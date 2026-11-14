@@ -445,8 +445,8 @@ export type DropTarget =
 
 /**
  * Drag and drop a field. Dropped between rows it gets a row of its own; dropped
- * beside another cell it joins that row (shrunk to fit), or lands in a row of its
- * own next to it when the row is full. Works across pages.
+ * beside another cell it joins that row (shrunk to fit); a full row is shared
+ * evenly when that gives valid widths (up to 4 cells), else the field gets a row of its own. Works across pages.
  */
 export function dropField(definition: DraftDefinition, fieldId: string, target: DropTarget): DraftDefinition {
 	const at = locateField(definition, fieldId)
@@ -511,7 +511,17 @@ export function dropField(definition: DraftDefinition, fieldId: string, target: 
 
 	const span = largestSpanWithin(Math.min(src.cell.span, ROW_WIDTH - rowUsed(tgt.row)))
 	if (span === null) {
-		// No room: its own row, above or below the one it was dropped beside.
+		// A full row: share it evenly (2, 3 or 4 cells fit a valid width), else a row of its own.
+		const even = ROW_WIDTH / (tgt.row.cells.length + 1)
+		if ((SPANS as readonly number[]).includes(even)) {
+			detach()
+			const at = tgt.row.cells.findIndex((cell) => cell.id === tgt.cell.id)
+			tgt.row.cells.splice(at + (target.side === 'after' ? 1 : 0), 0, src.cell)
+			for (const cell of tgt.row.cells) {
+				cell.span = even
+			}
+			return next
+		}
 		const tgtRows = rowsOf(next, tgt.pageIndex)
 		const anchor = tgt.row
 		detach()

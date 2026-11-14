@@ -13,7 +13,7 @@ import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcActionCaption from '@nextcloud/vue/components/NcActionCaption'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import { MAX_PAGES, resizeField, rulesTouching, type DropTarget } from '../../builder/definition.ts'
+import { MAX_PAGES, dropField, resizeField, rulesTouching, type DropTarget } from '../../builder/definition.ts'
 import { renderedLabelPosition } from '../../layout/labelPosition.ts'
 import { groupErrors } from '../../builder/errors.ts'
 import Icon from '../common/Icon.vue'
@@ -44,10 +44,23 @@ const emit = defineEmits<{
 	removePage: [pageId: string]
 }>()
 
+type Drag = { kind: 'field', fieldId: string } | { kind: 'row', rowId: string }
+const drag = ref<Drag | null>(null)
+const dropHint = ref<{ key: string, cellId?: string, side?: 'before' | 'after' } | null>(null)
 // While a resize handle is dragged the canvas shows the result without touching the draft;
 // one edit is emitted when the pointer is released.
 const resizing = ref<{ fieldId: string, raw: number, left: number, colWidth: number, gap: number } | null>(null)
-const view = computed(() => (resizing.value ? resizeField(props.definition, resizing.value.fieldId, resizing.value.raw) : props.definition))
+// Likewise a field dragged over another cell: the canvas previews the layout it would give.
+const view = computed(() => {
+	if (resizing.value) {
+		return resizeField(props.definition, resizing.value.fieldId, resizing.value.raw)
+	}
+	const hint = dropHint.value
+	if (drag.value?.kind === 'field' && hint?.cellId) {
+		return dropField(props.definition, drag.value.fieldId, { kind: 'cell', cellId: hint.cellId, side: hint.side ?? 'after' })
+	}
+	return props.definition
+})
 const pages = computed(() => view.value.pages)
 
 // The page being edited. Everything on the canvas happens on this one page.
@@ -102,9 +115,6 @@ async function startRename(pageId: string) {
 }
 
 // Drag and drop (native HTML5, so it needs a mouse; the properties panel keeps the button moves).
-type Drag = { kind: 'field', fieldId: string } | { kind: 'row', rowId: string }
-const drag = ref<Drag | null>(null)
-const dropHint = ref<{ key: string, side?: 'before' | 'after' } | null>(null)
 let tabTimer: ReturnType<typeof setTimeout> | undefined
 
 function startDrag(event: DragEvent, value: Drag, image?: HTMLElement | null): void {
@@ -148,7 +158,11 @@ function overCell(event: DragEvent, cellId: string, fieldId: string): void {
 	}
 	event.preventDefault()
 	const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
-	dropHint.value = { key: cellId, side: event.clientX < rect.left + rect.width / 2 ? 'before' : 'after' }
+	const x = (event.clientX - rect.left) / rect.width
+	const previous = dropHint.value?.cellId === cellId ? dropHint.value.side : undefined
+	// A dead zone in the middle keeps the last side, so the preview does not flicker.
+	const side = x < 0.4 ? 'before' : x > 0.6 ? 'after' : (previous ?? (x < 0.5 ? 'before' : 'after'))
+	dropHint.value = { key: cellId, cellId, side }
 }
 
 function dropOnCell(cellId: string): void {
@@ -158,6 +172,20 @@ function dropOnCell(cellId: string): void {
 	if (current?.kind === 'field') {
 		emit('dropField', current.fieldId, { kind: 'cell', cellId, side })
 	}
+}
+
+/** Leaving the page area clears the preview. Moving between cells must not, or the layout flickers. */
+function leavePage(event: DragEvent): void {
+	if (!(event.currentTarget as HTMLElement).contains(event.relatedTarget as Node | null)) {
+		dropHint.value = null
+	}
+}
+
+/** Row slots are indexes into the saved layout, which the preview may have reshuffled. */
+function slot(rowId: string, index: number): number {
+	const saved = props.definition.pages[activeIndex.value]?.rows ?? []
+	const found = saved.findIndex((row) => row.id === rowId)
+	return found === -1 ? index : found
 }
 
 /** Hovering a tab while dragging opens that page, so a field can be dropped there. */
@@ -295,14 +323,13 @@ function codes(fieldId: string): string[] {
 				</template>
 			</NcEmptyContent>
 
-			<div v-else role="tabpanel" :class="{ 'af-dragging': drag }">
+			<div v-else role="tabpanel" :class="{ 'af-dragging': drag }" @dragleave="leavePage">
 					<template v-for="(row, index) in activePage.rows" :key="row.id">
 						<div class="af-gap"
 							:class="{ 'af-gap--over': dropHint?.key === 'gap' + index }"
 							@dragover="overGap($event, 'gap' + index)"
-							@dragleave="dropHint = null"
-							@drop.prevent="dropOnGap(index)">
-							<AddFieldMenu @pick="(type) => emit('add', type, index, activeIndex)" />
+							@drop.prevent="dropOnGap(slot(row.id, index))">
+							<AddFieldMenu @pick="(type) => emit('add', type, slot(row.id, index), activeIndex)" />
 						</div>
 						<div class="af-row"
 							:class="{ 'af-row--dragged': drag?.kind === 'row' && drag.rowId === row.id }">
@@ -319,8 +346,6 @@ function codes(fieldId: string): string[] {
 								:key="cell.id"
 								class="af-cell"
 								:class="{
-									'af-cell--before': dropHint?.key === cell.id && dropHint.side === 'before',
-									'af-cell--after': dropHint?.key === cell.id && dropHint.side === 'after',
 									'af-cell--dragged': drag?.kind === 'field' && drag.fieldId === cell.field,
 									'af-cell--resizing': resizing?.fieldId === cell.field,
 								}"
@@ -329,7 +354,6 @@ function codes(fieldId: string): string[] {
 								@dragstart.self="startDrag($event, { kind: 'field', fieldId: cell.field })"
 								@dragend="endDrag"
 								@dragover="overCell($event, cell.id, cell.field)"
-								@dragleave="dropHint = null"
 								@drop.prevent="dropOnCell(cell.id)">
 								<FieldCard v-if="definition.fields[cell.field]"
 									:field="definition.fields[cell.field]"
@@ -359,8 +383,7 @@ function codes(fieldId: string): string[] {
 						class="af-gap af-gap--end"
 						:class="{ 'af-gap--over': dropHint?.key === 'gapend' }"
 						@dragover="overGap($event, 'gapend')"
-						@dragleave="dropHint = null"
-						@drop.prevent="dropOnGap(activePage.rows.length)" />
+						@drop.prevent="dropOnGap(definition.pages[activeIndex]?.rows.length ?? 0)" />
 					<div class="af-canvas__add">
 					<AddFieldMenu :label="t('advancedforms', 'Add field')"
 						variant="secondary"
@@ -548,27 +571,6 @@ function codes(fieldId: string): string[] {
 
 .af-gap--end {
 	margin-top: calc(var(--default-grid-baseline) * 2);
-}
-
-/* Where a dragged field would land: a bar on the side of the cell it would sit beside. */
-.af-cell--before::before,
-.af-cell--after::after {
-	content: '';
-	position: absolute;
-	top: 0;
-	bottom: 0;
-	width: 4px;
-	border-radius: 2px;
-	background: var(--color-primary-element);
-	z-index: 2;
-}
-
-.af-cell--before::before {
-	left: -5px;
-}
-
-.af-cell--after::after {
-	right: -5px;
 }
 
 .af-cell__resize {

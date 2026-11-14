@@ -323,11 +323,28 @@ describe('dropField and dropRow', () => {
 		expect(fieldOrder(moved).slice(0, 2)).toEqual([b, a])
 	})
 
-	it('puts the field in its own row when the target row is full', () => {
+	it('shares a full row evenly with the dropped field', () => {
 		const { def, a, c } = build()
 		const moved = dropField(def, c, { kind: 'cell', cellId: locateField(def, a)!.cell.id, side: 'after' })
+		expect(moved.pages[0].rows).toHaveLength(1)
+		expect(moved.pages[0].rows[0].cells.map((cell) => cell.span)).toEqual([4, 4, 4])
+		expect(fieldOrder(moved)[1]).toBe(c)
+	})
+
+	it('puts the field in its own row when the row already has four cells', () => {
+		let def = emptyDefinition('T')
+		const first = addField(def, 'text', { kind: 'row', index: 0 })
+		def = setSpan(first.definition, first.fieldId, 3)
+		const rowId = def.pages[0].rows[0].id
+		for (const span of [3, 3, 3]) {
+			const joined = addField(def, 'text', { kind: 'join', rowId })
+			def = setSpan(joined.definition, joined.fieldId, span)
+		}
+		const extra = addField(def, 'text', { kind: 'row', index: 1 })
+		const moved = dropField(extra.definition, extra.fieldId, { kind: 'cell', cellId: def.pages[0].rows[0].cells[0].id, side: 'before' })
 		expect(moved.pages[0].rows).toHaveLength(2)
-		expect(moved.pages[0].rows[1].cells[0].field).toBe(c)
+		expect(moved.pages[0].rows[0].cells).toHaveLength(1)
+		expect(moved.pages[0].rows[0].cells[0].field).toBe(extra.fieldId)
 	})
 
 	it('moves a field to another page', () => {
