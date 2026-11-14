@@ -48,6 +48,7 @@ Non-goals (v1, but the format must not block them):
     "requireLogin": false,
     "allowMultipleSubmissions": true,
     "hideRequiredIndicator": false,
+    "captcha": true,
     "closedMessage": "This form is no longer accepting responses.",
     "design": { "width": "standard", "card": true, "background": "default", "accentColor": "#0082c9" }
   },
@@ -122,6 +123,10 @@ Non-goals (v1, but the format must not block them):
 
 `schemaVersion` is the version of this format, not of the form. It lets later
 releases migrate stored definitions.
+
+`settings.captcha` (boolean, default true) turns the server's spam check off for this form
+when false. It is a form setting only; which check runs, and its keys, are server-wide and set
+by an administrator (section 10.1).
 
 `settings.hideRequiredIndicator` (boolean, default false) leaves out the asterisk
 after the labels of required fields. It only changes how the label is drawn: the
@@ -689,6 +694,30 @@ The server never trusts the client's idea of visibility.
 
 Validation errors return field IDs with machine-readable codes so the client
 can show them next to the right field.
+
+### 10.1 Spam check
+
+Between the fill-time token (step 2) and field validation, a respondent who is not logged
+in must pass the administrator's spam check, unless `settings.captcha` is false. Failing it
+returns the form level code `captcha_failed`. The check is skipped for logged-in users.
+
+The administrator picks one provider for the whole server (Settings, Administration,
+Advanced Forms): `builtin` (default), `turnstile`, `hcaptcha`, or `none`. The choice,
+the site key, and the secret key live in app config; the secret is stored encrypted and is
+never sent to a browser. A Turnstile or hCaptcha choice without both keys counts as `none`,
+so an unfinished setup never locks respondents out.
+
+- `builtin`: proof of work in the ALTCHA v1 format (SHA-256). `GET /api/v1/public/captcha/challenge`
+  returns `{algorithm, challenge, salt, signature, maxnumber}`, where `challenge = sha256(salt || n)`
+  for a secret `n <= maxnumber` and `signature` is an HMAC of the challenge keyed from the instance
+  secret. The salt ends in `?expires=<unix time>` (ten minutes). The browser finds `n` and sends
+  `base64(json{algorithm, challenge, number, salt, signature})` as `captcha`. The server checks the
+  signature, the expiry and the hash, and accepts each challenge once (distributed cache; without
+  a shared cache replay protection is best effort, bounded by the expiry and the rate limits).
+- `turnstile`, `hcaptcha`: the widget's token is sent as `captcha` and the server verifies it
+  with the provider's siteverify endpoint. A provider that cannot be reached fails closed.
+
+The public form response carries `captcha: {provider, siteKey} | null`; `null` means no check.
 
 ## 11. Shared test vectors
 

@@ -22,6 +22,7 @@ use OCA\AdvancedForms\Forms\JsonShape;
 use OCA\AdvancedForms\Forms\SubmissionValidator;
 use OCA\AdvancedForms\Forms\UploadPolicy;
 use OCA\AdvancedForms\Rules\FieldType;
+use OCA\AdvancedForms\Security\Captcha\CaptchaService;
 use OCA\AdvancedForms\Security\FillTimeToken;
 use OCA\AdvancedForms\Uploads\UploadRejected;
 use OCA\AdvancedForms\Uploads\UploadService;
@@ -55,6 +56,7 @@ class SubmissionService {
 		private readonly IJobList $jobs,
 		private readonly LoggerInterface $logger,
 		private readonly UploadService $uploads,
+		private readonly CaptchaService $captcha,
 	) {
 		$this->tokens = new FillTimeToken($config->getSystemValueString('secret'));
 	}
@@ -73,6 +75,7 @@ class SubmissionService {
 		$version = $this->openVersion($form, $userId);
 		$definition = $version->getDefinitionArray();
 		unset($definition['actions']);
+		$captcha = $this->captcha->publicConfig($definition, $userId);
 		// Where files end up is the owner's business, not the respondent's.
 		foreach ($definition['fields'] as $fieldId => $field) {
 			if (is_array($field) && ($field['type'] ?? null) === FieldType::FILE) {
@@ -86,6 +89,7 @@ class SubmissionService {
 			'signedIn' => $userId !== null,
 			'uploadLimit' => (int)\OCP\Util::uploadLimit(),
 			'fillToken' => $this->tokens->issue($form->getId(), $version->getId(), $this->time->getTime()),
+			'captcha' => $captcha,
 			'definition' => JsonShape::definition($definition),
 		];
 	}
@@ -105,6 +109,8 @@ class SubmissionService {
 		array $values,
 		string $fillToken,
 		string $honeypot,
+		string $captcha = '',
+		string $remoteIp = '',
 	): array {
 		$form = $this->forms->findByToken($token);
 		$latest = $this->openVersion($form, $userId);
@@ -125,6 +131,9 @@ class SubmissionService {
 		}
 
 		$definition = $version->getDefinitionArray();
+		if (!$this->captcha->passes($definition, $userId, $captcha, $remoteIp, $this->time->getTime())) {
+			throw new ValidationException([['code' => 'captcha_failed']]);
+		}
 		$result = $this->validator->validate($definition, $values);
 		if ($result['errors'] !== []) {
 			throw new ValidationException($result['errors']);

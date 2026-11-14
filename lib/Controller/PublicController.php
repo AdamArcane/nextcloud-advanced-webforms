@@ -14,6 +14,7 @@ use OCA\AdvancedForms\Exception\FormClosedException;
 use OCA\AdvancedForms\Exception\LoginRequiredException;
 use OCA\AdvancedForms\Exception\NotFoundException;
 use OCA\AdvancedForms\Exception\ValidationException;
+use OCA\AdvancedForms\Security\Captcha\CaptchaService;
 use OCA\AdvancedForms\Service\SubmissionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -23,6 +24,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\Attribute\UserRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IRequest;
 use OCP\IUserSession;
 
@@ -39,6 +41,8 @@ class PublicController extends Controller {
 		IRequest $request,
 		private readonly SubmissionService $service,
 		private readonly IUserSession $userSession,
+		private readonly CaptchaService $captcha,
+		private readonly ITimeFactory $time,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 	}
@@ -67,13 +71,29 @@ class PublicController extends Controller {
 		array $values = [],
 		string $fillToken = '',
 		string $hp = '',
+		string $captcha = '',
 	): JSONResponse {
 		if (strlen((string)json_encode($values)) > self::MAX_VALUES_BYTES) {
 			return new JSONResponse(['error' => 'too_large'], Http::STATUS_REQUEST_ENTITY_TOO_LARGE);
 		}
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
-			$this->service->submit($token, $this->userId(), $versionId, $values, $fillToken, $hp),
+			$this->service->submit($token, $this->userId(), $versionId, $values, $fillToken, $hp, $captcha, $this->request->getRemoteAddress()),
 		));
+	}
+
+	/**
+	 * A fresh challenge for the built-in captcha. It says nothing about any form, so a form that
+	 * does not exist answers the same as one that does.
+	 */
+	#[PublicPage]
+	#[NoAdminRequired]
+	#[AnonRateLimit(limit: 30, period: 60)]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/public/captcha/challenge')]
+	public function challenge(): JSONResponse {
+		$challenge = $this->captcha->challenge($this->time->getTime());
+		return $challenge === null
+			? new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND)
+			: new JSONResponse($challenge);
 	}
 
 	/**

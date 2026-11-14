@@ -42,6 +42,8 @@ export function messageFor(code: string): string {
 		case 'token_expired':
 		case 'token_invalid':
 			return t('advancedforms', 'This page was open for too long. Please send again.')
+		case 'captcha_failed':
+			return t('advancedforms', 'The spam check was not passed. Please try again.')
 		case 'too_many_files':
 			return t('advancedforms', 'You added too many files.')
 		case 'duplicate_file':

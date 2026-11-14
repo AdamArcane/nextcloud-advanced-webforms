@@ -4,6 +4,7 @@
  */
 
 import type { PublicForm, SubmitResult } from '../types.ts'
+import type { PowChallenge } from '../captcha/pow.ts'
 
 import axios from '@nextcloud/axios'
 import { toApiError, url } from './http.ts'
@@ -25,6 +26,8 @@ export interface SubmitBody {
 	values: Record<string, unknown>
 	fillToken: string
 	hp: string
+	/** The answer to the spam check, when the form has one. */
+	captcha?: string
 }
 
 export async function submitPublicForm(token: string, body: SubmitBody): Promise<SubmitResult> {
@@ -59,6 +62,16 @@ export async function uploadPublicFile(
 		const response = await axios.post<UploadedFile>(url('/public/' + encodeURIComponent(token) + '/upload'), body, {
 			onUploadProgress: (event) => onProgress(event.total ? event.loaded / event.total : 0),
 		})
+		return response.data
+	} catch (error) {
+		throw toApiError(error)
+	}
+}
+
+/** A new challenge for the built-in spam check. */
+export async function fetchCaptchaChallenge(): Promise<PowChallenge> {
+	try {
+		const response = await axios.get<PowChallenge>(url('/public/captcha/challenge'))
 		return response.data
 	} catch (error) {
 		throw toApiError(error)

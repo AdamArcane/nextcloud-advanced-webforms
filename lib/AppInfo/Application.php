@@ -19,6 +19,13 @@ use OCA\AdvancedForms\Actions\Ports\MailPort;
 use OCA\AdvancedForms\Actions\Ports\SecretPort;
 use OCA\AdvancedForms\Db\UploadMapper;
 use OCA\AdvancedForms\Listener\UserDeletedListener;
+use OCA\AdvancedForms\Security\Captcha\AppConfigStore;
+use OCA\AdvancedForms\Security\Captcha\CacheReplayStore;
+use OCA\AdvancedForms\Security\Captcha\CaptchaHttp;
+use OCA\AdvancedForms\Security\Captcha\ConfigStore;
+use OCA\AdvancedForms\Security\Captcha\NextcloudCaptchaHttp;
+use OCA\AdvancedForms\Security\Captcha\ProofOfWork;
+use OCA\AdvancedForms\Security\Captcha\ReplayStore;
 use OCA\AdvancedForms\Uploads\Adapter\NextcloudMime;
 use OCA\AdvancedForms\Uploads\Adapter\NextcloudOwnerFiles;
 use OCA\AdvancedForms\Uploads\Adapter\NextcloudPendingStore;
@@ -32,7 +39,9 @@ use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
+use OCP\IConfig;
 use OCP\User\Events\UserDeletedEvent;
+use Psr\Container\ContainerInterface;
 
 class Application extends App implements IBootstrap {
 	public const APP_ID = 'advancedforms';
@@ -56,6 +65,14 @@ class Application extends App implements IBootstrap {
 		$context->registerServiceAlias(OwnerFilesPort::class, NextcloudOwnerFiles::class);
 		$context->registerServiceAlias(TokenPort::class, NextcloudTokens::class);
 		$context->registerServiceAlias(MimePort::class, NextcloudMime::class);
+
+		$context->registerServiceAlias(ConfigStore::class, AppConfigStore::class);
+		$context->registerServiceAlias(ReplayStore::class, CacheReplayStore::class);
+		$context->registerServiceAlias(CaptchaHttp::class, NextcloudCaptchaHttp::class);
+		$context->registerService(ProofOfWork::class, static fn (ContainerInterface $c): ProofOfWork => new ProofOfWork(
+			$c->get(IConfig::class)->getSystemValueString('secret'),
+			$c->get(ReplayStore::class),
+		));
 
 		$context->registerEventListener(UserDeletedEvent::class, UserDeletedListener::class);
 	}

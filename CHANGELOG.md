@@ -7,6 +7,11 @@
 
 ## 0.3.0 - Unreleased
 
+- Spam protection for people who are not logged in. An administrator picks one check for the
+  whole server under Administration settings: a built-in proof-of-work check (default, no account,
+  nothing shown, no data leaves the server), Cloudflare Turnstile, hCaptcha, or none. Form owners
+  can turn the check off for a single form ("Spam check" switch in Settings). Logged-in users never
+  see it. The hidden trap field, minimum fill time and rate limits stay on in every case.
 - Import and export a whole form. Each form in the sidebar has a menu with Export draft and
   Export published version, and the list has Import form. The file holds the definition (fields,
   layout, rules, actions, settings) and never responses, ids, links or webhook secrets. Importing

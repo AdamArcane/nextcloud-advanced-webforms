@@ -16,6 +16,7 @@ import { submitButtonStyle } from '../../design.ts'
 import { visiblePages } from '../../layout/visibleLayout.ts'
 import { evaluateRules } from '../../rules/engine.ts'
 import { isInputType } from '../../rules/fieldTypes.ts'
+import CaptchaField from './CaptchaField.vue'
 import FieldInput from './FieldInput.vue'
 import { messageFor } from './messages.ts'
 import { createUploadState } from './uploadState.ts'
@@ -58,6 +59,9 @@ for (const [id, field] of Object.entries(fields.value)) {
 }
 
 const honeypot = ref('')
+const captchaField = ref<InstanceType<typeof CaptchaField> | null>(null)
+// The spam check belongs to the real page, not to the builder preview.
+const captchaConfig = computed(() => (props.preview ? null : props.form.captcha ?? null))
 // The files of upload fields. The form is not sent while one is still on its way.
 const uploads = createUploadState(() => ({
 	token: props.form.token,
@@ -206,6 +210,16 @@ async function onSubmit() {
 		return
 	}
 
+	let captcha: string | undefined
+	if (captchaConfig.value) {
+		captcha = (await captchaField.value?.response()) ?? undefined
+		if (!captcha) {
+			formError.value = t('advancedforms', 'Please complete the spam check before sending.')
+			captchaField.value?.reset()
+			return
+		}
+	}
+
 	submitting.value = true
 	try {
 		const result = await submitPublicForm(props.form.token, {
@@ -213,12 +227,15 @@ async function onSubmit() {
 			values: submitted,
 			fillToken: props.form.fillToken,
 			hp: honeypot.value,
+			captcha,
 		})
 		done.value = { message: result.message ?? t('advancedforms', 'Thank you. Your response has been sent.') }
 		if (result.redirect?.startsWith('https://')) {
 			window.location.assign(result.redirect)
 		}
 	} catch (error) {
+		// An answer to the spam check works once, so the next attempt needs a new one.
+		captchaField.value?.reset()
 		await showError(error)
 	} finally {
 		submitting.value = false
@@ -295,6 +312,8 @@ async function showError(error: unknown) {
 				tabindex="-1"
 				autocomplete="off">
 		</div>
+
+		<CaptchaField v-if="captchaConfig && isLast" ref="captchaField" :config="captchaConfig" />
 
 		<NcNoteCard v-if="formError" type="error" role="alert">
 			{{ formError }}

@@ -229,6 +229,14 @@ function str(value: string | number): string | undefined {
 				@update:model-value="(value: boolean) => emit('settings', { allowMultipleSubmissions: value ? undefined : false })">
 				{{ t('advancedforms', 'Allow more than one response per person') }}
 			</NcCheckboxRadioSwitch>
+			<NcCheckboxRadioSwitch type="switch"
+				:model-value="definition.settings.captcha !== false"
+				@update:model-value="(value: boolean) => emit('settings', { captcha: value ? undefined : false })">
+				{{ t('advancedforms', 'Spam check for people who are not logged in') }}
+			</NcCheckboxRadioSwitch>
+			<p class="af-form-props__hint">
+				{{ t('advancedforms', 'The administrator chooses the kind of check. Logged-in users never see it.') }}
+			</p>
 			<NcTextField :model-value="definition.settings.closedMessage ?? ''"
 				:label="t('advancedforms', 'Message when closed')"
 				@update:model-value="(value: string | number) => emit('settings', { closedMessage: str(value) })" />

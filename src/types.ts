@@ -80,6 +80,8 @@ export interface FormSettings {
 	allowMultipleSubmissions?: boolean
 	/** Leave out the asterisk after required labels. Screen readers are still told. Default false. */
 	hideRequiredIndicator?: boolean
+	/** Ask anonymous respondents to pass the server's spam check. Default true; false turns it off for this form. */
+	captcha?: boolean
 	closedMessage?: string
 }
 
@@ -103,6 +105,14 @@ export interface PublicForm {
 	signedIn?: boolean
 	/** The server's largest single upload in bytes. */
 	uploadLimit?: number
+	/** The spam check to show, or null when this respondent does not need one. */
+	captcha?: CaptchaConfig | null
+}
+
+export interface CaptchaConfig {
+	provider: 'builtin' | 'turnstile' | 'hcaptcha'
+	/** Public key of the provider; empty for the built-in check. */
+	siteKey: string
 }
 
 export interface SubmitResult {

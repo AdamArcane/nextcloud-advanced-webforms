@@ -42,6 +42,11 @@ This app is in early development.
 		<job>OCA\AdvancedForms\BackgroundJob\CleanupUploadsJob</job>
 	</background-jobs>
 
+	<settings>
+		<admin>OCA\AdvancedForms\Settings\AdminSettings</admin>
+		<admin-section>OCA\AdvancedForms\Settings\AdminSection</admin-section>
+	</settings>
+
 	<navigations>
 		<navigation>
 			<name>Advanced Forms</name>
