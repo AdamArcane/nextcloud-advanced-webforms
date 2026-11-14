@@ -20,6 +20,7 @@ use OCA\AdvancedForms\Exception\NotFoundException;
 use OCA\AdvancedForms\Exception\ValidationException;
 use OCA\AdvancedForms\Forms\DefinitionValidator;
 use OCA\AdvancedForms\Forms\JsonShape;
+use OCA\AdvancedForms\Forms\RetiredIds;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Security\ISecureRandom;
 
@@ -126,9 +127,12 @@ class FormService {
 		if ($errors !== []) {
 			throw new ValidationException($errors);
 		}
-		$previous = array_map('strval', array_keys($form->getDraftDefinition()['fields'] ?? []));
-		$removed = array_diff($previous, array_map('strval', array_keys($fields)));
-		$retired = array_values(array_unique(array_merge($retired, $removed)));
+		$retired = RetiredIds::after(
+			$retired,
+			array_map('strval', array_keys($form->getDraftDefinition()['fields'] ?? [])),
+			array_map('strval', array_keys($fields)),
+			$this->versions->publishedFieldIds($form->getId()),
+		);
 
 		$form->setTitle(trim($title));
 		$description = $definition['description'] ?? null;
@@ -273,6 +277,8 @@ class FormService {
 		if ($withDraft) {
 			$data['draft'] = JsonShape::definition($form->getDraftDefinition());
 			$data['hasUnpublishedChanges'] = $this->hasUnpublishedChanges($form);
+			// Ids that cannot be used again, so the builder can say so before the server has to refuse.
+			$data['retiredIds'] = $form->getRetiredIdList();
 		}
 		return $data;
 	}

@@ -136,6 +136,8 @@ export interface OwnerForm {
 	updatedAt: number
 	draft?: DraftDefinition
 	hasUnpublishedChanges?: boolean
+	/** Field ids that can no longer be used because a published field had them. */
+	retiredIds?: string[]
 }
 
 /** A structural problem the server found in a draft (`path` like `fields.f_abc.label`). */

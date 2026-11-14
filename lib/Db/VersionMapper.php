@@ -55,6 +55,30 @@ class VersionMapper extends QBMapper {
 	}
 
 	/**
+	 * Every field id that appears in any published version of the form.
+	 *
+	 * @return list<string>
+	 * @throws Exception
+	 */
+	public function publishedFieldIds(int $formId): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('definition')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('form_id', $qb->createNamedParameter($formId)));
+		$result = $qb->executeQuery();
+		$ids = [];
+		while (($json = $result->fetchOne()) !== false) {
+			$definition = json_decode((string)$json, true);
+			$fields = is_array($definition) && is_array($definition['fields'] ?? null) ? $definition['fields'] : [];
+			foreach (array_keys($fields) as $id) {
+				$ids[(string)$id] = true;
+			}
+		}
+		$result->closeCursor();
+		return array_keys($ids);
+	}
+
+	/**
 	 * @throws Exception
 	 */
 	public function deleteByForm(int $formId): void {

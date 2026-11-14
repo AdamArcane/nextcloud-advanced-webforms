@@ -13,9 +13,10 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { allowedSpans, canMove, locateField, SPANS } from '../../builder/definition.ts'
 import { describeError } from '../../builder/errors.ts'
+import { fieldIdProblem } from '../../builder/fieldId.ts'
 import { renderedLabelPosition, requestedLabelPosition, supportsInline } from '../../layout/labelPosition.ts'
 import AddFieldMenu from './AddFieldMenu.vue'
 import OptionsEditor from './OptionsEditor.vue'
@@ -25,6 +26,10 @@ const props = defineProps<{
 	definition: DraftDefinition
 	fieldId: string
 	errorCodes: string[]
+	/** Ids that cannot be reused (a published field had them). */
+	retiredIds?: string[]
+	/** Whether the form has been published, which makes an id change visible to receivers. */
+	published?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -32,6 +37,7 @@ const emit = defineEmits<{
 	span: [span: number]
 	move: [move: Move]
 	addBeside: [type: string]
+	rename: [id: string]
 	remove: []
 }>()
 
@@ -94,6 +100,24 @@ function setLabelPosition(choice: string): void {
 		labelPosition: choice === 'default' ? undefined : choice as FormField['labelPosition'],
 		hideLabel: undefined,
 	})
+}
+
+// Changing the id is explicit (Change ID), not per keystroke: every change rewrites rules, actions and layout.
+const idDraft = ref(props.fieldId)
+const idProblem = computed(() => fieldIdProblem(props.definition, props.fieldId, idDraft.value, props.retiredIds ?? []))
+const idMessage = computed(() => {
+	switch (idProblem.value) {
+		case 'pattern': return t('advancedforms', 'Use 3 to 32 lowercase letters, numbers or underscores, starting with a letter.')
+		case 'taken': return t('advancedforms', 'Another field already uses this ID.')
+		case 'retired': return t('advancedforms', 'A published field used this ID before it was deleted, so it cannot be used again.')
+		default: return null
+	}
+})
+
+function applyId(): void {
+	if (idProblem.value === null) {
+		emit('rename', idDraft.value)
+	}
 }
 
 const spanLabels: Record<number, string> = { 3: '¼', 4: '⅓', 6: '½', 8: '⅔', 9: '¾', 12: t('advancedforms', 'Full') }
@@ -261,6 +285,24 @@ const moves: { move: Move, label: string }[] = [
 				:label="t('advancedforms', 'Add a field beside this one')"
 				variant="tertiary"
 				@pick="(newType) => emit('addBeside', newType)" />
+		</section>
+
+		<section class="af-props__section">
+			<h3 class="af-props__heading">
+				{{ t('advancedforms', 'Advanced') }}
+			</h3>
+			<NcTextField :model-value="idDraft"
+				:label="t('advancedforms', 'Field ID')"
+				:error="idMessage !== null"
+				:helper-text="idMessage ?? t('advancedforms', 'Sent with webhooks and used in exports. Rules, actions and layout follow if you change it.')"
+				@update:model-value="(value: string | number) => { idDraft = String(value) }"
+				@keydown.enter.prevent="applyId" />
+			<NcNoteCard v-if="published && idProblem === null" type="info">
+				{{ t('advancedforms', 'This form is published. After you publish again, webhooks and exports use the new ID. Responses already received keep the old one.') }}
+			</NcNoteCard>
+			<NcButton variant="secondary" :disabled="idProblem !== null" @click="applyId">
+				{{ t('advancedforms', 'Change ID') }}
+			</NcButton>
 		</section>
 
 		<section class="af-props__section">

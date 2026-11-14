@@ -21,6 +21,7 @@ import { ApiError } from '../../api/http.ts'
 import { deleteForm, getForm, publicFormUrl, publishForm, saveDraft } from '../../api/forms.ts'
 import { addField, locateField, moveField, removeField, setSpan, updateField } from '../../builder/definition.ts'
 import { describeError, groupErrors } from '../../builder/errors.ts'
+import { renameField } from '../../builder/fieldId.ts'
 import type { Rule } from '../../rules/types.ts'
 import { FORM_STATUS_PUBLISHED } from '../../types.ts'
 import ActionsPanel from './ActionsPanel.vue'
@@ -252,6 +253,17 @@ function onMove(move: Move): void {
 	}
 }
 
+function onRename(newId: string): void {
+	if (!draft.value || !selectedId.value) {
+		return
+	}
+	const renamed = renameField(draft.value, selectedId.value, newId, form.value?.retiredIds ?? [])
+	if (renamed !== draft.value) {
+		edit(renamed)
+		selectedId.value = newId
+	}
+}
+
 function onRemoveConfirmed(): void {
 	confirmRemoveField.value = false
 	if (draft.value && selectedId.value) {
@@ -408,10 +420,13 @@ function openSettings(): void {
 				:definition="draft"
 				:field-id="selectedId"
 				:error-codes="selectedCodes"
+				:retired-ids="form.retiredIds ?? []"
+				:published="form.latestVersionId !== null"
 				@update="onUpdate"
 				@span="onSpan"
 				@move="onMove"
 				@add-beside="onAddBeside"
+				@rename="onRename"
 				@remove="confirmRemoveField = true" />
 			<NcEmptyContent v-else
 				class="af-builder__hint"

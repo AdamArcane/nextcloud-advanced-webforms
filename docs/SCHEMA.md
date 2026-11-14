@@ -130,10 +130,24 @@ moving a field in the layout never changes its identity.
 ### 4.1 Field IDs (DECISION)
 
 - Pattern: `^[a-z][a-z0-9_]{2,31}$`, conventionally prefixed `f_`.
-- Unique within a form, opaque, immutable.
-- Never positional and never derived from the label.
-- IDs of deleted fields stay reserved for that form so old entries cannot be
-  confused with a new field that reuses the ID.
+- Unique within a form and never positional. The builder generates one, and the
+  owner may replace it with a meaningful name (for example `customer_email`),
+  because the id is what a webhook receiver or an export sees.
+- Never derived from the label automatically, so renaming a label does not
+  change the id.
+- Changing an id means moving everything that refers to it: the layout cell,
+  rule targets and conditions, action conditions, an email's recipient field,
+  and `{placeholders}` in action text. The builder does this in one step.
+- Entries are read through the version they were submitted to (section 8), so
+  changing an id in a later version leaves earlier responses intact. Receivers
+  and exports that join responses across versions will see the new id from the
+  next publish on; the builder warns about this for a published form.
+- An id is **retired** (reserved for that form for good) when a field that
+  appeared in a published version is removed or renamed, so a different field
+  can never take over an id that old responses used for something else. An id
+  that only ever existed in a draft is not retired and can be reused freely.
+  The owner API returns `retiredIds`, and saving a draft that reuses one is
+  refused.
 
 ### 4.2 Field types (v1)
 
@@ -487,7 +501,7 @@ Hidden or unanswered fields are omitted from `data`.
 
 - A form has one mutable **draft** definition. Saving a draft is lenient so the
   builder can store work in progress: only an oversize document, a missing
-  title, a non-object `fields`, or reuse of a deleted field's id is refused, and
+  title, a non-object `fields`, or reuse of a retired field id is refused, and
   other validation errors are returned as warnings. Publishing is the gate (this
   amends the earlier "cycles are rejected on save": a draft is never executed,
   so a cycle in it is harmless until publish).
