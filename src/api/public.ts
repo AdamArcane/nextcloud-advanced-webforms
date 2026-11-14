@@ -3,35 +3,13 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-import type { FieldError, PublicForm, SubmitResult } from '../types.ts'
+import type { PublicForm, SubmitResult } from '../types.ts'
 
-import axios, { isAxiosError } from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
+import axios from '@nextcloud/axios'
+import { toApiError, url } from './http.ts'
 
-/** A failed API call, reduced to what the UI needs. */
-export class ApiError extends Error {
-	constructor(
-		public readonly status: number,
-		public readonly code: string,
-		public readonly errors: FieldError[] = [],
-		public readonly serverMessage: string | null = null,
-	) {
-		super(code)
-		this.name = 'ApiError'
-	}
-}
-
-function toApiError(error: unknown): ApiError {
-	if (isAxiosError(error) && error.response) {
-		const body = (error.response.data ?? {}) as { error?: string, errors?: FieldError[], message?: string }
-		return new ApiError(error.response.status, body.error ?? 'failed', body.errors ?? [], body.message ?? null)
-	}
-	return new ApiError(0, 'network')
-}
-
-function url(path: string): string {
-	return generateUrl('/apps/advancedforms/api/v1' + path)
-}
+// Kept so existing imports of ApiError from this module keep working.
+export { ApiError } from './http.ts'
 
 export async function fetchPublicForm(token: string): Promise<PublicForm> {
 	try {

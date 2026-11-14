@@ -65,3 +65,39 @@ export interface FieldError {
 	field?: string
 	code: string
 }
+
+/** The owner's editable definition (docs/SCHEMA.md section 3), including `actions`. */
+export interface DraftDefinition {
+	schemaVersion: number
+	title: string
+	description?: string | null
+	settings: FormSettings
+	fields: Record<string, FormField>
+	pages: LayoutPage[]
+	rules: Rule[]
+	actions: unknown[]
+}
+
+export const FORM_STATUS_UNPUBLISHED = 0
+export const FORM_STATUS_PUBLISHED = 1
+export const FORM_STATUS_CLOSED = 2
+
+/** A form as the owner API returns it. `draft` is only present on single-form calls. */
+export interface OwnerForm {
+	id: number
+	title: string
+	description: string | null
+	status: number
+	publicToken: string | null
+	latestVersionId: number | null
+	createdAt: number
+	updatedAt: number
+	draft?: DraftDefinition
+	hasUnpublishedChanges?: boolean
+}
+
+/** A structural problem the server found in a draft (`path` like `fields.f_abc.label`). */
+export interface DefinitionError {
+	code: string
+	path: string
+}
