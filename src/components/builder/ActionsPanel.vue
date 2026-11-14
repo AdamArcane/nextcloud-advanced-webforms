@@ -8,6 +8,8 @@ import type { ActionType, DefinitionError, DraftDefinition, FormAction } from '.
 
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import { actionTypeIcons } from '../../icons.ts'
+import Icon from '../common/Icon.vue'
 import { computed, ref } from 'vue'
 import { createWebhookSecret } from '../../api/forms.ts'
 import { ACTION_TYPES, addAction, errorActionIndex, MAX_ACTIONS, moveAction, removeAction, unreachableResponseActions, updateAction } from '../../builder/actions.ts'
@@ -124,6 +126,9 @@ async function generateSecret(index: number): Promise<void> {
 					:disabled="full"
 					:title="actionHint(type)"
 					@click="add(type)">
+					<template #icon>
+						<Icon :path="actionTypeIcons[type]" />
+					</template>
 					{{ actionLabel(type) }}
 				</NcButton>
 			</div>

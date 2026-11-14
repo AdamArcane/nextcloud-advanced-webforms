@@ -9,6 +9,8 @@ import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcActionCaption from '@nextcloud/vue/components/NcActionCaption'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import { FIELD_TYPES } from '../../builder/definition.ts'
+import { fieldTypeIcon, icons } from '../../icons.ts'
+import Icon from '../common/Icon.vue'
 
 defineProps<{
 	/** Text on the trigger button. Without it the trigger is a compact plus. */
@@ -49,13 +51,16 @@ function typeName(type: string): string {
 		:aria-label="label ? undefined : t('advancedforms', 'Add a field here')"
 		:class="{ 'af-add-menu--compact': !label }">
 		<template v-if="!label" #icon>
-			<span class="af-add-menu__plus" aria-hidden="true">+</span>
+			<Icon :path="icons.add" />
 		</template>
 		<NcActionCaption :name="t('advancedforms', 'Inputs')" />
 		<NcActionButton v-for="info in inputTypes"
 			:key="info.type"
 			close-after-click
 			@click="emit('pick', info.type)">
+			<template #icon>
+				<Icon :path="fieldTypeIcon(info.type)" />
+			</template>
 			{{ typeName(info.type) }}
 		</NcActionButton>
 		<NcActionCaption :name="t('advancedforms', 'Content')" />
@@ -63,15 +68,11 @@ function typeName(type: string): string {
 			:key="info.type"
 			close-after-click
 			@click="emit('pick', info.type)">
+			<template #icon>
+				<Icon :path="fieldTypeIcon(info.type)" />
+			</template>
 			{{ typeName(info.type) }}
 		</NcActionButton>
 	</NcActions>
 </template>
 
-<style scoped>
-.af-add-menu__plus {
-	font-size: 20px;
-	line-height: 1;
-	font-weight: bold;
-}
-</style>

@@ -4,17 +4,25 @@
 -->
 
 <script setup lang="ts" generic="T extends string | number">
+import Icon from '../common/Icon.vue'
+
 export interface SegmentOption<V> {
 	value: V
 	label: string
 	disabled?: boolean
 	title?: string
+	/** An icon path from `icons.ts`, shown before the label. */
+	icon?: string
 }
 
 defineProps<{
 	options: SegmentOption<T>[]
 	modelValue: T | null
 	groupLabel: string
+	/** Show only the icons. The label stays as the tooltip and the accessible name. */
+	iconOnly?: boolean
+	/** Drop the labels (keeping the icons) when the screen is narrow. */
+	collapse?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -23,7 +31,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-	<div class="af-seg" role="radiogroup" :aria-label="groupLabel">
+	<div class="af-seg" :class="{ 'af-seg--collapse': collapse }" role="radiogroup" :aria-label="groupLabel">
 		<button v-for="option in options"
 			:key="String(option.value)"
 			type="button"
@@ -32,9 +40,11 @@ const emit = defineEmits<{
 			:class="{ 'af-seg__item--on': option.value === modelValue }"
 			:aria-checked="option.value === modelValue"
 			:disabled="option.disabled"
-			:title="option.title"
+			:aria-label="iconOnly && option.icon ? option.label : undefined"
+			:title="option.title ?? (iconOnly || collapse ? option.label : undefined)"
 			@click="emit('update:modelValue', option.value)">
-			{{ option.label }}
+			<Icon v-if="option.icon" :path="option.icon" :size="18" />
+			<span v-if="!(iconOnly && option.icon)" class="af-seg__label">{{ option.label }}</span>
 		</button>
 	</div>
 </template>
@@ -49,6 +59,10 @@ const emit = defineEmits<{
 }
 
 .af-seg__item {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--default-grid-baseline);
 	flex: 1 1 0;
 	min-width: 0;
 	min-height: calc(var(--default-clickable-area) - 6px);
@@ -60,6 +74,12 @@ const emit = defineEmits<{
 	font: inherit;
 	cursor: pointer;
 	transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+@media (max-width: 700px) {
+	.af-seg--collapse .af-seg__label {
+		display: none;
+	}
 }
 
 .af-seg__item:hover:not(:disabled, .af-seg__item--on) {

@@ -8,6 +8,8 @@ import type { Delivery } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import { icons } from '../../icons.ts'
+import Icon from '../common/Icon.vue'
 import { canRetry, describeDeliveryError, statusLabel, typeLabel } from '../../entries/deliveryText.ts'
 import { formatTime, inFuture } from '../../entries/format.ts'
 
@@ -55,6 +57,9 @@ const emit = defineEmits<{
 			variant="secondary"
 			:disabled="busy"
 			@click="emit('retry')">
+			<template #icon>
+				<Icon :path="icons.refresh" />
+			</template>
 			{{ t('advancedforms', 'Try again') }}
 		</NcButton>
 	</li>

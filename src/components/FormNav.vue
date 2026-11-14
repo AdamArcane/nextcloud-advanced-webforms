@@ -5,6 +5,7 @@
 
 <script setup lang="ts">
 import { t } from '@nextcloud/l10n'
+import { icons } from '../icons.ts'
 import SegmentedControl from './builder/SegmentedControl.vue'
 
 const props = defineProps<{
@@ -21,10 +22,11 @@ function go(view: string | number): void {
 <template>
 	<SegmentedControl :model-value="active"
 		class="af-formnav"
+		collapse
 		:group-label="t('advancedforms', 'Form view')"
 		:options="[
-			{ value: 'edit', label: t('advancedforms', 'Edit') },
-			{ value: 'responses', label: t('advancedforms', 'Responses') },
+			{ value: 'edit', label: t('advancedforms', 'Edit'), icon: icons.edit },
+			{ value: 'responses', label: t('advancedforms', 'Responses'), icon: icons.responses },
 		]"
 		@update:model-value="go" />
 </template>
@@ -32,5 +34,11 @@ function go(view: string | number): void {
 <style scoped>
 .af-formnav {
 	min-width: 200px;
+}
+
+@media (max-width: 700px) {
+	.af-formnav {
+		min-width: 0;
+	}
 }
 </style>

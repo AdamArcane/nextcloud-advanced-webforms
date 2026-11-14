@@ -12,6 +12,8 @@ import NcAppContent from '@nextcloud/vue/components/NcAppContent'
 import NcAppSidebar from '@nextcloud/vue/components/NcAppSidebar'
 import NcAppSidebarTab from '@nextcloud/vue/components/NcAppSidebarTab'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import { icons } from '../../icons.ts'
+import Icon from '../common/Icon.vue'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
@@ -349,19 +351,32 @@ function openSettings(): void {
 						class="af-bar__device"
 						:group-label="t('advancedforms', 'Canvas width')"
 						:options="[
-							{ value: 'desktop', label: t('advancedforms', 'Desktop') },
-							{ value: 'mobile', label: t('advancedforms', 'Mobile') },
-						]" />
-					<NcButton variant="tertiary" @click="openSettings">
-						{{ t('advancedforms', 'Settings') }}
+							{ value: 'desktop', label: t('advancedforms', 'Desktop'), icon: icons.desktop },
+							{ value: 'mobile', label: t('advancedforms', 'Mobile'), icon: icons.mobile },
+						]"
+						icon-only />
+					<NcButton variant="tertiary" :aria-label="t('advancedforms', 'Settings')" :title="t('advancedforms', 'Settings')" @click="openSettings">
+						<template #icon>
+							<Icon :path="icons.settings" />
+						</template>
+						<span class="af-bar__text">{{ t('advancedforms', 'Settings') }}</span>
 					</NcButton>
 					<NcButton variant="secondary" @click="previewOpen = true">
+						<template #icon>
+							<Icon :path="icons.preview" />
+						</template>
 						{{ t('advancedforms', 'Preview') }}
 					</NcButton>
 					<NcButton v-if="published && shareUrl" variant="tertiary" :href="shareUrl" target="_blank" rel="noopener">
+						<template #icon>
+							<Icon :path="icons.openNew" />
+						</template>
 						{{ t('advancedforms', 'Open form') }}
 					</NcButton>
 					<NcButton variant="primary" :disabled="!canPublish" @click="publish">
+						<template #icon>
+							<Icon :path="icons.publish" />
+						</template>
 						{{ publishing ? t('advancedforms', 'Publishing…') : publishLabel }}
 					</NcButton>
 				</div>
@@ -417,6 +432,9 @@ function openSettings(): void {
 		:name="sidebarName"
 		:subname="sidebarSubname">
 		<NcAppSidebarTab id="field" :name="t('advancedforms', 'Field')" :order="1">
+			<template #icon>
+				<Icon :path="icons.tabField" />
+			</template>
 			<FieldProperties v-if="selectedId && selectedField"
 				:key="selectedId"
 				:definition="draft"
@@ -436,6 +454,9 @@ function openSettings(): void {
 				:description="t('advancedforms', 'Select a field on the canvas to edit it.')" />
 		</NcAppSidebarTab>
 		<NcAppSidebarTab id="logic" :name="t('advancedforms', 'Logic')" :order="2">
+			<template #icon>
+				<Icon :path="icons.logic" />
+			</template>
 			<LogicPanel v-if="selectedId && selectedField"
 				:key="selectedId"
 				:definition="draft"
@@ -449,12 +470,18 @@ function openSettings(): void {
 				:description="t('advancedforms', 'Select a field on the canvas to set up its rules.')" />
 		</NcAppSidebarTab>
 		<NcAppSidebarTab id="actions" :name="t('advancedforms', 'Actions')" :order="3">
+			<template #icon>
+				<Icon :path="icons.tabActions" />
+			</template>
 			<ActionsPanel :definition="draft"
 				:form-id="formId"
 				:errors="errors"
 				@change="edit" />
 		</NcAppSidebarTab>
 		<NcAppSidebarTab id="form" :name="t('advancedforms', 'Form')" :order="4">
+			<template #icon>
+				<Icon :path="icons.tabForm" />
+			</template>
 			<FormProperties :definition="draft"
 				:share-url="shareUrl"
 				@title="onTitle"
@@ -539,8 +566,14 @@ function openSettings(): void {
 }
 
 .af-bar__device {
-	min-width: 180px;
+	min-width: 84px;
 	margin-inline-end: var(--default-grid-baseline);
+}
+
+@media (max-width: 700px) {
+	.af-bar__text {
+		display: none;
+	}
 }
 
 .af-builder__notes {

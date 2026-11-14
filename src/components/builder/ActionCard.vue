@@ -8,6 +8,8 @@ import type { DraftDefinition, EmailAction, FormAction, MessageAction, RedirectA
 
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import { icons } from '../../icons.ts'
+import Icon from '../common/Icon.vue'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
@@ -21,6 +23,10 @@ import { sourceFields } from '../../builder/rules.ts'
 import ConditionGroup from './ConditionGroup.vue'
 import PlaceholderMenu from './PlaceholderMenu.vue'
 import SegmentedControl from './SegmentedControl.vue'
+
+const ARROW_UP: string = icons.arrowUp
+const ARROW_DOWN: string = icons.arrowDown
+const TRASH: string = icons.delete
 
 const props = defineProps<{
 	action: FormAction
@@ -258,12 +264,19 @@ const recipientField = computed(() => (typeof email.value.to === 'object' ? emai
 
 			<div class="af-action__footer">
 				<NcButton variant="tertiary" :disabled="index === 0" :aria-label="t('advancedforms', 'Move action up')" @click="emit('move', -1)">
-					↑
+					<template #icon>
+						<Icon :path="ARROW_UP" />
+					</template>
 				</NcButton>
 				<NcButton variant="tertiary" :disabled="index === count - 1" :aria-label="t('advancedforms', 'Move action down')" @click="emit('move', 1)">
-					↓
+					<template #icon>
+						<Icon :path="ARROW_DOWN" />
+					</template>
 				</NcButton>
 				<NcButton variant="tertiary" @click="emit('remove')">
+					<template #icon>
+						<Icon :path="TRASH" />
+					</template>
 					{{ t('advancedforms', 'Delete action') }}
 				</NcButton>
 			</div>

@@ -8,6 +8,8 @@ import type { Delivery, EntryRecord, VersionDefinition } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import { icons } from '../../icons.ts'
+import Icon from '../common/Icon.vue'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { computed, ref, watch } from 'vue'
 import { listDeliveries, retryDelivery } from '../../api/forms.ts'
@@ -117,6 +119,9 @@ async function retry(delivery: Delivery): Promise<void> {
 			<div class="af-response__footer">
 				<span class="af-response__id">{{ t('advancedforms', 'Response #{id}', { id: entry.id }) }}</span>
 				<NcButton variant="error" @click="emit('delete')">
+					<template #icon>
+						<Icon :path="icons.delete" />
+					</template>
 					{{ t('advancedforms', 'Delete response') }}
 				</NcButton>
 			</div>

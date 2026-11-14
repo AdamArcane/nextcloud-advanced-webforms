@@ -8,9 +8,11 @@ import type { DraftDefinition, PublicForm } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { cloneJson } from '../../builder/definition.ts'
+import { icons } from '../../icons.ts'
 import FormRenderer from '../render/FormRenderer.vue'
+import SegmentedControl from './SegmentedControl.vue'
 
 const props = defineProps<{
 	definition: DraftDefinition
@@ -19,6 +21,13 @@ const props = defineProps<{
 const emit = defineEmits<{
 	close: []
 }>()
+
+type Device = 'desktop' | 'tablet' | 'mobile'
+
+// Widths are the usual breakpoints; the renderer's layout reacts to its own width, so this is what a phone really shows.
+const WIDTHS: Record<Device, number | null> = { desktop: null, tablet: 768, mobile: 390 }
+const device = ref<Device>('desktop')
+const frameWidth = computed(() => WIDTHS[device.value])
 
 // The same renderer the public page uses, so rules and layout behave exactly as respondents will see them.
 const form = computed<PublicForm>(() => {
@@ -31,16 +40,71 @@ const form = computed<PublicForm>(() => {
 	<NcDialog :name="t('advancedforms', 'Preview')"
 		size="large"
 		@closing="emit('close')">
-		<p class="af-preview__note">
-			{{ t('advancedforms', 'This is how respondents will see the form. Nothing you enter here is saved.') }}
-		</p>
-		<FormRenderer :form="form" preview />
+		<div class="af-preview__top">
+			<p class="af-preview__note">
+				{{ t('advancedforms', 'This is how respondents will see the form. Nothing you enter here is saved.') }}
+			</p>
+			<SegmentedControl v-model="device"
+				class="af-preview__device"
+				:group-label="t('advancedforms', 'Preview device')"
+				icon-only
+				:options="[
+					{ value: 'desktop', label: t('advancedforms', 'Desktop'), icon: icons.desktop },
+					{ value: 'tablet', label: t('advancedforms', 'Tablet'), icon: icons.tablet },
+					{ value: 'mobile', label: t('advancedforms', 'Mobile'), icon: icons.mobile },
+				]" />
+		</div>
+		<div class="af-preview__stage" :class="{ 'af-preview__stage--framed': frameWidth !== null }">
+			<div class="af-preview__frame" :style="frameWidth ? { maxWidth: frameWidth + 'px' } : undefined">
+				<FormRenderer :form="form" preview />
+			</div>
+		</div>
 	</NcDialog>
 </template>
 
 <style scoped>
+.af-preview__top {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 4);
+	margin-bottom: calc(var(--default-grid-baseline) * 4);
+}
+
 .af-preview__note {
-	margin: 0 0 calc(var(--default-grid-baseline) * 4);
+	flex: 1 1 260px;
+	margin: 0;
 	color: var(--color-text-maxcontrast);
+}
+
+.af-preview__device {
+	flex: 0 0 auto;
+	min-width: 132px;
+}
+
+.af-preview__stage {
+	border-radius: var(--border-radius-large);
+	transition: background-color 0.15s ease;
+}
+
+/* A narrower device sits on a tinted stage so its edges are visible. */
+.af-preview__stage--framed {
+	padding: calc(var(--default-grid-baseline) * 4) calc(var(--default-grid-baseline) * 2);
+	background: var(--color-background-dark);
+}
+
+.af-preview__frame {
+	box-sizing: border-box;
+	width: 100%;
+	margin: 0 auto;
+	transition: max-width 0.2s ease;
+}
+
+.af-preview__stage--framed .af-preview__frame {
+	padding: calc(var(--default-grid-baseline) * 4);
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large);
+	background: var(--color-main-background);
 }
 </style>

@@ -9,6 +9,8 @@ import type { FormField, LabelPosition } from '../../types.ts'
 import { t } from '@nextcloud/l10n'
 import { computed } from 'vue'
 import { describeError } from '../../builder/errors.ts'
+import { fieldTypeIcon } from '../../icons.ts'
+import Icon from '../common/Icon.vue'
 
 const props = defineProps<{
 	field: FormField
@@ -63,6 +65,7 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 		@keydown.enter.self.prevent="emit('select')"
 		@keydown.space.self.prevent="emit('select')">
 		<div class="af-card__meta">
+			<Icon class="af-card__typeicon" :path="fieldTypeIcon(field.type)" :size="16" />
 			<span class="af-card__type">{{ typeLabel }}</span>
 			<span v-if="ruleCount > 0" class="af-card__badge" :title="t('advancedforms', 'This field has conditional logic')">
 				{{ t('advancedforms', 'Conditional') }}
@@ -158,6 +161,10 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 	align-items: center;
 	gap: var(--default-grid-baseline);
 	min-height: 20px;
+}
+
+.af-card__typeicon {
+	color: var(--color-text-maxcontrast);
 }
 
 .af-card__type {

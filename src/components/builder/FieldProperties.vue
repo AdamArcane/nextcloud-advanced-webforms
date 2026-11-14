@@ -9,6 +9,8 @@ import type { Move } from '../../builder/definition.ts'
 
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import { icons } from '../../icons.ts'
+import Icon from '../common/Icon.vue'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
@@ -146,13 +148,13 @@ function number(key: keyof FormField, value: string | number): void {
 	emit('update', { [key]: str === '' || Number.isNaN(parsed) ? undefined : parsed } as Partial<FormField>)
 }
 
-const moves: { move: Move, label: string }[] = [
-	{ move: 'rowUp', label: t('advancedforms', 'Move row up') },
-	{ move: 'rowDown', label: t('advancedforms', 'Move row down') },
-	{ move: 'left', label: t('advancedforms', 'Move left') },
-	{ move: 'right', label: t('advancedforms', 'Move right') },
-	{ move: 'joinAbove', label: t('advancedforms', 'Share the row above') },
-	{ move: 'ownRow', label: t('advancedforms', 'Put in its own row') },
+const moves: { move: Move, label: string, icon: string }[] = [
+	{ move: 'rowUp', label: t('advancedforms', 'Move row up'), icon: icons.moveRowUp },
+	{ move: 'rowDown', label: t('advancedforms', 'Move row down'), icon: icons.moveRowDown },
+	{ move: 'left', label: t('advancedforms', 'Move left'), icon: icons.moveLeft },
+	{ move: 'right', label: t('advancedforms', 'Move right'), icon: icons.moveRight },
+	{ move: 'joinAbove', label: t('advancedforms', 'Share the row above'), icon: icons.joinAbove },
+	{ move: 'ownRow', label: t('advancedforms', 'Put in its own row'), icon: icons.ownRow },
 ]
 </script>
 
@@ -278,6 +280,9 @@ const moves: { move: Move, label: string }[] = [
 					variant="secondary"
 					:disabled="!canMove(definition, fieldId, item.move)"
 					@click="emit('move', item.move)">
+					<template #icon>
+						<Icon :path="item.icon" />
+					</template>
 					{{ item.label }}
 				</NcButton>
 			</div>
@@ -307,6 +312,9 @@ const moves: { move: Move, label: string }[] = [
 
 		<section class="af-props__section">
 			<NcButton variant="error" @click="emit('remove')">
+				<template #icon>
+					<Icon :path="icons.delete" />
+				</template>
 				{{ t('advancedforms', 'Delete field') }}
 			</NcButton>
 		</section>

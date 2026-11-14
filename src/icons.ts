@@ -1,0 +1,117 @@
+/**
+ * SPDX-FileCopyrightText: 2026 ArcaneX
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+// Only the icons the app uses are imported, so the bundle keeps just those paths.
+import {
+	mdiAlertCircle,
+	mdiArrowDown,
+	mdiArrowLeft,
+	mdiArrowRight,
+	mdiArrowUp,
+	mdiAt,
+	mdiCalendar,
+	mdiCellphone,
+	mdiCheckboxMarkedOutline,
+	mdiCheckboxOutline,
+	mdiClockOutline,
+	mdiClose,
+	mdiCog,
+	mdiContentCopy,
+	mdiDelete,
+	mdiDownload,
+	mdiEmailOutline,
+	mdiEye,
+	mdiFileDocumentOutline,
+	mdiFormatHeader1,
+	mdiFormatListBulleted,
+	mdiFormatParagraph,
+	mdiFormDropdown,
+	mdiFormTextbox,
+	mdiInboxArrowDown,
+	mdiLightningBolt,
+	mdiLinkVariant,
+	mdiMessageTextOutline,
+	mdiMinus,
+	mdiMonitor,
+	mdiOpenInNew,
+	mdiPencil,
+	mdiPhone,
+	mdiPlus,
+	mdiPound,
+	mdiRadioboxMarked,
+	mdiRefresh,
+	mdiRocketLaunch,
+	mdiSend,
+	mdiSourceBranch,
+	mdiTablet,
+	mdiTextBoxOutline,
+	mdiTextLong,
+	mdiTune,
+	mdiWebhook,
+} from '@mdi/js'
+
+export const icons = {
+	add: mdiPlus,
+	alert: mdiAlertCircle,
+	arrowDown: mdiArrowDown,
+	arrowLeft: mdiArrowLeft,
+	arrowRight: mdiArrowRight,
+	arrowUp: mdiArrowUp,
+	close: mdiClose,
+	copy: mdiContentCopy,
+	delete: mdiDelete,
+	desktop: mdiMonitor,
+	download: mdiDownload,
+	edit: mdiPencil,
+	logic: mdiSourceBranch,
+	mobile: mdiCellphone,
+	openNew: mdiOpenInNew,
+	preview: mdiEye,
+	publish: mdiRocketLaunch,
+	refresh: mdiRefresh,
+	deliveries: mdiSend,
+	responses: mdiInboxArrowDown,
+	settings: mdiCog,
+	tablet: mdiTablet,
+	tabField: mdiFormTextbox,
+	tabForm: mdiFileDocumentOutline,
+	tabActions: mdiLightningBolt,
+	/** Row/column moves in the field properties. */
+	moveRowUp: mdiArrowUp,
+	moveRowDown: mdiArrowDown,
+	moveLeft: mdiArrowLeft,
+	moveRight: mdiArrowRight,
+	joinAbove: mdiFormatListBulleted,
+	ownRow: mdiTune,
+} as const
+
+/** One icon per field type, shown in the add menu and on the canvas. */
+export const fieldTypeIcons: Record<string, string> = {
+	text: mdiFormTextbox,
+	textarea: mdiTextLong,
+	email: mdiAt,
+	phone: mdiPhone,
+	number: mdiPound,
+	select: mdiFormDropdown,
+	radio: mdiRadioboxMarked,
+	checkboxes: mdiCheckboxMarkedOutline,
+	checkbox: mdiCheckboxOutline,
+	date: mdiCalendar,
+	time: mdiClockOutline,
+	heading: mdiFormatHeader1,
+	paragraph: mdiFormatParagraph,
+	divider: mdiMinus,
+}
+
+export const actionTypeIcons: Record<string, string> = {
+	message: mdiMessageTextOutline,
+	redirect: mdiLinkVariant,
+	email: mdiEmailOutline,
+	webhook: mdiWebhook,
+}
+
+export function fieldTypeIcon(type: string): string {
+	return fieldTypeIcons[type] ?? mdiTextBoxOutline
+}

@@ -10,6 +10,8 @@ import type { SourceField } from '../../builder/rules.ts'
 
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import { icons } from '../../icons.ts'
+import Icon from '../common/Icon.vue'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { computed } from 'vue'
@@ -142,7 +144,9 @@ function setList(raw: string | number): void {
 			:aria-label="t('advancedforms', 'Remove condition')"
 			:title="removable ? undefined : t('advancedforms', 'A rule needs at least one condition')"
 			@click="emit('remove')">
-			✕
+			<template #icon>
+				<Icon :path="icons.close" />
+			</template>
 		</NcButton>
 	</div>
 </template>

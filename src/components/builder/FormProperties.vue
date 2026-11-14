@@ -8,6 +8,8 @@ import type { DraftDefinition, FormSettings } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import { icons } from '../../icons.ts'
+import Icon from '../common/Icon.vue'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
@@ -115,6 +117,9 @@ function str(value: string | number): string | undefined {
 					readonly
 					@focus="($event.target as HTMLInputElement).select()" />
 				<NcButton variant="secondary" @click="copy(shareUrl)">
+					<template #icon>
+						<Icon :path="icons.copy" />
+					</template>
 					{{ copied ? t('advancedforms', 'Copied') : t('advancedforms', 'Copy link') }}
 				</NcButton>
 			</template>
@@ -125,6 +130,9 @@ function str(value: string | number): string | undefined {
 
 		<section class="af-form-props__section">
 			<NcButton variant="error" @click="emit('delete')">
+				<template #icon>
+					<Icon :path="icons.delete" />
+				</template>
 				{{ t('advancedforms', 'Delete form') }}
 			</NcButton>
 		</section>

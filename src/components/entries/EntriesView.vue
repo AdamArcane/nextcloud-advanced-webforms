@@ -14,6 +14,8 @@ import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, nextTick, onMounted, ref } from 'vue'
+import { icons } from '../../icons.ts'
+import Icon from '../common/Icon.vue'
 import { deleteEntry, exportUrl, listDeliveries, listEntries, retryDelivery } from '../../api/forms.ts'
 import FormNav from '../FormNav.vue'
 import SegmentedControl from '../builder/SegmentedControl.vue'
@@ -195,6 +197,9 @@ onMounted(() => {
 			<div class="af-entries__actions">
 				<FormNav :form-id="formId" active="responses" />
 				<NcButton variant="secondary" :href="exportUrl(formId)" :disabled="total === 0">
+					<template #icon>
+						<Icon :path="icons.download" />
+					</template>
 					{{ t('advancedforms', 'Download CSV') }}
 				</NcButton>
 			</div>
@@ -205,8 +210,8 @@ onMounted(() => {
 				class="af-entries__tabs"
 				:group-label="t('advancedforms', 'What to show')"
 				:options="[
-					{ value: 'responses', label: t('advancedforms', 'Responses') },
-					{ value: 'deliveries', label: failedCount > 0 ? t('advancedforms', 'Deliveries ({n} failed)', { n: failedCount }) : t('advancedforms', 'Deliveries') },
+					{ value: 'responses', label: t('advancedforms', 'Responses'), icon: icons.responses },
+					{ value: 'deliveries', icon: icons.deliveries, label: failedCount > 0 ? t('advancedforms', 'Deliveries ({n} failed)', { n: failedCount }) : t('advancedforms', 'Deliveries') },
 				]"
 				@update:model-value="openTab" />
 
