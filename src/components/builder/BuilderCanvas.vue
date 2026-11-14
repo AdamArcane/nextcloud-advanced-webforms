@@ -9,7 +9,10 @@ import type { DraftDefinition } from '../../types.ts'
 import { t } from '@nextcloud/l10n'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import { computed } from 'vue'
+import NcActionButton from '@nextcloud/vue/components/NcActionButton'
+import NcActionCaption from '@nextcloud/vue/components/NcActionCaption'
+import NcActions from '@nextcloud/vue/components/NcActions'
+import { computed, nextTick, ref, watch } from 'vue'
 import { MAX_PAGES, rulesTouching } from '../../builder/definition.ts'
 import { renderedLabelPosition } from '../../layout/labelPosition.ts'
 import { groupErrors } from '../../builder/errors.ts'
@@ -37,9 +40,57 @@ const emit = defineEmits<{
 }>()
 
 const pages = computed(() => props.definition.pages)
-const multiPage = computed(() => pages.value.length > 1)
-const isEmpty = computed(() => pages.value.every((page) => page.rows.length === 0) && !multiPage.value)
+
+// The page being edited. Everything on the canvas happens on this one page.
+const activeId = ref(pages.value[0]?.id ?? '')
+const activeIndex = computed(() => Math.max(0, pages.value.findIndex((page) => page.id === activeId.value)))
+const activePage = computed(() => pages.value[activeIndex.value])
+const isEmpty = computed(() => activePage.value.rows.length === 0 && pages.value.length === 1)
+
+// Selecting a field elsewhere (a rule, an error) switches to its page.
+watch(() => props.selectedId, (fieldId) => {
+	const page = pages.value.find((candidate) => candidate.rows.some((row) => row.cells.some((cell) => cell.field === fieldId)))
+	if (page) {
+		activeId.value = page.id
+	}
+})
+
+// A new page is opened straight away; a deleted active page falls back to its neighbour.
+watch(() => pages.value.map((page) => page.id), (ids, before) => {
+	const added = ids.find((id) => !before.includes(id))
+	if (added) {
+		activeId.value = added
+	} else if (!ids.includes(activeId.value)) {
+		activeId.value = ids[Math.min(before.indexOf(activeId.value), ids.length - 1)]
+	}
+})
+
 const errorsByField = computed(() => groupErrors(props.errors))
+
+/** Pages with a problem: one of their fields has an error, or the page itself does. */
+const pagesWithErrors = computed(() => {
+	const flagged = new Set<string>()
+	pages.value.forEach((page, index) => {
+		const own = props.errors.some((error) => error.path.startsWith('pages[' + index + ']'))
+		const fieldErrors = page.rows.some((row) => row.cells.some((cell) => (errorsByField.value.get(cell.field) ?? []).length > 0))
+		if (own || fieldErrors) {
+			flagged.add(page.id)
+		}
+	})
+	return flagged
+})
+
+function tabName(index: number): string {
+	return pages.value[index].title || t('advancedforms', 'Page {n}', { n: index + 1 })
+}
+
+const renamingId = ref<string | null>(null)
+
+async function startRename(pageId: string) {
+	renamingId.value = pageId
+	await nextTick()
+	document.querySelector<HTMLInputElement>('.af-tab__rename')?.select()
+}
 
 function codes(fieldId: string): string[] {
 	return (errorsByField.value.get(fieldId) ?? []).map((error) => error.code)
@@ -49,78 +100,111 @@ function codes(fieldId: string): string[] {
 <template>
 	<div class="af-canvas" :class="{ 'af-canvas--mobile': mobile }">
 		<div class="af-canvas__paper">
-			<NcEmptyContent v-if="isEmpty"
-					class="af-canvas__empty"
-					:name="t('advancedforms', 'Start your form')"
-					:description="t('advancedforms', 'Add your first field. You can put several fields side by side later.')">
-					<template #action>
-						<AddFieldMenu :label="t('advancedforms', 'Add field')" variant="primary" @pick="(type) => emit('add', type, 0, 0)" />
-					</template>
-				</NcEmptyContent>
-
-				<template v-else>
-					<section v-for="(page, pageIndex) in pages" :key="page.id" class="af-page" :class="{ 'af-page--multi': multiPage }">
-						<header v-if="multiPage" class="af-page__header">
-							<span class="af-page__number">{{ t('advancedforms', 'Page {n} of {total}', { n: pageIndex + 1, total: pages.length }) }}</span>
-							<input class="af-page__title"
-								type="text"
-								maxlength="255"
-								:value="page.title ?? ''"
-								:aria-label="t('advancedforms', 'Page title')"
-								:placeholder="t('advancedforms', 'Page title (optional)')"
-								@input="emit('pageTitle', page.id, ($event.target as HTMLInputElement).value)">
-							<NcButton variant="tertiary" :aria-label="t('advancedforms', 'Move page up')" :disabled="pageIndex === 0" @click="emit('movePage', page.id, -1)">
-								<template #icon>
-									<Icon :path="icons.arrowUp" />
-								</template>
-							</NcButton>
-							<NcButton variant="tertiary" :aria-label="t('advancedforms', 'Move page down')" :disabled="pageIndex === pages.length - 1" @click="emit('movePage', page.id, 1)">
-								<template #icon>
-									<Icon :path="icons.arrowDown" />
-								</template>
-							</NcButton>
-							<NcButton variant="tertiary" :aria-label="t('advancedforms', 'Delete page')" @click="emit('removePage', page.id)">
-								<template #icon>
-									<Icon :path="icons.delete" />
-								</template>
-							</NcButton>
-						</header>
-
-						<template v-for="(row, index) in page.rows" :key="row.id">
-							<div class="af-gap">
-								<AddFieldMenu @pick="(type) => emit('add', type, index, pageIndex)" />
-							</div>
-							<div class="af-row">
-								<div v-for="cell in row.cells"
-									:key="cell.id"
-									class="af-cell"
-									:style="{ '--af-span': cell.span }">
-									<FieldCard v-if="definition.fields[cell.field]"
-										:field="definition.fields[cell.field]"
-										:selected="selectedId === cell.field"
-										:rule-count="rulesTouching(definition, cell.field).length"
-										:errors="codes(cell.field)"
-										:label-position="renderedLabelPosition(definition.fields[cell.field], definition.settings)"
-										@select="emit('select', cell.field)" />
-								</div>
-							</div>
-						</template>
-						<div class="af-canvas__add">
-							<AddFieldMenu :label="t('advancedforms', 'Add field')"
-								variant="secondary"
-								@pick="(type) => emit('add', type, page.rows.length, pageIndex)" />
-						</div>
-					</section>
-
-					<div class="af-canvas__add-page">
-						<NcButton variant="tertiary" :disabled="pages.length >= MAX_PAGES" @click="emit('addPage')">
+			<div class="af-tabs" role="tablist" :aria-label="t('advancedforms', 'Pages')">
+				<div v-for="(page, index) in pages"
+					:key="page.id"
+					class="af-tab"
+					:class="{ 'af-tab--active': page.id === activeId }">
+					<input v-if="renamingId === page.id"
+						class="af-tab__rename"
+						type="text"
+						maxlength="255"
+						:value="page.title ?? ''"
+						:aria-label="t('advancedforms', 'Page title')"
+						:placeholder="t('advancedforms', 'Page {n}', { n: index + 1 })"
+						@input="emit('pageTitle', page.id, ($event.target as HTMLInputElement).value)"
+						@keydown.enter="renamingId = null"
+						@keydown.esc="renamingId = null"
+						@blur="renamingId = null">
+					<button v-else
+						class="af-tab__label"
+						type="button"
+						role="tab"
+						:aria-selected="page.id === activeId"
+						@click="activeId = page.id"
+						@dblclick="startRename(page.id)">
+						{{ tabName(index) }}
+						<span v-if="pagesWithErrors.has(page.id)"
+							class="af-tab__error"
+							role="img"
+							:aria-label="t('advancedforms', 'This page has a problem')" />
+					</button>
+					<NcActions v-if="page.id === activeId" :aria-label="t('advancedforms', 'Page options')" force-menu>
+						<NcActionButton @click="startRename(page.id)">
 							<template #icon>
-								<Icon :path="icons.add" />
+								<Icon :path="icons.edit" />
 							</template>
-							{{ t('advancedforms', 'Add page') }}
-						</NcButton>
+							{{ t('advancedforms', 'Rename page') }}
+						</NcActionButton>
+						<NcActionButton :disabled="index === 0" @click="emit('movePage', page.id, -1)">
+							<template #icon>
+								<Icon :path="icons.arrowLeft" />
+							</template>
+							{{ t('advancedforms', 'Move page left') }}
+						</NcActionButton>
+						<NcActionButton :disabled="index === pages.length - 1" @click="emit('movePage', page.id, 1)">
+							<template #icon>
+								<Icon :path="icons.arrowRight" />
+							</template>
+							{{ t('advancedforms', 'Move page right') }}
+						</NcActionButton>
+						<NcActionButton :disabled="pages.length === 1 || page.rows.length > 0"
+							:title="page.rows.length > 0 ? t('advancedforms', 'Move or delete this page\'s fields first') : undefined"
+							@click="emit('removePage', page.id)">
+							<template #icon>
+								<Icon :path="icons.delete" />
+							</template>
+							{{ t('advancedforms', 'Delete page') }}
+						</NcActionButton>
+						<NcActionCaption v-if="page.rows.length > 0" :name="t('advancedforms', 'Move or delete the fields on this page to delete it.')" />
+					</NcActions>
+				</div>
+				<NcButton variant="tertiary"
+					:disabled="pages.length >= MAX_PAGES"
+					:aria-label="t('advancedforms', 'Add page')"
+					:title="t('advancedforms', 'Add page')"
+					@click="emit('addPage')">
+					<template #icon>
+						<Icon :path="icons.add" />
+					</template>
+				</NcButton>
+			</div>
+
+			<NcEmptyContent v-if="isEmpty"
+				class="af-canvas__empty"
+				:name="t('advancedforms', 'Start your form')"
+				:description="t('advancedforms', 'Add your first field. You can put several fields side by side later.')">
+				<template #action>
+					<AddFieldMenu :label="t('advancedforms', 'Add field')" variant="primary" @pick="(type) => emit('add', type, 0, 0)" />
+				</template>
+			</NcEmptyContent>
+
+			<div v-else role="tabpanel">
+				<template v-for="(row, index) in activePage.rows" :key="row.id">
+					<div class="af-gap">
+						<AddFieldMenu @pick="(type) => emit('add', type, index, activeIndex)" />
+					</div>
+					<div class="af-row">
+						<div v-for="cell in row.cells"
+							:key="cell.id"
+							class="af-cell"
+							:style="{ '--af-span': cell.span }">
+							<FieldCard v-if="definition.fields[cell.field]"
+								:field="definition.fields[cell.field]"
+								:selected="selectedId === cell.field"
+								:rule-count="rulesTouching(definition, cell.field).length"
+								:errors="codes(cell.field)"
+								:label-position="renderedLabelPosition(definition.fields[cell.field], definition.settings)"
+								@select="emit('select', cell.field)" />
+						</div>
 					</div>
 				</template>
+				<div class="af-canvas__add">
+					<AddFieldMenu :label="t('advancedforms', 'Add field')"
+						variant="secondary"
+						@pick="(type) => emit('add', type, activePage.rows.length, activeIndex)" />
+				</div>
+			</div>
 		</div>
 	</div>
 </template>
@@ -197,35 +281,59 @@ function codes(fieldId: string): string[] {
 	}
 }
 
-.af-page--multi {
-	margin-bottom: calc(var(--default-grid-baseline) * 4);
-	padding: calc(var(--default-grid-baseline) * 3);
-	border: 1px dashed var(--color-border-dark);
-	border-radius: var(--border-radius-large);
-}
-
-.af-page__header {
+.af-tabs {
 	display: flex;
 	align-items: center;
-	gap: calc(var(--default-grid-baseline) * 2);
-	margin-bottom: calc(var(--default-grid-baseline) * 2);
+	gap: calc(var(--default-grid-baseline) * 1);
+	margin-bottom: calc(var(--default-grid-baseline) * 4);
+	border-bottom: 1px solid var(--color-border);
+	overflow-x: auto;
 }
 
-.af-page__number {
+.af-tab {
+	display: flex;
 	flex: none;
-	color: var(--color-text-maxcontrast);
-	font-size: 0.9em;
+	align-items: center;
+	margin-bottom: -1px;
+	border-bottom: 2px solid transparent;
 }
 
-.af-page__title {
-	flex: 1;
-	min-width: 0;
+.af-tab--active {
+	border-bottom-color: var(--color-primary-element);
+}
+
+.af-tab__label {
+	display: flex;
+	align-items: center;
+	gap: calc(var(--default-grid-baseline) * 1);
+	max-width: 200px;
+	padding: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 3);
+	border: 0;
+	background: none;
+	color: var(--color-text-maxcontrast);
+	font: inherit;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	cursor: pointer;
+}
+
+.af-tab--active .af-tab__label {
+	color: var(--color-main-text);
 	font-weight: bold;
 }
 
-.af-canvas__add-page {
-	display: flex;
-	justify-content: center;
+.af-tab__rename {
+	width: 140px;
+	margin: 0 calc(var(--default-grid-baseline) * 1);
+}
+
+.af-tab__error {
+	flex: none;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--color-error);
 }
 
 .af-canvas__add {

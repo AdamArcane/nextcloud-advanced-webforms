@@ -10,6 +10,7 @@ import {
 	addField,
 	addPage,
 	movePage,
+	moveFieldToPage,
 	removePage,
 	setPageTitle,
 	allowedSpans,
@@ -258,11 +259,13 @@ describe('pages', () => {
 		expect(setPageTitle(def, def.pages[0].id, '  ').pages[0].title).toBeNull()
 	})
 
-	it('removes a page with its fields, but never the last page', () => {
-		const { def, b } = twoPages()
-		const next = removePage(def, def.pages[1].id)
+	it('removes an empty page, but not one with fields or the last page', () => {
+		const { def, a, b } = twoPages()
+		expect(removePage(def, def.pages[1].id)).toBe(def)
+		const emptied = removeField(def, b)
+		const next = removePage(emptied, emptied.pages[1].id)
 		expect(next.pages).toHaveLength(1)
-		expect(b in next.fields).toBe(false)
+		expect(a in next.fields).toBe(true)
 		expect(removePage(next, next.pages[0].id)).toBe(next)
 	})
 
@@ -271,5 +274,17 @@ describe('pages', () => {
 		const next = removeField(def, b)
 		expect(next.pages[1].rows).toEqual([])
 		expect(next.pages).toHaveLength(2)
+	})
+})
+
+describe('moveFieldToPage', () => {
+	it('moves a field to the end of another page in its own row', () => {
+		let def = emptyDefinition('T')
+		const a = addField(def, 'text', { kind: 'row', index: 0 })
+		def = addPage(a.definition)
+		const next = moveFieldToPage(def, a.fieldId, 1)
+		expect(next.pages[0].rows).toEqual([])
+		expect(next.pages[1].rows[0].cells[0]).toMatchObject({ field: a.fieldId, span: 12 })
+		expect(moveFieldToPage(next, a.fieldId, 1)).toBe(next)
 	})
 })

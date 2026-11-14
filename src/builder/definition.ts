@@ -409,21 +409,30 @@ export function movePage(definition: DraftDefinition, pageId: string, direction:
 }
 
 /**
- * Remove a page and every field on it (with their rules, like removeField).
- * The last remaining page cannot be removed.
+ * Remove an empty page. A page that still has fields is left alone: the owner moves
+ * or deletes the fields first, so nothing disappears by accident. The last page stays.
  */
 export function removePage(definition: DraftDefinition, pageId: string): DraftDefinition {
 	const page = definition.pages.find((candidate) => candidate.id === pageId)
-	if (!page || definition.pages.length <= 1) {
+	if (!page || page.rows.length > 0 || definition.pages.length <= 1) {
 		return definition
 	}
-	let next = definition
-	for (const row of page.rows) {
-		for (const cell of row.cells) {
-			next = removeField(next, cell.field)
-		}
-	}
-	next = clone(next)
+	const next = clone(definition)
 	next.pages = next.pages.filter((candidate) => candidate.id !== pageId)
+	return next
+}
+
+/** Move a field to the end of another page, in a full-width row of its own. */
+export function moveFieldToPage(definition: DraftDefinition, fieldId: string, pageIndex: number): DraftDefinition {
+	const at = locateField(definition, fieldId)
+	if (!at || at.pageIndex === pageIndex || pageIndex < 0 || pageIndex >= definition.pages.length) {
+		return definition
+	}
+	const next = clone(definition)
+	const from = locateField(next, fieldId)!
+	from.row.cells.splice(from.cellIndex, 1)
+	next.pages[from.pageIndex].rows = next.pages[from.pageIndex].rows.filter((row) => row.cells.length > 0)
+	const rowId = randomId('r', allIds(next))
+	next.pages[pageIndex].rows.push({ id: rowId, cells: [{ ...from.cell, span: ROW_WIDTH }] })
 	return next
 }

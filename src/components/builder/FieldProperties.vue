@@ -39,6 +39,7 @@ const emit = defineEmits<{
 	span: [span: number]
 	move: [move: Move]
 	addBeside: [type: string]
+	toPage: [pageIndex: number]
 	rename: [id: string]
 	remove: []
 }>()
@@ -285,6 +286,16 @@ const moves: { move: Move, label: string, icon: string }[] = [
 					</template>
 					{{ item.label }}
 				</NcButton>
+			</div>
+			<div v-if="definition.pages.length > 1" class="af-props__group">
+				<label class="af-props__caption" for="af-props-page">{{ t('advancedforms', 'Page') }}</label>
+				<select id="af-props-page"
+					:value="locateField(definition, fieldId)?.pageIndex ?? 0"
+					@change="emit('toPage', Number(($event.target as HTMLSelectElement).value))">
+					<option v-for="(page, index) in definition.pages" :key="page.id" :value="index">
+						{{ page.title || t('advancedforms', 'Page {n}', { n: index + 1 }) }}
+					</option>
+				</select>
 			</div>
 			<AddFieldMenu v-if="roomBeside || canShareRow"
 				:label="t('advancedforms', 'Add a field beside this one')"

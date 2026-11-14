@@ -137,7 +137,7 @@ final class DefinitionValidator {
 				'width' => in_array($value, ['narrow', 'standard', 'wide'], true),
 				'card' => is_bool($value),
 				'background' => in_array($value, ['default', 'plain', 'color'], true),
-				'backgroundColor', 'accentColor' => is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1,
+				'backgroundColor', 'accentColor', 'buttonColor' => is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1,
 				default => null,
 			};
 			if ($valid === null) {

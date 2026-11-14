@@ -166,6 +166,23 @@ function str(value: string | number): string | undefined {
 					@click="setDesign(definition.settings.design, { accentColor: undefined })">
 					{{ t('advancedforms', 'Use the Nextcloud colour') }}
 				</NcButton>
+			</section>
+
+			<section class="af-form-props__section">
+				<h3 class="af-form-props__heading">
+					{{ t('advancedforms', 'Submit button colour') }}
+				</h3>
+				<label class="af-form-props__color">
+					<input type="color"
+						:value="safeColor(definition.settings.design?.buttonColor) ?? safeColor(definition.settings.design?.accentColor) ?? DEFAULT_ACCENT"
+						@input="setDesign(definition.settings.design, { buttonColor: ($event.target as HTMLInputElement).value })">
+					{{ t('advancedforms', 'Next, Back and submit buttons') }}
+				</label>
+				<NcButton v-if="definition.settings.design?.buttonColor"
+					variant="tertiary"
+					@click="setDesign(definition.settings.design, { buttonColor: undefined })">
+					{{ t('advancedforms', 'Same as the accent colour') }}
+				</NcButton>
 				<p class="af-form-props__hint">
 					{{ t('advancedforms', 'Use Preview to see the result.') }}
 				</p>

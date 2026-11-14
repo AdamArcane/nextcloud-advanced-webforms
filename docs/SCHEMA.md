@@ -124,7 +124,8 @@ releases migrate stored definitions.
 
 `settings.design` is optional and every key in it too: `width` (`narrow`,
 `standard`, `wide`), `card` (boolean), `background` (`default`, `plain`,
-`color`), `backgroundColor` and `accentColor` (`#rrggbb` only, so a value can
+`color`), `backgroundColor`, `accentColor` and `buttonColor` (the form buttons; defaults to
+`accentColor`) (`#rrggbb` only, so a value can
 never carry CSS).
 
 ## 4. Fields

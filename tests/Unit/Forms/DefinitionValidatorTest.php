@@ -85,7 +85,7 @@ class DefinitionValidatorTest extends TestCase {
 
 	public function testDesignSettings(): void {
 		$this->assertSame([], $this->codes(static function (array $d): array {
-			$d['settings']['design'] = ['width' => 'wide', 'card' => false, 'background' => 'color', 'backgroundColor' => '#112233', 'accentColor' => '#FF8800'];
+			$d['settings']['design'] = ['width' => 'wide', 'card' => false, 'background' => 'color', 'backgroundColor' => '#112233', 'accentColor' => '#FF8800', 'buttonColor' => '#00aa55'];
 			return $d;
 		}));
 		$this->assertSame(['settings_invalid', 'settings_invalid', 'unknown_property'], $this->codes(static function (array $d): array {

@@ -227,4 +227,14 @@ describe('FormRenderer with several pages', () => {
 		expect(submitMock).toHaveBeenCalledTimes(1)
 		expect(submitMock.mock.calls[0][1].values).toEqual({ f_name: 'Ann', f_mail: '' })
 	})
+
+	it('lets the preview page through but never submits', async () => {
+		submitMock.mockReset()
+		const wrapper = mount(FormRenderer, { props: { form: paged, preview: true }, attachTo: document.body })
+		await wrapper.find('#af-f_name').setValue('Ann')
+		await wrapper.find('form').trigger('submit')
+		expect(wrapper.find('#af-f_mail').exists()).toBe(true)
+		await wrapper.find('form').trigger('submit')
+		expect(submitMock).not.toHaveBeenCalled()
+	})
 })

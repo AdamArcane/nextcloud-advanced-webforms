@@ -21,7 +21,7 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ApiError } from '../../api/http.ts'
 import { deleteForm, getForm, publicFormUrl, publishForm, saveDraft } from '../../api/forms.ts'
-import { addField, addPage, locateField, movePage, removePage, setPageTitle, moveField, removeField, setSpan, updateField } from '../../builder/definition.ts'
+import { addField, addPage, moveFieldToPage, locateField, movePage, removePage, setPageTitle, moveField, removeField, setSpan, updateField } from '../../builder/definition.ts'
 import { describeError, groupErrors } from '../../builder/errors.ts'
 import { renameField } from '../../builder/fieldId.ts'
 import type { Rule } from '../../rules/types.ts'
@@ -228,20 +228,10 @@ function onMovePage(pageId: string, direction: -1 | 1): void {
 }
 
 function onRemovePage(pageId: string): void {
-	if (!draft.value) {
-		return
+	// removePage refuses a page that still has fields; the canvas disables the button too.
+	if (draft.value) {
+		edit(removePage(draft.value, pageId))
 	}
-	const page = draft.value.pages.find((candidate) => candidate.id === pageId)
-	const hasFields = page?.rows.length ? true : false
-	// Deleting a page with fields also deletes their answers' place in the form, so ask first.
-	if (hasFields && !window.confirm(t('advancedforms', 'Delete this page and all of its fields?'))) {
-		return
-	}
-	const next = removePage(draft.value, pageId)
-	if (selectedId.value && !(selectedId.value in next.fields)) {
-		selectedId.value = null
-	}
-	edit(next)
 }
 
 function onAdd(type: string, rowIndex: number, pageIndex = 0): void {
@@ -281,6 +271,12 @@ function onSpan(span: number): void {
 function onMove(move: Move): void {
 	if (draft.value && selectedId.value) {
 		edit(moveField(draft.value, selectedId.value, move))
+	}
+}
+
+function onToPage(pageIndex: number): void {
+	if (draft.value && selectedId.value) {
+		edit(moveFieldToPage(draft.value, selectedId.value, pageIndex))
 	}
 }
 
@@ -511,6 +507,7 @@ async function onDeleteConfirmed(): Promise<void> {
 				@span="onSpan"
 				@move="onMove"
 				@add-beside="onAddBeside"
+				@to-page="onToPage"
 				@rename="onRename"
 				@remove="confirmRemoveField = true" />
 			<NcEmptyContent v-else
