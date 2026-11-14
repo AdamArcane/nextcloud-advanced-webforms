@@ -31,6 +31,7 @@ class PageController extends Controller {
 	#[FrontpageRoute(verb: 'GET', url: '/')]
 	public function index(): TemplateResponse {
 		Util::addScript(Application::APP_ID, Application::APP_ID . '-main');
+		Util::addStyle(Application::APP_ID, Application::APP_ID . '-main');
 		return new TemplateResponse(Application::APP_ID, 'main');
 	}
 }

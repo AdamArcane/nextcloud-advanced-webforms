@@ -36,6 +36,7 @@ class PublicPageController extends Controller {
 	#[FrontpageRoute(verb: 'GET', url: '/f/{token}')]
 	public function show(string $token): PublicTemplateResponse {
 		Util::addScript(Application::APP_ID, Application::APP_ID . '-public');
+		Util::addStyle(Application::APP_ID, Application::APP_ID . '-public');
 		$response = new PublicTemplateResponse(Application::APP_ID, 'public', ['token' => $token]);
 		$response->setFooterVisible(false);
 		return $response;

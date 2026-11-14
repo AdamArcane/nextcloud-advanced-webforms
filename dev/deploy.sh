@@ -22,6 +22,9 @@ rsync -a --delete \
 # Docker creates custom_apps as root (bind mount parent); Nextcloud needs to write there.
 ssh "$TARGET" 'cd /opt/nc-dev && docker compose exec -T app chown www-data:www-data /var/www/html/custom_apps'
 
+# The image revalidates opcache only every 60 s; reload Apache so new PHP runs at once.
+ssh "$TARGET" 'cd /opt/nc-dev && docker compose exec -T app apachectl graceful'
+
 OCC='cd /opt/nc-dev && docker compose exec -T -u www-data app php occ'
 ssh "$TARGET" "$OCC app:enable advancedforms && $OCC app:list | grep -A1 advancedforms"
 echo "Deployed. Logs: ssh $TARGET 'cd /opt/nc-dev && docker compose logs -f app'"
