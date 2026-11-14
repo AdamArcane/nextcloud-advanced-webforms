@@ -22,3 +22,6 @@
   capped per form per hour. Actions tab in the builder.
 - Field IDs can be chosen by the owner. Changing one updates layout, rules, and
   actions together. Only ids that were published are reserved afterwards.
+- Responses view: browse responses with their answers, see the delivery log for
+  emails and webhooks with plain-language reasons, retry failed deliveries, delete
+  responses, and download a CSV (spreadsheet-formula safe).

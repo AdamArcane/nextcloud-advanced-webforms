@@ -17,9 +17,10 @@ import NcContent from '@nextcloud/vue/components/NcContent'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { createForm, listForms } from './api/forms.ts'
 import BuilderView from './components/builder/BuilderView.vue'
+import EntriesView from './components/entries/EntriesView.vue'
 import { FORM_STATUS_CLOSED, FORM_STATUS_PUBLISHED } from './types.ts'
 
 const forms = ref<OwnerForm[]>([])
@@ -27,16 +28,19 @@ const loading = ref(true)
 const loadFailed = ref(false)
 const creating = ref(false)
 const createFailed = ref(false)
-const selectedId = ref<number | null>(readHash())
+const route = ref(readHash())
+const selectedId = computed(() => route.value.id)
+const view = computed(() => route.value.view)
+const selectedTitle = computed(() => forms.value.find((form) => form.id === selectedId.value)?.title ?? '')
 
-// The selected form lives in the URL hash so a reload or a shared link opens the same form.
-function readHash(): number | null {
-	const match = /^#\/f\/(\d+)$/.exec(window.location.hash)
-	return match ? Number(match[1]) : null
+// The selected form and screen live in the URL hash, so a reload, the back button and a shared link all work.
+function readHash(): { id: number | null, view: 'edit' | 'responses' } {
+	const match = /^#\/f\/(\d+)(\/responses)?$/.exec(window.location.hash)
+	return match ? { id: Number(match[1]), view: match[2] ? 'responses' : 'edit' } : { id: null, view: 'edit' }
 }
 
 function onHashChange(): void {
-	selectedId.value = readHash()
+	route.value = readHash()
 }
 
 function open(id: number | null): void {
@@ -113,7 +117,7 @@ function statusText(form: OwnerForm): string {
 						:active="form.id === selectedId"
 						:href="'#/f/' + form.id"
 						:details="statusText(form)"
-						@click="selectedId = form.id" />
+						@click="open(form.id)" />
 				</NcAppNavigationList>
 				<NcNoteCard v-if="loadFailed" type="error">
 					{{ t('advancedforms', 'Could not load your forms.') }}
@@ -127,7 +131,12 @@ function statusText(form: OwnerForm): string {
 			</template>
 		</NcAppNavigation>
 
-		<BuilderView v-if="selectedId !== null"
+		<EntriesView v-if="selectedId !== null && view === 'responses'"
+			:key="'responses-' + selectedId"
+			:form-id="selectedId"
+			:title="selectedTitle" />
+
+		<BuilderView v-else-if="selectedId !== null"
 			:key="selectedId"
 			:form-id="selectedId"
 			@changed="onChanged"

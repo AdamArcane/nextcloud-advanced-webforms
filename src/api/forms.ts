@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-import type { DefinitionError, DraftDefinition, OwnerForm } from '../types.ts'
+import type { DefinitionError, DeliveriesPage, Delivery, DeliveryStatus, DraftDefinition, EntriesPage, OwnerForm } from '../types.ts'
 
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
@@ -66,4 +66,33 @@ export interface WebhookSecret {
 /** Create a signing secret for a webhook, or replace the one under `ref`. */
 export function createWebhookSecret(id: number, ref?: string): Promise<WebhookSecret> {
 	return call(axios.post<WebhookSecret>(url('/forms/' + id + '/webhook-secret'), ref ? { ref } : {}))
+}
+
+export function listEntries(id: number, limit: number, offset: number): Promise<EntriesPage> {
+	return call(axios.get<EntriesPage>(url('/forms/' + id + '/entries'), { params: { limit, offset } }))
+}
+
+export async function deleteEntry(id: number, entryId: number): Promise<void> {
+	await call(axios.delete(url('/forms/' + id + '/entries/' + entryId)))
+}
+
+export interface DeliveryQuery {
+	status?: DeliveryStatus
+	entryId?: number
+	limit?: number
+	offset?: number
+}
+
+export function listDeliveries(id: number, query: DeliveryQuery = {}): Promise<DeliveriesPage> {
+	return call(axios.get<DeliveriesPage>(url('/forms/' + id + '/deliveries'), { params: query }))
+}
+
+/** Try a failed delivery again from scratch. */
+export function retryDelivery(id: number, logId: number): Promise<Delivery> {
+	return call(axios.post<Delivery>(url('/forms/' + id + '/deliveries/' + logId + '/retry')))
+}
+
+/** Where the CSV download lives. Opened as a link, so the session cookie authenticates it. */
+export function exportUrl(id: number): string {
+	return generateUrl('/apps/advancedforms/api/v1/forms/{id}/entries/export', { id })
 }

@@ -145,3 +145,48 @@ export interface DefinitionError {
 	code: string
 	path: string
 }
+
+/** The part of a stored version an entry is read through. */
+export interface VersionDefinition {
+	fields: Record<string, FormField>
+	pages: LayoutPage[]
+}
+
+export interface EntryRecord {
+	id: number
+	versionId: number
+	userId: string | null
+	/** Unix seconds. */
+	submittedAt: number
+	data: Record<string, unknown>
+}
+
+export interface EntriesPage {
+	total: number
+	entries: EntryRecord[]
+	/** Definitions keyed by version id, for the versions the listed entries belong to. */
+	versions: Record<string, VersionDefinition>
+}
+
+export type DeliveryStatus = 'queued' | 'success' | 'failed' | 'skipped'
+
+/** One email or webhook delivery for one response. */
+export interface Delivery {
+	id: number
+	entryId: number
+	actionId: string
+	type: string
+	/** An address, a field label, or a webhook host. Never a full URL. */
+	target: string | null
+	status: DeliveryStatus
+	attempt: number
+	error: string | null
+	createdAt: number
+	updatedAt: number | null
+	nextAttemptAt: number | null
+}
+
+export interface DeliveriesPage {
+	total: number
+	rows: Delivery[]
+}

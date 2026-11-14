@@ -9,11 +9,11 @@ Forms with conditional logic, grid layouts, and after-submit actions, for
 Nextcloud. Your data stays on your server.
 
 **Status: early development.** You can build a form (fields, grid layout, label
-position, conditional rules, after-submit actions), publish it, and collect
-responses on a development Nextcloud server. Not built yet: the entries view
-(browsing responses and the action log) and exports. Webhook delivery to a
-receiver on a public address is implemented and unit tested, but has not been
-exercised end to end on a real server.
+position, conditional rules, after-submit actions), publish it, collect
+responses, browse them, check what happened to each email and webhook, retry
+failures, and download a CSV, all on a development Nextcloud server. Webhook
+delivery to a receiver on a public address is implemented and unit tested, but
+has not been exercised end to end on a real server.
 
 ## Planned for v1
 

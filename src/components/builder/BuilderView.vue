@@ -25,6 +25,7 @@ import { renameField } from '../../builder/fieldId.ts'
 import type { Rule } from '../../rules/types.ts'
 import { FORM_STATUS_PUBLISHED } from '../../types.ts'
 import ActionsPanel from './ActionsPanel.vue'
+import FormNav from '../FormNav.vue'
 import BuilderCanvas from './BuilderCanvas.vue'
 import FieldProperties from './FieldProperties.vue'
 import FormProperties from './FormProperties.vue'
@@ -343,6 +344,7 @@ function openSettings(): void {
 					<span v-else class="af-bar__chip af-bar__chip--quiet">{{ t('advancedforms', 'Draft') }}</span>
 				</div>
 				<div class="af-bar__actions">
+					<FormNav :form-id="formId" active="edit" />
 					<SegmentedControl v-model="canvasWidth"
 						class="af-bar__device"
 						:group-label="t('advancedforms', 'Canvas width')"

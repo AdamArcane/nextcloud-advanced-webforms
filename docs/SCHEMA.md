@@ -534,6 +534,36 @@ from the entry's version). Open design points: how a field rename or type change
 maps to Tables columns, whether the table is created and owned by the form
 owner, and whether entries are written to both stores or only to Tables.
 
+### 9.1 CSV export
+
+`GET /api/v1/forms/{id}/entries/export` returns every response as a UTF-8 CSV
+(with a byte order mark so spreadsheets open it correctly, CRLF line endings,
+RFC 4180 quoting), oldest first, up to 20 000 rows.
+
+- Fixed columns: `Response ID`, `Submitted (UTC)`, `Respondent` (the Nextcloud
+  user, empty for anonymous responses).
+- Then one column per input field, taken from the union of every version that
+  has responses. Newest version first, in layout order, using the newest label;
+  a field removed from the form keeps its column. Two different fields that
+  share a label are told apart as `Label (field_id)`.
+- Each response is read through its own version (section 8), so an option
+  renamed later still shows the label it had when it was chosen.
+- Values read like the emails do: option labels, `Yes` or `No`, lists joined
+  with commas, nothing for an unanswered field.
+- **Spreadsheet formulas:** a response is text anyone can submit, and a cell
+  starting with `=`, `+`, `-`, `@`, a tab or a carriage return would run as a
+  formula. Such text (and column headers) gets a leading apostrophe. Numbers are
+  exempt, so a negative number stays a number.
+- The file name is ASCII, built from the form title and the date.
+
+### 9.2 Delivery log
+
+`GET /api/v1/forms/{id}/deliveries` lists email and webhook deliveries newest
+first (filters: `status`, `entryId`), with a short target (an address, the label
+of the email field used, or a webhook's host, never a full URL). `POST
+/api/v1/forms/{id}/deliveries/{logId}/retry` starts a `failed` one over from
+attempt 1. Deleting a response deletes its deliveries.
+
 No database-level JSON querying (Nextcloud supports several databases). Filtering
 and search happen in PHP for v1. IP addresses and user agents are not stored by
 default. If abuse tracking needs them later, store a salted hash with a
