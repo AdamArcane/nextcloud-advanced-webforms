@@ -51,7 +51,7 @@ const field = computed(() => props.definition.fields[props.fieldId])
 const type = computed(() => field.value?.type ?? '')
 
 const isDisplay = computed(() => ['heading', 'paragraph', 'divider'].includes(type.value))
-const hasPlaceholder = computed(() => ['text', 'textarea', 'email', 'number', 'phone', 'select'].includes(type.value))
+const hasPlaceholder = computed(() => ['text', 'textarea', 'email', 'url', 'number', 'phone', 'select'].includes(type.value))
 const hasOptions = computed(() => ['select', 'radio', 'checkboxes'].includes(type.value))
 const hasLabel = computed(() => !isDisplay.value)
 

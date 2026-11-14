@@ -7,6 +7,7 @@
 
 ## 0.3.0 - Unreleased
 
+- Website (URL) field type: http and https only, `https://` added when missing.
 - Select, radio and checkbox fields can be filled from a ready-made list (countries, US states,
   Canadian provinces, Australian states, currencies, languages, months, weekdays). Option values may
   now be two characters, and a field may have up to 300 options.

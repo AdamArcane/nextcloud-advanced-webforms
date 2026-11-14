@@ -18,6 +18,7 @@ final class FieldType {
 	public const TEXTAREA = 'textarea';
 	public const EMAIL = 'email';
 	public const PHONE = 'phone';
+	public const URL = 'url';
 	public const NUMBER = 'number';
 	public const SELECT = 'select';
 	public const RADIO = 'radio';
@@ -50,6 +51,7 @@ final class FieldType {
 		self::TEXTAREA => self::TEXT_OPERATORS,
 		self::EMAIL => self::TEXT_OPERATORS,
 		self::PHONE => self::TEXT_OPERATORS,
+		self::URL => self::TEXT_OPERATORS,
 		self::NUMBER => self::NUMBER_OPERATORS,
 		self::SELECT => self::CHOICE_OPERATORS,
 		self::RADIO => self::CHOICE_OPERATORS,

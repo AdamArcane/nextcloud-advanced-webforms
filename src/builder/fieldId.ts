@@ -124,7 +124,7 @@ export function renameField(
 // ---- Ids that follow the label ------------------------------------------------
 
 /** Field types that carry a value and a label, so an id made from the label means something. */
-const NAMED_TYPES = new Set(['text', 'textarea', 'email', 'phone', 'number', 'select', 'radio', 'checkbox', 'checkboxes', 'date', 'time', 'file'])
+const NAMED_TYPES = new Set(['text', 'textarea', 'email', 'phone', 'url', 'number', 'select', 'radio', 'checkbox', 'checkboxes', 'date', 'time', 'file'])
 
 const RANDOM_ID = /^f_[a-z0-9]{6}$/
 

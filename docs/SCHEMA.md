@@ -176,6 +176,7 @@ Input types (produce a value):
 | `textarea` | string | multi line, optional `maxLength` |
 | `email` | string | validated as an email address |
 | `phone` | string | validated as a phone number, see 4.4 |
+| `url` | string | a web address, see 4.4a |
 | `number` | number | optional `min`, `max`, `step` |
 | `select` | string | one of `options[].value` |
 | `radio` | string | one of `options[].value` |
@@ -199,7 +200,7 @@ Common properties for input fields: `label` (required), `description`,
 `required` (default false), `defaultValue`, `labelPosition`, `hideLabel` (default false).
 
 `placeholder` (optional string) is supported on `text`, `textarea`, `email`,
-`number`, `phone`, and `select` (for `select` it is the empty-choice prompt).
+`number`, `phone`, `url`, and `select` (for `select` it is the empty-choice prompt).
 
 `align` on a `heading` or `paragraph` is `start` (default), `center` or `end`. It aligns the
 text only; the field still fills its cell. It is `start` and `end` rather than left and right so
@@ -258,6 +259,15 @@ Canadian provinces, Australian states, months, weekdays, currencies, languages).
 The list is copied into the field, so it never changes under an existing form.
 Values are lowercase standard codes (`us`, `us_ca`, `eur`, `january`); labels are
 in the owner's language where the browser can translate them.
+
+### 4.4a Website (url) fields
+
+- Stored as a string, trimmed, up to 2048 characters.
+- Only `http` and `https` are accepted, so a stored value can never be a
+  `javascript:` or `data:` link. A value without a scheme gets `https://` put in
+  front (`example.com` is stored as `https://example.com`). The host must contain
+  a dot, and spaces, `<`, `>` and `"` are refused (`invalid_url`).
+- Rules treat it like text (`eq`, `contains`, ...), compared case-insensitively.
 
 ### 4.4 Phone fields
 
@@ -405,7 +415,7 @@ against public input are a ReDoS risk. Revisit only with a safe engine.
 Comparison semantics (**DECISION**, must be identical in PHP and TypeScript):
 
 - Option values (`select`, `radio`, `checkboxes`): exact string match.
-- Free text (`text`, `textarea`, `email`): trimmed, case-insensitive.
+- Free text (`text`, `textarea`, `email`, `url`): trimmed, case-insensitive.
 - `phone`: compared on digits and a leading `+` only, so spacing and punctuation
   do not matter.
 - `number`: numeric. A non-numeric stored value counts as empty.
@@ -438,7 +448,7 @@ on save, and evaluates to false if it ever reaches the engine):
 
 | field type | operators |
 | --- | --- |
-| `text`, `textarea`, `email`, `phone` | `eq`, `neq`, `contains`, `not_contains`, `in`, `not_in`, `empty`, `not_empty` |
+| `text`, `textarea`, `email`, `phone`, `url` | `eq`, `neq`, `contains`, `not_contains`, `in`, `not_in`, `empty`, `not_empty` |
 | `number` | `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `not_in`, `empty`, `not_empty` |
 | `select`, `radio` | `eq`, `neq`, `in`, `not_in`, `empty`, `not_empty` |
 | `checkboxes` | `contains`, `not_contains`, `empty`, `not_empty` |

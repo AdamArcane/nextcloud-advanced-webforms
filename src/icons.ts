@@ -56,6 +56,7 @@ import {
 	mdiTextLong,
 	mdiPalette,
 	mdiTableRowPlusAfter,
+	mdiWeb,
 	mdiWebhook,
 } from '@mdi/js'
 
@@ -107,6 +108,7 @@ export const fieldTypeIcons: Record<string, string> = {
 	textarea: mdiTextLong,
 	email: mdiAt,
 	phone: mdiPhone,
+	url: mdiWeb,
 	number: mdiPound,
 	select: mdiFormDropdown,
 	radio: mdiRadioboxMarked,

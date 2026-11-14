@@ -29,6 +29,7 @@ final class ValueNormalizer {
 			case FieldType::TEXT:
 			case FieldType::TEXTAREA:
 			case FieldType::EMAIL:
+			case FieldType::URL:
 				return self::text($raw);
 			case FieldType::PHONE:
 				return self::phone($raw);

@@ -12,6 +12,8 @@ export function messageFor(code: string): string {
 			return t('advancedforms', 'This field is required.')
 		case 'invalid_email':
 			return t('advancedforms', 'Enter a valid email address.')
+		case 'invalid_url':
+			return t('advancedforms', 'Enter a valid web address, such as https://example.com.')
 		case 'invalid_phone':
 			return t('advancedforms', 'Enter a valid phone number.')
 		case 'invalid_number':

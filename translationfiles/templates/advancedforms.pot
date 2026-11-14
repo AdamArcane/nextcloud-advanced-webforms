@@ -47,7 +47,7 @@ msgstr ""
 msgid "A group of conditions is empty or nested too deeply."
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:49
+#: src/builder/fieldTypeNames.ts:51
 msgid "A line between sections"
 msgstr ""
 
@@ -55,11 +55,11 @@ msgstr ""
 msgid "A list replaces the options above. It is copied into this field, so you can still edit it."
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:36
+#: src/builder/fieldTypeNames.ts:37
 msgid "A message or a longer answer"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:35
+#: src/builder/fieldTypeNames.ts:36
 msgid "A name or a short answer"
 msgstr ""
 
@@ -75,12 +75,16 @@ msgstr ""
 msgid "A secret is set"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:43
+#: src/builder/fieldTypeNames.ts:45
 msgid "A single yes or no"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:47
+#: src/builder/fieldTypeNames.ts:49
 msgid "A title for a section"
+msgstr ""
+
+#: src/builder/fieldTypeNames.ts:40
+msgid "A web address, checked to be one"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:67
@@ -171,7 +175,7 @@ msgstr ""
 msgid "Adds an answer to the end of the body."
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:59
+#: src/builder/fieldTypeNames.ts:61
 #: src/components/builder/FieldProperties.vue:479
 msgid "Advanced"
 msgstr ""
@@ -234,7 +238,7 @@ msgstr ""
 msgid "Archives (zip, 7z)"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:46
+#: src/builder/fieldTypeNames.ts:48
 msgid "Attach files to the response"
 msgstr ""
 
@@ -309,19 +313,19 @@ msgstr ""
 msgid "Change ID"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:21
+#: src/builder/fieldTypeNames.ts:22
 msgid "Checkbox"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:38
+#: src/builder/fieldTypeNames.ts:39
 msgid "Checked to be a phone number"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:37
+#: src/builder/fieldTypeNames.ts:38
 msgid "Checked to be an email address"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:57
+#: src/builder/fieldTypeNames.ts:59
 msgid "Choices"
 msgstr ""
 
@@ -359,7 +363,7 @@ msgstr ""
 msgid "Choose folder"
 msgstr ""
 
-#: src/components/render/messages.ts:37
+#: src/components/render/messages.ts:39
 msgid "Choose one of the available options."
 msgstr ""
 
@@ -396,7 +400,7 @@ msgstr ""
 msgid "Conditional"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:60
+#: src/builder/fieldTypeNames.ts:62
 msgid "Content"
 msgstr ""
 
@@ -460,11 +464,11 @@ msgstr ""
 msgid "Currencies"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:22
+#: src/builder/fieldTypeNames.ts:23
 msgid "Date"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:58
+#: src/builder/fieldTypeNames.ts:60
 msgid "Date and time"
 msgstr ""
 
@@ -541,7 +545,7 @@ msgstr ""
 msgid "Desktop"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:27
+#: src/builder/fieldTypeNames.ts:28
 msgid "Divider"
 msgstr ""
 
@@ -571,7 +575,7 @@ msgstr ""
 msgid "Drag to resize, or use the arrow keys"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:18
+#: src/builder/fieldTypeNames.ts:19
 msgid "Dropdown"
 msgstr ""
 
@@ -630,7 +634,7 @@ msgstr ""
 msgid "Enter a full address starting with https://."
 msgstr ""
 
-#: src/components/render/messages.ts:26
+#: src/components/render/messages.ts:28
 msgid "Enter a valid date."
 msgstr ""
 
@@ -638,16 +642,20 @@ msgstr ""
 msgid "Enter a valid email address."
 msgstr ""
 
-#: src/components/render/messages.ts:18
+#: src/components/render/messages.ts:20
 msgid "Enter a valid number."
 msgstr ""
 
-#: src/components/render/messages.ts:16
+#: src/components/render/messages.ts:18
 msgid "Enter a valid phone number."
 msgstr ""
 
-#: src/components/render/messages.ts:28
+#: src/components/render/messages.ts:30
 msgid "Enter a valid time."
+msgstr ""
+
+#: src/components/render/messages.ts:16
+msgid "Enter a valid web address, such as https://example.com."
 msgstr ""
 
 #: src/builder/errors.ts:20
@@ -681,7 +689,7 @@ msgstr ""
 msgid "Field width"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:24
+#: src/builder/fieldTypeNames.ts:25
 msgid "File upload"
 msgstr ""
 
@@ -770,7 +778,7 @@ msgstr ""
 msgid "Give this field a label."
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:25
+#: src/builder/fieldTypeNames.ts:26
 msgid "Heading"
 msgstr ""
 
@@ -1078,7 +1086,7 @@ msgstr ""
 msgid "Moves above the field when there is not enough room."
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:20
+#: src/builder/fieldTypeNames.ts:21
 msgid "Multiple choice"
 msgstr ""
 
@@ -1180,7 +1188,7 @@ msgstr ""
 msgid "Nothing was sent for this response."
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:17
+#: src/builder/fieldTypeNames.ts:18
 msgid "Number"
 msgstr ""
 
@@ -1188,7 +1196,7 @@ msgstr ""
 msgid "One file, up to {size}. Accepted: {types}"
 msgstr ""
 
-#: src/components/render/messages.ts:47
+#: src/components/render/messages.ts:49
 msgid "One of the files is no longer available. Remove it and add it again."
 msgstr ""
 
@@ -1269,7 +1277,7 @@ msgstr ""
 msgid "Pages"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:26
+#: src/builder/fieldTypeNames.ts:27
 msgid "Paragraph"
 msgstr ""
 
@@ -1277,11 +1285,11 @@ msgstr ""
 msgid "Phone"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:44
+#: src/builder/fieldTypeNames.ts:46
 msgid "Pick a day"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:45
+#: src/builder/fieldTypeNames.ts:47
 msgid "Pick a time"
 msgstr ""
 
@@ -1289,15 +1297,15 @@ msgstr ""
 msgid "Pick an email field or type an address"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:42
+#: src/builder/fieldTypeNames.ts:44
 msgid "Pick any number of options"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:40
+#: src/builder/fieldTypeNames.ts:42
 msgid "Pick one from a list"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:41
+#: src/builder/fieldTypeNames.ts:43
 msgid "Pick one, all options visible"
 msgstr ""
 
@@ -1472,11 +1480,11 @@ msgstr ""
 msgid "Select a form"
 msgstr ""
 
-#: src/components/render/messages.ts:34
+#: src/components/render/messages.ts:36
 msgid "Select fewer options."
 msgstr ""
 
-#: src/components/render/messages.ts:32
+#: src/components/render/messages.ts:34
 msgid "Select more options."
 msgstr ""
 
@@ -1571,7 +1579,7 @@ msgstr ""
 msgid "Sign in"
 msgstr ""
 
-#: src/components/render/messages.ts:57
+#: src/components/render/messages.ts:59
 msgid "Sign in to upload files."
 msgstr ""
 
@@ -1587,7 +1595,7 @@ msgstr ""
 msgid "Signing secret"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:19
+#: src/builder/fieldTypeNames.ts:20
 msgid "Single choice"
 msgstr ""
 
@@ -1608,7 +1616,7 @@ msgstr ""
 msgid "Some deliveries are overdue. Nextcloud sends them with its background jobs, which do not seem to be running. Ask your administrator to switch background jobs to Cron (Administration settings, Basic settings)."
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:48
+#: src/builder/fieldTypeNames.ts:50
 msgid "Some explanatory text"
 msgstr ""
 
@@ -1657,7 +1665,7 @@ msgstr ""
 msgid "Tablet"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:56
+#: src/builder/fieldTypeNames.ts:58
 #: src/components/builder/FieldProperties.vue:302
 msgid "Text"
 msgstr ""
@@ -1683,7 +1691,7 @@ msgstr ""
 msgid "That Nextcloud account has no email address set."
 msgstr ""
 
-#: src/components/render/messages.ts:39
+#: src/components/render/messages.ts:41
 msgid "That was very quick. Please check your answers and send again."
 msgstr ""
 
@@ -1699,7 +1707,7 @@ msgstr ""
 msgid "The email has no valid recipient set."
 msgstr ""
 
-#: src/components/render/messages.ts:64
+#: src/components/render/messages.ts:66
 msgid "The file could not be saved. Please try again later or contact the form owner."
 msgstr ""
 
@@ -1771,7 +1779,7 @@ msgstr ""
 msgid "The text uses a field that does not exist."
 msgstr ""
 
-#: src/components/render/messages.ts:66
+#: src/components/render/messages.ts:68
 msgid "The upload did not work. Please try again."
 msgstr ""
 
@@ -1795,7 +1803,7 @@ msgstr ""
 msgid "This action was removed from the form."
 msgstr ""
 
-#: src/components/render/messages.ts:70
+#: src/components/render/messages.ts:72
 msgid "This answer is not valid."
 msgstr ""
 
@@ -1827,15 +1835,15 @@ msgstr ""
 msgid "This field's answer controls"
 msgstr ""
 
-#: src/components/render/messages.ts:53
+#: src/components/render/messages.ts:55
 msgid "This file is empty."
 msgstr ""
 
-#: src/components/render/messages.ts:51
+#: src/components/render/messages.ts:53
 msgid "This file is too large."
 msgstr ""
 
-#: src/components/render/messages.ts:55
+#: src/components/render/messages.ts:57
 msgid "This file name is not valid."
 msgstr ""
 
@@ -1872,7 +1880,7 @@ msgstr ""
 msgid "This kind of action is not supported."
 msgstr ""
 
-#: src/components/render/messages.ts:49
+#: src/components/render/messages.ts:51
 msgid "This kind of file is not accepted."
 msgstr ""
 
@@ -1884,15 +1892,15 @@ msgstr ""
 msgid "This list also refreshes by itself every few seconds while deliveries are waiting."
 msgstr ""
 
-#: src/components/render/messages.ts:24
+#: src/components/render/messages.ts:26
 msgid "This number is not an allowed value."
 msgstr ""
 
-#: src/components/render/messages.ts:22
+#: src/components/render/messages.ts:24
 msgid "This number is too large."
 msgstr ""
 
-#: src/components/render/messages.ts:20
+#: src/components/render/messages.ts:22
 msgid "This number is too small."
 msgstr ""
 
@@ -1900,7 +1908,7 @@ msgstr ""
 msgid "This page has a problem"
 msgstr ""
 
-#: src/components/render/messages.ts:42
+#: src/components/render/messages.ts:44
 msgid "This page was open for too long. Please send again."
 msgstr ""
 
@@ -1908,7 +1916,7 @@ msgstr ""
 msgid "This rule does not point at a field."
 msgstr ""
 
-#: src/components/render/messages.ts:30
+#: src/components/render/messages.ts:32
 msgid "This text is too long."
 msgstr ""
 
@@ -1916,7 +1924,7 @@ msgstr ""
 msgid "Ticked"
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:23
+#: src/builder/fieldTypeNames.ts:24
 msgid "Time"
 msgstr ""
 
@@ -1936,7 +1944,7 @@ msgstr ""
 msgid "Too many emails to respondents were sent for this form in the last hour."
 msgstr ""
 
-#: src/components/render/messages.ts:59
+#: src/components/render/messages.ts:61
 msgid "Too many files are waiting right now. Try again later."
 msgstr ""
 
@@ -2043,6 +2051,10 @@ msgstr ""
 msgid "Webhook address"
 msgstr ""
 
+#: src/builder/fieldTypeNames.ts:17
+msgid "Website"
+msgstr ""
+
 #: src/components/builder/RuleCard.vue:58
 msgid "What the rule does"
 msgstr ""
@@ -2081,7 +2093,7 @@ msgstr ""
 msgid "Width only applies on larger screens. On phones the form fills the screen and fields sit one under another."
 msgstr ""
 
-#: src/builder/fieldTypeNames.ts:39
+#: src/builder/fieldTypeNames.ts:41
 msgid "With optional minimum and maximum"
 msgstr ""
 
@@ -2101,7 +2113,7 @@ msgstr ""
 msgid "you"
 msgstr ""
 
-#: src/components/render/messages.ts:44
+#: src/components/render/messages.ts:46
 msgid "You added too many files."
 msgstr ""
 
@@ -2113,7 +2125,7 @@ msgstr ""
 msgid "You cannot save files to this folder. Choose a folder you can write to."
 msgstr ""
 
-#: src/components/render/messages.ts:68
+#: src/components/render/messages.ts:70
 msgid "You have already submitted this form."
 msgstr ""
 

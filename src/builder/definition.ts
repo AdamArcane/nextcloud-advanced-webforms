@@ -36,6 +36,7 @@ export const FIELD_TYPES: readonly FieldTypeInfo[] = [
 	{ type: 'textarea', label: 'Long text', group: 'text' },
 	{ type: 'email', label: 'Email', group: 'text' },
 	{ type: 'phone', label: 'Phone', group: 'text' },
+	{ type: 'url', label: 'Website', group: 'text' },
 	{ type: 'number', label: 'Number', group: 'text' },
 	{ type: 'select', label: 'Dropdown', group: 'choice' },
 	{ type: 'radio', label: 'Single choice', group: 'choice' },

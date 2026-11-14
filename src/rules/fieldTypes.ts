@@ -19,6 +19,7 @@ const OPERATORS = new Map<string, readonly string[]>([
 	['textarea', TEXT_OPERATORS],
 	['email', TEXT_OPERATORS],
 	['phone', TEXT_OPERATORS],
+	['url', TEXT_OPERATORS],
 	['number', NUMBER_OPERATORS],
 	['select', CHOICE_OPERATORS],
 	['radio', CHOICE_OPERATORS],

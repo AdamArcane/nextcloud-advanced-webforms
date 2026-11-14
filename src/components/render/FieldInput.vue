@@ -55,6 +55,7 @@ const inputType = computed(() => ({
 	text: 'text',
 	email: 'email',
 	phone: 'tel',
+	url: 'url',
 	number: 'number',
 	date: 'date',
 	time: 'time',

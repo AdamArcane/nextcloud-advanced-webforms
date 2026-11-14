@@ -202,6 +202,7 @@ final class RuleValidator {
 			case FieldType::TEXTAREA:
 			case FieldType::EMAIL:
 			case FieldType::PHONE:
+			case FieldType::URL:
 				return ValueNormalizer::normalize($type, $value) !== null;
 			case FieldType::NUMBER:
 				return is_int($value) || (is_float($value) && is_finite($value));

@@ -35,7 +35,7 @@ final class DefinitionValidator {
 	private const MAX_PAGES = 20;
 	private const TOP_KEYS = ['schemaVersion', 'title', 'description', 'settings', 'fields', 'pages', 'rules', 'actions'];
 	private const COMMON_INPUT_KEYS = ['type', 'label', 'description', 'required', 'defaultValue', 'labelPosition', 'hideLabel'];
-	private const PLACEHOLDER_TYPES = [FieldType::TEXT, FieldType::TEXTAREA, FieldType::EMAIL, FieldType::NUMBER, FieldType::PHONE, FieldType::SELECT];
+	private const PLACEHOLDER_TYPES = [FieldType::TEXT, FieldType::TEXTAREA, FieldType::EMAIL, FieldType::URL, FieldType::NUMBER, FieldType::PHONE, FieldType::SELECT];
 
 	/** @var list<array{code: string, path: string}> */
 	private array $errors = [];

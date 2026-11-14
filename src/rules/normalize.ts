@@ -21,6 +21,7 @@ export function normalize(type: string, raw: unknown): NormalizedValue {
 		case 'text':
 		case 'textarea':
 		case 'email':
+		case 'url':
 			return normalizeText(raw)
 		case 'phone':
 			return normalizePhone(raw)

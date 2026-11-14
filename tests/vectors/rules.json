@@ -1808,6 +1808,47 @@
       }
     },
     {
+      "name": "url behaves like text",
+      "fields": {
+        "f_a": {
+          "type": "url",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "HTTPS://Example.com/Path"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "https://example.com/path"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
       "name": "text in: matches a listed value after normalizing",
       "fields": {
         "f_a": {

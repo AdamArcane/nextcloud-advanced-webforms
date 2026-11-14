@@ -61,7 +61,7 @@ rules semantics, actions, versioning and the submit algorithm.
 
 ## Status
 
-Done: spec v0.3, schema migration, rules engine (PHP + TS) with 75 shared vectors,
+Done: spec v0.3, schema migration, rules engine (PHP + TS) with 79 shared vectors,
 validators, services, owner and public APIs, public renderer, owner UI (forms list,
 responses, delivery log, CSV export), actions pipeline (email, webhook, message, redirect,
 retries), builder (fields, logic, actions, settings, multi-page, design tab, drag and drop

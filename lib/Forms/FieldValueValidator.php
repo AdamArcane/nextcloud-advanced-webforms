@@ -23,6 +23,7 @@ final class FieldValueValidator {
 	public const MAX_TEXT = 2000;
 	public const MAX_TEXTAREA = 20000;
 	public const MAX_EMAIL = 254;
+	public const MAX_URL = 2048;
 	/** What ISecureRandom hands out for an upload: lower case letters and digits. */
 	public const UPLOAD_ID = '/^[a-z0-9]{32}$/D';
 
@@ -39,6 +40,7 @@ final class FieldValueValidator {
 			FieldType::TEXTAREA => self::text($field, $raw, self::MAX_TEXTAREA),
 			FieldType::EMAIL => self::email($raw),
 			FieldType::PHONE => self::phone($raw),
+			FieldType::URL => self::url($raw),
 			FieldType::NUMBER => self::number($field, $raw),
 			FieldType::SELECT, FieldType::RADIO => self::choice($field, $raw),
 			FieldType::CHECKBOXES => self::multi($field, $raw),
@@ -118,6 +120,33 @@ final class FieldValueValidator {
 		}
 		if (strlen($value) > self::MAX_EMAIL || filter_var($value, FILTER_VALIDATE_EMAIL) === false) {
 			return [null, 'invalid_email'];
+		}
+		return [$value, null];
+	}
+
+	/**
+	 * A web address. Only http and https are accepted, so a stored value can never be a `javascript:`
+	 * or `data:` link when an owner opens it from the responses. Without a scheme, `https://` is added,
+	 * since people type `example.com`.
+	 *
+	 * @return array{0: string|null, 1: string|null}
+	 */
+	private static function url(mixed $raw): array {
+		[$value, $error] = self::trimmed($raw);
+		if ($value === null) {
+			return [null, $error];
+		}
+		if (preg_match('#^[a-z][a-z0-9+.-]*:#i', $value) !== 1) {
+			$value = 'https://' . $value;
+		}
+		if (strlen($value) > self::MAX_URL || preg_match('/[\s<>"]/u', $value) === 1) {
+			return [null, 'invalid_url'];
+		}
+		$parts = parse_url($value);
+		$scheme = is_array($parts) ? strtolower((string)($parts['scheme'] ?? '')) : '';
+		$host = is_array($parts) ? (string)($parts['host'] ?? '') : '';
+		if (!in_array($scheme, ['http', 'https'], true) || $host === '' || !str_contains($host, '.') || str_starts_with($host, '.') || str_ends_with($host, '.')) {
+			return [null, 'invalid_url'];
 		}
 		return [$value, null];
 	}
