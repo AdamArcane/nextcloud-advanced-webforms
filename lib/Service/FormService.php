@@ -269,8 +269,22 @@ class FormService {
 		];
 		if ($withDraft) {
 			$data['draft'] = JsonShape::definition($form->getDraftDefinition());
+			$data['hasUnpublishedChanges'] = $this->hasUnpublishedChanges($form);
 		}
 		return $data;
+	}
+
+	/**
+	 * Whether the draft differs from the latest published version (always true
+	 * before the first publish).
+	 */
+	private function hasUnpublishedChanges(Form $form): bool {
+		$latestId = $form->getLatestVersionId();
+		if ($latestId === null) {
+			return true;
+		}
+		$draft = $this->encode(JsonShape::definition($form->getDraftDefinition()));
+		return $this->canonical($this->versions->find($latestId)->getDefinition()) !== $this->canonical($draft);
 	}
 
 	/**
