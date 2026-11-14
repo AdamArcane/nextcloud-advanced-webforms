@@ -46,8 +46,11 @@ const form = computed<PublicForm>(() => {
 		@closing="emit('close')">
 		<div class="af-preview__top">
 			<p class="af-preview__note">
-				{{ t('advancedforms', 'This is how respondents will see the form. Nothing you enter here is saved.') }}
+				{{ t('advancedforms', 'Preview only, nothing saved') }}
 			</p>
+			<NcCheckboxRadioSwitch v-model="validate" type="switch" class="af-preview__validate">
+				{{ t('advancedforms', 'Enable validation') }}
+			</NcCheckboxRadioSwitch>
 			<SegmentedControl v-model="device"
 				class="af-preview__device"
 				:group-label="t('advancedforms', 'Preview device')"
@@ -58,9 +61,6 @@ const form = computed<PublicForm>(() => {
 					{ value: 'mobile', label: t('advancedforms', 'Mobile'), icon: icons.mobile },
 				]" />
 		</div>
-		<NcCheckboxRadioSwitch v-model="validate" type="switch" class="af-preview__validate">
-			{{ t('advancedforms', 'Check required fields, like a respondent would') }}
-		</NcCheckboxRadioSwitch>
 		<div class="af-preview__stage"
 			:class="{ 'af-preview__stage--framed': frameWidth !== null || stageBackground !== null }"
 			:style="stageBackground ? { background: stageBackground } : undefined">
@@ -82,13 +82,13 @@ const form = computed<PublicForm>(() => {
 }
 
 .af-preview__note {
-	flex: 1 1 260px;
+	flex: 1 1 140px;
 	margin: 0;
 	color: var(--color-text-maxcontrast);
 }
 
 .af-preview__validate {
-	margin-bottom: calc(var(--default-grid-baseline) * 3);
+	flex: 0 0 auto;
 }
 
 .af-preview__device {
