@@ -11,6 +11,9 @@ import { t } from '@nextcloud/l10n'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
 import NcAppSidebar from '@nextcloud/vue/components/NcAppSidebar'
 import NcAppSidebarTab from '@nextcloud/vue/components/NcAppSidebarTab'
+import NcActionButton from '@nextcloud/vue/components/NcActionButton'
+import NcActionLink from '@nextcloud/vue/components/NcActionLink'
+import NcActions from '@nextcloud/vue/components/NcActions'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import { icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
@@ -355,24 +358,51 @@ function openSettings(): void {
 							{ value: 'mobile', label: t('advancedforms', 'Mobile'), icon: icons.mobile },
 						]"
 						icon-only />
-					<NcButton variant="tertiary" :aria-label="t('advancedforms', 'Settings')" :title="t('advancedforms', 'Settings')" @click="openSettings">
+					<NcButton variant="tertiary" class="af-bar__btn" :aria-label="t('advancedforms', 'Settings')" :title="t('advancedforms', 'Settings')" @click="openSettings">
 						<template #icon>
 							<Icon :path="icons.settings" />
 						</template>
 						<span class="af-bar__text">{{ t('advancedforms', 'Settings') }}</span>
 					</NcButton>
-					<NcButton variant="secondary" :aria-label="t('advancedforms', 'Preview')" :title="t('advancedforms', 'Preview')" @click="previewOpen = true">
-						<template #icon>
-							<Icon :path="icons.preview" />
-						</template>
-						<span class="af-bar__text">{{ t('advancedforms', 'Preview') }}</span>
-					</NcButton>
-					<NcButton v-if="published && shareUrl" variant="tertiary" :href="shareUrl" target="_blank" rel="noopener" :aria-label="t('advancedforms', 'Open form')" :title="t('advancedforms', 'Open form')">
-						<template #icon>
-							<Icon :path="icons.openNew" />
-						</template>
-						<span class="af-bar__text">{{ t('advancedforms', 'Open form') }}</span>
-					</NcButton>
+					<div class="af-bar__split">
+						<NcButton variant="secondary"
+							class="af-bar__btn af-bar__split-main"
+							:aria-label="t('advancedforms', 'Preview')"
+							:title="t('advancedforms', 'Preview')"
+							@click="previewOpen = true">
+							<template #icon>
+								<Icon :path="icons.preview" />
+							</template>
+						</NcButton>
+						<NcActions class="af-bar__split-more"
+							variant="secondary"
+							:aria-label="t('advancedforms', 'More ways to view the form')">
+							<template #icon>
+								<Icon :path="icons.chevronDown" />
+							</template>
+							<NcActionButton close-after-click @click="previewOpen = true">
+								<template #icon>
+									<Icon :path="icons.preview" />
+								</template>
+								{{ t('advancedforms', 'Preview') }}
+							</NcActionButton>
+							<NcActionLink v-if="published && shareUrl"
+								:href="shareUrl"
+								target="_blank"
+								rel="noopener">
+								<template #icon>
+									<Icon :path="icons.openNew" />
+								</template>
+								{{ t('advancedforms', 'Open published form') }}
+							</NcActionLink>
+							<NcActionButton v-else disabled>
+								<template #icon>
+									<Icon :path="icons.openNew" />
+								</template>
+								{{ t('advancedforms', 'Publish to get a public link') }}
+							</NcActionButton>
+						</NcActions>
+					</div>
 					<NcButton variant="primary" :disabled="!canPublish" @click="publish">
 						<template #icon>
 							<Icon :path="icons.publish" />
@@ -574,6 +604,32 @@ function openSettings(): void {
 	.af-bar__text {
 		display: none;
 	}
+
+	/* With the text gone, the button is just an icon: make it square instead of a wide pill. */
+	.af-bar__btn:deep(.button-vue) {
+		width: var(--default-clickable-area);
+		padding: 0;
+	}
+}
+
+.af-bar__split {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+}
+
+/* The arrow reads as part of the Preview button: squared inner corners, shared edge. */
+.af-bar__split-main:deep(.button-vue) {
+	border-start-end-radius: 0;
+	border-end-end-radius: 0;
+}
+
+.af-bar__split-more:deep(.button-vue) {
+	border-start-start-radius: 0;
+	border-end-start-radius: 0;
+	width: calc(var(--default-clickable-area) - 10px);
+	min-width: 0;
+	padding: 0;
 }
 
 .af-builder__notes {
