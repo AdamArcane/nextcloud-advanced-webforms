@@ -7,7 +7,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/components/builder/BuilderView.vue:263
+#: src/components/builder/BuilderView.vue:266
 msgid "{label} (copy)"
 msgstr ""
 
@@ -35,7 +35,7 @@ msgstr ""
 msgid "A condition uses a field that no longer exists."
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:314
+#: src/components/builder/FieldProperties.vue:316
 msgid "A divider has no settings."
 msgstr ""
 
@@ -59,7 +59,7 @@ msgstr ""
 msgid "A name or a short answer"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:129
+#: src/components/builder/FieldProperties.vue:131
 msgid "A published field used this ID before it was deleted, so it cannot be used again."
 msgstr ""
 
@@ -92,7 +92,7 @@ msgstr ""
 msgid "Accent colour"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:335
+#: src/components/builder/FieldProperties.vue:337
 msgid "Accepted types"
 msgstr ""
 
@@ -100,11 +100,11 @@ msgstr ""
 msgid "Action"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:469
+#: src/components/builder/BuilderView.vue:483
 msgid "Actions"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:470
+#: src/components/builder/FieldProperties.vue:472
 msgid "Add a field beside this one"
 msgstr ""
 
@@ -168,16 +168,16 @@ msgid "Adds an answer to the end of the body."
 msgstr ""
 
 #: src/builder/fieldTypeNames.ts:59
-#: src/components/builder/FieldProperties.vue:477
+#: src/components/builder/FieldProperties.vue:479
 msgid "Advanced"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:383
+#: src/components/builder/FieldProperties.vue:385
 msgid "Advanced Forms/<form title>"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:290
-#: src/components/builder/FieldProperties.vue:305
+#: src/components/builder/FieldProperties.vue:292
+#: src/components/builder/FieldProperties.vue:307
 msgid "Alignment"
 msgstr ""
 
@@ -206,7 +206,7 @@ msgstr ""
 msgid "and"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:128
+#: src/components/builder/FieldProperties.vue:130
 msgid "Another field already uses this ID."
 msgstr ""
 
@@ -218,15 +218,15 @@ msgstr ""
 msgid "any moment now"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:360
+#: src/components/builder/FieldProperties.vue:362
 msgid "Anyone"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:377
+#: src/components/builder/FieldProperties.vue:379
 msgid "App only"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:170
+#: src/components/builder/FieldProperties.vue:172
 msgid "Archives (zip, 7z)"
 msgstr ""
 
@@ -238,7 +238,7 @@ msgstr ""
 msgid "Attempt {n}"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:171
+#: src/components/builder/FieldProperties.vue:173
 msgid "Audio"
 msgstr ""
 
@@ -250,7 +250,7 @@ msgstr ""
 msgid "Background colour"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:301
+#: src/components/builder/FieldProperties.vue:303
 msgid "Basic markdown works: bold, italic, lists and links."
 msgstr ""
 
@@ -279,13 +279,13 @@ msgstr ""
 msgid "Call a webhook"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:508
-#: src/components/builder/BuilderView.vue:517
+#: src/components/builder/BuilderView.vue:522
+#: src/components/builder/BuilderView.vue:531
 #: src/components/entries/EntriesView.vue:382
 msgid "Cancel"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:430
+#: src/components/builder/BuilderView.vue:444
 msgid "Canvas width"
 msgstr ""
 
@@ -293,7 +293,7 @@ msgstr ""
 msgid "Center"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:489
+#: src/components/builder/FieldProperties.vue:491
 msgid "Change ID"
 msgstr ""
 
@@ -313,7 +313,7 @@ msgstr ""
 msgid "Choices"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:209
+#: src/components/builder/FieldProperties.vue:211
 msgid "Choose {name}"
 msgstr ""
 
@@ -322,7 +322,7 @@ msgstr ""
 msgid "Choose a file"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:203
+#: src/components/builder/FieldProperties.vue:205
 msgid "Choose a folder for the uploaded files"
 msgstr ""
 
@@ -330,11 +330,11 @@ msgstr ""
 msgid "Choose a form from the list to edit it, or create a new one."
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:426
+#: src/components/builder/FieldProperties.vue:428
 msgid "Choose at least"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:430
+#: src/components/builder/FieldProperties.vue:432
 msgid "Choose at most"
 msgstr ""
 
@@ -343,7 +343,7 @@ msgstr ""
 msgid "Choose files"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:386
+#: src/components/builder/FieldProperties.vue:388
 msgid "Choose folder"
 msgstr ""
 
@@ -351,7 +351,7 @@ msgstr ""
 msgid "Choose one of the available options."
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:209
+#: src/components/builder/FieldProperties.vue:211
 msgid "Choose this folder"
 msgstr ""
 
@@ -432,7 +432,7 @@ msgstr ""
 msgid "Could not load your forms."
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:157
+#: src/components/builder/BuilderView.vue:160
 msgid "Could not save"
 msgstr ""
 
@@ -448,7 +448,7 @@ msgstr ""
 msgid "Date and time"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:509
+#: src/components/builder/BuilderView.vue:523
 #: src/components/entries/EntriesView.vue:383
 msgid "Delete"
 msgstr ""
@@ -457,11 +457,11 @@ msgstr ""
 msgid "Delete action"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:507
+#: src/components/builder/FieldProperties.vue:509
 msgid "Delete field"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:518
+#: src/components/builder/BuilderView.vue:532
 #: src/components/builder/FormProperties.vue:242
 msgid "Delete form"
 msgstr ""
@@ -482,11 +482,11 @@ msgstr ""
 msgid "Delete rule for all fields"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:505
+#: src/components/builder/BuilderView.vue:519
 msgid "Delete this field?"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:514
+#: src/components/builder/BuilderView.vue:528
 msgid "Delete this form?"
 msgstr ""
 
@@ -506,11 +506,11 @@ msgstr ""
 msgid "Description"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:467
+#: src/components/builder/BuilderView.vue:481
 msgid "Design"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:432
+#: src/components/builder/BuilderView.vue:446
 #: src/components/builder/PreviewDialog.vue:59
 msgid "Desktop"
 msgstr ""
@@ -519,7 +519,7 @@ msgstr ""
 msgid "Divider"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:169
+#: src/components/builder/FieldProperties.vue:171
 msgid "Documents"
 msgstr ""
 
@@ -532,7 +532,7 @@ msgid "Download CSV"
 msgstr ""
 
 #: src/App.vue:98
-#: src/components/builder/BuilderView.vue:405
+#: src/components/builder/BuilderView.vue:419
 msgid "Draft"
 msgstr ""
 
@@ -549,11 +549,11 @@ msgstr ""
 msgid "Dropdown"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:501
+#: src/components/builder/FieldProperties.vue:503
 msgid "Duplicate field"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:345
+#: src/components/builder/FieldProperties.vue:347
 msgid "dwg, stl"
 msgstr ""
 
@@ -565,7 +565,7 @@ msgstr ""
 msgid "Each request is signed so the receiver can check it came from this form. The signature is in the X-AdvancedForms-Signature header."
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:389
+#: src/components/builder/FieldProperties.vue:391
 msgid "Each response gets its own subfolder here. You can only pick folders you can write to, and this is checked again every time someone submits."
 msgstr ""
 
@@ -635,17 +635,17 @@ msgstr ""
 msgid "Failed deliveries are tried again automatically, up to five times. Trying again by hand starts over and is sent within a minute."
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:201
-#: src/components/builder/BuilderView.vue:203
-#: src/components/builder/BuilderView.vue:528
+#: src/components/builder/BuilderView.vue:204
+#: src/components/builder/BuilderView.vue:206
+#: src/components/builder/BuilderView.vue:542
 msgid "Field"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:480
+#: src/components/builder/FieldProperties.vue:482
 msgid "Field ID"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:442
+#: src/components/builder/FieldProperties.vue:444
 msgid "Field width"
 msgstr ""
 
@@ -653,11 +653,11 @@ msgstr ""
 msgid "File upload"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:320
+#: src/components/builder/FieldProperties.vue:322
 msgid "Files"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:393
+#: src/components/builder/FieldProperties.vue:395
 msgid "Files stay in the app and are downloaded from the Responses view."
 msgstr ""
 
@@ -669,11 +669,11 @@ msgstr ""
 msgid "Filter deliveries"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:449
+#: src/components/builder/BuilderView.vue:463
 msgid "Fix the highlighted problems before publishing."
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:382
+#: src/components/builder/FieldProperties.vue:384
 msgid "Folder"
 msgstr ""
 
@@ -698,7 +698,7 @@ msgid "Form field · the answer given"
 msgstr ""
 
 #: src/PublicApp.vue:86
-#: src/components/builder/BuilderView.vue:381
+#: src/components/builder/BuilderView.vue:395
 msgid "Form not found"
 msgstr ""
 
@@ -718,11 +718,11 @@ msgstr ""
 msgid "Forms"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:140
+#: src/components/builder/FieldProperties.vue:142
 msgid "Full"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:466
+#: src/components/builder/BuilderView.vue:480
 msgid "General"
 msgstr ""
 
@@ -742,15 +742,15 @@ msgstr ""
 msgid "Heading"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:281
+#: src/components/builder/FieldProperties.vue:283
 msgid "Heading size"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:276
+#: src/components/builder/FieldProperties.vue:278
 msgid "Heading text"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:251
+#: src/components/builder/FieldProperties.vue:253
 msgid "Help text"
 msgstr ""
 
@@ -779,7 +779,7 @@ msgstr ""
 msgid "If several messages or redirects match, the first one is shown. Emails and webhooks all run."
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:168
+#: src/components/builder/FieldProperties.vue:170
 msgid "Images"
 msgstr ""
 
@@ -859,11 +859,11 @@ msgstr ""
 msgid "is one of"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:382
+#: src/components/builder/BuilderView.vue:396
 msgid "It may have been deleted, or you may not have access to it."
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:248
+#: src/components/builder/FieldProperties.vue:250
 msgid "Label"
 msgstr ""
 
@@ -879,8 +879,8 @@ msgstr ""
 msgid "Label of option {n}"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:263
 #: src/components/builder/FieldProperties.vue:265
+#: src/components/builder/FieldProperties.vue:267
 msgid "Label position"
 msgstr ""
 
@@ -892,15 +892,15 @@ msgstr ""
 msgid "Labels"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:283
+#: src/components/builder/FieldProperties.vue:285
 msgid "Large"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:332
+#: src/components/builder/FieldProperties.vue:334
 msgid "Largest file, in MB"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:437
+#: src/components/builder/FieldProperties.vue:439
 #: src/components/builder/FormProperties.vue:119
 msgid "Layout"
 msgstr ""
@@ -909,11 +909,11 @@ msgstr ""
 msgid "Left"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:366
+#: src/components/builder/FieldProperties.vue:368
 msgid "Letting anyone upload into your files works like a public upload link, so it is only allowed if you may share that folder by link."
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:399
+#: src/components/builder/FieldProperties.vue:401
 msgid "Limits"
 msgstr ""
 
@@ -925,7 +925,7 @@ msgstr ""
 msgid "Log in"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:552
+#: src/components/builder/BuilderView.vue:566
 msgid "Logic"
 msgstr ""
 
@@ -945,11 +945,11 @@ msgstr ""
 msgid "Match all or any of the conditions"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:416
+#: src/components/builder/FieldProperties.vue:418
 msgid "Maximum"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:407
+#: src/components/builder/FieldProperties.vue:409
 msgid "Maximum length"
 msgstr ""
 
@@ -957,7 +957,7 @@ msgstr ""
 msgid "Me (the form owner)"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:284
+#: src/components/builder/FieldProperties.vue:286
 msgid "Medium"
 msgstr ""
 
@@ -969,16 +969,16 @@ msgstr ""
 msgid "Message when closed"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:412
+#: src/components/builder/FieldProperties.vue:414
 msgid "Minimum"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:433
+#: src/components/builder/BuilderView.vue:447
 #: src/components/builder/PreviewDialog.vue:61
 msgid "Mobile"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:326
+#: src/components/builder/FieldProperties.vue:328
 msgid "Most files (1 to 10)"
 msgstr ""
 
@@ -990,11 +990,11 @@ msgstr ""
 msgid "Move action up"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:232
+#: src/components/builder/FieldProperties.vue:234
 msgid "Move into the row above"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:230
+#: src/components/builder/FieldProperties.vue:232
 msgid "Move left"
 msgstr ""
 
@@ -1022,15 +1022,15 @@ msgstr ""
 msgid "Move page right"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:231
+#: src/components/builder/FieldProperties.vue:233
 msgid "Move right"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:229
+#: src/components/builder/FieldProperties.vue:231
 msgid "Move row down"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:228
+#: src/components/builder/FieldProperties.vue:230
 msgid "Move row up"
 msgstr ""
 
@@ -1042,7 +1042,7 @@ msgstr ""
 msgid "Multiple choice"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:260
+#: src/components/builder/FieldProperties.vue:262
 msgid "Must be ticked"
 msgstr ""
 
@@ -1095,8 +1095,8 @@ msgstr ""
 msgid "No deliveries match this filter."
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:549
-#: src/components/builder/BuilderView.vue:565
+#: src/components/builder/BuilderView.vue:563
+#: src/components/builder/BuilderView.vue:579
 msgid "No field selected"
 msgstr ""
 
@@ -1116,7 +1116,7 @@ msgstr ""
 msgid "Not available for this type of field"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:146
+#: src/components/builder/FieldProperties.vue:148
 msgid "Not enough room in this row"
 msgstr ""
 
@@ -1176,8 +1176,8 @@ msgstr ""
 msgid "Only when the answers match"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:421
-#: src/components/builder/BuilderView.vue:422
+#: src/components/builder/BuilderView.vue:435
+#: src/components/builder/BuilderView.vue:436
 msgid "Open published form"
 msgstr ""
 
@@ -1186,7 +1186,7 @@ msgstr ""
 msgid "Option {n}"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:399
+#: src/components/builder/FieldProperties.vue:401
 msgid "Options"
 msgstr ""
 
@@ -1198,17 +1198,17 @@ msgstr ""
 msgid "or drop here"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:344
+#: src/components/builder/FieldProperties.vue:346
 msgid "Other extensions"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:460
+#: src/components/builder/FieldProperties.vue:462
 msgid "Page"
 msgstr ""
 
 #: src/components/builder/BuilderCanvas.vue:106
 #: src/components/builder/BuilderCanvas.vue:318
-#: src/components/builder/FieldProperties.vue:465
+#: src/components/builder/FieldProperties.vue:467
 msgid "Page {n}"
 msgstr ""
 
@@ -1265,7 +1265,7 @@ msgstr ""
 msgid "Pick who receives it, or type an address and press Enter."
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:255
+#: src/components/builder/FieldProperties.vue:257
 msgid "Placeholder"
 msgstr ""
 
@@ -1281,8 +1281,8 @@ msgstr ""
 msgid "Please wait until your files have finished uploading."
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:409
-#: src/components/builder/BuilderView.vue:410
+#: src/components/builder/BuilderView.vue:423
+#: src/components/builder/BuilderView.vue:424
 #: src/components/builder/PreviewDialog.vue:44
 msgid "Preview"
 msgstr ""
@@ -1295,7 +1295,7 @@ msgstr ""
 msgid "Preview only, nothing saved"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:348
+#: src/components/builder/FieldProperties.vue:350
 msgid "Programs, scripts and web pages are never accepted."
 msgstr ""
 
@@ -1303,7 +1303,7 @@ msgstr ""
 msgid "Programs, scripts and web pages can never be uploaded."
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:255
+#: src/components/builder/FieldProperties.vue:257
 msgid "Prompt"
 msgstr ""
 
@@ -1312,7 +1312,7 @@ msgstr ""
 msgid "Public link"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:439
+#: src/components/builder/BuilderView.vue:453
 msgid "Publish"
 msgstr ""
 
@@ -1321,15 +1321,15 @@ msgid "Publish the form to get a link you can share."
 msgstr ""
 
 #: src/App.vue:96
-#: src/components/builder/BuilderView.vue:403
+#: src/components/builder/BuilderView.vue:417
 msgid "Published"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:439
+#: src/components/builder/BuilderView.vue:453
 msgid "Publishing…"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:233
+#: src/components/builder/FieldProperties.vue:235
 msgid "Put in its own row"
 msgstr ""
 
@@ -1369,7 +1369,7 @@ msgstr ""
 msgid "Require"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:260
+#: src/components/builder/FieldProperties.vue:262
 msgid "Required"
 msgstr ""
 
@@ -1399,7 +1399,7 @@ msgstr ""
 msgid "Right"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:506
+#: src/components/builder/BuilderView.vue:520
 msgid "Rules that use this field will be updated or removed. Responses already received keep their answers."
 msgstr ""
 
@@ -1407,11 +1407,11 @@ msgstr ""
 msgid "Same as the accent colour"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:158
+#: src/components/builder/BuilderView.vue:161
 msgid "Saved"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:155
+#: src/components/builder/BuilderView.vue:158
 msgid "Saving…"
 msgstr ""
 
@@ -1420,11 +1420,11 @@ msgstr ""
 msgid "Search field types"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:550
+#: src/components/builder/BuilderView.vue:564
 msgid "Select a field on the canvas to edit it."
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:566
+#: src/components/builder/BuilderView.vue:580
 msgid "Select a field on the canvas to set up its rules."
 msgstr ""
 
@@ -1478,19 +1478,19 @@ msgstr ""
 msgid "Sent to the Nextcloud account the respondent is signed in with. Use it on forms that require login; otherwise anonymous responses are skipped."
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:482
-msgid "Sent with webhooks and used in exports. Rules, actions and layout follow if you change it."
+#: src/components/builder/FieldProperties.vue:484
+msgid "Sent with webhooks and used in exports. It follows the label until you change it yourself. Rules, actions and layout follow if you change it."
 msgstr ""
 
 #: src/components/FormNav.vue:29
 msgid "Settings"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:464
+#: src/components/builder/BuilderView.vue:478
 msgid "Settings section"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:468
+#: src/components/builder/BuilderView.vue:482
 msgid "Sharing"
 msgstr ""
 
@@ -1539,7 +1539,7 @@ msgstr ""
 msgid "Signed-in respondent"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:361
+#: src/components/builder/FieldProperties.vue:363
 msgid "Signed-in users"
 msgstr ""
 
@@ -1551,7 +1551,7 @@ msgstr ""
 msgid "Single choice"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:279
+#: src/components/builder/FieldProperties.vue:281
 msgid "Size"
 msgstr ""
 
@@ -1560,7 +1560,7 @@ msgstr ""
 msgid "Skipped"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:285
+#: src/components/builder/FieldProperties.vue:287
 msgid "Small"
 msgstr ""
 
@@ -1589,7 +1589,7 @@ msgstr ""
 msgid "Start your form"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:420
+#: src/components/builder/FieldProperties.vue:422
 msgid "Step"
 msgstr ""
 
@@ -1618,12 +1618,12 @@ msgid "Tablet"
 msgstr ""
 
 #: src/builder/fieldTypeNames.ts:56
-#: src/components/builder/FieldProperties.vue:300
+#: src/components/builder/FieldProperties.vue:302
 msgid "Text"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:292
-#: src/components/builder/FieldProperties.vue:307
+#: src/components/builder/FieldProperties.vue:294
+#: src/components/builder/FieldProperties.vue:309
 msgid "Text alignment"
 msgstr ""
 
@@ -1663,7 +1663,7 @@ msgstr ""
 msgid "The file could not be saved. Please try again later or contact the form owner."
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:515
+#: src/components/builder/BuilderView.vue:529
 msgid "The form and all of its responses will be deleted. This cannot be undone."
 msgstr ""
 
@@ -1671,7 +1671,7 @@ msgstr ""
 msgid "The form could not be loaded. Please try again later."
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:455
+#: src/components/builder/BuilderView.vue:469
 msgid "The form could not be published."
 msgstr ""
 
@@ -1799,7 +1799,7 @@ msgstr ""
 msgid "This file name is not valid."
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:496
+#: src/components/builder/FieldProperties.vue:498
 msgid "This form has the most fields it can have."
 msgstr ""
 
@@ -1816,7 +1816,7 @@ msgstr ""
 msgid "This form is no longer accepting responses."
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:486
+#: src/components/builder/FieldProperties.vue:488
 msgid "This form is published. After you publish again, webhooks and exports use the new ID. Responses already received keep the old one."
 msgstr ""
 
@@ -1918,7 +1918,7 @@ msgstr ""
 msgid "Two options share the same value."
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:156
+#: src/components/builder/BuilderView.vue:159
 msgid "Unsaved changes"
 msgstr ""
 
@@ -1944,11 +1944,11 @@ msgstr ""
 msgid "Uploading {name}"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:367
+#: src/components/builder/FieldProperties.vue:369
 msgid "Uploads are only accepted from people who are signed in to this Nextcloud."
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:127
+#: src/components/builder/FieldProperties.vue:129
 msgid "Use 3 to 32 lowercase letters, numbers or underscores, starting with a letter."
 msgstr ""
 
@@ -1978,7 +1978,7 @@ msgstr ""
 msgid "Values, separated by commas"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:172
+#: src/components/builder/FieldProperties.vue:174
 msgid "Video"
 msgstr ""
 
@@ -2007,8 +2007,8 @@ msgstr ""
 msgid "When this field"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:371
-#: src/components/builder/FieldProperties.vue:374
+#: src/components/builder/FieldProperties.vue:373
+#: src/components/builder/FieldProperties.vue:376
 msgid "Where files are saved"
 msgstr ""
 
@@ -2016,8 +2016,8 @@ msgstr ""
 msgid "Who can respond"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:355
-#: src/components/builder/FieldProperties.vue:358
+#: src/components/builder/FieldProperties.vue:357
+#: src/components/builder/FieldProperties.vue:360
 msgid "Who can upload"
 msgstr ""
 
@@ -2025,7 +2025,7 @@ msgstr ""
 msgid "Wide"
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:440
+#: src/components/builder/FieldProperties.vue:442
 msgid "Width"
 msgstr ""
 
@@ -2085,10 +2085,10 @@ msgstr ""
 msgid "Your answers are too large to send."
 msgstr ""
 
-#: src/components/builder/FieldProperties.vue:376
+#: src/components/builder/FieldProperties.vue:378
 msgid "Your Files"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:446
+#: src/components/builder/BuilderView.vue:460
 msgid "Your latest changes could not be saved. Check your connection; they will be retried when you edit again."
 msgstr ""

@@ -16,7 +16,7 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { allowedSpans, canMove, locateField, MAX_FIELDS, SPANS } from '../../builder/definition.ts'
 import { describeError } from '../../builder/errors.ts'
 import { fieldIdProblem } from '../../builder/fieldId.ts'
@@ -121,6 +121,8 @@ function setLabelPosition(choice: string): void {
 
 // Changing the id is explicit (Change ID), not per keystroke: every change rewrites rules, actions and layout.
 const idDraft = ref(props.fieldId)
+// The id can change under you when it follows the label.
+watch(() => props.fieldId, (id) => { idDraft.value = id })
 const idProblem = computed(() => fieldIdProblem(props.definition, props.fieldId, idDraft.value, props.retiredIds ?? []))
 const idMessage = computed(() => {
 	switch (idProblem.value) {
@@ -479,7 +481,7 @@ const moves: { move: Move, label: string, icon: string }[] = [
 			<NcTextField :model-value="idDraft"
 				:label="t('advancedforms', 'Field ID')"
 				:error="idMessage !== null"
-				:helper-text="idMessage ?? t('advancedforms', 'Sent with webhooks and used in exports. Rules, actions and layout follow if you change it.')"
+				:helper-text="idMessage ?? t('advancedforms', 'Sent with webhooks and used in exports. It follows the label until you change it yourself. Rules, actions and layout follow if you change it.')"
 				@update:model-value="(value: string | number) => { idDraft = String(value) }"
 				@keydown.enter.prevent="applyId" />
 			<NcNoteCard v-if="published && idProblem === null" type="info">

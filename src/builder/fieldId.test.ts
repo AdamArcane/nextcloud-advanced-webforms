@@ -7,7 +7,7 @@ import type { DraftDefinition, FormAction } from '../types.ts'
 
 import { describe, expect, it } from 'vitest'
 import { addField, emptyDefinition, fieldOrder } from './definition.ts'
-import { FIELD_ID_PATTERN, fieldIdProblem, renameField } from './fieldId.ts'
+import { FIELD_ID_PATTERN, fieldIdProblem, followLabel, idFromLabel, renameField, slugFromLabel } from './fieldId.ts'
 
 function form(): { def: DraftDefinition, a: string, b: string, c: string } {
 	let def = emptyDefinition('T')
@@ -133,5 +133,44 @@ describe('renameField', () => {
 		const { reactive } = await import('vue')
 		const { def, b } = form()
 		expect(() => renameField(reactive(def), b, 'customer_email')).not.toThrow()
+	})
+})
+
+describe('ids that follow the label', () => {
+	const base = (id: string, label: string, extra: Record<string, unknown> = {}) => ({
+		...emptyDefinition('T'),
+		fields: { [id]: { type: 'text', label, ...extra } as never },
+		pages: [{ id: 'p_1', title: null, rows: [{ id: 'r_1', cells: [{ id: 'c_1', span: 12, field: id }] }] }],
+	})
+
+	it('makes a slug from a label', () => {
+		expect(slugFromLabel('First Name')).toBe('f_first_name')
+		expect(slugFromLabel('  Café & Crème! ')).toBe('f_cafe_creme')
+		expect(slugFromLabel('???')).toBeNull()
+		expect(slugFromLabel('x'.repeat(60))?.length).toBe(32)
+	})
+
+	it('adds a number when the slug is taken', () => {
+		expect(idFromLabel('Email', new Set(['f_email']))).toBe('f_email_2')
+		expect(idFromLabel('Email', new Set(['f_email', 'f_email_2']))).toBe('f_email_3')
+	})
+
+	it('renames a random id to follow the label', () => {
+		const result = followLabel(base('f_abc123', 'First Name'), 'f_abc123', 'Text', [], new Set())
+		expect(result.fieldId).toBe('f_first_name')
+		expect(Object.keys(result.definition.fields)).toEqual(['f_first_name'])
+	})
+
+	it('keeps following while the id matches the previous label', () => {
+		const result = followLabel(base('f_first', 'First Name'), 'f_first', 'First', [], new Set())
+		expect(result.fieldId).toBe('f_first_name')
+	})
+
+	it('leaves an id the owner chose, a frozen field, a retired id and display fields alone', () => {
+		expect(followLabel(base('customer_email', 'Email'), 'customer_email', 'E', [], new Set()).fieldId).toBe('customer_email')
+		expect(followLabel(base('f_abc123', 'Name'), 'f_abc123', 'Text', [], new Set(['f_abc123'])).fieldId).toBe('f_abc123')
+		expect(followLabel(base('f_abc123', 'Name'), 'f_abc123', 'Text', ['f_name'], new Set()).fieldId).toBe('f_name_2')
+		const heading = { ...base('f_abc123', ''), fields: { f_abc123: { type: 'heading', text: 'Hi' } as never } }
+		expect(followLabel(heading, 'f_abc123', undefined, [], new Set()).fieldId).toBe('f_abc123')
 	})
 })

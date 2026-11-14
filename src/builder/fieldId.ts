@@ -120,3 +120,80 @@ export function renameField(
 	result.actions = result.actions.map((action) => renameInAction(action, current, next))
 	return result
 }
+
+// ---- Ids that follow the label ------------------------------------------------
+
+/** Field types that carry a value and a label, so an id made from the label means something. */
+const NAMED_TYPES = new Set(['text', 'textarea', 'email', 'phone', 'number', 'select', 'radio', 'checkbox', 'checkboxes', 'date', 'time', 'file'])
+
+const RANDOM_ID = /^f_[a-z0-9]{6}$/
+
+/** `First Name` becomes `f_first_name`. Null when the label has nothing usable in it. */
+export function slugFromLabel(label: string): string | null {
+	const words = label
+		.normalize('NFKD')
+		.replace(/\p{M}+/gu, '')
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, '_')
+		.replace(/^_+|_+$/g, '')
+	if (words === '') {
+		return null
+	}
+	return ('f_' + words).slice(0, 32).replace(/_+$/, '')
+}
+
+/** The first free id for a label: the slug, else the slug with _2, _3 and so on. */
+export function idFromLabel(label: string, unavailable: ReadonlySet<string>): string | null {
+	const slug = slugFromLabel(label)
+	if (slug === null || slug.length < 3) {
+		return null
+	}
+	for (let n = 1; n < 1000; n++) {
+		const suffix = n === 1 ? '' : '_' + n
+		const id = slug.slice(0, 32 - suffix.length).replace(/_+$/, '') + suffix
+		if (!unavailable.has(id)) {
+			return id
+		}
+	}
+	return null
+}
+
+/** Whether `id` is one the builder made itself (random, or made from `label`), as opposed to one the owner chose. */
+function isAutoId(id: string, label: string | undefined): boolean {
+	if (RANDOM_ID.test(id)) {
+		return true
+	}
+	const slug = slugFromLabel(label ?? '')
+	if (slug === null) {
+		return false
+	}
+	const base = slug.slice(0, 30).replace(/_+$/, '')
+	return id === slug || id.startsWith(base) && /^_\d+$/.test(id.slice(base.length))
+}
+
+/**
+ * Make a field's id follow its label, unless the owner chose the id themselves or the field is
+ * `frozen` (already in a published version, where the id is what webhooks and exports see).
+ * `previousLabel` is what the label was before this change. Everything pointing at the id moves with it.
+ */
+export function followLabel(
+	definition: DraftDefinition,
+	fieldId: string,
+	previousLabel: string | undefined,
+	retired: readonly string[],
+	frozen: ReadonlySet<string>,
+): { definition: DraftDefinition, fieldId: string } {
+	const field = definition.fields[fieldId]
+	const unchanged = { definition, fieldId }
+	if (!field || frozen.has(fieldId) || !NAMED_TYPES.has(field.type) || !isAutoId(fieldId, previousLabel)) {
+		return unchanged
+	}
+	const unavailable = new Set<string>([...Object.keys(definition.fields), ...retired])
+	unavailable.delete(fieldId)
+	const next = idFromLabel(field.label ?? '', unavailable)
+	if (next === null || next === fieldId) {
+		return unchanged
+	}
+	const renamed = renameField(definition, fieldId, next, retired)
+	return renamed === definition ? unchanged : { definition: renamed, fieldId: next }
+}

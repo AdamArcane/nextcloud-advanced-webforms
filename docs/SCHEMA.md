@@ -145,8 +145,13 @@ moving a field in the layout never changes its identity.
 - Unique within a form and never positional. The builder generates one, and the
   owner may replace it with a meaningful name (for example `customer_email`),
   because the id is what a webhook receiver or an export sees.
-- Never derived from the label automatically, so renaming a label does not
-  change the id.
+- While the builder made the id (the random one, or one made from the label), it
+  follows the label as you type: `First Name` becomes `f_first_name`, with `_2`,
+  `_3` added if taken. Accents are dropped and other characters become `_`. Once
+  the owner sets an id by hand it never changes by itself. Only fields that
+  carry a value follow (not headings, paragraphs or dividers), and a field that
+  was already in a published version keeps its id, since webhooks and exports
+  use it. Hyphens are not allowed in ids, so words are joined with `_`.
 - Changing an id means moving everything that refers to it: the layout cell,
   rule targets and conditions, action conditions, an email's recipient field,
   and `{placeholders}` in action text. The builder does this in one step.

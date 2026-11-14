@@ -23,7 +23,7 @@ import { ApiError } from '../../api/http.ts'
 import { deleteForm, getForm, publicFormUrl, publishForm, saveDraft } from '../../api/forms.ts'
 import { addField, addPage, dropField, duplicateField, dropRow, resizeField, type DropTarget, moveFieldToPage, locateField, movePage, removePage, setPageTitle, moveField, removeField, setSpan, updateField } from '../../builder/definition.ts'
 import { describeError, groupErrors } from '../../builder/errors.ts'
-import { renameField } from '../../builder/fieldId.ts'
+import { followLabel, renameField } from '../../builder/fieldId.ts'
 import type { Rule } from '../../rules/types.ts'
 import { FORM_STATUS_PUBLISHED } from '../../types.ts'
 import ActionsPanel from './ActionsPanel.vue'
@@ -50,6 +50,8 @@ const emit = defineEmits<{
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error'
 
 const form = ref<OwnerForm | null>(null)
+// Fields that were already in a published form when it was opened keep their ids (see followLabel).
+let frozenIds = new Set<string>()
 const draft = ref<DraftDefinition | null>(null)
 const loadError = ref(false)
 const saveState = ref<SaveState>('saved')
@@ -87,6 +89,7 @@ onMounted(async () => {
 		const loaded = await getForm(props.formId)
 		form.value = loaded
 		draft.value = normalize(loaded.draft as DraftDefinition)
+		frozenIds = loaded.latestVersionId !== null ? new Set(Object.keys(draft.value.fields)) : new Set()
 	} catch {
 		loadError.value = true
 	}
@@ -262,14 +265,23 @@ function onDuplicate(): void {
 	}
 	const result = duplicateField(draft.value, selectedId.value, (label) => t('advancedforms', '{label} (copy)', { label }))
 	if (result) {
-		edit(result.definition)
-		select(result.fieldId)
+		// The copy is "<label> (copy)", so its id follows that rather than staying random.
+		const named = followLabel(result.definition, result.fieldId, undefined, form.value?.retiredIds ?? [], frozenIds)
+		edit(named.definition)
+		select(named.fieldId)
 	}
 }
 
 function onUpdate(patch: Partial<FormField>): void {
 	if (draft.value && selectedId.value) {
-		edit(updateField(draft.value, selectedId.value, patch))
+		const previousLabel = draft.value.fields[selectedId.value]?.label
+		const updated = updateField(draft.value, selectedId.value, patch)
+		// The id follows the label while the builder made it; a hand-picked id is left alone.
+		const named = 'label' in patch
+			? followLabel(updated, selectedId.value, previousLabel, form.value?.retiredIds ?? [], frozenIds)
+			: { definition: updated, fieldId: selectedId.value }
+		edit(named.definition)
+		selectedId.value = named.fieldId
 	}
 }
 
@@ -318,6 +330,8 @@ function onRename(newId: string): void {
 	if (renamed !== draft.value) {
 		edit(renamed)
 		selectedId.value = newId
+		// Chosen by hand: from now on the label no longer changes it.
+		frozenIds.add(newId)
 	}
 }
 
