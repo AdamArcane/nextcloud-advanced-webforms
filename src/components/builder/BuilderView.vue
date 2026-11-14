@@ -21,7 +21,7 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ApiError } from '../../api/http.ts'
 import { deleteForm, getForm, publicFormUrl, publishForm, saveDraft } from '../../api/forms.ts'
-import { addField, addPage, dropField, dropRow, resizeField, type DropTarget, moveFieldToPage, locateField, movePage, removePage, setPageTitle, moveField, removeField, setSpan, updateField } from '../../builder/definition.ts'
+import { addField, addPage, dropField, duplicateField, dropRow, resizeField, type DropTarget, moveFieldToPage, locateField, movePage, removePage, setPageTitle, moveField, removeField, setSpan, updateField } from '../../builder/definition.ts'
 import { describeError, groupErrors } from '../../builder/errors.ts'
 import { renameField } from '../../builder/fieldId.ts'
 import type { Rule } from '../../rules/types.ts'
@@ -254,6 +254,17 @@ function onAddBeside(type: string): void {
 	const result = addField(draft.value, type, { kind: 'join', rowId: at.row.id })
 	edit(result.definition)
 	select(result.fieldId)
+}
+
+function onDuplicate(): void {
+	if (!draft.value || !selectedId.value) {
+		return
+	}
+	const result = duplicateField(draft.value, selectedId.value, (label) => t('advancedforms', '{label} (copy)', { label }))
+	if (result) {
+		edit(result.definition)
+		select(result.fieldId)
+	}
 }
 
 function onUpdate(patch: Partial<FormField>): void {
@@ -529,6 +540,7 @@ async function onDeleteConfirmed(): Promise<void> {
 				@span="onSpan"
 				@move="onMove"
 				@add-beside="onAddBeside"
+				@duplicate="onDuplicate"
 				@to-page="onToPage"
 				@rename="onRename"
 				@remove="confirmRemoveField = true" />

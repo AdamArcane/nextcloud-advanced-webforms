@@ -17,7 +17,7 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { computed, ref } from 'vue'
-import { allowedSpans, canMove, locateField, SPANS } from '../../builder/definition.ts'
+import { allowedSpans, canMove, locateField, MAX_FIELDS, SPANS } from '../../builder/definition.ts'
 import { describeError } from '../../builder/errors.ts'
 import { fieldIdProblem } from '../../builder/fieldId.ts'
 import { DEFAULT_ACCEPT, DEFAULT_MAX_FILES, DEFAULT_MAX_SIZE_MB, UPLOAD_GROUPS } from '../../uploads.ts'
@@ -44,6 +44,7 @@ const emit = defineEmits<{
 	toPage: [pageIndex: number]
 	rename: [id: string]
 	remove: []
+	duplicate: []
 }>()
 
 const field = computed(() => props.definition.fields[props.fieldId])
@@ -489,7 +490,16 @@ const moves: { move: Move, label: string, icon: string }[] = [
 			</NcButton>
 		</section>
 
-		<section class="af-props__section">
+		<section class="af-props__section af-props__actions">
+			<NcButton variant="secondary"
+				:disabled="Object.keys(definition.fields).length >= MAX_FIELDS"
+				:title="Object.keys(definition.fields).length >= MAX_FIELDS ? t('advancedforms', 'This form has the most fields it can have.') : undefined"
+				@click="emit('duplicate')">
+				<template #icon>
+					<Icon :path="icons.copy" />
+				</template>
+				{{ t('advancedforms', 'Duplicate field') }}
+			</NcButton>
 			<NcButton variant="error" @click="emit('remove')">
 				<template #icon>
 					<Icon :path="icons.delete" />

@@ -17,6 +17,8 @@ import {
 	canMove,
 	dropField,
 	dropRow,
+	duplicateField,
+	MAX_FIELDS,
 	resizeField,
 	emptyDefinition,
 	fieldOrder,
@@ -379,5 +381,73 @@ describe('resizeField', () => {
 	it('leaves the definition alone when nothing changes', () => {
 		const { def, a } = build()
 		expect(resizeField(def, a, 6.2)).toBe(def)
+	})
+})
+
+describe('duplicateField', () => {
+	const copy = (label: string) => label + ' (copy)'
+
+	it('puts a copy in a row of its own below a full-width field, with a new id and label', () => {
+		const { def, c } = build()
+		const result = duplicateField(def, c, copy)!
+		expect(result.fieldId).not.toBe(c)
+		expect(result.fieldId).toMatch(ID)
+		expect(result.definition.fields[result.fieldId]).toMatchObject({ type: 'select', label: 'Dropdown (copy)' })
+		expect(result.definition.fields[result.fieldId].options).toEqual(def.fields[c].options)
+		expect(result.definition.pages[0].rows).toHaveLength(3)
+		expect(locateField(result.definition, result.fieldId)).toMatchObject({ rowIndex: 2 })
+		// The original is untouched.
+		expect(def.fields[c].label).toBe('Dropdown')
+	})
+
+	it('joins the same row when there is room, taking the same width', () => {
+		let def = emptyDefinition('T')
+		const a = addField(def, 'text', { kind: 'row', index: 0 })
+		def = setSpan(a.definition, a.fieldId, 4)
+		const result = duplicateField(def, a.fieldId, copy)!
+		expect(result.definition.pages[0].rows).toHaveLength(1)
+		expect(result.definition.pages[0].rows[0].cells.map((cell) => cell.span)).toEqual([4, 4])
+		expect(fieldOrder(result.definition)).toEqual([a.fieldId, result.fieldId])
+	})
+
+	it('shrinks the copy to the space that is left, or moves it below when none is', () => {
+		const { def, a, b } = build() // a and b share a full 6 + 6 row
+		const below = duplicateField(def, a, copy)!
+		expect(locateField(below.definition, below.fieldId)!.rowIndex).toBe(1)
+		expect(locateField(below.definition, below.fieldId)!.cell.span).toBe(6)
+		// 6 + 3 leaves 3 free: the copy of the 6-wide field fits only at that width, right after the original.
+		const narrow = setSpan(def, b, 3)
+		const shrunk = duplicateField(narrow, a, copy)!
+		expect(locateField(shrunk.definition, shrunk.fieldId)).toMatchObject({ rowIndex: 0, cellIndex: 1 })
+		expect(locateField(shrunk.definition, shrunk.fieldId)!.cell.span).toBe(3)
+	})
+
+	it('copies content fields without a label, and keeps ids unique', () => {
+		let def = emptyDefinition('T')
+		const h = addField(def, 'heading', { kind: 'row', index: 0 })
+		def = h.definition
+		const first = duplicateField(def, h.fieldId, copy)!
+		expect(first.definition.fields[first.fieldId]).toMatchObject({ type: 'heading', text: 'Heading' })
+		const second = duplicateField(first.definition, h.fieldId, copy)!
+		expect(new Set([h.fieldId, first.fieldId, second.fieldId]).size).toBe(3)
+	})
+
+	it('keeps rules where they are, refuses unknown fields, and stops at the field limit', () => {
+		const { def, a } = build()
+		const withRule = { ...def, rules: [{ id: 'r_one', effect: 'show' as const, targets: [a], when: { all: [{ field: a, op: 'not_empty' as const }] } }] }
+		expect(duplicateField(withRule, a, copy)!.definition.rules).toEqual(withRule.rules)
+		expect(duplicateField(def, 'f_missing', copy)).toBeNull()
+		const full = { ...def, fields: { ...def.fields } }
+		for (let i = Object.keys(full.fields).length; i < MAX_FIELDS; i++) {
+			full.fields['f_x' + String(i).padStart(3, '0')] = { type: 'text', label: 'x' }
+		}
+		expect(duplicateField(full, a, copy)).toBeNull()
+	})
+
+	it('truncates a label that would get too long', () => {
+		const { def, a } = build()
+		const long = updateField(def, a, { label: 'x'.repeat(255) })
+		const result = duplicateField(long, a, copy)!
+		expect((result.definition.fields[result.fieldId].label ?? '').length).toBe(255)
 	})
 })

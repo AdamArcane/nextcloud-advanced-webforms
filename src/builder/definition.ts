@@ -202,6 +202,47 @@ export function addField(definition: DraftDefinition, type: string, placement: P
 	return { definition: next, fieldId }
 }
 
+/** The most fields a form may have (lib/Forms/DefinitionValidator.php). */
+export const MAX_FIELDS = 100
+
+/**
+ * Copy a field with all its settings next to the original: in the same row when there is room, else in
+ * a row of its own just below. The copy gets a new id and a label made by `copyLabel`. Rules and
+ * actions are not copied, since they belong to the original's place in the form.
+ */
+export function duplicateField(definition: DraftDefinition, fieldId: string, copyLabel: (label: string) => string): AddResult | null {
+	if (!(fieldId in definition.fields) || Object.keys(definition.fields).length >= MAX_FIELDS) {
+		return null
+	}
+	const at = locateField(definition, fieldId)
+	if (!at) {
+		return null
+	}
+	const next = clone(definition)
+	const taken = allIds(next)
+	const newId = randomId('f', taken)
+	taken.add(newId)
+	const cellId = randomId('c', taken)
+	taken.add(cellId)
+	const rowId = randomId('r', taken)
+
+	const copy = next.fields[fieldId]
+	const copied: FormField = { ...cloneJson(copy) }
+	if (typeof copied.label === 'string' && copied.label !== '') {
+		copied.label = copyLabel(copied.label).slice(0, 255)
+	}
+	next.fields[newId] = copied
+
+	const from = locateField(next, fieldId)!
+	const span = largestSpanWithin(Math.min(from.cell.span, ROW_WIDTH - rowUsed(from.row)))
+	if (span !== null) {
+		from.row.cells.splice(from.cellIndex + 1, 0, { id: cellId, span, field: newId })
+	} else {
+		rowsOf(next, from.pageIndex).splice(from.rowIndex + 1, 0, { id: rowId, cells: [{ id: cellId, span: from.cell.span, field: newId }] })
+	}
+	return { definition: next, fieldId: newId }
+}
+
 /** Replace a field's properties. Pass `undefined` for a key to remove it. */
 export function updateField(definition: DraftDefinition, fieldId: string, patch: Partial<FormField>): DraftDefinition {
 	if (!(fieldId in definition.fields)) {
