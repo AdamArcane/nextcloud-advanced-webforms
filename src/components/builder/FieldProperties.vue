@@ -165,7 +165,7 @@ const moves: { move: Move, label: string, icon: string }[] = [
 	{ move: 'rowDown', label: t('advancedforms', 'Move row down'), icon: icons.moveRowDown },
 	{ move: 'left', label: t('advancedforms', 'Move left'), icon: icons.moveLeft },
 	{ move: 'right', label: t('advancedforms', 'Move right'), icon: icons.moveRight },
-	{ move: 'joinAbove', label: t('advancedforms', 'Share the row above'), icon: icons.joinAbove },
+	{ move: 'joinAbove', label: t('advancedforms', 'Move into the row above'), icon: icons.joinAbove },
 	{ move: 'ownRow', label: t('advancedforms', 'Put in its own row'), icon: icons.ownRow },
 ]
 </script>
@@ -304,12 +304,13 @@ const moves: { move: Move, label: string, icon: string }[] = [
 				<NcButton v-for="item in moves"
 					:key="item.move"
 					variant="secondary"
+					:aria-label="item.label"
+					:title="item.label"
 					:disabled="!canMove(definition, fieldId, item.move)"
 					@click="emit('move', item.move)">
 					<template #icon>
 						<Icon :path="item.icon" />
 					</template>
-					{{ item.label }}
 				</NcButton>
 			</div>
 			<div v-if="definition.pages.length > 1" class="af-props__group">
@@ -398,7 +399,7 @@ const moves: { move: Move, label: string, icon: string }[] = [
 
 .af-props__moves {
 	display: grid;
-	grid-template-columns: 1fr 1fr;
+	grid-template-columns: repeat(6, minmax(0, 1fr));
 	gap: var(--default-grid-baseline);
 }
 

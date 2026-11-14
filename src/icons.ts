@@ -29,7 +29,7 @@ import {
 	mdiEye,
 	mdiFileDocumentOutline,
 	mdiFormatHeader1,
-	mdiFormatListBulleted,
+	mdiArrowCollapseUp,
 	mdiFormatParagraph,
 	mdiFormDropdown,
 	mdiFormTextbox,
@@ -54,7 +54,7 @@ import {
 	mdiTextBoxOutline,
 	mdiTextLong,
 	mdiPalette,
-	mdiTune,
+	mdiTableRowPlusAfter,
 	mdiWebhook,
 } from '@mdi/js'
 
@@ -96,8 +96,8 @@ export const icons = {
 	moveRowDown: mdiArrowDown,
 	moveLeft: mdiArrowLeft,
 	moveRight: mdiArrowRight,
-	joinAbove: mdiFormatListBulleted,
-	ownRow: mdiTune,
+	joinAbove: mdiArrowCollapseUp,
+	ownRow: mdiTableRowPlusAfter,
 } as const
 
 /** One icon per field type, shown in the add menu and on the canvas. */
