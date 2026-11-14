@@ -138,6 +138,8 @@ pct push "$CTID" "$WORK/compose.yml" /opt/nc-dev/compose.yml --perms 0644
 
 say "Starting Nextcloud (first start installs it, this takes a few minutes)"
 pct exec "$CTID" -- bash -c 'cd /opt/nc-dev && docker compose up -d'
+# The bind mount makes Docker create custom_apps as root, which breaks the Apps page.
+pct exec "$CTID" -- bash -c 'cd /opt/nc-dev && docker compose exec -T app chown www-data:www-data /var/www/html/custom_apps'
 READY=""
 for _ in $(seq 1 90); do
 	if pct exec "$CTID" -- bash -c 'cd /opt/nc-dev && docker compose exec -T -u www-data app php occ status 2>/dev/null' | grep -q 'installed: true'; then
