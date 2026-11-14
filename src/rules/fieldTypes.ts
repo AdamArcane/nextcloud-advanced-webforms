@@ -10,6 +10,7 @@ const NUMBER_OPERATORS = ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'in', 'not_in',
 const CHOICE_OPERATORS = ['eq', 'neq', 'in', 'not_in', 'empty', 'not_empty']
 const MULTI_OPERATORS = ['contains', 'not_contains', 'empty', 'not_empty']
 const BOOLEAN_OPERATORS = ['eq', 'neq']
+const FILE_OPERATORS = ['empty', 'not_empty']
 const ORDERED_OPERATORS = ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'empty', 'not_empty']
 
 /** Input types (they produce a value) mapped to their allowed operators. */
@@ -25,6 +26,7 @@ const OPERATORS = new Map<string, readonly string[]>([
 	['checkbox', BOOLEAN_OPERATORS],
 	['date', ORDERED_OPERATORS],
 	['time', ORDERED_OPERATORS],
+	['file', FILE_OPERATORS],
 ])
 
 export function isInputType(type: string): boolean {

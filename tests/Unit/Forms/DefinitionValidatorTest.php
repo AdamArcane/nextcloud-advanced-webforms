@@ -225,6 +225,38 @@ class DefinitionValidatorTest extends TestCase {
 		$this->assertSame(['unknown_property'], $this->codes(static fn (array $d): array => $layout($d, ['type' => 'divider', 'align' => 'center'])));
 	}
 
+	/**
+	 * @param array<string, mixed> $field
+	 * @return list<string>
+	 */
+	private function codesForUploadField(array $field): array {
+		return $this->codes(static function (array $d) use ($field): array {
+			$d['fields']['f_up'] = array_merge(['type' => 'file', 'label' => 'CV'], $field);
+			$d['pages'][0]['rows'][] = ['id' => 'r_up', 'cells' => [['id' => 'c_up', 'span' => 12, 'field' => 'f_up']]];
+			return $d;
+		});
+	}
+
+	public function testUploadFieldSettings(): void {
+		$this->assertSame([], $this->codesForUploadField([]));
+		$this->assertSame([], $this->codesForUploadField(['maxFiles' => 5, 'maxSizeMb' => 50, 'accept' => ['images', '.dwg'], 'audience' => 'login', 'storage' => 'files', 'folder' => 'Work/CVs']));
+		$this->assertSame([], $this->codesForUploadField(['storage' => 'app']));
+	}
+
+	public function testUploadFieldRefusals(): void {
+		$this->assertSame(['field_limit_invalid'], $this->codesForUploadField(['maxFiles' => 11]));
+		$this->assertSame(['field_limit_invalid'], $this->codesForUploadField(['maxFiles' => 0]));
+		$this->assertSame(['field_limit_invalid'], $this->codesForUploadField(['maxSizeMb' => 101]));
+		$this->assertSame(['field_upload_invalid'], $this->codesForUploadField(['audience' => 'everyone']));
+		$this->assertSame(['field_upload_invalid'], $this->codesForUploadField(['storage' => 'cloud']));
+		$this->assertSame(['field_upload_folder_invalid'], $this->codesForUploadField(['folder' => '../Secret']));
+		$this->assertSame(['field_upload_accept_invalid'], $this->codesForUploadField(['accept' => []]));
+		$this->assertSame(['field_upload_accept_invalid'], $this->codesForUploadField(['accept' => ['photos']]));
+		$this->assertSame(['field_upload_type_denied'], $this->codesForUploadField(['accept' => ['.php']]));
+		$this->assertSame(['field_default_invalid'], $this->codesForUploadField(['defaultValue' => 'x']));
+		$this->assertSame(['unknown_property'], $this->codesForUploadField(['placeholder' => 'x']));
+	}
+
 	public function testRuleErrorsAreIncluded(): void {
 		$this->assertContains('rule_unknown_target', $this->codes(static function (array $d): array {
 			$d['rules'][0]['targets'] = ['f_ghost'];

@@ -17,6 +17,10 @@ use OCA\AdvancedForms\Db\FormMapper;
 use OCA\AdvancedForms\Db\Version;
 use OCA\AdvancedForms\Db\VersionMapper;
 use OCA\AdvancedForms\Exception\NotFoundException;
+use OCA\AdvancedForms\Forms\UploadPolicy;
+use OCA\AdvancedForms\Rules\FieldType;
+use OCA\AdvancedForms\Uploads\UploadRejected;
+use OCA\AdvancedForms\Uploads\UploadService;
 use OCA\AdvancedForms\Exception\ValidationException;
 use OCA\AdvancedForms\Forms\DefinitionValidator;
 use OCA\AdvancedForms\Forms\JsonShape;
@@ -42,6 +46,7 @@ class FormService {
 		private readonly ITimeFactory $time,
 		private readonly ISecureRandom $random,
 		private readonly NextcloudSecrets $secrets,
+		private readonly UploadService $uploads,
 	) {
 	}
 
@@ -142,7 +147,7 @@ class FormService {
 		$form->setUpdatedAt($this->time->getTime());
 		$form = $this->forms->update($form);
 
-		return ['form' => $form, 'errors' => $this->validator->validate($definition)];
+		return ['form' => $form, 'errors' => array_merge($this->validator->validate($definition), $this->uploadPermissionErrors($form, $definition))];
 	}
 
 	/**
@@ -156,7 +161,7 @@ class FormService {
 		$form = $this->get($userId, $id);
 		$draft = $form->getDraftDefinition();
 
-		$errors = $this->validator->validate($draft);
+		$errors = array_merge($this->validator->validate($draft), $this->uploadPermissionErrors($form, $draft));
 		if ($errors !== []) {
 			throw new ValidationException($errors);
 		}
@@ -211,6 +216,7 @@ class FormService {
 	 */
 	public function delete(string $userId, int $id): void {
 		$form = $this->get($userId, $id);
+		$this->deleteUploadedFiles($form);
 		$this->entries->deleteByForm($form->getId());
 		$this->actionLog->deleteByForm($form->getId());
 		$this->secrets->deleteForForm($form->getId());
@@ -258,9 +264,81 @@ class FormService {
 	public function deleteEntry(string $userId, int $id, int $entryId): void {
 		$form = $this->get($userId, $id);
 		$entry = $this->entries->findInForm($form->getId(), $entryId);
+		$definition = $this->versions->find($entry->getVersionId())->getDefinitionArray();
+		$this->uploads->deleteFilesOf($form->getOwnerId(), self::fieldsOf($definition), $entry->getDataArray());
 		// Its deliveries go with it, so the log never points at a response that no longer exists.
 		$this->actionLog->deleteByEntry($entry->getId());
 		$this->entries->delete($entry);
+	}
+
+	/**
+	 * One file of a response, for the owner to download.
+	 *
+	 * @return array{name: string, size: int, mime: string, stream: resource}
+	 * @throws NotFoundException
+	 */
+	public function openEntryFile(string $userId, int $id, int $entryId, string $fieldId, int $index): array {
+		$form = $this->get($userId, $id);
+		$entry = $this->entries->findInForm($form->getId(), $entryId);
+		$fields = self::fieldsOf($this->versions->find($entry->getVersionId())->getDefinitionArray());
+		$data = $entry->getDataArray();
+		$files = UploadService::storedFiles(isset($fields[$fieldId]) ? [$fieldId => $fields[$fieldId]] : [], isset($data[$fieldId]) ? [$fieldId => $data[$fieldId]] : []);
+		if (!isset($files[$index])) {
+			throw new NotFoundException();
+		}
+		$opened = $this->uploads->open($form->getOwnerId(), $files[$index]);
+		if ($opened === null) {
+			throw new NotFoundException();
+		}
+		return $opened;
+	}
+
+	/**
+	 * Upload fields whose destination the owner may not use. The folder is checked against the owner's
+	 * own permissions, so a form cannot send files anywhere its owner could not put them.
+	 *
+	 * @param array<string, mixed> $definition
+	 * @return list<array{code: string, path: string}>
+	 */
+	private function uploadPermissionErrors(Form $form, array $definition): array {
+		$title = is_string($definition['title'] ?? null) ? $definition['title'] : $form->getTitle();
+		$errors = [];
+		foreach (self::fieldsOf($definition) as $fieldId => $field) {
+			if (($field['type'] ?? null) !== FieldType::FILE || UploadPolicy::storage($field) !== UploadPolicy::STORAGE_FILES) {
+				continue;
+			}
+			try {
+				$this->uploads->requireDestination($form->getOwnerId(), $title, $field, (string)$fieldId);
+			} catch (UploadRejected $e) {
+				$errors[] = ['code' => $e->reason, 'path' => 'fields.' . $fieldId];
+			}
+		}
+		return $errors;
+	}
+
+	/** Removes the uploaded files of every response, and uploads still waiting, when a form is deleted. */
+	private function deleteUploadedFiles(Form $form): void {
+		$definitions = [];
+		for ($offset = 0; ; $offset += 200) {
+			$page = $this->entries->findByForm($form->getId(), 200, $offset);
+			foreach ($page as $entry) {
+				$definitions[$entry->getVersionId()] ??= self::fieldsOf($this->versions->find($entry->getVersionId())->getDefinitionArray());
+				$this->uploads->deleteFilesOf($form->getOwnerId(), $definitions[$entry->getVersionId()], $entry->getDataArray());
+			}
+			if (count($page) < 200) {
+				break;
+			}
+		}
+		$this->uploads->discardPending($form->getId());
+	}
+
+	/**
+	 * @param array<string, mixed> $definition
+	 * @return array<string, array<string, mixed>>
+	 */
+	private static function fieldsOf(array $definition): array {
+		$fields = $definition['fields'] ?? [];
+		return is_array($fields) ? array_filter($fields, 'is_array') : [];
 	}
 
 	/**

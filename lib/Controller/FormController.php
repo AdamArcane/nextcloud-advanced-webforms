@@ -23,6 +23,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\Http\StreamResponse;
 use OCP\IRequest;
 use OCP\IUserSession;
 
@@ -140,6 +141,28 @@ class FormController extends Controller {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 		$response = new DataDownloadResponse($file['csv'], $file['filename'], 'text/csv; charset=utf-8');
+		$response->addHeader('Cache-Control', 'no-store');
+		return $response;
+	}
+
+	/**
+	 * Download one uploaded file of a response. Always an attachment, so a browser never renders it.
+	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/forms/{id}/entries/{entryId}/files/{fieldId}/{index}')]
+	public function downloadFile(int $id, int $entryId, string $fieldId, int $index): StreamResponse|JSONResponse {
+		try {
+			$file = $this->service->openEntryFile($this->userId(), $id, $entryId, $fieldId, $index);
+		} catch (NotFoundException) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+		$response = new StreamResponse($file['stream']);
+		$ascii = preg_replace('/[^A-Za-z0-9._-]+/', '_', $file['name']) ?? 'file';
+		$response->addHeader('Content-Type', $file['mime'] !== '' ? $file['mime'] : 'application/octet-stream');
+		$response->addHeader('Content-Length', (string)$file['size']);
+		$response->addHeader('Content-Disposition', 'attachment; filename="' . $ascii . '"; filename*=UTF-8\'\'' . rawurlencode($file['name']));
+		$response->addHeader('X-Content-Type-Options', 'nosniff');
 		$response->addHeader('Cache-Control', 'no-store');
 		return $response;
 	}

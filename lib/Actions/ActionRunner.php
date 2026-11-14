@@ -161,7 +161,14 @@ final class ActionRunner {
 			if (!array_key_exists($id, $context->data) || !FieldType::isInput((string)($field['type'] ?? ''))) {
 				continue;
 			}
-			$data[$id] = ['label' => (string)($field['label'] ?? ''), 'value' => $context->data[$id]];
+			$value = $context->data[$id];
+			if (($field['type'] ?? null) === FieldType::FILE && is_array($value)) {
+				// Where a file is stored is private; a receiver gets what it is.
+				$value = array_values(array_map(static fn (mixed $file): array => is_array($file)
+					? ['name' => (string)($file['name'] ?? ''), 'size' => (int)($file['size'] ?? 0), 'mime' => (string)($file['mime'] ?? '')]
+					: [], $value));
+			}
+			$data[$id] = ['label' => (string)($field['label'] ?? ''), 'value' => $value];
 		}
 		return [
 			'event' => 'entry.created',

@@ -20,7 +20,11 @@ use OCA\AdvancedForms\Exception\NotFoundException;
 use OCA\AdvancedForms\Exception\ValidationException;
 use OCA\AdvancedForms\Forms\JsonShape;
 use OCA\AdvancedForms\Forms\SubmissionValidator;
+use OCA\AdvancedForms\Forms\UploadPolicy;
+use OCA\AdvancedForms\Rules\FieldType;
 use OCA\AdvancedForms\Security\FillTimeToken;
+use OCA\AdvancedForms\Uploads\UploadRejected;
+use OCA\AdvancedForms\Uploads\UploadService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCA\AdvancedForms\Actions\ActionPlanner;
 use OCA\AdvancedForms\BackgroundJob\ProcessActionsNowJob;
@@ -50,6 +54,7 @@ class SubmissionService {
 		private readonly ActionLogMapper $actionLog,
 		private readonly IJobList $jobs,
 		private readonly LoggerInterface $logger,
+		private readonly UploadService $uploads,
 	) {
 		$this->tokens = new FillTimeToken($config->getSystemValueString('secret'));
 	}
@@ -68,10 +73,18 @@ class SubmissionService {
 		$version = $this->openVersion($form, $userId);
 		$definition = $version->getDefinitionArray();
 		unset($definition['actions']);
+		// Where files end up is the owner's business, not the respondent's.
+		foreach ($definition['fields'] as $fieldId => $field) {
+			if (is_array($field) && ($field['type'] ?? null) === FieldType::FILE) {
+				unset($definition['fields'][$fieldId]['folder'], $definition['fields'][$fieldId]['storage']);
+			}
+		}
 
 		return [
 			'token' => $token,
 			'versionId' => $version->getId(),
+			'signedIn' => $userId !== null,
+			'uploadLimit' => (int)\OCP\Util::uploadLimit(),
 			'fillToken' => $this->tokens->issue($form->getId(), $version->getId(), $this->time->getTime()),
 			'definition' => JsonShape::definition($definition),
 		];
@@ -123,15 +136,88 @@ class SubmissionService {
 			throw new ValidationException([['code' => 'already_submitted']]);
 		}
 
-		$entry = new Entry();
-		$entry->setFormId($form->getId());
-		$entry->setVersionId($version->getId());
-		$entry->setUserId($userId);
-		$entry->setData(json_encode($result['data'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-		$entry->setSubmittedAt($this->time->getTime());
-		$entry = $this->entries->insert($entry);
+		$fields = is_array($definition['fields'] ?? null) ? $definition['fields'] : [];
+		try {
+			$data = $this->uploads->claim($form->getId(), $form->getOwnerId(), $form->getTitle(), $fields, $result['data'], $userId, $this->time->getTime());
+		} catch (UploadRejected $e) {
+			throw new ValidationException([$e->fieldId === null ? ['code' => $e->reason] : ['field' => $e->fieldId, 'code' => $e->reason]]);
+		}
 
-		return $this->afterSubmit($form, $definition, $entry, $result['data']);
+		try {
+			$entry = new Entry();
+			$entry->setFormId($form->getId());
+			$entry->setVersionId($version->getId());
+			$entry->setUserId($userId);
+			$entry->setData(json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+			$entry->setSubmittedAt($this->time->getTime());
+			$entry = $this->entries->insert($entry);
+		} catch (\Throwable $e) {
+			// The answers were not saved, so the files must not stay behind.
+			$this->uploads->deleteFilesOf($form->getOwnerId(), $fields, $data);
+			throw $e;
+		}
+
+		return $this->afterSubmit($form, $definition, $entry, self::forConditions($fields, $data));
+	}
+
+	/**
+	 * Action conditions read answers the way rules do, and an upload field reads as the list of file
+	 * names (so "has a file" works), not the stored file details.
+	 *
+	 * @param array<string, mixed> $fields
+	 * @param array<string, mixed> $data
+	 * @return array<string, mixed>
+	 */
+	private static function forConditions(array $fields, array $data): array {
+		foreach ($data as $fieldId => $value) {
+			if (is_array($fields[$fieldId] ?? null) && ($fields[$fieldId]['type'] ?? null) === FieldType::FILE && is_array($value)) {
+				$data[$fieldId] = array_values(array_map(static fn (mixed $file): string => is_array($file) && is_string($file['name'] ?? null) ? $file['name'] : '', $value));
+			}
+		}
+		return $data;
+	}
+
+	/**
+	 * Accept one file for an upload field, before the form is submitted. The browser sends the
+	 * file by itself so the submit request stays small; the answer to the field is the id it gets back.
+	 *
+	 * @param array{name?: string, tmp_name?: string, error?: int, size?: int}|null $file PHP's entry for the upload
+	 * @return array{id: string, name: string, size: int}
+	 * @throws NotFoundException
+	 * @throws FormClosedException
+	 * @throws LoginRequiredException
+	 * @throws ValidationException
+	 */
+	public function upload(string $token, ?string $userId, int $versionId, string $fieldId, string $fillToken, ?array $file): array {
+		$form = $this->forms->findByToken($token);
+		$latest = $this->openVersion($form, $userId);
+		$version = $versionId === $latest->getId() ? $latest : $this->versions->find($versionId);
+		if ($version->getFormId() !== $form->getId()) {
+			throw new NotFoundException();
+		}
+		// Unlike a submission, an upload may follow the page load at once.
+		$tokenState = $this->tokens->check($fillToken, $form->getId(), $version->getId(), $this->time->getTime());
+		if ($tokenState === 'invalid' || $tokenState === 'expired') {
+			throw new ValidationException([['code' => 'token_' . $tokenState]]);
+		}
+		$fields = $version->getDefinitionArray()['fields'] ?? [];
+		$field = is_array($fields) ? ($fields[$fieldId] ?? null) : null;
+		if (!is_array($field)) {
+			throw new NotFoundException();
+		}
+		if ($file === null || !isset($file['tmp_name'], $file['name'])) {
+			throw new ValidationException([['field' => $fieldId, 'code' => 'upload_failed']]);
+		}
+		$error = $file['error'] ?? UPLOAD_ERR_NO_FILE;
+		if ($error !== UPLOAD_ERR_OK) {
+			$code = $error === UPLOAD_ERR_INI_SIZE || $error === UPLOAD_ERR_FORM_SIZE ? 'upload_too_large' : 'upload_failed';
+			throw new ValidationException([['field' => $fieldId, 'code' => $code]]);
+		}
+		try {
+			return $this->uploads->receive($form->getId(), $fieldId, $field, $userId, (string)$file['name'], (string)$file['tmp_name'], (int)($file['size'] ?? 0), $this->time->getTime());
+		} catch (UploadRejected $e) {
+			throw new ValidationException([['field' => $fieldId, 'code' => $e->reason]]);
+		}
 	}
 
 	/**

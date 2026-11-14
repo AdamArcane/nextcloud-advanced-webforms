@@ -18,7 +18,7 @@
 This app is in early development.
 	]]></description>
 
-	<version>0.2.0</version>
+	<version>0.3.0</version>
 	<licence>AGPL-3.0-or-later</licence>
 
 	<author>Adam Arcane</author>
@@ -39,6 +39,7 @@ This app is in early development.
 
 	<background-jobs>
 		<job>OCA\AdvancedForms\BackgroundJob\ProcessActionsJob</job>
+		<job>OCA\AdvancedForms\BackgroundJob\CleanupUploadsJob</job>
 	</background-jobs>
 
 	<navigations>

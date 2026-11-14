@@ -25,6 +25,7 @@ final class FieldType {
 	public const CHECKBOX = 'checkbox';
 	public const DATE = 'date';
 	public const TIME = 'time';
+	public const FILE = 'file';
 
 	public const HEADING = 'heading';
 	public const PARAGRAPH = 'paragraph';
@@ -35,6 +36,8 @@ final class FieldType {
 	private const CHOICE_OPERATORS = ['eq', 'neq', 'in', 'not_in', 'empty', 'not_empty'];
 	private const MULTI_OPERATORS = ['contains', 'not_contains', 'empty', 'not_empty'];
 	private const BOOLEAN_OPERATORS = ['eq', 'neq'];
+	/** Upload fields hold a list of uploaded files: a rule can only ask whether any were added. */
+	private const FILE_OPERATORS = ['empty', 'not_empty'];
 	private const ORDERED_OPERATORS = ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'empty', 'not_empty'];
 
 	/**
@@ -54,6 +57,7 @@ final class FieldType {
 		self::CHECKBOX => self::BOOLEAN_OPERATORS,
 		self::DATE => self::ORDERED_OPERATORS,
 		self::TIME => self::ORDERED_OPERATORS,
+		self::FILE => self::FILE_OPERATORS,
 	];
 
 	/** @var list<string> */

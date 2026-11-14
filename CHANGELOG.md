@@ -5,6 +5,15 @@
 
 # Changelog
 
+## 0.3.0 - Unreleased
+
+- File upload fields. Per field: how many files (1 to 10), the largest size, which types
+  (images, documents, archives, audio, video, or listed extensions), who may upload
+  (anyone or signed-in users) and where files go (a folder in the form owner's Files, or the
+  app's own storage). The folder and the audience are limited by the owner's own permissions,
+  checked on publish and again on every submission. Executable and web page types are never
+  accepted. Files are uploaded before the form is sent and thrown away if it never is.
+
 ## 0.2.0 - Unreleased
 
 - Multi-page forms: the builder can add, title, reorder and delete pages (up to 20), and

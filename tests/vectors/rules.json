@@ -3779,6 +3779,124 @@
         ],
         "required": []
       }
+    },
+    {
+      "name": "file not_empty: an uploaded file shows the target",
+      "fields": {
+        "f_up": {
+          "type": "file",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_up",
+                "op": "not_empty"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_up": [
+          "a1b2c3"
+        ]
+      },
+      "expect": {
+        "visible": [
+          "f_b",
+          "f_up"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "file not_empty: no files keeps the target hidden",
+      "fields": {
+        "f_up": {
+          "type": "file",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_up",
+                "op": "not_empty"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {},
+      "expect": {
+        "visible": [
+          "f_up"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "file not_empty: empty list counts as no files",
+      "fields": {
+        "f_up": {
+          "type": "file",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_up",
+                "op": "not_empty"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_up": []
+      },
+      "expect": {
+        "visible": [
+          "f_up"
+        ],
+        "required": []
+      }
     }
   ]
 }

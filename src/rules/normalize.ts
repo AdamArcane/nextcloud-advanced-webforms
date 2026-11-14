@@ -30,6 +30,7 @@ export function normalize(type: string, raw: unknown): NormalizedValue {
 		case 'radio':
 			return typeof raw === 'string' && raw !== '' ? raw : null
 		case 'checkboxes':
+		case 'file':
 			return normalizeList(raw)
 		case 'checkbox':
 			return typeof raw === 'boolean' ? raw : null

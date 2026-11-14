@@ -159,4 +159,34 @@ class SubmissionValidatorTest extends TestCase {
 		$result = $this->validate(['f_name' => "bad\xC3\x28", 'f_email' => 'a@example.com', 'f_kind' => 'new']);
 		$this->assertSame(['f_name:invalid_encoding'], $this->errorKeys($result));
 	}
+
+	/**
+	 * @param array<string, mixed> $extra
+	 * @param array<string, mixed> $payload
+	 * @return array{data: array<string, mixed>, errors: list<array{field: string, code: string}>}
+	 */
+	private function validateUpload(array $extra, array $payload): array {
+		$definition = DefinitionValidatorTest::specExample();
+		$definition['fields']['f_up'] = array_merge(['type' => 'file', 'label' => 'CV'], $extra);
+		$definition['pages'][0]['rows'][] = ['id' => 'r_up', 'cells' => [['id' => 'c_up', 'span' => 12, 'field' => 'f_up']]];
+		$base = ['f_name' => 'Ada', 'f_email' => 'ada@example.com', 'f_kind' => 'new'];
+		return (new SubmissionValidator())->validate($definition, array_merge($base, $payload));
+	}
+
+	public function testUploadFieldTakesUploadIds(): void {
+		$id = str_repeat('a1', 16);
+		$result = $this->validateUpload(['maxFiles' => 2], ['f_up' => [$id]]);
+		$this->assertSame([], $result['errors']);
+		$this->assertSame([$id], $result['data']['f_up']);
+	}
+
+	public function testUploadFieldErrors(): void {
+		$a = str_repeat('a1', 16);
+		$b = str_repeat('b2', 16);
+		$this->assertSame(['f_up:too_many_files'], $this->errorKeys($this->validateUpload([], ['f_up' => [$a, $b]])));
+		$this->assertSame(['f_up:duplicate_file'], $this->errorKeys($this->validateUpload(['maxFiles' => 2], ['f_up' => [$a, $a]])));
+		$this->assertSame(['f_up:invalid_type'], $this->errorKeys($this->validateUpload([], ['f_up' => ['short']])));
+		$this->assertSame(['f_up:invalid_type'], $this->errorKeys($this->validateUpload([], ['f_up' => 'x'])));
+		$this->assertSame(['f_up:required'], $this->errorKeys($this->validateUpload(['required' => true], ['f_up' => []])));
+	}
 }

@@ -17,7 +17,17 @@ use OCA\AdvancedForms\Actions\Ports\AccountPort;
 use OCA\AdvancedForms\Actions\Ports\HttpPort;
 use OCA\AdvancedForms\Actions\Ports\MailPort;
 use OCA\AdvancedForms\Actions\Ports\SecretPort;
+use OCA\AdvancedForms\Db\UploadMapper;
 use OCA\AdvancedForms\Listener\UserDeletedListener;
+use OCA\AdvancedForms\Uploads\Adapter\NextcloudMime;
+use OCA\AdvancedForms\Uploads\Adapter\NextcloudOwnerFiles;
+use OCA\AdvancedForms\Uploads\Adapter\NextcloudPendingStore;
+use OCA\AdvancedForms\Uploads\Adapter\NextcloudTokens;
+use OCA\AdvancedForms\Uploads\Ports\MimePort;
+use OCA\AdvancedForms\Uploads\Ports\OwnerFilesPort;
+use OCA\AdvancedForms\Uploads\Ports\PendingStorePort;
+use OCA\AdvancedForms\Uploads\Ports\TokenPort;
+use OCA\AdvancedForms\Uploads\Ports\UploadRegistryPort;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -41,6 +51,11 @@ class Application extends App implements IBootstrap {
 		$context->registerServiceAlias(HttpPort::class, NextcloudHttp::class);
 		$context->registerServiceAlias(SecretPort::class, NextcloudSecrets::class);
 		$context->registerServiceAlias(AccountPort::class, NextcloudAccounts::class);
+		$context->registerServiceAlias(UploadRegistryPort::class, UploadMapper::class);
+		$context->registerServiceAlias(PendingStorePort::class, NextcloudPendingStore::class);
+		$context->registerServiceAlias(OwnerFilesPort::class, NextcloudOwnerFiles::class);
+		$context->registerServiceAlias(TokenPort::class, NextcloudTokens::class);
+		$context->registerServiceAlias(MimePort::class, NextcloudMime::class);
 
 		$context->registerEventListener(UserDeletedEvent::class, UserDeletedListener::class);
 	}

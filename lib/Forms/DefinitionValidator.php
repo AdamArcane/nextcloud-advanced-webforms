@@ -198,6 +198,7 @@ final class DefinitionValidator {
 			FieldType::NUMBER => ['min', 'max', 'step'],
 			FieldType::SELECT, FieldType::RADIO => ['options'],
 			FieldType::CHECKBOXES => ['options', 'minSelected', 'maxSelected'],
+			FieldType::FILE => ['maxFiles', 'maxSizeMb', 'accept', 'audience', 'storage', 'folder'],
 			default => [],
 		};
 		$allowed = array_merge($allowed, $extra);
@@ -238,11 +239,53 @@ final class DefinitionValidator {
 			$this->selectionLimits($field, $path);
 		}
 
+		if ($type === FieldType::FILE) {
+			$this->uploadSettings($field, $path);
+			if (array_key_exists('defaultValue', $field)) {
+				$this->err('field_default_invalid', $path . '.defaultValue');
+			}
+		}
+
 		// A default must be a value the field itself would accept.
-		if (array_key_exists('defaultValue', $field) && $field['defaultValue'] !== null) {
+		if ($type !== FieldType::FILE && array_key_exists('defaultValue', $field) && $field['defaultValue'] !== null) {
 			[, $error] = FieldValueValidator::clean($field, $field['defaultValue']);
 			if ($error !== null) {
 				$this->err('field_default_invalid', $path . '.defaultValue');
+			}
+		}
+	}
+
+	/**
+	 * @param array<string, mixed> $field
+	 */
+	private function uploadSettings(array $field, string $path): void {
+		if (array_key_exists('maxFiles', $field) && (!is_int($field['maxFiles']) || $field['maxFiles'] < 1 || $field['maxFiles'] > UploadPolicy::MAX_FILES)) {
+			$this->err('field_limit_invalid', $path . '.maxFiles');
+		}
+		if (array_key_exists('maxSizeMb', $field) && (!is_int($field['maxSizeMb']) || $field['maxSizeMb'] < 1 || $field['maxSizeMb'] > UploadPolicy::MAX_SIZE_MB)) {
+			$this->err('field_limit_invalid', $path . '.maxSizeMb');
+		}
+		if (array_key_exists('audience', $field) && !in_array($field['audience'], [UploadPolicy::AUDIENCE_ANYONE, UploadPolicy::AUDIENCE_LOGIN], true)) {
+			$this->err('field_upload_invalid', $path . '.audience');
+		}
+		if (array_key_exists('storage', $field) && !in_array($field['storage'], [UploadPolicy::STORAGE_FILES, UploadPolicy::STORAGE_APP], true)) {
+			$this->err('field_upload_invalid', $path . '.storage');
+		}
+		if (array_key_exists('folder', $field) && (!is_string($field['folder']) || UploadPolicy::cleanFolder($field['folder']) === null)) {
+			$this->err('field_upload_folder_invalid', $path . '.folder');
+		}
+		if (array_key_exists('accept', $field)) {
+			$accept = $field['accept'];
+			if (!is_array($accept) || !array_is_list($accept) || $accept === [] || count($accept) > 20) {
+				$this->err('field_upload_accept_invalid', $path . '.accept');
+				return;
+			}
+			foreach ($accept as $index => $entry) {
+				if (!is_string($entry) || (!isset(UploadPolicy::GROUPS[$entry]) && preg_match('/^\.[a-z0-9]{1,10}$/D', $entry) !== 1)) {
+					$this->err('field_upload_accept_invalid', $path . '.accept[' . $index . ']');
+				} elseif ($entry[0] === '.' && in_array(substr($entry, 1), UploadPolicy::DENIED, true)) {
+					$this->err('field_upload_type_denied', $path . '.accept[' . $index . ']');
+				}
 			}
 		}
 	}

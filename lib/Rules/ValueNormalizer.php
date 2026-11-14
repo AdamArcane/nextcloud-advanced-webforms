@@ -38,6 +38,7 @@ final class ValueNormalizer {
 			case FieldType::RADIO:
 				return (is_string($raw) && $raw !== '' && mb_check_encoding($raw, 'UTF-8')) ? $raw : null;
 			case FieldType::CHECKBOXES:
+			case FieldType::FILE:
 				return self::list($raw);
 			case FieldType::CHECKBOX:
 				return is_bool($raw) ? $raw : null;

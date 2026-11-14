@@ -76,6 +76,23 @@ class PublicController extends Controller {
 		));
 	}
 
+	/**
+	 * One file for an upload field. It waits on the server until the form is submitted with the
+	 * id this returns. Limits are stricter than for a submission because a file costs more to take.
+	 */
+	#[PublicPage]
+	#[NoAdminRequired]
+	#[AnonRateLimit(limit: 30, period: 60)]
+	#[UserRateLimit(limit: 60, period: 60)]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/public/{token}/upload')]
+	public function upload(string $token, int $versionId = 0, string $fieldId = '', string $fillToken = ''): JSONResponse {
+		$file = $this->request->getUploadedFile('file');
+		return $this->guard(fn (): JSONResponse => new JSONResponse(
+			$this->service->upload($token, $this->userId(), $versionId, $fieldId, $fillToken, is_array($file) ? $file : null),
+			Http::STATUS_CREATED,
+		));
+	}
+
 	private function userId(): ?string {
 		return $this->userSession->getUser()?->getUID();
 	}

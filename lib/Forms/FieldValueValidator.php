@@ -23,6 +23,8 @@ final class FieldValueValidator {
 	public const MAX_TEXT = 2000;
 	public const MAX_TEXTAREA = 20000;
 	public const MAX_EMAIL = 254;
+	/** What ISecureRandom hands out for an upload: lower case letters and digits. */
+	public const UPLOAD_ID = '/^[a-z0-9]{32}$/D';
 
 	/**
 	 * @param array<string, mixed> $field the field definition
@@ -43,8 +45,34 @@ final class FieldValueValidator {
 			FieldType::CHECKBOX => is_bool($raw) || $raw === null ? [$raw, null] : [null, 'invalid_type'],
 			FieldType::DATE => self::date($raw),
 			FieldType::TIME => self::time($raw),
+			FieldType::FILE => self::files($field, $raw),
 			default => [null, 'invalid_type'],
 		};
+	}
+
+	/**
+	 * An upload field's value is the list of upload ids the respondent's browser got back from the
+	 * upload endpoint. The service swaps them for stored files after this check.
+	 *
+	 * @param array<string, mixed> $field
+	 * @return array{0: list<string>|null, 1: string|null}
+	 */
+	private static function files(array $field, mixed $raw): array {
+		if ($raw === null || $raw === []) {
+			return [null, null];
+		}
+		if (!is_array($raw) || !array_is_list($raw)) {
+			return [null, 'invalid_type'];
+		}
+		foreach ($raw as $item) {
+			if (!is_string($item) || preg_match(self::UPLOAD_ID, $item) !== 1) {
+				return [null, 'invalid_type'];
+			}
+		}
+		if (count($raw) !== count(array_unique($raw))) {
+			return [null, 'duplicate_file'];
+		}
+		return count($raw) > UploadPolicy::maxFiles($field) ? [null, 'too_many_files'] : [$raw, null];
 	}
 
 	/**

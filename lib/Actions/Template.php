@@ -55,6 +55,10 @@ final class Template {
 		if (is_bool($value)) {
 			return $value ? 'Yes' : 'No';
 		}
+		if (($field['type'] ?? null) === 'file' && is_array($value)) {
+			// Stored files: only their names are ever put in text.
+			return implode(', ', array_map(static fn (mixed $file): string => is_array($file) && is_string($file['name'] ?? null) ? $file['name'] : '', array_values($value)));
+		}
 		if (is_array($value)) {
 			return implode(', ', array_map(static fn (mixed $item): string => self::optionLabel($field, $item), array_values($value)));
 		}
