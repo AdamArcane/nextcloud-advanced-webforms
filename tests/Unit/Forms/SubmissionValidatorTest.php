@@ -17,7 +17,7 @@ class SubmissionValidatorTest extends TestCase {
 	 * @param array<string, mixed> $payload
 	 * @return array{data: array<string, mixed>, errors: list<array{field: string, code: string}>}
 	 */
-	private function run(array $payload): array {
+	private function validate(array $payload): array {
 		return (new SubmissionValidator())->validate(DefinitionValidatorTest::specExample(), $payload);
 	}
 
@@ -32,7 +32,7 @@ class SubmissionValidatorTest extends TestCase {
 	}
 
 	public function testValidSubmissionIsCleaned(): void {
-		$result = $this->run(['f_name' => '  Ada  ', 'f_email' => 'ada@example.com', 'f_kind' => 'new']);
+		$result = $this->validate(['f_name' => '  Ada  ', 'f_email' => 'ada@example.com', 'f_kind' => 'new']);
 		$this->assertSame([], $result['errors']);
 		$this->assertSame(['f_name' => 'Ada', 'f_email' => 'ada@example.com', 'f_kind' => 'new'], $result['data']);
 	}
@@ -40,40 +40,40 @@ class SubmissionValidatorTest extends TestCase {
 	public function testRequiredFieldsMissing(): void {
 		$this->assertSame(
 			['f_email:required', 'f_kind:required', 'f_name:required'],
-			$this->errorKeys($this->run([])),
+			$this->errorKeys($this->validate([])),
 		);
 	}
 
 	public function testWhitespaceOnlyCountsAsMissing(): void {
-		$result = $this->run(['f_name' => "   \u{00A0}", 'f_email' => 'a@example.com', 'f_kind' => 'new']);
+		$result = $this->validate(['f_name' => "   \u{00A0}", 'f_email' => 'a@example.com', 'f_kind' => 'new']);
 		$this->assertSame(['f_name:required'], $this->errorKeys($result));
 	}
 
 	public function testUnknownFieldRejected(): void {
-		$result = $this->run(['f_name' => 'Ada', 'f_email' => 'a@example.com', 'f_kind' => 'new', 'f_evil' => 'x']);
+		$result = $this->validate(['f_name' => 'Ada', 'f_email' => 'a@example.com', 'f_kind' => 'new', 'f_evil' => 'x']);
 		$this->assertSame(['f_evil:unknown_field'], $this->errorKeys($result));
 	}
 
 	public function testDisplayFieldCannotCarryAValue(): void {
-		$result = $this->run(['f_name' => 'Ada', 'f_email' => 'a@example.com', 'f_kind' => 'new', 'f_note' => 'x']);
+		$result = $this->validate(['f_name' => 'Ada', 'f_email' => 'a@example.com', 'f_kind' => 'new', 'f_note' => 'x']);
 		$this->assertSame(['f_note:unknown_field'], $this->errorKeys($result));
 	}
 
 	public function testHiddenFieldValueIsDropped(): void {
 		// f_url is shown only when f_kind is "support".
-		$result = $this->run(['f_name' => 'Ada', 'f_email' => 'a@example.com', 'f_kind' => 'new', 'f_url' => 'https://x.test']);
+		$result = $this->validate(['f_name' => 'Ada', 'f_email' => 'a@example.com', 'f_kind' => 'new', 'f_url' => 'https://x.test']);
 		$this->assertSame([], $result['errors']);
 		$this->assertSame(['f_name' => 'Ada', 'f_email' => 'a@example.com', 'f_kind' => 'new'], $result['data']);
 	}
 
 	public function testVisibleFieldValueIsKept(): void {
-		$result = $this->run(['f_name' => 'Ada', 'f_email' => 'a@example.com', 'f_kind' => 'support', 'f_url' => 'https://x.test']);
+		$result = $this->validate(['f_name' => 'Ada', 'f_email' => 'a@example.com', 'f_kind' => 'support', 'f_url' => 'https://x.test']);
 		$this->assertSame([], $result['errors']);
 		$this->assertSame('https://x.test', $result['data']['f_url']);
 	}
 
 	public function testInvalidValuesReportCodes(): void {
-		$result = $this->run(['f_name' => 'Ada', 'f_email' => 'not-an-email', 'f_kind' => 'bogus', 'f_phone' => '12']);
+		$result = $this->validate(['f_name' => 'Ada', 'f_email' => 'not-an-email', 'f_kind' => 'bogus', 'f_phone' => '12']);
 		$this->assertSame(
 			['f_email:invalid_email', 'f_kind:invalid_option', 'f_phone:invalid_phone'],
 			$this->errorKeys($result),
@@ -81,12 +81,12 @@ class SubmissionValidatorTest extends TestCase {
 	}
 
 	public function testWrongTypesAreErrorsNotSilentlyEmpty(): void {
-		$result = $this->run(['f_name' => ['x'], 'f_email' => 'a@example.com', 'f_kind' => 5]);
+		$result = $this->validate(['f_name' => ['x'], 'f_email' => 'a@example.com', 'f_kind' => 5]);
 		$this->assertSame(['f_kind:invalid_type', 'f_name:invalid_type'], $this->errorKeys($result));
 	}
 
 	public function testValidPhoneIsStoredAsTyped(): void {
-		$result = $this->run(['f_name' => 'Ada', 'f_email' => 'a@example.com', 'f_kind' => 'new', 'f_phone' => ' +1 (860) 555-0100 ']);
+		$result = $this->validate(['f_name' => 'Ada', 'f_email' => 'a@example.com', 'f_kind' => 'new', 'f_phone' => ' +1 (860) 555-0100 ']);
 		$this->assertSame('+1 (860) 555-0100', $result['data']['f_phone']);
 	}
 
@@ -151,12 +151,12 @@ class SubmissionValidatorTest extends TestCase {
 	}
 
 	public function testOverlongTextRejected(): void {
-		$result = $this->run(['f_name' => str_repeat('a', 2001), 'f_email' => 'a@example.com', 'f_kind' => 'new']);
+		$result = $this->validate(['f_name' => str_repeat('a', 2001), 'f_email' => 'a@example.com', 'f_kind' => 'new']);
 		$this->assertSame(['f_name:too_long'], $this->errorKeys($result));
 	}
 
 	public function testInvalidUtf8Rejected(): void {
-		$result = $this->run(['f_name' => "bad\xC3\x28", 'f_email' => 'a@example.com', 'f_kind' => 'new']);
+		$result = $this->validate(['f_name' => "bad\xC3\x28", 'f_email' => 'a@example.com', 'f_kind' => 'new']);
 		$this->assertSame(['f_name:invalid_encoding'], $this->errorKeys($result));
 	}
 }
