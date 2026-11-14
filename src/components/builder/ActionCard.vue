@@ -8,7 +8,7 @@ import type { DraftDefinition, EmailAction, FormAction, MessageAction, RedirectA
 
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import { icons } from '../../icons.ts'
+import { fieldTypeIcon, icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
@@ -108,6 +108,9 @@ function setWhenEnabled(enabled: boolean): void {
 	const next = enabled ? defaultWhen(props.definition) : null
 	emit('update', setWhen(props.action, next))
 }
+
+const MAIL_ICON: string = icons.mail
+const EMAIL_FIELD_ICON: string = fieldTypeIcon('email')
 
 interface RecipientOption {
 	id: string
@@ -212,7 +215,21 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 					taggable
 					:create-option="createRecipient"
 					label="label"
-					@update:model-value="setRecipient" />
+					@update:model-value="setRecipient">
+					<template #option="option">
+						<span class="af-recipient">
+							<Icon :path="option.custom ? MAIL_ICON : EMAIL_FIELD_ICON" :size="18" />
+							<span class="af-recipient__label">{{ option.label }}</span>
+							<span class="af-recipient__kind">{{ option.custom ? t('advancedforms', 'Use this address') : t('advancedforms', 'Form field · the answer given') }}</span>
+						</span>
+					</template>
+					<template #selected-option="option">
+						<span class="af-recipient">
+							<span class="af-recipient__label">{{ option.label }}</span>
+							<span v-if="!option.custom" class="af-recipient__kind">{{ t('advancedforms', 'Form field') }}</span>
+						</span>
+					</template>
+				</NcSelect>
 				<p class="af-action__hint">
 					<template v-if="recipientIsField">
 						{{ t('advancedforms', 'Sent to the address the respondent typed. To limit abuse, at most 30 such emails are sent per hour for this form.') }}
@@ -440,5 +457,24 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 	color: var(--color-main-text);
 	overflow-wrap: anywhere;
 	user-select: all;
+}
+.af-recipient {
+	display: flex;
+	align-items: center;
+	gap: var(--default-grid-baseline);
+	min-width: 0;
+}
+
+.af-recipient__label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.af-recipient__kind {
+	flex: 0 0 auto;
+	margin-inline-start: auto;
+	color: var(--color-text-maxcontrast);
+	font-size: 12px;
 }
 </style>

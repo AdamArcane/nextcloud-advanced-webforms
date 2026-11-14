@@ -70,6 +70,7 @@ export const icons = {
 	desktop: mdiMonitor,
 	download: mdiDownload,
 	edit: mdiPencil,
+	mail: mdiEmailOutline,
 	logic: mdiSourceBranch,
 	mobile: mdiCellphone,
 	openNew: mdiOpenInNew,
