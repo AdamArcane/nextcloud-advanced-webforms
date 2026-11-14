@@ -1,0 +1,1784 @@
+# SPDX-FileCopyrightText: 2026 ArcaneX
+# SPDX-License-Identifier: AGPL-3.0-or-later
+msgid ""
+msgstr ""
+"Project-Id-Version: Advanced Forms\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/components/entries/EntriesView.vue:260
+msgid "{n} emails or webhooks could not be sent."
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:237
+msgid "{n} responses"
+msgstr ""
+
+#: src/builder/errors.ts:51
+msgid "A condition needs a valid value to compare against."
+msgstr ""
+
+#: src/builder/errors.ts:47
+msgid "A condition reads a field that has no answer."
+msgstr ""
+
+#: src/builder/errors.ts:49
+msgid "A condition uses a comparison this field does not support."
+msgstr ""
+
+#: src/builder/errors.ts:45
+msgid "A condition uses a field that no longer exists."
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:250
+msgid "A divider has no settings."
+msgstr ""
+
+#: src/components/builder/ActionsPanel.vue:139
+msgid "A form can have up to {max} actions."
+msgstr ""
+
+#: src/builder/errors.ts:54
+msgid "A group of conditions is empty or nested too deeply."
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:126
+msgid "A published field used this ID before it was deleted, so it cannot be used again."
+msgstr ""
+
+#: src/components/builder/ConditionRow.vue:145
+msgid "A rule needs at least one condition"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:332
+msgid "A secret is set"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:64
+#: src/components/builder/FormProperties.vue:91
+msgid "Above"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:78
+msgid "above the field"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:161
+msgid "Accent colour"
+msgstr ""
+
+#: src/entries/deliveryText.ts:23
+msgid "Action"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:458
+msgid "Actions"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:327
+msgid "Add a field beside this one"
+msgstr ""
+
+#: src/components/builder/AddFieldMenu.vue:51
+msgid "Add a field here"
+msgstr ""
+
+#: src/components/builder/ActionsPanel.vue:123
+msgid "Add an action"
+msgstr ""
+
+#: src/components/builder/LogicPanel.vue:90
+msgid "Add another input field first. Rules react to the answers in other fields."
+msgstr ""
+
+#: src/builder/errors.ts:18
+msgid "Add at least one option."
+msgstr ""
+
+#: src/components/builder/ConditionGroup.vue:125
+msgid "Add condition"
+msgstr ""
+
+#: src/components/builder/BuilderCanvas.vue:382
+#: src/components/builder/BuilderCanvas.vue:450
+msgid "Add field"
+msgstr ""
+
+#: src/components/builder/ConditionGroup.vue:128
+msgid "Add group"
+msgstr ""
+
+#: src/components/builder/OptionsEditor.vue:79
+msgid "Add option"
+msgstr ""
+
+#: src/components/builder/BuilderCanvas.vue:368
+#: src/components/builder/BuilderCanvas.vue:369
+msgid "Add page"
+msgstr ""
+
+#: src/components/builder/LogicPanel.vue:87
+msgid "Add rule"
+msgstr ""
+
+#: src/builder/errors.ts:16
+msgid "Add some text."
+msgstr ""
+
+#: src/components/builder/BuilderCanvas.vue:380
+msgid "Add your first field. You can put several fields side by side later."
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:252
+msgid "Address"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:305
+msgid "Adds an answer to the end of the body."
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:334
+msgid "Advanced"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:226
+#: src/components/builder/FieldProperties.vue:241
+msgid "Alignment"
+msgstr ""
+
+#: src/components/builder/ConditionGroup.vue:86
+#: src/components/entries/EntriesView.vue:314
+msgid "All"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:230
+msgid "Allow more than one response per person"
+msgstr ""
+
+#: src/components/builder/RuleCard.vue:82
+msgid "Also applies to: {fields}"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:97
+msgid "Always above the field."
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:234
+msgid "An earlier message or redirect always applies, so this one is never shown. Give the earlier one a condition, or move this one up."
+msgstr ""
+
+#: src/components/builder/ConditionGroup.vue:101
+msgid "and"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:125
+msgid "Another field already uses this ID."
+msgstr ""
+
+#: src/components/builder/ConditionGroup.vue:87
+msgid "Any"
+msgstr ""
+
+#: src/entries/format.ts:81
+msgid "any moment now"
+msgstr ""
+
+#: src/components/entries/DeliveryRow.vue:62
+msgid "Attempt {n}"
+msgstr ""
+
+#: src/components/render/FormRenderer.vue:285
+msgid "Back"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:155
+msgid "Background colour"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:237
+msgid "Basic markdown works: bold, italic, lists and links."
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:67
+#: src/components/builder/FormProperties.vue:92
+msgid "Beside"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:76
+msgid "beside the field"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:300
+msgid "Body"
+msgstr ""
+
+#: src/App.vue:153
+msgid "Build forms with conditional fields and flexible layouts. Responses stay on your server."
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:167
+msgid "Buttons and highlights"
+msgstr ""
+
+#: src/builder/labels.ts:44
+msgid "Call a webhook"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:497
+#: src/components/builder/BuilderView.vue:506
+#: src/components/entries/EntriesView.vue:382
+msgid "Cancel"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:419
+msgid "Canvas width"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:103
+msgid "Center"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:346
+msgid "Change ID"
+msgstr ""
+
+#: src/components/builder/AddFieldMenu.vue:38
+#: src/components/builder/FieldCard.vue:46
+msgid "Checkbox"
+msgstr ""
+
+#: src/App.vue:162
+msgid "Choose a form from the list to edit it, or create a new one."
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:283
+msgid "Choose at least"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:287
+msgid "Choose at most"
+msgstr ""
+
+#: src/components/render/messages.ts:37
+msgid "Choose one of the available options."
+msgstr ""
+
+#: src/components/builder/ActionsPanel.vue:94
+msgid "Choose what happens after someone sends the form. Emails and webhooks are sent in the background, so a slow mail server never holds up the respondent."
+msgstr ""
+
+#: src/builder/errors.ts:56
+msgid "Choose who should receive this email."
+msgstr ""
+
+#: src/App.vue:97
+msgid "Closed"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:148
+msgid "Colour"
+msgstr ""
+
+#: src/components/builder/ConditionRow.vue:85
+msgid "Comparison"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:221
+#: src/components/builder/FieldCard.vue:74
+msgid "Conditional"
+msgstr ""
+
+#: src/components/builder/AddFieldMenu.vue:66
+msgid "Content"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:210
+msgid "Copied"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:210
+msgid "Copy link"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:322
+msgid "Copy this secret now. It will not be shown again."
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:329
+msgid "Could not create a secret. Try again."
+msgstr ""
+
+#: src/App.vue:131
+msgid "Could not create the form."
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:283
+msgid "Could not delete the response."
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:303
+msgid "Could not load more responses."
+msgstr ""
+
+#: src/components/entries/ResponseCard.vue:105
+msgid "Could not load or update the deliveries."
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:343
+msgid "Could not load the deliveries."
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:272
+msgid "Could not load the responses."
+msgstr ""
+
+#: src/App.vue:125
+msgid "Could not load your forms."
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:157
+msgid "Could not save"
+msgstr ""
+
+#: src/App.vue:152
+msgid "Create your first form"
+msgstr ""
+
+#: src/components/builder/AddFieldMenu.vue:39
+#: src/components/builder/FieldCard.vue:47
+msgid "Date"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:498
+#: src/components/entries/EntriesView.vue:383
+msgid "Delete"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:377
+msgid "Delete action"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:355
+msgid "Delete field"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:507
+#: src/components/builder/FormProperties.vue:242
+msgid "Delete form"
+msgstr ""
+
+#: src/components/builder/BuilderCanvas.vue:361
+msgid "Delete page"
+msgstr ""
+
+#: src/components/entries/ResponseCard.vue:125
+msgid "Delete response"
+msgstr ""
+
+#: src/components/builder/RuleCard.vue:90
+msgid "Delete rule"
+msgstr ""
+
+#: src/components/builder/RuleCard.vue:90
+msgid "Delete rule for all fields"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:494
+msgid "Delete this field?"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:503
+msgid "Delete this form?"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:379
+msgid "Delete this response?"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:255
+msgid "Deliveries"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:255
+msgid "Deliveries ({n} failed)"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:79
+msgid "Description"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:456
+msgid "Design"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:421
+#: src/components/builder/PreviewDialog.vue:59
+msgid "Desktop"
+msgstr ""
+
+#: src/components/builder/AddFieldMenu.vue:43
+#: src/components/builder/FieldCard.vue:51
+msgid "Divider"
+msgstr ""
+
+#: src/builder/labels.ts:18
+msgid "does not include"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:244
+msgid "Download CSV"
+msgstr ""
+
+#: src/App.vue:98
+#: src/components/builder/BuilderView.vue:394
+msgid "Draft"
+msgstr ""
+
+#: src/components/builder/BuilderCanvas.vue:404
+#: src/components/builder/BuilderCanvas.vue:405
+msgid "Drag to move this row"
+msgstr ""
+
+#: src/components/builder/BuilderCanvas.vue:435
+msgid "Drag to resize, or use the arrow keys"
+msgstr ""
+
+#: src/components/builder/AddFieldMenu.vue:35
+#: src/components/builder/FieldCard.vue:43
+msgid "Dropdown"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:97
+msgid "Each field can override this. Beside labels stay above long text and choice fields."
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:319
+msgid "Each request is signed so the receiver can check it came from this form. The signature is in the X-AdvancedForms-Signature header."
+msgstr ""
+
+#: src/components/FormNav.vue:28
+msgid "Edit"
+msgstr ""
+
+#: src/components/builder/FieldCard.vue:66
+msgid "Edit field: {name}"
+msgstr ""
+
+#: src/components/builder/AddFieldMenu.vue:32
+#: src/components/builder/FieldCard.vue:40
+#: src/entries/deliveryText.ts:21
+msgid "Email"
+msgstr ""
+
+#: src/builder/labels.ts:52
+msgid "Email you, or the respondent, a copy of the answers."
+msgstr ""
+
+#: src/components/entries/ResponseCard.vue:101
+msgid "Emails and webhooks"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:350
+msgid "Emails and webhooks from your form's actions are listed here, with what happened to each."
+msgstr ""
+
+#: src/components/builder/PreviewDialog.vue:52
+msgid "Enable validation"
+msgstr ""
+
+#: src/builder/errors.ts:60
+msgid "Enter a full address starting with https://."
+msgstr ""
+
+#: src/components/render/messages.ts:26
+msgid "Enter a valid date."
+msgstr ""
+
+#: src/components/render/messages.ts:14
+msgid "Enter a valid email address."
+msgstr ""
+
+#: src/components/render/messages.ts:18
+msgid "Enter a valid number."
+msgstr ""
+
+#: src/components/render/messages.ts:16
+msgid "Enter a valid phone number."
+msgstr ""
+
+#: src/components/render/messages.ts:28
+msgid "Enter a valid time."
+msgstr ""
+
+#: src/builder/errors.ts:20
+msgid "Every option needs a label."
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:315
+#: src/entries/deliveryText.ts:13
+msgid "Failed"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:357
+msgid "Failed deliveries are tried again automatically, up to five times. Trying again by hand starts over and is sent within a minute."
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:201
+#: src/components/builder/BuilderView.vue:203
+#: src/components/builder/BuilderView.vue:517
+msgid "Field"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:337
+msgid "Field ID"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:299
+msgid "Field width"
+msgstr ""
+
+#: src/builder/errors.ts:58
+msgid "Fill in all the text for this action."
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:312
+msgid "Filter deliveries"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:438
+msgid "Fix the highlighted problems before publishing."
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:89
+msgid "Following the form setting: {position}."
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:87
+msgid "Following the form setting. The label stays above this kind of field."
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:63
+msgid "Form"
+msgstr ""
+
+#: src/PublicApp.vue:90
+msgid "Form closed"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:184
+msgid "Form field · the answer given"
+msgstr ""
+
+#: src/PublicApp.vue:86
+#: src/components/builder/BuilderView.vue:370
+msgid "Form not found"
+msgstr ""
+
+#: src/components/entries/DeliveryRow.vue:33
+msgid "Form owner"
+msgstr ""
+
+#: src/components/FormNav.vue:26
+msgid "Form view"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:122
+msgid "Form width"
+msgstr ""
+
+#: src/App.vue:105
+msgid "Forms"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:137
+msgid "Full"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:455
+msgid "General"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:334
+msgid "Generate a new secret"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:334
+msgid "Generate a secret"
+msgstr ""
+
+#: src/builder/errors.ts:14
+msgid "Give this field a label."
+msgstr ""
+
+#: src/components/builder/AddFieldMenu.vue:41
+#: src/components/builder/FieldCard.vue:49
+msgid "Heading"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:217
+msgid "Heading size"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:212
+msgid "Heading text"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:187
+msgid "Help text"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:77
+msgid "hidden"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:71
+#: src/components/builder/FormProperties.vue:93
+msgid "Hidden"
+msgstr ""
+
+#: src/builder/labels.ts:34
+msgid "Hide"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:102
+msgid "Hide the required indicator (*)"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:325
+msgid "I have copied it"
+msgstr ""
+
+#: src/components/builder/ActionsPanel.vue:142
+msgid "If several messages or redirects match, the first one is shown. Emails and webhooks all run."
+msgstr ""
+
+#: src/entries/format.ts:89
+msgid "in {n} hours"
+msgstr ""
+
+#: src/entries/format.ts:88
+msgid "in {n} minutes"
+msgstr ""
+
+#: src/entries/format.ts:84
+msgid "in about a minute"
+msgstr ""
+
+#: src/builder/labels.ts:17
+msgid "includes"
+msgstr ""
+
+#: src/components/builder/AddFieldMenu.vue:56
+msgid "Inputs"
+msgstr ""
+
+#: src/components/builder/PlaceholderMenu.vue:28
+msgid "Insert an answer"
+msgstr ""
+
+#: src/builder/labels.ts:15
+msgid "is"
+msgstr ""
+
+#: src/builder/labels.ts:23
+msgid "is after"
+msgstr ""
+
+#: src/builder/labels.ts:24
+msgid "is at least"
+msgstr ""
+
+#: src/builder/labels.ts:26
+msgid "is at most"
+msgstr ""
+
+#: src/builder/labels.ts:25
+msgid "is before"
+msgstr ""
+
+#: src/builder/labels.ts:21
+msgid "is empty"
+msgstr ""
+
+#: src/builder/labels.ts:22
+msgid "is filled in"
+msgstr ""
+
+#: src/builder/labels.ts:23
+msgid "is greater than"
+msgstr ""
+
+#: src/builder/labels.ts:25
+msgid "is less than"
+msgstr ""
+
+#: src/builder/labels.ts:20
+msgid "is none of"
+msgstr ""
+
+#: src/builder/labels.ts:16
+msgid "is not"
+msgstr ""
+
+#: src/builder/labels.ts:24
+msgid "is on or after"
+msgstr ""
+
+#: src/builder/labels.ts:26
+msgid "is on or before"
+msgstr ""
+
+#: src/builder/labels.ts:19
+msgid "is one of"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:371
+msgid "It may have been deleted, or you may not have access to it."
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:184
+msgid "Label"
+msgstr ""
+
+#: src/components/builder/FieldCard.vue:80
+msgid "Label beside"
+msgstr ""
+
+#: src/components/builder/FieldCard.vue:77
+msgid "Label hidden"
+msgstr ""
+
+#: src/components/builder/OptionsEditor.vue:58
+msgid "Label of option {n}"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:199
+#: src/components/builder/FieldProperties.vue:201
+msgid "Label position"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:89
+msgid "Label position for the whole form"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:86
+msgid "Labels"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:219
+msgid "Large"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:294
+#: src/components/builder/FormProperties.vue:119
+msgid "Layout"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:102
+msgid "Left"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:256
+msgid "Limits"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:298
+msgid "Loading…"
+msgstr ""
+
+#: src/PublicApp.vue:97
+msgid "Log in"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:540
+msgid "Logic"
+msgstr ""
+
+#: src/PublicApp.vue:94
+msgid "Login required"
+msgstr ""
+
+#: src/components/builder/AddFieldMenu.vue:31
+#: src/components/builder/FieldCard.vue:39
+msgid "Long text"
+msgstr ""
+
+#: src/components/builder/ConditionGroup.vue:81
+msgid "Match"
+msgstr ""
+
+#: src/components/builder/ConditionGroup.vue:84
+msgid "Match all or any of the conditions"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:273
+msgid "Maximum"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:264
+msgid "Maximum length"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:135
+msgid "Me (the form owner)"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:220
+msgid "Medium"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:243
+msgid "Message"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:233
+msgid "Message when closed"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:269
+msgid "Minimum"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:422
+#: src/components/builder/PreviewDialog.vue:61
+msgid "Mobile"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:368
+msgid "Move action down"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:363
+msgid "Move action up"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:168
+msgid "Move into the row above"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:166
+msgid "Move left"
+msgstr ""
+
+#: src/components/builder/OptionsEditor.vue:68
+msgid "Move option down"
+msgstr ""
+
+#: src/components/builder/OptionsEditor.vue:62
+msgid "Move option up"
+msgstr ""
+
+#: src/components/builder/BuilderCanvas.vue:363
+msgid "Move or delete the fields on this page to delete it."
+msgstr ""
+
+#: src/components/builder/BuilderCanvas.vue:356
+msgid "Move or delete this page's fields first"
+msgstr ""
+
+#: src/components/builder/BuilderCanvas.vue:347
+msgid "Move page left"
+msgstr ""
+
+#: src/components/builder/BuilderCanvas.vue:353
+msgid "Move page right"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:167
+msgid "Move right"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:165
+msgid "Move row down"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:164
+msgid "Move row up"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:95
+msgid "Moves above the field when there is not enough room."
+msgstr ""
+
+#: src/components/builder/AddFieldMenu.vue:37
+#: src/components/builder/FieldCard.vue:45
+msgid "Multiple choice"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:196
+msgid "Must be ticked"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:253
+msgid "Must start with https://. Answers can be added after the address, for example ?name=…"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:313
+msgid "Must start with https://. Nextcloud blocks addresses on private networks unless an administrator allows them."
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:124
+msgid "Narrow"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:222
+msgid "Never used"
+msgstr ""
+
+#: src/App.vue:107
+#: src/App.vue:156
+msgid "New form"
+msgstr ""
+
+#: src/components/render/FormRenderer.vue:288
+msgid "Next"
+msgstr ""
+
+#: src/components/entries/DeliveryRow.vue:65
+msgid "next try {when}"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:146
+msgid "Nextcloud"
+msgstr ""
+
+#: src/entries/format.ts:25
+msgid "No"
+msgstr ""
+
+#: src/components/builder/ActionsPanel.vue:118
+msgid "No actions yet. Respondents will see a default thank-you."
+msgstr ""
+
+#: src/components/entries/ResponseCard.vue:84
+msgid "No answers"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:350
+msgid "No deliveries match this filter."
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:537
+#: src/components/builder/BuilderView.vue:553
+msgid "No field selected"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:278
+msgid "No responses yet"
+msgstr ""
+
+#: src/components/builder/LogicPanel.vue:79
+msgid "No rules yet. This field is always shown."
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:69
+msgid "Not available for this type of field"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:143
+msgid "Not enough room in this row"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:92
+msgid "Not shown, but still read by screen readers."
+msgstr ""
+
+#: src/components/builder/ConditionRow.vue:98
+msgid "Not ticked"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:349
+msgid "Nothing here"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:349
+msgid "Nothing sent yet"
+msgstr ""
+
+#: src/components/entries/ResponseCard.vue:108
+msgid "Nothing was sent for this response."
+msgstr ""
+
+#: src/components/builder/AddFieldMenu.vue:34
+#: src/components/builder/FieldCard.vue:42
+msgid "Number"
+msgstr ""
+
+#: src/builder/errors.ts:24
+msgid "One of the limits is not valid."
+msgstr ""
+
+#: src/builder/errors.ts:41
+msgid "Only input fields can be required."
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:225
+msgid "Only logged-in users can respond"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:184
+msgid "Only the submit button"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:349
+msgid "Only when the answers match"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:410
+#: src/components/builder/BuilderView.vue:411
+msgid "Open published form"
+msgstr ""
+
+#: src/components/builder/OptionsEditor.vue:33
+#: src/components/builder/OptionsEditor.vue:56
+msgid "Option {n}"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:256
+msgid "Options"
+msgstr ""
+
+#: src/components/builder/ConditionGroup.vue:101
+msgid "or"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:317
+msgid "Page"
+msgstr ""
+
+#: src/components/builder/BuilderCanvas.vue:106
+#: src/components/builder/BuilderCanvas.vue:318
+#: src/components/builder/FieldProperties.vue:322
+msgid "Page {n}"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:141
+#: src/components/builder/FormProperties.vue:144
+msgid "Page background"
+msgstr ""
+
+#: src/components/builder/BuilderCanvas.vue:336
+msgid "Page options"
+msgstr ""
+
+#: src/components/builder/BuilderCanvas.vue:317
+msgid "Page title"
+msgstr ""
+
+#: src/components/builder/BuilderCanvas.vue:307
+msgid "Pages"
+msgstr ""
+
+#: src/components/builder/AddFieldMenu.vue:42
+#: src/components/builder/FieldCard.vue:50
+msgid "Paragraph"
+msgstr ""
+
+#: src/components/builder/AddFieldMenu.vue:33
+#: src/components/builder/FieldCard.vue:41
+msgid "Phone"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:262
+msgid "Pick an email field or type an address"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:293
+msgid "Pick who receives it, or type an address and press Enter."
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:191
+msgid "Placeholder"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:147
+msgid "Plain"
+msgstr ""
+
+#: src/components/render/FormRenderer.vue:241
+msgid "Please log in to submit this form."
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:398
+#: src/components/builder/BuilderView.vue:399
+#: src/components/builder/PreviewDialog.vue:44
+msgid "Preview"
+msgstr ""
+
+#: src/components/builder/PreviewDialog.vue:56
+msgid "Preview device"
+msgstr ""
+
+#: src/components/builder/PreviewDialog.vue:49
+msgid "Preview only, nothing saved"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:191
+msgid "Prompt"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:199
+#: src/components/builder/FormProperties.vue:203
+msgid "Public link"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:428
+msgid "Publish"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:214
+msgid "Publish the form to get a link you can share."
+msgstr ""
+
+#: src/App.vue:96
+#: src/components/builder/BuilderView.vue:392
+msgid "Published"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:428
+msgid "Publishing…"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:169
+msgid "Put in its own row"
+msgstr ""
+
+#: src/builder/labels.ts:42
+msgid "Redirect"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:329
+msgid "Refresh"
+msgstr ""
+
+#: src/components/builder/ConditionRow.vue:144
+msgid "Remove condition"
+msgstr ""
+
+#: src/components/builder/ConditionGroup.vue:92
+msgid "Remove group"
+msgstr ""
+
+#: src/components/builder/OptionsEditor.vue:73
+msgid "Remove option"
+msgstr ""
+
+#: src/components/builder/BuilderCanvas.vue:341
+msgid "Rename page"
+msgstr ""
+
+#: src/builder/labels.ts:35
+msgid "Require"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:196
+msgid "Required"
+msgstr ""
+
+#: src/components/builder/BuilderCanvas.vue:436
+msgid "Resize field"
+msgstr ""
+
+#: src/components/entries/DeliveryRow.vue:56
+#: src/components/entries/ResponseCard.vue:120
+msgid "Response #{id}"
+msgstr ""
+
+#: src/components/FormNav.vue:30
+#: src/components/entries/EntriesView.vue:254
+msgid "Responses"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:279
+msgid "Responses appear here as soon as someone sends the form."
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:262
+msgid "Review"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:104
+msgid "Right"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:495
+msgid "Rules that use this field will be updated or removed. Responses already received keep their answers."
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:189
+msgid "Same as the accent colour"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:158
+msgid "Saved"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:155
+msgid "Saving…"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:538
+msgid "Select a field on the canvas to edit it."
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:554
+msgid "Select a field on the canvas to set up its rules."
+msgstr ""
+
+#: src/App.vue:161
+msgid "Select a form"
+msgstr ""
+
+#: src/components/render/messages.ts:34
+msgid "Select fewer options."
+msgstr ""
+
+#: src/components/render/messages.ts:32
+msgid "Select more options."
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:112
+#: src/components/render/FormRenderer.vue:86
+msgid "Send"
+msgstr ""
+
+#: src/builder/labels.ts:43
+msgid "Send an email"
+msgstr ""
+
+#: src/builder/labels.ts:53
+msgid "Send the answers to another system, such as n8n or Zapier."
+msgstr ""
+
+#: src/builder/labels.ts:51
+msgid "Send the respondent to another page after they send the form."
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:261
+msgid "Send to"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:317
+#: src/entries/deliveryText.ts:12
+msgid "Sent"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:284
+msgid "Sent to the address the respondent typed. To limit abuse, at most 30 such emails are sent per hour for this form."
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:287
+msgid "Sent to the email address on your Nextcloud account. If you change it, forms follow automatically."
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:290
+msgid "Sent to the Nextcloud account the respondent is signed in with. Use it on forms that require login; otherwise anonymous responses are skipped."
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:339
+msgid "Sent with webhooks and used in exports. Rules, actions and layout follow if you change it."
+msgstr ""
+
+#: src/components/FormNav.vue:29
+msgid "Settings"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:453
+msgid "Settings section"
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:457
+msgid "Sharing"
+msgstr ""
+
+#: src/components/builder/AddFieldMenu.vue:30
+#: src/components/builder/FieldCard.vue:38
+msgid "Short text"
+msgstr ""
+
+#: src/builder/labels.ts:33
+msgid "Show"
+msgstr ""
+
+#: src/builder/labels.ts:41
+msgid "Show a message"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:298
+#: src/components/entries/EntriesView.vue:371
+msgid "Show more"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:132
+msgid "Show the form on a card"
+msgstr ""
+
+#: src/components/builder/LogicPanel.vue:65
+msgid "Show, hide or require this field depending on the answers to other fields."
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:300
+msgid "Showing {shown} of {total}"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:220
+msgid "Shown to respondent"
+msgstr ""
+
+#: src/components/entries/DeliveryRow.vue:36
+msgid "Signed-in respondent"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:317
+msgid "Signing secret"
+msgstr ""
+
+#: src/components/builder/AddFieldMenu.vue:36
+#: src/components/builder/FieldCard.vue:44
+msgid "Single choice"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:215
+msgid "Size"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:318
+#: src/entries/deliveryText.ts:14
+msgid "Skipped"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:221
+msgid "Small"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:336
+msgid "Some deliveries are overdue. Nextcloud sends them with its background jobs, which do not seem to be running. Ask your administrator to switch background jobs to Cron (Administration settings, Basic settings)."
+msgstr ""
+
+#: src/entries/deliveryText.ts:46
+msgid "Something unexpected went wrong. Check the Nextcloud log."
+msgstr ""
+
+#: src/components/render/FormRenderer.vue:214
+#: src/components/render/FormRenderer.vue:244
+msgid "Something went wrong. Please try again."
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:125
+msgid "Standard"
+msgstr ""
+
+#: src/components/builder/BuilderCanvas.vue:379
+msgid "Start your form"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:277
+msgid "Step"
+msgstr ""
+
+#: src/components/builder/RuleCard.vue:87
+msgid "Stop applying to this field"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:297
+msgid "Subject"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:178
+msgid "Submit button colour"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:111
+msgid "Submit button text"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:108
+msgid "Submitting"
+msgstr ""
+
+#: src/components/builder/PreviewDialog.vue:60
+msgid "Tablet"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:236
+msgid "Text"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:228
+#: src/components/builder/FieldProperties.vue:243
+msgid "Text alignment"
+msgstr ""
+
+#: src/builder/labels.ts:50
+msgid "Thank the respondent on the page after they send the form."
+msgstr ""
+
+#: src/components/render/FormRenderer.vue:201
+msgid "Thank you. Your response has been sent."
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:354
+msgid "That did not work. Try again in a moment."
+msgstr ""
+
+#: src/entries/deliveryText.ts:38
+msgid "That Nextcloud account has no email address set."
+msgstr ""
+
+#: src/components/render/messages.ts:39
+msgid "That was very quick. Please check your answers and send again."
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:380
+msgid "The answers and the record of what was sent are deleted. This cannot be undone."
+msgstr ""
+
+#: src/builder/errors.ts:26
+msgid "The default value is not valid."
+msgstr ""
+
+#: src/entries/deliveryText.ts:43
+msgid "The email has no valid recipient set."
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:504
+msgid "The form and all of its responses will be deleted. This cannot be undone."
+msgstr ""
+
+#: src/PublicApp.vue:102
+msgid "The form could not be loaded. Please try again later."
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:444
+msgid "The form could not be published."
+msgstr ""
+
+#: src/builder/errors.ts:32
+msgid "The form needs a title."
+msgstr ""
+
+#: src/builder/errors.ts:30
+msgid "The help text is too long."
+msgstr ""
+
+#: src/entries/deliveryText.ts:57
+msgid "The mail server refused it:{detail}"
+msgstr ""
+
+#: src/builder/errors.ts:28
+msgid "The placeholder is too long."
+msgstr ""
+
+#: src/entries/deliveryText.ts:51
+msgid "The receiver answered with HTTP {status}."
+msgstr ""
+
+#: src/entries/deliveryText.ts:54
+msgid "The request could not be made:{detail}"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:71
+msgid "the respondent"
+msgstr ""
+
+#: src/entries/deliveryText.ts:37
+msgid "The respondent did not give a usable email address."
+msgstr ""
+
+#: src/entries/deliveryText.ts:39
+msgid "The respondent was not signed in, so there is no account to email."
+msgstr ""
+
+#: src/entries/deliveryText.ts:45
+msgid "The response was deleted before this could be sent."
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:69
+msgid "the signed-in respondent"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:136
+msgid "The signed-in respondent"
+msgstr ""
+
+#: src/builder/errors.ts:64
+msgid "The signing secret is not valid. Generate a new one."
+msgstr ""
+
+#: src/builder/errors.ts:62
+msgid "The text uses a field that does not exist."
+msgstr ""
+
+#: src/entries/deliveryText.ts:42
+msgid "The webhook address is not valid."
+msgstr ""
+
+#: src/entries/deliveryText.ts:41
+msgid "The webhook has no signing secret. Generate a new one in the Actions tab."
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:183
+msgid "Their account email"
+msgstr ""
+
+#: src/entries/deliveryText.ts:44
+msgid "This action was removed from the form."
+msgstr ""
+
+#: src/components/render/messages.ts:46
+msgid "This answer is not valid."
+msgstr ""
+
+#: src/components/builder/FieldCard.vue:73
+msgid "This field has conditional logic"
+msgstr ""
+
+#: src/builder/errors.ts:36
+msgid "This field id was used by a deleted field."
+msgstr ""
+
+#: src/components/builder/RuleCard.vue:49
+msgid "This field is hidden when:"
+msgstr ""
+
+#: src/components/builder/RuleCard.vue:50
+msgid "This field is required when:"
+msgstr ""
+
+#: src/components/render/messages.ts:12
+msgid "This field is required."
+msgstr ""
+
+#: src/components/builder/RuleCard.vue:48
+msgid "This field is shown only when:"
+msgstr ""
+
+#: src/components/builder/LogicPanel.vue:96
+msgid "This field's answer controls"
+msgstr ""
+
+#: src/builder/errors.ts:66
+msgid "This form has too many actions."
+msgstr ""
+
+#: src/builder/errors.ts:34
+msgid "This form has too many fields."
+msgstr ""
+
+#: src/PublicApp.vue:91
+#: src/components/render/FormRenderer.vue:238
+msgid "This form is no longer accepting responses."
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:343
+msgid "This form is published. After you publish again, webhooks and exports use the new ID. Responses already received keep the old one."
+msgstr ""
+
+#: src/builder/errors.ts:68
+msgid "This form is too large."
+msgstr ""
+
+#: src/builder/errors.ts:70
+msgid "This is not valid ({code})."
+msgstr ""
+
+#: src/entries/deliveryText.ts:47
+msgid "This kind of action is not supported."
+msgstr ""
+
+#: src/PublicApp.vue:87
+msgid "This link does not lead to an open form."
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:332
+msgid "This list also refreshes by itself every few seconds while deliveries are waiting."
+msgstr ""
+
+#: src/components/render/messages.ts:24
+msgid "This number is not an allowed value."
+msgstr ""
+
+#: src/components/render/messages.ts:22
+msgid "This number is too large."
+msgstr ""
+
+#: src/components/render/messages.ts:20
+msgid "This number is too small."
+msgstr ""
+
+#: src/components/builder/BuilderCanvas.vue:334
+msgid "This page has a problem"
+msgstr ""
+
+#: src/components/render/messages.ts:42
+msgid "This page was open for too long. Please send again."
+msgstr ""
+
+#: src/builder/errors.ts:39
+msgid "This rule does not point at a field."
+msgstr ""
+
+#: src/components/render/messages.ts:30
+msgid "This text is too long."
+msgstr ""
+
+#: src/components/builder/ConditionRow.vue:97
+msgid "Ticked"
+msgstr ""
+
+#: src/components/builder/AddFieldMenu.vue:40
+#: src/components/builder/FieldCard.vue:48
+msgid "Time"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:76
+msgid "Title"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:82
+msgid "To {to}: {subject}"
+msgstr ""
+
+#: src/components/render/FormRenderer.vue:232
+msgid "Too many attempts. Please wait a moment and try again."
+msgstr ""
+
+#: src/entries/deliveryText.ts:40
+msgid "Too many emails to respondents were sent for this form in the last hour."
+msgstr ""
+
+#: src/App.vue:127
+#: src/components/entries/DeliveryRow.vue:76
+#: src/components/entries/EntriesView.vue:274
+msgid "Try again"
+msgstr ""
+
+#: src/builder/errors.ts:43
+msgid "Two fields depend on each other. Change one of the conditions."
+msgstr ""
+
+#: src/builder/errors.ts:22
+msgid "Two options share the same value."
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:156
+msgid "Unsaved changes"
+msgstr ""
+
+#: src/components/builder/ConditionRow.vue:44
+#: src/components/builder/FieldCard.vue:96
+#: src/components/builder/LogicPanel.vue:34
+msgid "Untitled field"
+msgstr ""
+
+#: src/App.vue:74
+msgid "Untitled form"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:124
+msgid "Use 3 to 32 lowercase letters, numbers or underscores, starting with a letter."
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:192
+msgid "Use Preview to see the result."
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:172
+msgid "Use the Nextcloud colour"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:185
+msgid "Use this address"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:237
+msgid "Uses answers that no longer exist: {names}"
+msgstr ""
+
+#: src/components/builder/ConditionRow.vue:95
+#: src/components/builder/ConditionRow.vue:104
+#: src/components/builder/ConditionRow.vue:113
+msgid "Value"
+msgstr ""
+
+#: src/components/builder/ConditionRow.vue:122
+msgid "Values, separated by commas"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:316
+#: src/entries/deliveryText.ts:15
+msgid "Waiting"
+msgstr ""
+
+#: src/entries/deliveryText.ts:22
+msgid "Webhook"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:312
+msgid "Webhook address"
+msgstr ""
+
+#: src/components/builder/RuleCard.vue:58
+msgid "What the rule does"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:252
+msgid "What to show"
+msgstr ""
+
+#: src/components/builder/ConditionRow.vue:76
+msgid "When this field"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:220
+msgid "Who can respond"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:126
+msgid "Wide"
+msgstr ""
+
+#: src/components/builder/FieldProperties.vue:297
+msgid "Width"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:135
+msgid "Width only applies on larger screens. On phones the form fills the screen and fields sit one under another."
+msgstr ""
+
+#: src/components/builder/LogicPanel.vue:82
+msgid "With several \"show\" rules the field appears when any of them matches. A \"hide\" rule always wins."
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:338
+msgid "Without a secret the request is sent unsigned."
+msgstr ""
+
+#: src/entries/format.ts:25
+msgid "Yes"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:66
+msgid "you"
+msgstr ""
+
+#: src/components/render/messages.ts:44
+msgid "You have already submitted this form."
+msgstr ""
+
+#: src/PublicApp.vue:95
+msgid "You need to log in to fill in this form."
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:182
+msgid "Your account email"
+msgstr ""
+
+#: src/components/render/FormRenderer.vue:235
+msgid "Your answers are too large to send."
+msgstr ""
+
+#: src/components/builder/BuilderView.vue:435
+msgid "Your latest changes could not be saved. Check your connection; they will be retried when you edit again."
+msgstr ""

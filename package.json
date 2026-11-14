@@ -11,6 +11,8 @@
     "dev": "vite --mode development build",
     "watch": "vite --mode development build --watch",
     "typecheck": "vue-tsc --noEmit",
+    "l10n:extract": "node tools/l10n.mjs extract",
+    "l10n:compile": "node tools/l10n.mjs compile",
     "test": "vitest run"
   },
   "browserslist": [

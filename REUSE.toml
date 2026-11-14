@@ -7,3 +7,9 @@ path = ["package.json", "package-lock.json", "composer.json", "composer.lock", "
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 ArcaneX"
 SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+[[annotations]]
+path = ["l10n/**", "translationfiles/**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 ArcaneX"
+SPDX-License-Identifier = "AGPL-3.0-or-later"

@@ -69,8 +69,11 @@ Verified on the dev instance by hand (deploy with `dev/deploy.sh user@dev-host`;
 `user@proxmox-host` is the Proxmox host and is the wrong target). Not yet verified: `info.xml`
 against the app store XSD, a fresh install migration, rate-limit attributes under load.
 
-Remaining: phase 7 hardening and release (security pass on public endpoints and the webhook
-client, l10n files, app store packaging and screenshots). Touch dragging is not supported
+Phase 7 so far: security pass done (account deletion now cleans up forms and responses),
+`info.xml` validates against the app store XSD, translation tooling (`npm run l10n:extract`,
+`l10n:compile`) and `tools/package.sh` for the release archive. Release steps are in
+`docs/RELEASING.md`. Remaining: app store registration and signing, screenshots, and any
+actual translations. Touch dragging is not supported
 (the move buttons in the field panel cover it). Submit message and redirect are resolved
 synchronously; see `docs/SCHEMA.md`.
 
