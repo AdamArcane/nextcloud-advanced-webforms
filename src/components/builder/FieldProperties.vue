@@ -98,6 +98,17 @@ const labelHint = computed(() => {
 })
 
 /** Setting a position replaces the older hideLabel flag, so the two never disagree. */
+const alignOptions = computed(() => [
+	{ value: 'start', label: t('advancedforms', 'Left') },
+	{ value: 'center', label: t('advancedforms', 'Center') },
+	{ value: 'end', label: t('advancedforms', 'Right') },
+])
+
+/** Start is the default, so it is stored as no value at all. */
+function setAlign(choice: string): void {
+	emit('update', { align: choice === 'center' || choice === 'end' ? choice : undefined })
+}
+
 function setLabelPosition(choice: string): void {
 	emit('update', {
 		labelPosition: choice === 'default' ? undefined : choice as FormField['labelPosition'],
@@ -211,6 +222,13 @@ const moves: { move: Move, label: string, icon: string }[] = [
 						]"
 						@update:model-value="(value) => emit('update', { level: Number(value) })" />
 				</div>
+				<div class="af-props__group">
+					<span class="af-props__caption">{{ t('advancedforms', 'Alignment') }}</span>
+					<SegmentedControl :model-value="field.align ?? 'start'"
+						:group-label="t('advancedforms', 'Text alignment')"
+						:options="alignOptions"
+						@update:model-value="(value) => setAlign(String(value))" />
+				</div>
 			</template>
 
 			<template v-else-if="type === 'paragraph'">
@@ -219,6 +237,13 @@ const moves: { move: Move, label: string, icon: string }[] = [
 					:helper-text="t('advancedforms', 'Basic markdown works: bold, italic, lists and links.')"
 					rows="5"
 					@update:model-value="(value: string) => emit('update', { text: value })" />
+				<div class="af-props__group">
+					<span class="af-props__caption">{{ t('advancedforms', 'Alignment') }}</span>
+					<SegmentedControl :model-value="field.align ?? 'start'"
+						:group-label="t('advancedforms', 'Text alignment')"
+						:options="alignOptions"
+						@update:model-value="(value) => setAlign(String(value))" />
+				</div>
 			</template>
 
 			<p v-else class="af-props__hint">

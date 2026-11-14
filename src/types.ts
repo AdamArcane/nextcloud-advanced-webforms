@@ -34,6 +34,8 @@ export type FormField = {
 	maxSelected?: number
 	text?: string
 	level?: number
+	/** Text alignment of a heading or paragraph. Default `start`. */
+	align?: 'start' | 'center' | 'end'
 }
 
 /** How the public page looks (docs/SCHEMA.md 3). Every key is optional; unset means the default. */

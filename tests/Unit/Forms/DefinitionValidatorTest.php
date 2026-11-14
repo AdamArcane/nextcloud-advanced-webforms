@@ -213,6 +213,18 @@ class DefinitionValidatorTest extends TestCase {
 		}));
 	}
 
+	public function testTextAlignment(): void {
+		$layout = static function (array $d, array $field): array {
+			$d['fields']['f_head'] = $field;
+			$d['pages'][0]['rows'][] = ['id' => 'r_9', 'cells' => [['id' => 'c_9', 'span' => 12, 'field' => 'f_head']]];
+			return $d;
+		};
+		$this->assertSame([], $this->codes(static fn (array $d): array => $layout($d, ['type' => 'heading', 'text' => 'Hi', 'align' => 'center'])));
+		$this->assertSame([], $this->codes(static fn (array $d): array => $layout($d, ['type' => 'paragraph', 'text' => 'Hi', 'align' => 'end'])));
+		$this->assertSame(['field_align_invalid'], $this->codes(static fn (array $d): array => $layout($d, ['type' => 'heading', 'text' => 'Hi', 'align' => 'left'])));
+		$this->assertSame(['unknown_property'], $this->codes(static fn (array $d): array => $layout($d, ['type' => 'divider', 'align' => 'center'])));
+	}
+
 	public function testRuleErrorsAreIncluded(): void {
 		$this->assertContains('rule_unknown_target', $this->codes(static function (array $d): array {
 			$d['rules'][0]['targets'] = ['f_ghost'];

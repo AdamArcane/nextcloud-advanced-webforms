@@ -183,8 +183,8 @@ Display types (no value, cannot be rule sources, can be rule targets):
 
 | type | properties |
 | --- | --- |
-| `heading` | `text`, `level` (2 to 4) |
-| `paragraph` | `text` (limited markdown, see 4.5) |
+| `heading` | `text`, `level` (2 to 4), `align` |
+| `paragraph` | `text` (limited markdown, see 4.5), `align` |
 | `divider` | none |
 
 Deferred: file upload, hidden fields, rating, matrix, signature.
@@ -194,6 +194,10 @@ Common properties for input fields: `label` (required), `description`,
 
 `placeholder` (optional string) is supported on `text`, `textarea`, `email`,
 `number`, `phone`, and `select` (for `select` it is the empty-choice prompt).
+
+`align` on a `heading` or `paragraph` is `start` (default), `center` or `end`. It aligns the
+text only; the field still fills its cell. It is `start` and `end` rather than left and right so
+right-to-left languages behave.
 
 `label` stays required for every input field, whatever its position, because
 accessibility, entry display, and exports depend on it. A placeholder is not a

@@ -52,6 +52,8 @@ const typeLabel = computed(() => {
 	}
 })
 
+const alignStyle = computed(() => (props.field.align === 'center' || props.field.align === 'end' ? { textAlign: props.field.align } : undefined))
+
 const title = computed(() => props.field.label || props.field.text || typeLabel.value)
 </script>
 
@@ -81,10 +83,10 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 
 		<template v-if="isDisplay">
 			<hr v-if="field.type === 'divider'" class="af-card__divider">
-			<p v-else-if="field.type === 'heading'" class="af-card__heading">
+			<p v-else-if="field.type === 'heading'" class="af-card__heading" :style="alignStyle">
 				{{ field.text }}
 			</p>
-			<p v-else class="af-card__text">
+			<p v-else class="af-card__text" :style="alignStyle">
 				{{ field.text }}
 			</p>
 		</template>

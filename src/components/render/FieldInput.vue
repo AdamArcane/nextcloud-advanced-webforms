@@ -52,6 +52,8 @@ const inputType = computed(() => ({
 	date: 'date',
 	time: 'time',
 }[props.field.type] ?? 'text'))
+/** Only headings and paragraphs align; start is the default and needs no style. */
+const alignStyle = computed(() => (props.field.align === 'center' || props.field.align === 'end' ? { textAlign: props.field.align } : undefined))
 const headingTag = computed(() => 'h' + ([2, 3, 4].includes(props.field.level ?? 2) ? (props.field.level ?? 2) : 2))
 
 const stringValue = computed(() => (typeof props.modelValue === 'string' ? props.modelValue : ''))
@@ -78,10 +80,10 @@ function toggleOption(value: string, event: Event) {
 <template>
 	<!-- Display types: no value, no label. -->
 	<template v-if="isDisplay">
-		<component :is="headingTag" v-if="field.type === 'heading'" class="af-heading">
+		<component :is="headingTag" v-if="field.type === 'heading'" class="af-heading" :style="alignStyle">
 			{{ field.text }}
 		</component>
-		<MarkdownText v-else-if="field.type === 'paragraph'" :source="field.text ?? ''" />
+		<MarkdownText v-else-if="field.type === 'paragraph'" :source="field.text ?? ''" :style="alignStyle" />
 		<hr v-else class="af-divider">
 	</template>
 

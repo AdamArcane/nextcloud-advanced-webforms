@@ -311,8 +311,8 @@ final class DefinitionValidator {
 	 */
 	private function displayField(array $field, string $type, string $path): void {
 		$allowed = match ($type) {
-			FieldType::HEADING => ['type', 'text', 'level'],
-			FieldType::PARAGRAPH => ['type', 'text'],
+			FieldType::HEADING => ['type', 'text', 'level', 'align'],
+			FieldType::PARAGRAPH => ['type', 'text', 'align'],
 			default => ['type'],
 		};
 		foreach (array_keys($field) as $key) {
@@ -327,6 +327,9 @@ final class DefinitionValidator {
 		$max = $type === FieldType::HEADING ? 255 : 2000;
 		if (!is_string($text) || trim($text) === '' || mb_strlen($text) > $max) {
 			$this->err('field_text_invalid', $path . '.text');
+		}
+		if (array_key_exists('align', $field) && !in_array($field['align'], ['start', 'center', 'end'], true)) {
+			$this->err('field_align_invalid', $path . '.align');
 		}
 		if ($type === FieldType::HEADING && !in_array($field['level'] ?? 2, [2, 3, 4], true)) {
 			$this->err('field_level_invalid', $path . '.level');

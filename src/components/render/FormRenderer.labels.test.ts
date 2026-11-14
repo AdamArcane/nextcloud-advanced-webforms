@@ -103,3 +103,18 @@ describe('required indicator', () => {
 		expect(wrapper.find('input').attributes('aria-required')).toBe('true')
 	})
 })
+
+describe('text alignment of headings and paragraphs', () => {
+	const fields: Record<string, FormField> = {
+		f_head: { type: 'heading', text: 'Hello', level: 2, align: 'center' },
+		f_para: { type: 'paragraph', text: 'Some text', align: 'end' },
+		f_plain: { type: 'heading', text: 'Plain', level: 3 },
+	}
+
+	it('aligns what asks for it and leaves the rest alone', () => {
+		const wrapper = render({}, fields)
+		expect(wrapper.find('h2').attributes('style')).toContain('text-align: center')
+		expect(wrapper.find('.af-markdown').attributes('style')).toContain('text-align: end')
+		expect(wrapper.find('h3').attributes('style') ?? '').not.toContain('text-align')
+	})
+})
