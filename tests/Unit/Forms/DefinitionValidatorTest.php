@@ -83,6 +83,28 @@ class DefinitionValidatorTest extends TestCase {
 		}));
 	}
 
+	public function testHideTitleSetting(): void {
+		$this->assertSame([], $this->codes(static function (array $d): array {
+			$d['settings']['hideTitle'] = true;
+			return $d;
+		}));
+		$this->assertSame(['settings_invalid'], $this->codes(static function (array $d): array {
+			$d['settings']['hideTitle'] = 'yes';
+			return $d;
+		}));
+	}
+
+	public function testCaptchaSetting(): void {
+		$this->assertSame([], $this->codes(static function (array $d): array {
+			$d['settings']['captcha'] = false;
+			return $d;
+		}));
+		$this->assertSame(['settings_invalid'], $this->codes(static function (array $d): array {
+			$d['settings']['captcha'] = 'off';
+			return $d;
+		}));
+	}
+
 	public function testHideRequiredIndicatorSetting(): void {
 		$this->assertSame([], $this->codes(static function (array $d): array {
 			$d['settings']['hideRequiredIndicator'] = true;

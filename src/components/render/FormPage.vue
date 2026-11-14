@@ -33,7 +33,7 @@ const style = computed(() => ({
 <template>
 	<div class="af-page" :class="{ 'af-page--card': design?.card !== false }" :style="style">
 		<header class="af-page__head">
-			<h1 class="af-page__title">
+			<h1 class="af-page__title" :class="{ 'af-page__title--hidden': form.definition.settings?.hideTitle === true }">
 				{{ form.definition.title }}
 			</h1>
 			<p v-if="form.definition.description" class="af-page__intro">
@@ -66,12 +66,29 @@ const style = computed(() => ({
 	margin-bottom: 28px;
 }
 
+.af-page__head:has(.af-page__title--hidden):not(:has(.af-page__intro)) {
+	margin-bottom: 0;
+}
+
 .af-page__title {
 	margin: 0 0 8px;
 	font-size: 28px;
 	font-weight: 600;
 	line-height: 1.25;
 	overflow-wrap: anywhere;
+}
+
+/* Hidden visually, still the page's heading for screen readers. */
+.af-page__title--hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
 }
 
 .af-page__intro {

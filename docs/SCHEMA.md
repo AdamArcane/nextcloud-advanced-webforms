@@ -49,6 +49,7 @@ Non-goals (v1, but the format must not block them):
     "allowMultipleSubmissions": true,
     "hideRequiredIndicator": false,
     "captcha": true,
+    "hideTitle": false,
     "closedMessage": "This form is no longer accepting responses.",
     "design": { "width": "standard", "card": true, "background": "default", "accentColor": "#0082c9" }
   },
@@ -127,6 +128,10 @@ releases migrate stored definitions.
 `settings.captcha` (boolean, default true) turns the server's spam check off for this form
 when false. It is a form setting only; which check runs, and its keys, are server-wide and set
 by an administrator (section 10.1).
+
+`settings.hideTitle` (boolean, default false) leaves the form title off the public page and the
+builder preview. The title is still the page's heading for assistive technology, and the
+description is unaffected.
 
 `settings.hideRequiredIndicator` (boolean, default false) leaves out the asterisk
 after the labels of required fields. It only changes how the label is drawn: the

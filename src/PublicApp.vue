@@ -126,6 +126,14 @@ async function refreshToken() {
  * (so cells can stack by their own width), and a size container has no intrinsic
  * width, so without an explicit one the page collapses to its padding.
  */
+/*
+ * Nextcloud's public layout fixes #content to the window and clips what overflows it, so a form
+ * taller than the window could not be scrolled. Let this one scroll.
+ */
+#content.app-advancedforms {
+	overflow-y: auto;
+}
+
 #advancedforms-public {
 	box-sizing: border-box;
 	flex: 1 1 100%;

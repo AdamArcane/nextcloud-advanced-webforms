@@ -7,6 +7,7 @@
 
 ## 0.3.0 - Unreleased
 
+- A form can hide its title on the public page (Settings, Show the title on the form page).
 - Spam protection for people who are not logged in. An administrator picks one check for the
   whole server under Administration settings: a built-in proof-of-work check (default, no account,
   nothing shown, no data leaves the server), Cloudflare Turnstile, hCaptcha, or none. Form owners

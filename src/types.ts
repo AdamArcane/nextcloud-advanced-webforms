@@ -80,6 +80,8 @@ export interface FormSettings {
 	allowMultipleSubmissions?: boolean
 	/** Leave out the asterisk after required labels. Screen readers are still told. Default false. */
 	hideRequiredIndicator?: boolean
+	/** Leave the title out of the public page. It stays there for screen readers. Default false. */
+	hideTitle?: boolean
 	/** Ask anonymous respondents to pass the server's spam check. Default true; false turns it off for this form. */
 	captcha?: boolean
 	closedMessage?: string

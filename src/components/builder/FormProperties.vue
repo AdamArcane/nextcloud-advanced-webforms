@@ -79,6 +79,11 @@ function str(value: string | number): string | undefined {
 				:label="t('advancedforms', 'Description')"
 				rows="3"
 				@update:model-value="(value: string) => emit('description', value)" />
+			<NcCheckboxRadioSwitch type="switch"
+				:model-value="definition.settings.hideTitle !== true"
+				@update:model-value="(value: boolean) => emit('settings', { hideTitle: value ? undefined : true })">
+				{{ t('advancedforms', 'Show the title on the form page') }}
+			</NcCheckboxRadioSwitch>
 		</section>
 
 		<section v-if="section === 'general'" class="af-form-props__section">
