@@ -21,10 +21,12 @@ import { ApiError } from '../../api/http.ts'
 import { deleteForm, getForm, publicFormUrl, publishForm, saveDraft } from '../../api/forms.ts'
 import { addField, locateField, moveField, removeField, setSpan, updateField } from '../../builder/definition.ts'
 import { describeError, groupErrors } from '../../builder/errors.ts'
+import type { Rule } from '../../rules/types.ts'
 import { FORM_STATUS_PUBLISHED } from '../../types.ts'
 import BuilderCanvas from './BuilderCanvas.vue'
 import FieldProperties from './FieldProperties.vue'
 import FormProperties from './FormProperties.vue'
+import LogicPanel from './LogicPanel.vue'
 import PreviewDialog from './PreviewDialog.vue'
 import SegmentedControl from './SegmentedControl.vue'
 
@@ -50,7 +52,7 @@ const publishFailed = ref(false)
 
 const selectedId = ref<string | null>(null)
 const sidebarOpen = ref(true)
-const tab = ref<'field' | 'form'>('form')
+const tab = ref<'field' | 'logic' | 'form'>('form')
 const canvasWidth = ref<'desktop' | 'mobile'>('desktop')
 const mobile = computed(() => canvasWidth.value === 'mobile')
 const previewOpen = ref(false)
@@ -187,7 +189,7 @@ const errorGroups = computed(() => groupErrors(errors.value))
 const formErrors = computed(() => errorGroups.value.get('') ?? [])
 const selectedField = computed(() => (selectedId.value && draft.value ? draft.value.fields[selectedId.value] : undefined))
 const selectedCodes = computed(() => (selectedId.value ? (errorGroups.value.get(selectedId.value) ?? []).map((e) => e.code) : []))
-const sidebarName = computed(() => (tab.value === 'field' && selectedField.value
+const sidebarName = computed(() => (tab.value !== 'form' && selectedField.value
 	? (selectedField.value.label || selectedField.value.text || t('advancedforms', 'Field'))
 	: t('advancedforms', 'Form settings')))
 
@@ -243,6 +245,12 @@ function onRemoveConfirmed(): void {
 		edit(removeField(draft.value, selectedId.value))
 		selectedId.value = null
 		tab.value = 'form'
+	}
+}
+
+function onRules(rules: Rule[]): void {
+	if (draft.value) {
+		edit({ ...draft.value, rules })
 	}
 }
 
@@ -380,7 +388,7 @@ function openSettings(): void {
 		v-model:active="tab"
 		v-model:open="sidebarOpen"
 		:name="sidebarName"
-		:subname="tab === 'field' ? undefined : t('advancedforms', 'Applies to the whole form')">
+		:subname="tab !== 'form' ? undefined : t('advancedforms', 'Applies to the whole form')">
 		<NcAppSidebarTab id="field" :name="t('advancedforms', 'Field')" :order="1">
 			<FieldProperties v-if="selectedId && selectedField"
 				:key="selectedId"
@@ -397,7 +405,20 @@ function openSettings(): void {
 				:name="t('advancedforms', 'No field selected')"
 				:description="t('advancedforms', 'Select a field on the canvas to edit it.')" />
 		</NcAppSidebarTab>
-		<NcAppSidebarTab id="form" :name="t('advancedforms', 'Form')" :order="2">
+		<NcAppSidebarTab id="logic" :name="t('advancedforms', 'Logic')" :order="2">
+			<LogicPanel v-if="selectedId && selectedField"
+				:key="selectedId"
+				:definition="draft"
+				:field-id="selectedId"
+				:errors="errors"
+				@rules="onRules"
+				@select="select" />
+			<NcEmptyContent v-else
+				class="af-builder__hint"
+				:name="t('advancedforms', 'No field selected')"
+				:description="t('advancedforms', 'Select a field on the canvas to set up its rules.')" />
+		</NcAppSidebarTab>
+		<NcAppSidebarTab id="form" :name="t('advancedforms', 'Form')" :order="3">
 			<FormProperties :definition="draft"
 				:share-url="shareUrl"
 				@title="onTitle"

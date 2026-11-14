@@ -34,6 +34,24 @@ export function describeError(code: string): string {
 			return t('advancedforms', 'This form has too many fields.')
 		case 'field_id_retired':
 			return t('advancedforms', 'This field id was used by a deleted field.')
+		case 'rule_no_targets':
+		case 'rule_unknown_target':
+			return t('advancedforms', 'This rule does not point at a field.')
+		case 'rule_require_on_display_field':
+			return t('advancedforms', 'Only input fields can be required.')
+		case 'rules_cycle':
+			return t('advancedforms', 'Two fields depend on each other. Change one of the conditions.')
+		case 'cond_unknown_field':
+			return t('advancedforms', 'A condition uses a field that no longer exists.')
+		case 'cond_source_not_input':
+			return t('advancedforms', 'A condition reads a field that has no answer.')
+		case 'cond_bad_operator':
+			return t('advancedforms', 'A condition uses a comparison this field does not support.')
+		case 'cond_bad_value':
+			return t('advancedforms', 'A condition needs a valid value to compare against.')
+		case 'cond_bad_shape':
+		case 'cond_too_deep':
+			return t('advancedforms', 'A group of conditions is empty or nested too deeply.')
 		case 'too_large':
 			return t('advancedforms', 'This form is too large.')
 		default:
