@@ -23,7 +23,7 @@ export function valueKind(op: string): ValueKind {
 	if (op === 'empty' || op === 'not_empty') {
 		return 'none'
 	}
-	return op === 'in' || op === 'not_in' ? 'list' : 'scalar'
+	return ['in', 'not_in', 'contains_any', 'contains_all', 'contains_none'].includes(op) ? 'list' : 'scalar'
 }
 
 export function isGroup(node: Condition): node is AllCondition | AnyCondition {

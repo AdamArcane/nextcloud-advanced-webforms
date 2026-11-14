@@ -32,6 +32,8 @@ final class Comparator {
 				return $empty || !self::contains($type, $normalized, $ruleValue);
 			case 'not_in':
 				return $empty || !self::in($type, $normalized, $ruleValue);
+			case 'contains_none':
+				return $empty || !self::containsAny($normalized, $ruleValue);
 		}
 
 		// Every remaining operator is false against an empty value.
@@ -43,6 +45,8 @@ final class Comparator {
 			'eq' => self::equals($type, $normalized, $ruleValue),
 			'contains' => self::contains($type, $normalized, $ruleValue),
 			'in' => self::in($type, $normalized, $ruleValue),
+			'contains_any' => self::containsAny($normalized, $ruleValue),
+			'contains_all' => self::containsAll($normalized, $ruleValue),
 			'gt', 'gte', 'lt', 'lte' => self::ordered($type, $op, $normalized, $ruleValue),
 			default => false,
 		};
@@ -59,6 +63,36 @@ final class Comparator {
 		}
 		$needle = ValueNormalizer::normalize($type, $ruleValue);
 		return is_string($normalized) && is_string($needle) && str_contains($normalized, $needle);
+	}
+
+	/**
+	 * For `checkboxes`: at least one of the listed option values is selected.
+	 */
+	private static function containsAny(mixed $normalized, mixed $ruleValue): bool {
+		if (!is_array($normalized) || !is_array($ruleValue) || !array_is_list($ruleValue)) {
+			return false;
+		}
+		foreach ($ruleValue as $item) {
+			if (is_string($item) && in_array($item, $normalized, true)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * For `checkboxes`: every listed option value is selected. An empty list is never true.
+	 */
+	private static function containsAll(mixed $normalized, mixed $ruleValue): bool {
+		if (!is_array($normalized) || !is_array($ruleValue) || !array_is_list($ruleValue) || $ruleValue === []) {
+			return false;
+		}
+		foreach ($ruleValue as $item) {
+			if (!is_string($item) || !in_array($item, $normalized, true)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	private static function in(string $type, mixed $normalized, mixed $ruleValue): bool {

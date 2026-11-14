@@ -11,6 +11,8 @@ import type { SourceField } from '../../builder/rules.ts'
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import { computed } from 'vue'
+import { icons } from '../../icons.ts'
+import Icon from '../common/Icon.vue'
 import { defaultLeaf, groupChildren, groupKind, isGroup, makeGroup, MAX_GROUP_DEPTH } from '../../builder/rules.ts'
 import ConditionRow from './ConditionRow.vue'
 import SegmentedControl from './SegmentedControl.vue'
@@ -90,8 +92,11 @@ function addGroup(): void {
 			<NcButton v-if="removable"
 				variant="tertiary"
 				:aria-label="t('advancedforms', 'Remove group')"
+				:title="t('advancedforms', 'Remove group')"
 				@click="emit('remove')">
-				✕
+				<template #icon>
+					<Icon :path="icons.close" />
+				</template>
 			</NcButton>
 		</div>
 
@@ -121,12 +126,25 @@ function addGroup(): void {
 		</ul>
 
 		<div class="af-group__add">
-			<NcButton variant="tertiary" :disabled="!firstAllowed" @click="addCondition">
+			<NcButton variant="secondary" :disabled="!firstAllowed" @click="addCondition">
+				<template #icon>
+					<Icon :path="icons.add" />
+				</template>
 				{{ t('advancedforms', 'Add condition') }}
 			</NcButton>
-			<NcButton v-if="depth < MAX_GROUP_DEPTH" variant="tertiary" :disabled="!canAddGroup" @click="addGroup">
+			<NcButton v-if="depth < MAX_GROUP_DEPTH"
+				variant="secondary"
+				:disabled="!canAddGroup"
+				:title="t('advancedforms', 'A group lets you mix \'all\' and \'any\' conditions')"
+				@click="addGroup">
+				<template #icon>
+					<Icon :path="icons.addGroup" />
+				</template>
 				{{ t('advancedforms', 'Add group') }}
 			</NcButton>
+			<span v-if="$slots.actions" class="af-group__end">
+				<slot name="actions" />
+			</span>
 		</div>
 	</div>
 </template>
@@ -191,6 +209,12 @@ function addGroup(): void {
 .af-group__add {
 	display: flex;
 	flex-wrap: wrap;
+	align-items: center;
 	gap: var(--default-grid-baseline);
+}
+
+/* Pushes what the parent adds (the rule's delete button) to the right edge of the button row. */
+.af-group__end {
+	margin-inline-start: auto;
 }
 </style>

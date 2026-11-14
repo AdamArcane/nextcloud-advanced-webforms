@@ -117,6 +117,20 @@ class RuleValidatorTest extends TestCase {
 		$this->assertContains('cond_bad_value', $this->codes([self::rule(['when' => $when])]));
 	}
 
+	public function testCheckboxesAnyAllNoneTakeAListOfOptions(): void {
+		foreach (['contains_any', 'contains_all', 'contains_none'] as $op) {
+			$ok = ['all' => [['field' => 'f_tags', 'op' => $op, 'value' => ['a', 'b']]]];
+			$this->assertSame([], $this->codes([self::rule(['when' => $ok])]), $op);
+			foreach ([[], 'a', ['a', 'z']] as $bad) {
+				$when = ['all' => [['field' => 'f_tags', 'op' => $op, 'value' => $bad]]];
+				$this->assertContains('cond_bad_value', $this->codes([self::rule(['when' => $when])]), $op);
+			}
+		}
+		// Only checkboxes have these operators.
+		$when = ['all' => [['field' => 'f_kind', 'op' => 'contains_any', 'value' => ['new']]]];
+		$this->assertContains('cond_bad_operator', $this->codes([self::rule(['when' => $when])]));
+	}
+
 	public function testCheckboxesValueMustBeAnOption(): void {
 		$ok = ['all' => [['field' => 'f_tags', 'op' => 'contains', 'value' => 'a']]];
 		$bad = ['all' => [['field' => 'f_tags', 'op' => 'contains', 'value' => 'z']]];

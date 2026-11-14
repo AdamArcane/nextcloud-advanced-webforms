@@ -31,6 +31,8 @@ export function compare(type: string, op: string, normalized: NormalizedValue, r
 			return empty || !contains(type, normalized, ruleValue)
 		case 'not_in':
 			return empty || !isIn(type, normalized, ruleValue)
+		case 'contains_none':
+			return empty || !containsAny(normalized, ruleValue)
 		default:
 			break
 	}
@@ -47,6 +49,10 @@ export function compare(type: string, op: string, normalized: NormalizedValue, r
 			return contains(type, normalized, ruleValue)
 		case 'in':
 			return isIn(type, normalized, ruleValue)
+		case 'contains_any':
+			return containsAny(normalized, ruleValue)
+		case 'contains_all':
+			return containsAll(normalized, ruleValue)
 		case 'gt':
 		case 'gte':
 		case 'lt':
@@ -68,6 +74,22 @@ function contains(type: string, normalized: NormalizedValue, ruleValue: unknown)
 	}
 	const needle = normalize(type, ruleValue)
 	return typeof normalized === 'string' && typeof needle === 'string' && normalized.includes(needle)
+}
+
+/** For checkboxes: at least one of the listed option values is selected. */
+function containsAny(normalized: NormalizedValue, ruleValue: unknown): boolean {
+	if (!Array.isArray(normalized) || !Array.isArray(ruleValue)) {
+		return false
+	}
+	return ruleValue.some((item) => typeof item === 'string' && normalized.includes(item))
+}
+
+/** For checkboxes: every listed option value is selected. An empty list is never true. */
+function containsAll(normalized: NormalizedValue, ruleValue: unknown): boolean {
+	if (!Array.isArray(normalized) || !Array.isArray(ruleValue) || ruleValue.length === 0) {
+		return false
+	}
+	return ruleValue.every((item) => typeof item === 'string' && normalized.includes(item))
 }
 
 function isIn(type: string, normalized: NormalizedValue, ruleValue: unknown): boolean {

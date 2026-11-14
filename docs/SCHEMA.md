@@ -417,6 +417,7 @@ Operators:
 | `gt`, `gte`, `lt`, `lte` | numeric or date comparison | number or date string |
 | `contains`, `not_contains` | for `checkboxes`: membership; for text: substring | scalar |
 | `in`, `not_in` | field value is (not) in a list | array of scalars |
+| `contains_any`, `contains_all`, `contains_none` | for `checkboxes` only: at least one / every / none of the listed options is selected | non-empty array of option values |
 | `empty`, `not_empty` | no value / has value | none |
 
 Deliberately not included: regular expressions. User-supplied patterns run
@@ -433,7 +434,8 @@ Comparison semantics (**DECISION**, must be identical in PHP and TypeScript):
 - `checkbox`: compares as boolean (`eq` with `true` or `false`).
 - Empty means: missing, `null`, empty string after trim, or empty array.
 - A comparison against an empty value is false, except `empty`, `neq`,
-  `not_contains`, and `not_in`, which are true.
+  `not_contains`, `not_in`, and `contains_none`, which are true. `contains_all`
+  is false against an empty value even for an empty list (it never matches an empty list).
 - A rule whose source field is itself hidden sees that field as empty.
 
 Normalization before comparing (applied to the submitted value and to the rule's

@@ -175,7 +175,7 @@ final class RuleValidator {
 		}
 
 		$value = $node['value'];
-		if ($op === 'in' || $op === 'not_in') {
+		if (in_array($op, ['in', 'not_in', 'contains_any', 'contains_all', 'contains_none'], true)) {
 			if (!is_array($value) || !array_is_list($value) || $value === []) {
 				$errors[] = ['code' => 'cond_bad_value', 'path' => $path . '.value'];
 				return;

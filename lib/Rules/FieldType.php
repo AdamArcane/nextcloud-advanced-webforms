@@ -35,7 +35,7 @@ final class FieldType {
 	private const TEXT_OPERATORS = ['eq', 'neq', 'contains', 'not_contains', 'in', 'not_in', 'empty', 'not_empty'];
 	private const NUMBER_OPERATORS = ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'in', 'not_in', 'empty', 'not_empty'];
 	private const CHOICE_OPERATORS = ['eq', 'neq', 'in', 'not_in', 'empty', 'not_empty'];
-	private const MULTI_OPERATORS = ['contains', 'not_contains', 'empty', 'not_empty'];
+	private const MULTI_OPERATORS = ['contains', 'not_contains', 'contains_any', 'contains_all', 'contains_none', 'empty', 'not_empty'];
 	private const BOOLEAN_OPERATORS = ['eq', 'neq'];
 	/** Upload fields hold a list of uploaded files: a rule can only ask whether any were added. */
 	private const FILE_OPERATORS = ['empty', 'not_empty'];

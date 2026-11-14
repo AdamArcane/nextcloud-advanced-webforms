@@ -138,11 +138,12 @@ function setList(raw: string | number): void {
 			</template>
 		</div>
 
-		<NcButton variant="tertiary"
+		<!-- A rule needs one condition, so the only one has nothing to remove. -->
+		<NcButton v-if="removable"
+			variant="tertiary"
 			class="af-cond__remove"
-			:disabled="!removable"
 			:aria-label="t('advancedforms', 'Remove condition')"
-			:title="removable ? undefined : t('advancedforms', 'A rule needs at least one condition')"
+			:title="t('advancedforms', 'Remove condition')"
 			@click="emit('remove')">
 			<template #icon>
 				<Icon :path="icons.close" />

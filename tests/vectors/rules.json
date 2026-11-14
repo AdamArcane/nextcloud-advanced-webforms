@@ -3938,6 +3938,539 @@
         ],
         "required": []
       }
+    },
+    {
+      "name": "checkboxes contains_any: one of the listed options is selected",
+      "fields": {
+        "f_a": {
+          "type": "checkboxes",
+          "label": "L",
+          "options": [
+            {
+              "value": "a",
+              "label": "A"
+            },
+            {
+              "value": "b",
+              "label": "B"
+            },
+            {
+              "value": "c",
+              "label": "C"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "contains_any",
+                "value": [
+                  "b",
+                  "c"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": [
+          "a",
+          "b"
+        ]
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "checkboxes contains_any: none of the listed options is selected",
+      "fields": {
+        "f_a": {
+          "type": "checkboxes",
+          "label": "L",
+          "options": [
+            {
+              "value": "a",
+              "label": "A"
+            },
+            {
+              "value": "b",
+              "label": "B"
+            },
+            {
+              "value": "c",
+              "label": "C"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "contains_any",
+                "value": [
+                  "b",
+                  "c"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": [
+          "a"
+        ]
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "checkboxes contains_any: nothing selected is false",
+      "fields": {
+        "f_a": {
+          "type": "checkboxes",
+          "label": "L",
+          "options": [
+            {
+              "value": "a",
+              "label": "A"
+            },
+            {
+              "value": "b",
+              "label": "B"
+            },
+            {
+              "value": "c",
+              "label": "C"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "contains_any",
+                "value": [
+                  "b",
+                  "c"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": []
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "checkboxes contains_all: every listed option is selected",
+      "fields": {
+        "f_a": {
+          "type": "checkboxes",
+          "label": "L",
+          "options": [
+            {
+              "value": "a",
+              "label": "A"
+            },
+            {
+              "value": "b",
+              "label": "B"
+            },
+            {
+              "value": "c",
+              "label": "C"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "contains_all",
+                "value": [
+                  "b",
+                  "c"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "checkboxes contains_all: one listed option is missing",
+      "fields": {
+        "f_a": {
+          "type": "checkboxes",
+          "label": "L",
+          "options": [
+            {
+              "value": "a",
+              "label": "A"
+            },
+            {
+              "value": "b",
+              "label": "B"
+            },
+            {
+              "value": "c",
+              "label": "C"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "contains_all",
+                "value": [
+                  "b",
+                  "c"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": [
+          "b"
+        ]
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "checkboxes contains_all: nothing selected is false",
+      "fields": {
+        "f_a": {
+          "type": "checkboxes",
+          "label": "L",
+          "options": [
+            {
+              "value": "a",
+              "label": "A"
+            },
+            {
+              "value": "b",
+              "label": "B"
+            },
+            {
+              "value": "c",
+              "label": "C"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "contains_all",
+                "value": [
+                  "b",
+                  "c"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": []
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "checkboxes contains_none: no listed option is selected",
+      "fields": {
+        "f_a": {
+          "type": "checkboxes",
+          "label": "L",
+          "options": [
+            {
+              "value": "a",
+              "label": "A"
+            },
+            {
+              "value": "b",
+              "label": "B"
+            },
+            {
+              "value": "c",
+              "label": "C"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "contains_none",
+                "value": [
+                  "b",
+                  "c"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": [
+          "a"
+        ]
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "checkboxes contains_none: a listed option is selected",
+      "fields": {
+        "f_a": {
+          "type": "checkboxes",
+          "label": "L",
+          "options": [
+            {
+              "value": "a",
+              "label": "A"
+            },
+            {
+              "value": "b",
+              "label": "B"
+            },
+            {
+              "value": "c",
+              "label": "C"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "contains_none",
+                "value": [
+                  "b",
+                  "c"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": [
+          "a",
+          "c"
+        ]
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "checkboxes contains_none: nothing selected is true",
+      "fields": {
+        "f_a": {
+          "type": "checkboxes",
+          "label": "L",
+          "options": [
+            {
+              "value": "a",
+              "label": "A"
+            },
+            {
+              "value": "b",
+              "label": "B"
+            },
+            {
+              "value": "c",
+              "label": "C"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "contains_none",
+                "value": [
+                  "b",
+                  "c"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": []
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
     }
   ]
 }

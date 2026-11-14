@@ -7,6 +7,7 @@
 
 ## 0.3.0 - Unreleased
 
+- Rules on a checkbox group can now match several options at once: includes any of, includes all of, includes none of.
 - A form can hide its title on the public page (Settings, Show the title on the form page).
 - Spam protection for people who are not logged in. An administrator picks one check for the
   whole server under Administration settings: a built-in proof-of-work check (default, no account,

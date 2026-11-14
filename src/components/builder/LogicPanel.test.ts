@@ -107,8 +107,8 @@ describe('LogicPanel', () => {
 		const { def, a, b } = twoFields()
 		def.rules = [{ id: 'rule_aaa', effect: 'show', targets: [b], when: { all: [{ field: a, op: 'not_empty' }] } }]
 		const wrapper = mount(LogicPanel, { props: { definition: def, fieldId: b, errors: [] } })
-		const remove = wrapper.find('button[aria-label="Remove condition"]')
-		expect(remove.attributes('disabled')).toBeDefined()
+		// The only condition has no remove button at all.
+		expect(wrapper.find('button[aria-label="Remove condition"]').exists()).toBe(false)
 	})
 
 	it('removes a nested group when its last condition is removed', async () => {
