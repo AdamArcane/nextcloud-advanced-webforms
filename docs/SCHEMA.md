@@ -425,7 +425,12 @@ Hidden or unanswered fields are omitted from `data`.
 
 ## 8. Versioning (DECISION)
 
-- A form has one mutable **draft** definition.
+- A form has one mutable **draft** definition. Saving a draft is lenient so the
+  builder can store work in progress: only an oversize document, a missing
+  title, a non-object `fields`, or reuse of a deleted field's id is refused, and
+  other validation errors are returned as warnings. Publishing is the gate (this
+  amends the earlier "cycles are rejected on save": a draft is never executed,
+  so a cycle in it is harmless until publish).
 - **Publish** validates the draft and stores an immutable **version** (numbered
   1, 2, 3, ...). Published versions are never edited.
 - The public endpoint serves the latest published version.
@@ -447,6 +452,13 @@ Initial proposal, one row per entry:
 | `submitted_at` | UTC timestamp |
 | `user_id` | nullable, set only for logged-in respondents |
 | `data` | JSON text, keyed by field ID, only visible fields |
+
+Entry access goes through one class (`EntryMapper`) so the storage can be
+swapped. **Planned integration:** an optional backend that stores submissions
+as rows in Nextcloud Tables (one table per form, one column per field, mapped
+from the entry's version). Open design points: how a field rename or type change
+maps to Tables columns, whether the table is created and owned by the form
+owner, and whether entries are written to both stores or only to Tables.
 
 No database-level JSON querying (Nextcloud supports several databases). Filtering
 and search happen in PHP for v1. IP addresses and user agents are not stored by
@@ -506,7 +518,10 @@ vectors first, and both test suites must pass.
    before adding a dependency.
 8. Markdown renderer and sanitizer: choose during implementation, preferring
    whatever the Nextcloud frontend stack already provides over a new dependency.
-9. Case-insensitive text comparison uses full Unicode lowercasing in both PHP
+9. Nextcloud Tables as an entry storage backend (see section 9): decide the
+   column mapping, ownership and sharing model, and the failure behaviour when
+   Tables is unavailable. Not in v1.
+10. Case-insensitive text comparison uses full Unicode lowercasing in both PHP
    (`mb_strtolower`) and JavaScript (`toLowerCase`). They agree for common text,
    but unusual characters (for example context-dependent letter forms) may
    differ. The server is authoritative, so the worst case is the browser briefly

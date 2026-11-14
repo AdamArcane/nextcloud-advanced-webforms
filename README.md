@@ -9,7 +9,9 @@ Forms with conditional logic, grid layouts, and after-submit actions, for
 Nextcloud. Your data stays on your server.
 
 **Status: early development.** The app installs and shows an empty page. The
-data format is designed (see below), the builder and renderer are not built yet.
+data format, rules engine, validation, and the owner and public APIs are
+written. The builder and renderer are not built yet, and the backend has not yet
+been run on a real Nextcloud server.
 
 ## Planned for v1
 
@@ -18,6 +20,11 @@ data format is designed (see below), the builder and renderer are not built yet.
 - Grid layout: several fields per row, responsive.
 - After-submit actions: email, webhook, confirmation message, redirect.
 - Public forms by link, and forms for logged-in users.
+
+## Planned later
+
+- Store submissions in Nextcloud Tables (optional backend).
+- Multi-page forms, theming, anonymous file uploads.
 
 ## Design
 

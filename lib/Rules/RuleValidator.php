@@ -88,6 +88,18 @@ final class RuleValidator {
 	}
 
 	/**
+	 * Validate one condition tree on its own (used for action conditions).
+	 *
+	 * @param array<string, array<string, mixed>> $fields
+	 * @return list<array{code: string, path: string}>
+	 */
+	public function validateCondition(mixed $node, array $fields, string $path): array {
+		$errors = [];
+		$this->validateNode($node, $fields, $path, 1, $errors);
+		return $errors;
+	}
+
+	/**
 	 * @param array<string, array<string, mixed>> $fields
 	 * @param list<array{code: string, path: string}> $errors
 	 */
