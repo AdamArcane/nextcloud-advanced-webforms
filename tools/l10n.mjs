@@ -18,6 +18,11 @@ import { join, relative } from 'node:path'
 
 const APP_ID = 'advancedforms'
 const DEFAULT_PLURAL = 'nplurals=2; plural=(n != 1);'
+// Written in pieces so licence scanners read the real header above, not these strings.
+const POT_HEADER = [
+	'# SPDX' + '-FileCopyrightText: 2026 ArcaneX',
+	'# SPDX' + '-License-Identifier: AGPL-3.0-or-later',
+]
 
 /** Source files that contain translatable strings. */
 function sourceFiles(root) {
@@ -65,8 +70,7 @@ function quotePo(text) {
 
 export function toPot(messages) {
 	const lines = [
-		'# SPDX-FileCopyrightText: 2026 ArcaneX',
-		'# SPDX-License-Identifier: AGPL-3.0-or-later',
+		...POT_HEADER,
 		'msgid ""',
 		'msgstr ""',
 		'"Project-Id-Version: Advanced Forms\\n"',
