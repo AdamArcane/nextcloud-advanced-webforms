@@ -361,17 +361,17 @@ function openSettings(): void {
 						</template>
 						<span class="af-bar__text">{{ t('advancedforms', 'Settings') }}</span>
 					</NcButton>
-					<NcButton variant="secondary" @click="previewOpen = true">
+					<NcButton variant="secondary" :aria-label="t('advancedforms', 'Preview')" :title="t('advancedforms', 'Preview')" @click="previewOpen = true">
 						<template #icon>
 							<Icon :path="icons.preview" />
 						</template>
-						{{ t('advancedforms', 'Preview') }}
+						<span class="af-bar__text">{{ t('advancedforms', 'Preview') }}</span>
 					</NcButton>
-					<NcButton v-if="published && shareUrl" variant="tertiary" :href="shareUrl" target="_blank" rel="noopener">
+					<NcButton v-if="published && shareUrl" variant="tertiary" :href="shareUrl" target="_blank" rel="noopener" :aria-label="t('advancedforms', 'Open form')" :title="t('advancedforms', 'Open form')">
 						<template #icon>
 							<Icon :path="icons.openNew" />
 						</template>
-						{{ t('advancedforms', 'Open form') }}
+						<span class="af-bar__text">{{ t('advancedforms', 'Open form') }}</span>
 					</NcButton>
 					<NcButton variant="primary" :disabled="!canPublish" @click="publish">
 						<template #icon>

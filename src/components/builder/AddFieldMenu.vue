@@ -50,7 +50,7 @@ function typeName(type: string): string {
 		:variant="variant ?? 'tertiary'"
 		:aria-label="label ? undefined : t('advancedforms', 'Add a field here')"
 		:class="{ 'af-add-menu--compact': !label }">
-		<template v-if="!label" #icon>
+		<template #icon>
 			<Icon :path="icons.add" />
 		</template>
 		<NcActionCaption :name="t('advancedforms', 'Inputs')" />
