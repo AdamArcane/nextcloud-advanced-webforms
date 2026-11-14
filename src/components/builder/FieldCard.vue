@@ -46,6 +46,7 @@ const typeLabel = computed(() => {
 		case 'checkbox': return t('advancedforms', 'Checkbox')
 		case 'date': return t('advancedforms', 'Date')
 		case 'time': return t('advancedforms', 'Time')
+		case 'file': return t('advancedforms', 'File upload')
 		case 'heading': return t('advancedforms', 'Heading')
 		case 'paragraph': return t('advancedforms', 'Paragraph')
 		default: return t('advancedforms', 'Divider')

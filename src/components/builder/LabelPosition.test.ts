@@ -121,3 +121,12 @@ describe('canvas card', () => {
 		expect(above.text()).not.toContain('Label beside')
 	})
 })
+
+describe('file upload field in the builder', () => {
+	it('is named File upload on its card, not a divider', () => {
+		const { def, id } = withField('file')
+		const wrapper = mount(FieldCard, { props: { field: def.fields[id], selected: false, ruleCount: 0, errors: [], labelPosition: 'above' as const } })
+		expect(wrapper.text()).toContain('File upload')
+		expect(wrapper.text()).not.toContain('Divider')
+	})
+})
