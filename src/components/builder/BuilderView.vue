@@ -58,7 +58,9 @@ const publishing = ref(false)
 const publishFailed = ref(false)
 
 const selectedId = ref<string | null>(null)
-const sidebarOpen = ref(true)
+// On a narrow screen the sidebar covers the canvas, so it opens only once a field is picked.
+const wide = typeof window.matchMedia === 'function' && window.matchMedia('(min-width: 1024px)').matches
+const sidebarOpen = ref(wide)
 const tab = ref<'field' | 'logic'>('field')
 const canvasWidth = ref<'desktop' | 'mobile'>('desktop')
 const mobile = computed(() => canvasWidth.value === 'mobile')
@@ -262,6 +264,9 @@ function onRemoveConfirmed(): void {
 	if (draft.value && selectedId.value) {
 		edit(removeField(draft.value, selectedId.value))
 		selectedId.value = null
+		if (!wide) {
+			sidebarOpen.value = false
+		}
 	}
 }
 
