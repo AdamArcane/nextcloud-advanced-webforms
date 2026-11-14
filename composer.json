@@ -10,6 +10,20 @@
     }
   },
   "scripts": {
-    "lint": "find lib -name '*.php' -print0 | xargs -0 -n1 php -l"
+    "lint": "find lib -name '*.php' -print0 | xargs -0 -n1 php -l",
+    "test:unit": "phpunit --display-all-issues -c tests/phpunit.xml"
+  },
+  "autoload": {
+    "psr-4": {
+      "OCA\\AdvancedForms\\": "lib/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "OCA\\AdvancedForms\\Tests\\": "tests/"
+    }
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^11.5"
   }
 }

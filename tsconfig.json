@@ -2,6 +2,7 @@
   "extends": "@vue/tsconfig/tsconfig.dom.json",
   "include": ["src/**/*.ts", "src/**/*.vue"],
   "compilerOptions": {
-    "noEmit": true
+    "noEmit": true,
+    "types": ["node"]
   }
 }

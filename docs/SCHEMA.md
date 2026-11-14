@@ -5,7 +5,7 @@
 
 # Advanced Forms: form definition spec
 
-Status: DRAFT v0.2 (design review, no code yet)
+Status: DRAFT v0.3 (design review, no code yet)
 
 This document defines the data format everything else is built on: the form
 definition, grid layout, rules engine, after-submit actions, versioning, and
@@ -252,6 +252,7 @@ Responsive behavior (renderer contract):
 }
 ```
 
+- `id`: unique within the form, same pattern as field IDs (section 4.1).
 - `effect`: `show`, `hide`, or `require`.
 - `targets`: field IDs (input or display fields).
 - `when`: a condition group.
@@ -292,6 +293,41 @@ Comparison semantics (**DECISION**, must be identical in PHP and TypeScript):
   `not_contains`, and `not_in`, which are true.
 - A rule whose source field is itself hidden sees that field as empty.
 
+Normalization before comparing (applied to the submitted value and to the rule's
+`value`; the same function is used in PHP and TypeScript):
+
+- Text (`text`, `textarea`, `email`): must be a string, otherwise it counts as
+  empty. Trimmed of Unicode whitespace (the set JavaScript's `trim()` removes),
+  then lowercased with full Unicode lowercasing.
+- `phone`: digits plus a leading `+` are kept, everything else is dropped. No
+  digits means empty.
+- `number`: a JSON number, or a string like `12` or `-3.5`. Anything else
+  (including exponent forms like `1e3`) counts as empty.
+- `select`, `radio`: a non-empty string, compared exactly. Any other type counts
+  as empty.
+- `checkboxes`: a list of strings. Any other type counts as empty.
+- `checkbox`: a boolean. Any other type counts as empty.
+- `date`, `time`: strings in the formats from section 4.2, anything else counts
+  as empty.
+
+Operators allowed per field type (a rule using any other operator is rejected
+on save, and evaluates to false if it ever reaches the engine):
+
+| field type | operators |
+| --- | --- |
+| `text`, `textarea`, `email`, `phone` | `eq`, `neq`, `contains`, `not_contains`, `in`, `not_in`, `empty`, `not_empty` |
+| `number` | `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `not_in`, `empty`, `not_empty` |
+| `select`, `radio` | `eq`, `neq`, `in`, `not_in`, `empty`, `not_empty` |
+| `checkboxes` | `contains`, `not_contains`, `empty`, `not_empty` |
+| `checkbox` | `eq`, `neq` |
+| `date`, `time` | `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `empty`, `not_empty` |
+
+Rule values must fit the source field: for `select`, `radio`, and `checkboxes`
+they must be existing option values, for `number` a number, for `checkbox` a
+boolean, for `date` and `time` a valid string. `in` and `not_in` take a
+non-empty list of such values. `empty` and `not_empty` take no value. `all` and
+`any` groups must not be empty.
+
 ### 6.3 Effect evaluation
 
 For each field:
@@ -317,6 +353,8 @@ each field's visibility is final before it is used as a source.
 - Sources must be input fields (they need a value).
 - Targets may be any field.
 - Referencing a nonexistent field ID is a validation error on save.
+- The save-time checks (references, operator and value validity, nesting depth,
+  dependency cycles) are done by the rule validator, `lib/Rules/RuleValidator.php`.
 
 ## 7. After-submit actions
 
@@ -441,10 +479,12 @@ can show them next to the right field.
 
 ## 11. Shared test vectors
 
-The condition evaluator exists twice (PHP for enforcement, TypeScript for the
-live form). Both are tested against one shared file of cases, `tests/vectors/`,
-each case being: definition fragment, submitted values, expected visible set,
-expected required set. A change to semantics changes the vectors first.
+The condition evaluator exists twice (PHP for enforcement in `lib/Rules/`,
+TypeScript for the live form in `src/rules/`). Both are tested against one
+shared file, `tests/vectors/rules.json`. Each case has `fields` and `rules` (a
+definition fragment), `values` (submitted values), and `expect.visible` and
+`expect.required` (sorted field ID lists). A change to semantics changes the
+vectors first, and both test suites must pass.
 
 ## 12. Open questions
 
@@ -466,3 +506,9 @@ expected required set. A change to semantics changes the vectors first.
    before adding a dependency.
 8. Markdown renderer and sanitizer: choose during implementation, preferring
    whatever the Nextcloud frontend stack already provides over a new dependency.
+9. Case-insensitive text comparison uses full Unicode lowercasing in both PHP
+   (`mb_strtolower`) and JavaScript (`toLowerCase`). They agree for common text,
+   but unusual characters (for example context-dependent letter forms) may
+   differ. The server is authoritative, so the worst case is the browser briefly
+   showing a different field set than the server accepts. Revisit only if a real
+   mismatch shows up.

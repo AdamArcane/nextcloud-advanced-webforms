@@ -1,0 +1,3784 @@
+{
+  "$comment": "Shared by the PHP and TypeScript rule evaluators. See docs/SCHEMA.md section 11. Generated shape: each case has fields, rules, values, and expect.visible / expect.required (sorted field ID lists).",
+  "version": 1,
+  "cases": [
+    {
+      "name": "no rules: all visible, required follows field.required",
+      "fields": {
+        "f_a": {
+          "type": "text",
+          "label": "L",
+          "required": true
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        },
+        "f_h": {
+          "type": "heading",
+          "text": "H",
+          "level": 2
+        }
+      },
+      "rules": [],
+      "values": {},
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b",
+          "f_h"
+        ],
+        "required": [
+          "f_a"
+        ]
+      }
+    },
+    {
+      "name": "show rule: target hidden when condition is false",
+      "fields": {
+        "f_kind": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "new",
+              "label": "NEW"
+            },
+            {
+              "value": "support",
+              "label": "SUPPORT"
+            }
+          ]
+        },
+        "f_url": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_url"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_kind",
+                "op": "eq",
+                "value": "support"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_kind": "new"
+      },
+      "expect": {
+        "visible": [
+          "f_kind"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "show rule: target visible when condition is true",
+      "fields": {
+        "f_kind": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "new",
+              "label": "NEW"
+            },
+            {
+              "value": "support",
+              "label": "SUPPORT"
+            }
+          ]
+        },
+        "f_url": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_url"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_kind",
+                "op": "eq",
+                "value": "support"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_kind": "support"
+      },
+      "expect": {
+        "visible": [
+          "f_kind",
+          "f_url"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "show rule: missing source value keeps target hidden",
+      "fields": {
+        "f_kind": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "new",
+              "label": "NEW"
+            },
+            {
+              "value": "support",
+              "label": "SUPPORT"
+            }
+          ]
+        },
+        "f_url": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_url"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_kind",
+                "op": "eq",
+                "value": "support"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {},
+      "expect": {
+        "visible": [
+          "f_kind"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "hide rule hides target when true",
+      "fields": {
+        "f_a": {
+          "type": "checkbox",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "hide",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": true
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": true
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "hide rule keeps target visible when false",
+      "fields": {
+        "f_a": {
+          "type": "checkbox",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "hide",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": true
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": false
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "hide wins over show",
+      "fields": {
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "x"
+              }
+            ]
+          }
+        },
+        {
+          "id": "r2",
+          "effect": "hide",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "x"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "x"
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "several show rules: any matching rule shows the target (second matches)",
+      "fields": {
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            },
+            {
+              "value": "z",
+              "label": "Z"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "x"
+              }
+            ]
+          }
+        },
+        {
+          "id": "r2",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "y"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "y"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "several show rules: no matching rule keeps target hidden",
+      "fields": {
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            },
+            {
+              "value": "z",
+              "label": "Z"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "x"
+              }
+            ]
+          }
+        },
+        {
+          "id": "r2",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "y"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "z"
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "require rule: required when condition is true",
+      "fields": {
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "require",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "x"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "x"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": [
+          "f_b"
+        ]
+      }
+    },
+    {
+      "name": "require rule: not required when condition is false",
+      "fields": {
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "require",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "x"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "y"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "hidden field is never required (hide rule)",
+      "fields": {
+        "f_a": {
+          "type": "checkbox",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L",
+          "required": true
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "hide",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": true
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": true
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "required field hidden by a show rule is not required",
+      "fields": {
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L",
+          "required": true
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "x"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "y"
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "require rule on a hidden target is ignored",
+      "fields": {
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "x"
+              }
+            ]
+          }
+        },
+        {
+          "id": "r2",
+          "effect": "require",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "y"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "y"
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "several require rules: either one makes the field required",
+      "fields": {
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "p",
+              "label": "P"
+            },
+            {
+              "value": "q",
+              "label": "Q"
+            }
+          ]
+        },
+        "f_c": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "require",
+          "targets": [
+            "f_c"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "x"
+              }
+            ]
+          }
+        },
+        {
+          "id": "r2",
+          "effect": "require",
+          "targets": [
+            "f_c"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_b",
+                "op": "eq",
+                "value": "p"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "y",
+        "f_b": "p"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b",
+          "f_c"
+        ],
+        "required": [
+          "f_c"
+        ]
+      }
+    },
+    {
+      "name": "one rule with several targets",
+      "fields": {
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        },
+        "f_c": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b",
+            "f_c"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "x"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "x"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b",
+          "f_c"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "chain: everything visible when each link matches",
+      "fields": {
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "p",
+              "label": "P"
+            },
+            {
+              "value": "q",
+              "label": "Q"
+            }
+          ]
+        },
+        "f_c": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "x"
+              }
+            ]
+          }
+        },
+        {
+          "id": "r2",
+          "effect": "show",
+          "targets": [
+            "f_c"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_b",
+                "op": "eq",
+                "value": "p"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "x",
+        "f_b": "p"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b",
+          "f_c"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "chain: a hidden source reads as empty, even with a submitted value",
+      "fields": {
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "p",
+              "label": "P"
+            },
+            {
+              "value": "q",
+              "label": "Q"
+            }
+          ]
+        },
+        "f_c": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "x"
+              }
+            ]
+          }
+        },
+        {
+          "id": "r2",
+          "effect": "show",
+          "targets": [
+            "f_c"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_b",
+                "op": "eq",
+                "value": "p"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "y",
+        "f_b": "p"
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "declaration order: reverse order, all links match",
+      "fields": {
+        "f_c": {
+          "type": "text",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "p",
+              "label": "P"
+            },
+            {
+              "value": "q",
+              "label": "Q"
+            }
+          ]
+        },
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            }
+          ]
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "x"
+              }
+            ]
+          }
+        },
+        {
+          "id": "r2",
+          "effect": "show",
+          "targets": [
+            "f_c"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_b",
+                "op": "eq",
+                "value": "p"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "x",
+        "f_b": "p"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b",
+          "f_c"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "declaration order: reverse order, hidden middle link",
+      "fields": {
+        "f_c": {
+          "type": "text",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "p",
+              "label": "P"
+            },
+            {
+              "value": "q",
+              "label": "Q"
+            }
+          ]
+        },
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            }
+          ]
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "x"
+              }
+            ]
+          }
+        },
+        {
+          "id": "r2",
+          "effect": "show",
+          "targets": [
+            "f_c"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_b",
+                "op": "eq",
+                "value": "p"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "y",
+        "f_b": "p"
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "hidden source with neq: empty source makes neq true",
+      "fields": {
+        "f_gate": {
+          "type": "checkbox",
+          "label": "L"
+        },
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_a"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_gate",
+                "op": "eq",
+                "value": true
+              }
+            ]
+          }
+        },
+        {
+          "id": "r2",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "neq",
+                "value": "x"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_gate": false,
+        "f_a": "x"
+      },
+      "expect": {
+        "visible": [
+          "f_b",
+          "f_gate"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "missing source with neq is true",
+      "fields": {
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "neq",
+                "value": "x"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {},
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "text eq: case-insensitive and trimmed",
+      "fields": {
+        "f_a": {
+          "type": "text",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "yes"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "  YES "
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "text eq: trims Unicode whitespace such as NBSP",
+      "fields": {
+        "f_a": {
+          "type": "text",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "yes"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "\u00a0yes\u00a0"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "text eq: lowercases non-ASCII letters",
+      "fields": {
+        "f_a": {
+          "type": "text",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "\u00e9t\u00e9"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "\u00c9T\u00c9"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "text eq: different text does not match",
+      "fields": {
+        "f_a": {
+          "type": "text",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "yes"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "no"
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "textarea contains: case-insensitive substring",
+      "fields": {
+        "f_a": {
+          "type": "textarea",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "contains",
+                "value": "refund"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "I want a REFUND please"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "text contains: false when empty",
+      "fields": {
+        "f_a": {
+          "type": "text",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "contains",
+                "value": "x"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {},
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "text not_contains: true when empty",
+      "fields": {
+        "f_a": {
+          "type": "text",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "not_contains",
+                "value": "x"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {},
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "text not_contains: false when the text contains it",
+      "fields": {
+        "f_a": {
+          "type": "text",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "not_contains",
+                "value": "x"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "axb"
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "text empty: whitespace-only text counts as empty",
+      "fields": {
+        "f_a": {
+          "type": "text",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "empty"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "   "
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "text not_empty: true for real text",
+      "fields": {
+        "f_a": {
+          "type": "text",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "not_empty"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "hi"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "text with a non-string value counts as empty",
+      "fields": {
+        "f_a": {
+          "type": "text",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "empty"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": [
+          "x"
+        ]
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "email behaves like text",
+      "fields": {
+        "f_a": {
+          "type": "email",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "A@Example.com"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "a@example.com"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "text in: matches a listed value after normalizing",
+      "fields": {
+        "f_a": {
+          "type": "text",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "in",
+                "value": [
+                  "Red",
+                  "Blue"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": " blue"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "text not_in: excludes listed values",
+      "fields": {
+        "f_a": {
+          "type": "text",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "not_in",
+                "value": [
+                  "red",
+                  "blue"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "RED"
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "number gt: true above the limit",
+      "fields": {
+        "f_a": {
+          "type": "number",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "gt",
+                "value": 10
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": 11
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "number gt: false at the limit",
+      "fields": {
+        "f_a": {
+          "type": "number",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "gt",
+                "value": 10
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": 10
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "number gte: true at the limit",
+      "fields": {
+        "f_a": {
+          "type": "number",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "gte",
+                "value": 10
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": 10
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "number lt: false at the limit",
+      "fields": {
+        "f_a": {
+          "type": "number",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "lt",
+                "value": 5
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": 5
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "number lte: true at the limit",
+      "fields": {
+        "f_a": {
+          "type": "number",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "lte",
+                "value": 5
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": 5
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "number accepts numeric strings",
+      "fields": {
+        "f_a": {
+          "type": "number",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "gt",
+                "value": 10
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "10.5"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "number: non-numeric string counts as empty",
+      "fields": {
+        "f_a": {
+          "type": "number",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "gt",
+                "value": 10
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "abc"
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "number: exponent form counts as empty",
+      "fields": {
+        "f_a": {
+          "type": "number",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "gt",
+                "value": 10
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "1e3"
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "number eq: float-formatted string equals the integer",
+      "fields": {
+        "f_a": {
+          "type": "number",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": 5
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "5.0"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "number neq: empty value is not equal",
+      "fields": {
+        "f_a": {
+          "type": "number",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "neq",
+                "value": 3
+              }
+            ]
+          }
+        }
+      ],
+      "values": {},
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "number in: listed value",
+      "fields": {
+        "f_a": {
+          "type": "number",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "in",
+                "value": [
+                  1,
+                  2,
+                  3
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": 2
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "select eq: exact, case-sensitive",
+      "fields": {
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            },
+            {
+              "value": "z",
+              "label": "Z"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "x"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "X"
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "radio eq: matches",
+      "fields": {
+        "f_a": {
+          "type": "radio",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            },
+            {
+              "value": "z",
+              "label": "Z"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "x"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "x"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "select in: listed value matches",
+      "fields": {
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            },
+            {
+              "value": "z",
+              "label": "Z"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "in",
+                "value": [
+                  "x",
+                  "y"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "y"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "select in: unlisted value does not match",
+      "fields": {
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            },
+            {
+              "value": "z",
+              "label": "Z"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "in",
+                "value": [
+                  "x",
+                  "y"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "z"
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "select not_in: listed value is excluded",
+      "fields": {
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            },
+            {
+              "value": "z",
+              "label": "Z"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "not_in",
+                "value": [
+                  "x"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "x"
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "select not_in: unlisted value passes",
+      "fields": {
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            },
+            {
+              "value": "z",
+              "label": "Z"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "not_in",
+                "value": [
+                  "x"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "y"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "select with a non-string value counts as empty",
+      "fields": {
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            },
+            {
+              "value": "z",
+              "label": "Z"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "neq",
+                "value": "x"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": 5
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "operator not valid for the type evaluates to false",
+      "fields": {
+        "f_a": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "x",
+              "label": "X"
+            },
+            {
+              "value": "y",
+              "label": "Y"
+            },
+            {
+              "value": "z",
+              "label": "Z"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "gt",
+                "value": "x"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "y"
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "checkboxes contains: selected option",
+      "fields": {
+        "f_a": {
+          "type": "checkboxes",
+          "label": "L",
+          "options": [
+            {
+              "value": "a",
+              "label": "A"
+            },
+            {
+              "value": "b",
+              "label": "B"
+            },
+            {
+              "value": "c",
+              "label": "C"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "contains",
+                "value": "b"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": [
+          "a",
+          "b"
+        ]
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "checkboxes contains: option not selected",
+      "fields": {
+        "f_a": {
+          "type": "checkboxes",
+          "label": "L",
+          "options": [
+            {
+              "value": "a",
+              "label": "A"
+            },
+            {
+              "value": "b",
+              "label": "B"
+            },
+            {
+              "value": "c",
+              "label": "C"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "contains",
+                "value": "b"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": [
+          "a"
+        ]
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "checkboxes not_contains: option not selected",
+      "fields": {
+        "f_a": {
+          "type": "checkboxes",
+          "label": "L",
+          "options": [
+            {
+              "value": "a",
+              "label": "A"
+            },
+            {
+              "value": "b",
+              "label": "B"
+            },
+            {
+              "value": "c",
+              "label": "C"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "not_contains",
+                "value": "b"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": [
+          "a"
+        ]
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "checkboxes empty: empty list counts as empty",
+      "fields": {
+        "f_a": {
+          "type": "checkboxes",
+          "label": "L",
+          "options": [
+            {
+              "value": "a",
+              "label": "A"
+            },
+            {
+              "value": "b",
+              "label": "B"
+            },
+            {
+              "value": "c",
+              "label": "C"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "empty"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": []
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "checkboxes not_empty: at least one selected",
+      "fields": {
+        "f_a": {
+          "type": "checkboxes",
+          "label": "L",
+          "options": [
+            {
+              "value": "a",
+              "label": "A"
+            },
+            {
+              "value": "b",
+              "label": "B"
+            },
+            {
+              "value": "c",
+              "label": "C"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "not_empty"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": [
+          "a"
+        ]
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "checkbox eq false: unchecked box matches",
+      "fields": {
+        "f_a": {
+          "type": "checkbox",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": false
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": false
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "checkbox eq false: missing value does not match",
+      "fields": {
+        "f_a": {
+          "type": "checkbox",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": false
+              }
+            ]
+          }
+        }
+      ],
+      "values": {},
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "date gt: later date",
+      "fields": {
+        "f_a": {
+          "type": "date",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "gt",
+                "value": "2026-01-01"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "2026-06-15"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "date eq: same date",
+      "fields": {
+        "f_a": {
+          "type": "date",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "2026-06-15"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "2026-06-15"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "date: invalid string counts as empty",
+      "fields": {
+        "f_a": {
+          "type": "date",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "gt",
+                "value": "2026-01-01"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "next week"
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "time lt: earlier time",
+      "fields": {
+        "f_a": {
+          "type": "time",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "lt",
+                "value": "12:00"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "09:30"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "time lt: false at the limit",
+      "fields": {
+        "f_a": {
+          "type": "time",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "lt",
+                "value": "12:00"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "12:00"
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "phone eq: ignores spaces and punctuation",
+      "fields": {
+        "f_a": {
+          "type": "phone",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "+15551234567"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "+1 (555) 123-4567"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "phone eq: plus sign is significant",
+      "fields": {
+        "f_a": {
+          "type": "phone",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "+15551234567"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "15551234567"
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "phone eq: local number with dots",
+      "fields": {
+        "f_a": {
+          "type": "phone",
+          "label": "L"
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": "5551234567"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": "555.123.4567"
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "nested any/all: inner all matches",
+      "fields": {
+        "f_k": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "new",
+              "label": "NEW"
+            },
+            {
+              "value": "support",
+              "label": "SUPPORT"
+            }
+          ]
+        },
+        "f_n": {
+          "type": "number",
+          "label": "L"
+        },
+        "f_e": {
+          "type": "email",
+          "label": "L"
+        },
+        "f_x": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_x"
+          ],
+          "when": {
+            "any": [
+              {
+                "field": "f_k",
+                "op": "eq",
+                "value": "support"
+              },
+              {
+                "all": [
+                  {
+                    "field": "f_n",
+                    "op": "gte",
+                    "value": 5000
+                  },
+                  {
+                    "field": "f_e",
+                    "op": "not_empty"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_k": "new",
+        "f_n": 6000,
+        "f_e": "a@b.co"
+      },
+      "expect": {
+        "visible": [
+          "f_e",
+          "f_k",
+          "f_n",
+          "f_x"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "nested any/all: inner all fails and outer leaf fails",
+      "fields": {
+        "f_k": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "new",
+              "label": "NEW"
+            },
+            {
+              "value": "support",
+              "label": "SUPPORT"
+            }
+          ]
+        },
+        "f_n": {
+          "type": "number",
+          "label": "L"
+        },
+        "f_e": {
+          "type": "email",
+          "label": "L"
+        },
+        "f_x": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_x"
+          ],
+          "when": {
+            "any": [
+              {
+                "field": "f_k",
+                "op": "eq",
+                "value": "support"
+              },
+              {
+                "all": [
+                  {
+                    "field": "f_n",
+                    "op": "gte",
+                    "value": 5000
+                  },
+                  {
+                    "field": "f_e",
+                    "op": "not_empty"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_k": "new",
+        "f_n": 6000,
+        "f_e": ""
+      },
+      "expect": {
+        "visible": [
+          "f_e",
+          "f_k",
+          "f_n"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "nested any/all: outer leaf matches alone",
+      "fields": {
+        "f_k": {
+          "type": "select",
+          "label": "L",
+          "options": [
+            {
+              "value": "new",
+              "label": "NEW"
+            },
+            {
+              "value": "support",
+              "label": "SUPPORT"
+            }
+          ]
+        },
+        "f_n": {
+          "type": "number",
+          "label": "L"
+        },
+        "f_e": {
+          "type": "email",
+          "label": "L"
+        },
+        "f_x": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_x"
+          ],
+          "when": {
+            "any": [
+              {
+                "field": "f_k",
+                "op": "eq",
+                "value": "support"
+              },
+              {
+                "all": [
+                  {
+                    "field": "f_n",
+                    "op": "gte",
+                    "value": 5000
+                  },
+                  {
+                    "field": "f_e",
+                    "op": "not_empty"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_k": "support"
+      },
+      "expect": {
+        "visible": [
+          "f_e",
+          "f_k",
+          "f_n",
+          "f_x"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "display field is hidden by a show rule",
+      "fields": {
+        "f_a": {
+          "type": "checkbox",
+          "label": "L"
+        },
+        "f_note": {
+          "type": "paragraph",
+          "text": "P"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_note"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": true
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": false
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "display field is shown by a show rule and is never required",
+      "fields": {
+        "f_a": {
+          "type": "checkbox",
+          "label": "L"
+        },
+        "f_note": {
+          "type": "paragraph",
+          "text": "P"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_note"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": true
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": true
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_note"
+        ],
+        "required": []
+      }
+    }
+  ]
+}
