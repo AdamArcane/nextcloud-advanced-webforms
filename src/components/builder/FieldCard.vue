@@ -97,6 +97,10 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 			</span>
 			<span class="af-card__control">
 				<span v-if="field.type === 'checkbox'" class="af-card__fake af-card__fake--box" aria-hidden="true" />
+				<span v-else-if="field.type === 'file'" class="af-card__upload" aria-hidden="true">
+					<Icon :path="fieldTypeIcon('file')" :size="18" />
+					{{ (field.maxFiles ?? 1) > 1 ? t('advancedforms', 'Choose files') : t('advancedforms', 'Choose a file') }}
+				</span>
 				<span v-else-if="hasOptions && field.type !== 'select'" class="af-card__choices" aria-hidden="true">
 					<span v-for="option in (field.options ?? []).slice(0, 3)" :key="option.value" class="af-card__choice">
 						<span class="af-card__dot" :class="{ 'af-card__dot--square': field.type === 'checkboxes' }" />{{ option.label }}
@@ -271,6 +275,17 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 	min-height: 20px;
 	padding: 0;
 	border-radius: var(--border-radius-small);
+}
+
+.af-card__upload {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: calc(var(--default-grid-baseline) * 2);
+	padding: calc(var(--default-grid-baseline) * 3);
+	border: 2px dashed var(--color-border-maxcontrast);
+	border-radius: var(--border-radius-large);
+	color: var(--color-text-maxcontrast);
 }
 
 .af-card__chevron {

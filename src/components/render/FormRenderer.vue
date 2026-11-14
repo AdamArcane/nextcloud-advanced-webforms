@@ -18,6 +18,7 @@ import { evaluateRules } from '../../rules/engine.ts'
 import { isInputType } from '../../rules/fieldTypes.ts'
 import FieldInput from './FieldInput.vue'
 import { messageFor } from './messages.ts'
+import { createUploadState } from './uploadState.ts'
 
 const props = defineProps<{
 	form: PublicForm
@@ -42,6 +43,8 @@ function initialValue(field: FormField): unknown {
 			return fallback === true
 		case 'checkboxes':
 			return Array.isArray(fallback) ? [...fallback] : []
+		case 'file':
+			return []
 		default:
 			return typeof fallback === 'string' || typeof fallback === 'number' ? String(fallback) : ''
 	}
@@ -55,6 +58,15 @@ for (const [id, field] of Object.entries(fields.value)) {
 }
 
 const honeypot = ref('')
+// The files of upload fields. The form is not sent while one is still on its way.
+const uploads = createUploadState(() => ({
+	token: props.form.token,
+	versionId: props.form.versionId,
+	fillToken: props.form.fillToken,
+	signedIn: props.form.signedIn === true,
+	preview: props.preview === true,
+	limit: props.form.uploadLimit,
+}), values)
 const fieldErrors = reactive<Record<string, string>>({})
 const formError = ref<string | null>(null)
 const submitting = ref(false)
@@ -162,6 +174,10 @@ async function onSubmit() {
 		return
 	}
 	clearErrors()
+	if (uploads.busy.value) {
+		formError.value = t('advancedforms', 'Please wait until your files have finished uploading.')
+		return
+	}
 	if (props.preview) {
 		// Nothing is sent from the preview, but it can still show what respondents would be told.
 		if (checking.value && !checkRequired(visible.value)) {
@@ -263,7 +279,11 @@ async function showError(error: unknown) {
 					:required="required.has(cell.field)"
 					:error="fieldErrors[cell.field] ?? null"
 					:label-position="renderedLabelPosition(fields[cell.field], definition.settings)"
-					:hide-required-indicator="definition.settings?.hideRequiredIndicator === true" />
+					:hide-required-indicator="definition.settings?.hideRequiredIndicator === true"
+					:uploads="uploads"
+					:signed-in="form.signedIn === true"
+					:preview="preview === true"
+					:upload-limit="form.uploadLimit" />
 			</div>
 		</div>
 

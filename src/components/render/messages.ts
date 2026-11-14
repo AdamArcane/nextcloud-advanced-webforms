@@ -40,6 +40,30 @@ export function messageFor(code: string): string {
 		case 'token_expired':
 		case 'token_invalid':
 			return t('advancedforms', 'This page was open for too long. Please send again.')
+		case 'too_many_files':
+			return t('advancedforms', 'You added too many files.')
+		case 'duplicate_file':
+		case 'upload_missing':
+			return t('advancedforms', 'One of the files is no longer available. Remove it and add it again.')
+		case 'upload_type_not_allowed':
+			return t('advancedforms', 'This kind of file is not accepted.')
+		case 'upload_too_large':
+			return t('advancedforms', 'This file is too large.')
+		case 'upload_empty':
+			return t('advancedforms', 'This file is empty.')
+		case 'upload_bad_name':
+			return t('advancedforms', 'This file name is not valid.')
+		case 'upload_login_required':
+			return t('advancedforms', 'Sign in to upload files.')
+		case 'upload_busy':
+			return t('advancedforms', 'Too many files are waiting right now. Try again later.')
+		case 'upload_destination_unavailable':
+		case 'upload_anonymous_not_allowed':
+		case 'upload_store_failed':
+		case 'upload_owner_storage_full':
+			return t('advancedforms', 'The file could not be saved. Please try again later or contact the form owner.')
+		case 'upload_failed':
+			return t('advancedforms', 'The upload did not work. Please try again.')
 		case 'already_submitted':
 			return t('advancedforms', 'You have already submitted this form.')
 		default:

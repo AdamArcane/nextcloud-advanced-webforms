@@ -7,6 +7,7 @@
 import type { DraftDefinition, FormField } from '../../types.ts'
 import type { Move } from '../../builder/definition.ts'
 
+import { getFilePickerBuilder } from '@nextcloud/dialogs'
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import { icons } from '../../icons.ts'
@@ -19,6 +20,7 @@ import { computed, ref } from 'vue'
 import { allowedSpans, canMove, locateField, SPANS } from '../../builder/definition.ts'
 import { describeError } from '../../builder/errors.ts'
 import { fieldIdProblem } from '../../builder/fieldId.ts'
+import { DEFAULT_ACCEPT, DEFAULT_MAX_FILES, DEFAULT_MAX_SIZE_MB, UPLOAD_GROUPS } from '../../uploads.ts'
 import { renderedLabelPosition, requestedLabelPosition, supportsInline } from '../../layout/labelPosition.ts'
 import AddFieldMenu from './AddFieldMenu.vue'
 import OptionsEditor from './OptionsEditor.vue'
@@ -160,6 +162,67 @@ function number(key: keyof FormField, value: string | number): void {
 	emit('update', { [key]: str === '' || Number.isNaN(parsed) ? undefined : parsed } as Partial<FormField>)
 }
 
+// Upload fields (docs/SCHEMA.md 4.6)
+const groupLabels: Record<string, string> = {
+	images: t('advancedforms', 'Images'),
+	documents: t('advancedforms', 'Documents'),
+	archives: t('advancedforms', 'Archives (zip, 7z)'),
+	audio: t('advancedforms', 'Audio'),
+	video: t('advancedforms', 'Video'),
+}
+const accepted = computed(() => field.value?.accept && field.value.accept.length > 0 ? field.value.accept : DEFAULT_ACCEPT)
+const extraExtensions = computed(() => accepted.value.filter((entry) => entry.startsWith('.')).join(', '))
+const uploadStorage = computed(() => field.value?.storage ?? 'files')
+
+function toggleGroup(group: string, on: boolean) {
+	const next = accepted.value.filter((entry) => entry !== group)
+	if (on) {
+		next.push(group)
+	}
+	// Nothing accepted would mean the default, so the last choice cannot be switched off.
+	emit('update', { accept: next.length > 0 ? next : undefined })
+}
+
+function setExtras(text: string) {
+	const groups = accepted.value.filter((entry) => !entry.startsWith('.'))
+	const extras = [...new Set(text.split(/[\s,;]+/).map((part) => part.replace(/^\.+/, '').toLowerCase()).filter((part) => /^[a-z0-9]{1,10}$/.test(part)))].map((part) => '.' + part)
+	const next = [...groups, ...extras]
+	emit('update', { accept: next.length > 0 ? next : undefined })
+}
+
+function setUploadNumber(key: 'maxFiles' | 'maxSizeMb', value: string | number, min: number, max: number) {
+	const parsed = Math.round(Number(String(value).trim()))
+	emit('update', { [key]: String(value).trim() === '' || Number.isNaN(parsed) ? undefined : Math.min(max, Math.max(min, parsed)) } as Partial<FormField>)
+}
+
+/** The picker only shows what you can see in your own Files, and the server checks that you can write there. */
+async function pickFolder() {
+	let chosen: string | null = null
+	const start = '/' + (field.value?.folder ?? '')
+	const picker = getFilePickerBuilder(t('advancedforms', 'Choose a folder for the uploaded files'))
+		.setMultiSelect(false)
+		.setMimeTypeFilter(['httpd/unix-directory'])
+		.allowDirectories(true)
+		.startAt(start)
+		.setButtonFactory((nodes, path) => [{
+			label: nodes.length > 0 ? t('advancedforms', 'Choose {name}', { name: nodes[0].basename }) : t('advancedforms', 'Choose this folder'),
+			variant: 'primary',
+			callback: (picked) => {
+				chosen = picked[0]?.path ?? path
+			},
+		}])
+		.build()
+	try {
+		await picker.pickNodes()
+	} catch {
+		return
+	}
+	const folder = (chosen ?? '').replace(/^\/+|\/+$/g, '')
+	if (folder !== '') {
+		emit('update', { folder })
+	}
+}
+
 const moves: { move: Move, label: string, icon: string }[] = [
 	{ move: 'rowUp', label: t('advancedforms', 'Move row up'), icon: icons.moveRowUp },
 	{ move: 'rowDown', label: t('advancedforms', 'Move row down'), icon: icons.moveRowDown },
@@ -248,6 +311,85 @@ const moves: { move: Move, label: string, icon: string }[] = [
 
 			<p v-else class="af-props__hint">
 				{{ t('advancedforms', 'A divider has no settings.') }}
+			</p>
+		</section>
+
+		<section v-if="type === 'file'" class="af-props__section">
+			<h3 class="af-props__heading">
+				{{ t('advancedforms', 'Files') }}
+			</h3>
+			<NcTextField :model-value="String(field.maxFiles ?? DEFAULT_MAX_FILES)"
+				type="number"
+				min="1"
+				max="10"
+				:label="t('advancedforms', 'Most files (1 to 10)')"
+				@update:model-value="(value: string | number) => setUploadNumber('maxFiles', value, 1, 10)" />
+			<NcTextField :model-value="String(field.maxSizeMb ?? DEFAULT_MAX_SIZE_MB)"
+				type="number"
+				min="1"
+				max="100"
+				:label="t('advancedforms', 'Largest file, in MB')"
+				@update:model-value="(value: string | number) => setUploadNumber('maxSizeMb', value, 1, 100)" />
+			<div class="af-props__group">
+				<span class="af-props__caption">{{ t('advancedforms', 'Accepted types') }}</span>
+				<NcCheckboxRadioSwitch v-for="group in Object.keys(UPLOAD_GROUPS)"
+					:key="group"
+					:model-value="accepted.includes(group)"
+					:disabled="accepted.length === 1 && accepted[0] === group"
+					@update:model-value="(value: boolean) => toggleGroup(group, value)">
+					{{ groupLabels[group] }}
+				</NcCheckboxRadioSwitch>
+				<NcTextField :model-value="extraExtensions"
+					:label="t('advancedforms', 'Other extensions')"
+					:placeholder="t('advancedforms', 'dwg, stl')"
+					@update:model-value="(value: string | number) => setExtras(String(value))" />
+				<p class="af-props__hint">
+					{{ t('advancedforms', 'Programs, scripts and web pages are never accepted.') }}
+				</p>
+			</div>
+		</section>
+
+		<section v-if="type === 'file'" class="af-props__section">
+			<h3 class="af-props__heading">
+				{{ t('advancedforms', 'Who can upload') }}
+			</h3>
+			<SegmentedControl :model-value="field.audience ?? 'anyone'"
+				:group-label="t('advancedforms', 'Who can upload')"
+				:options="[
+					{ value: 'anyone', label: t('advancedforms', 'Anyone') },
+					{ value: 'login', label: t('advancedforms', 'Signed-in users') },
+				]"
+				@update:model-value="(value) => emit('update', { audience: value === 'login' ? 'login' : undefined })" />
+			<p class="af-props__hint">
+				{{ uploadStorage === 'files' && (field.audience ?? 'anyone') === 'anyone'
+					? t('advancedforms', 'Letting anyone upload into your files works like a public upload link, so it is only allowed if you may share that folder by link.')
+					: t('advancedforms', 'Uploads are only accepted from people who are signed in to this Nextcloud.') }}
+			</p>
+
+			<h3 class="af-props__heading">
+				{{ t('advancedforms', 'Where files are saved') }}
+			</h3>
+			<SegmentedControl :model-value="uploadStorage"
+				:group-label="t('advancedforms', 'Where files are saved')"
+				:options="[
+					{ value: 'files', label: t('advancedforms', 'Your Files') },
+					{ value: 'app', label: t('advancedforms', 'App only') },
+				]"
+				@update:model-value="(value) => emit('update', { storage: value === 'app' ? 'app' : undefined })" />
+			<template v-if="uploadStorage === 'files'">
+				<NcTextField :model-value="field.folder ?? ''"
+					:label="t('advancedforms', 'Folder')"
+					:placeholder="t('advancedforms', 'Advanced Forms/<form title>')"
+					@update:model-value="(value: string | number) => text('folder', value)" />
+				<NcButton variant="secondary" @click="pickFolder">
+					{{ t('advancedforms', 'Choose folder') }}
+				</NcButton>
+				<p class="af-props__hint">
+					{{ t('advancedforms', 'Each response gets its own subfolder here. You can only pick folders you can write to, and this is checked again every time someone submits.') }}
+				</p>
+			</template>
+			<p v-else class="af-props__hint">
+				{{ t('advancedforms', 'Files stay in the app and are downloaded from the Responses view.') }}
 			</p>
 		</section>
 

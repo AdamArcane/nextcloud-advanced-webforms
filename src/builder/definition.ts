@@ -33,6 +33,7 @@ export const FIELD_TYPES: readonly FieldTypeInfo[] = [
 	{ type: 'checkbox', label: 'Checkbox' },
 	{ type: 'date', label: 'Date' },
 	{ type: 'time', label: 'Time' },
+	{ type: 'file', label: 'File upload' },
 	{ type: 'heading', label: 'Heading', display: true },
 	{ type: 'paragraph', label: 'Paragraph', display: true },
 	{ type: 'divider', label: 'Divider', display: true },
@@ -92,6 +93,8 @@ export function defaultField(type: string, optionValue: () => string): FormField
 			return { type, text: 'Some text.' }
 		case 'divider':
 			return { type }
+		case 'file':
+			return { type, label, required: false, maxFiles: 1, maxSizeMb: 10, accept: ['images', 'documents'], audience: 'anyone', storage: 'files' }
 		case 'select':
 		case 'radio':
 		case 'checkboxes':

@@ -199,6 +199,20 @@ class ActionRunnerTest extends TestCase {
 		$this->assertStringNotContainsString("\n", $this->mails[0][1]);
 	}
 
+	public function testWebhookPayloadNeverRevealsWhereAFileIsStored(): void {
+		$context = new ActionContext(
+			formId: 7, versionId: 3, entryId: 457, logId: 99, userId: null, submittedAt: 1794700000,
+			fields: ['f_cv' => ['type' => 'file', 'label' => 'CV']],
+			data: ['f_cv' => [['name' => 'cv.pdf', 'size' => 25, 'mime' => 'application/pdf', 'storage' => 'files', 'ref' => '151']]],
+			now: 1794700100, recentEmails: 0, ownerId: 'alice',
+		);
+		$this->runner()->run(['type' => 'webhook', 'url' => 'https://hooks.example.com/x'], $context);
+		$payload = json_decode($this->posts[0][1], true, 512, JSON_THROW_ON_ERROR);
+		$this->assertSame(['label' => 'CV', 'value' => [['name' => 'cv.pdf', 'size' => 25, 'mime' => 'application/pdf']]], $payload['data']['f_cv']);
+		$this->assertStringNotContainsString('151', $this->posts[0][1]);
+		$this->assertStringNotContainsString('storage', $this->posts[0][1]);
+	}
+
 	public function testAMailSystemErrorIsRetryable(): void {
 		$this->mailError = new \RuntimeException('smtp down');
 		try {

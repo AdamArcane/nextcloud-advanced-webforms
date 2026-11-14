@@ -14,6 +14,6 @@ export default defineConfig({
 		include: ['src/**/*.test.ts', 'tools/**/*.test.ts'],
 		environment: 'node',
 		// @nextcloud/vue ships CSS imports that plain Node cannot load; let Vite handle them.
-		server: { deps: { inline: [/@nextcloud\/vue/] } },
+		server: { deps: { inline: [/@nextcloud\/vue/, /@nextcloud\/dialogs/] } },
 	},
 })

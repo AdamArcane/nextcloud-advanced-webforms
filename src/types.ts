@@ -36,6 +36,24 @@ export type FormField = {
 	level?: number
 	/** Text alignment of a heading or paragraph. Default `start`. */
 	align?: 'start' | 'center' | 'end'
+	/** Upload fields (docs/SCHEMA.md 4.6). */
+	maxFiles?: number
+	maxSizeMb?: number
+	/** Groups (`images`, `documents`, `archives`, `audio`, `video`) and extra extensions like `.dwg`. */
+	accept?: string[]
+	audience?: 'anyone' | 'login'
+	storage?: 'files' | 'app'
+	/** Folder in the owner's Files. Never sent to respondents. */
+	folder?: string
+}
+
+/** One uploaded file as stored in a response. `ref` and `storage` stay on the server for respondents and receivers. */
+export interface StoredFile {
+	name: string
+	size: number
+	mime: string
+	storage: 'files' | 'app'
+	ref: string
 }
 
 /** How the public page looks (docs/SCHEMA.md 3). Every key is optional; unset means the default. */
@@ -81,6 +99,10 @@ export interface PublicForm {
 	versionId: number
 	fillToken: string
 	definition: PublicDefinition
+	/** Whether the visitor has a Nextcloud session. Upload fields can be limited to signed-in users. */
+	signedIn?: boolean
+	/** The server's largest single upload in bytes. */
+	uploadLimit?: number
 }
 
 export interface SubmitResult {

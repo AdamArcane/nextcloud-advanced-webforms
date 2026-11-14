@@ -6,9 +6,10 @@
 // How a stored response is shown. Mirrors lib/Actions/Template.php (display),
 // so the page, emails and the CSV all read an answer the same way.
 
-import type { FormField, VersionDefinition } from '../types.ts'
+import type { FormField, StoredFile, VersionDefinition } from '../types.ts'
 
 import { t } from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
 import { isInputType } from '../rules/fieldTypes.ts'
 
 function optionLabel(field: FormField, value: unknown): string {
@@ -24,6 +25,9 @@ export function displayAnswer(field: FormField, value: unknown): string {
 	if (typeof value === 'boolean') {
 		return value ? t('advancedforms', 'Yes') : t('advancedforms', 'No')
 	}
+	if (field.type === 'file') {
+		return storedFiles(value).map((file) => file.name).join(', ')
+	}
 	if (Array.isArray(value)) {
 		return value.map((item) => optionLabel(field, item)).join(', ')
 	}
@@ -31,6 +35,18 @@ export function displayAnswer(field: FormField, value: unknown): string {
 		return String(value)
 	}
 	return optionLabel(field, value)
+}
+
+/** The files of an upload answer; anything that is not a stored file is ignored. */
+export function storedFiles(value: unknown): StoredFile[] {
+	return Array.isArray(value)
+		? value.filter((item): item is StoredFile => typeof item === 'object' && item !== null && typeof (item as StoredFile).name === 'string')
+		: []
+}
+
+/** Where the owner downloads one file of a response. */
+export function entryFileUrl(formId: number, entryId: number, fieldId: string, index: number): string {
+	return generateUrl('/apps/advancedforms/api/v1/forms/{formId}/entries/{entryId}/files/{fieldId}/{index}', { formId, entryId, fieldId, index })
 }
 
 /** Input field ids as laid out on that version of the form, top to bottom, then any not placed. */
@@ -53,6 +69,8 @@ export interface AnswerLine {
 	label: string
 	value: string
 	answered: boolean
+	/** Upload fields: the files, so the page can link to them. Empty for other fields. */
+	files: StoredFile[]
 }
 
 /** Every question of the response's own version with its answer, for the detail view. */
@@ -60,7 +78,7 @@ export function answerLines(definition: VersionDefinition, data: Record<string, 
 	return answerFieldOrder(definition).map((id) => {
 		const field = definition.fields[id]
 		const value = displayAnswer(field, data[id])
-		return { id, label: field.label || id, value, answered: value !== '' }
+		return { id, label: field.label || id, value, answered: value !== '', files: field.type === 'file' ? storedFiles(data[id]) : [] }
 	})
 }
 

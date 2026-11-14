@@ -35,3 +35,32 @@ export async function submitPublicForm(token: string, body: SubmitBody): Promise
 		throw toApiError(error)
 	}
 }
+
+export interface UploadedFile {
+	id: string
+	name: string
+	size: number
+}
+
+/** Send one file for an upload field. The id it returns is what the field's answer holds. */
+export async function uploadPublicFile(
+	token: string,
+	context: { versionId: number, fillToken: string },
+	fieldId: string,
+	file: File,
+	onProgress: (fraction: number) => void,
+): Promise<UploadedFile> {
+	const body = new FormData()
+	body.append('versionId', String(context.versionId))
+	body.append('fieldId', fieldId)
+	body.append('fillToken', context.fillToken)
+	body.append('file', file)
+	try {
+		const response = await axios.post<UploadedFile>(url('/public/' + encodeURIComponent(token) + '/upload'), body, {
+			onUploadProgress: (event) => onProgress(event.total ? event.loaded / event.total : 0),
+		})
+		return response.data
+	} catch (error) {
+		throw toApiError(error)
+	}
+}

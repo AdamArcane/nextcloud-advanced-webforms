@@ -149,4 +149,15 @@ class CsvExporterTest extends TestCase {
 		$cell = self::parse(CsvExporter::build([self::entry(1, 1, ['f_a' => 'Zoë 日本語 🙂'])], [1 => $definition]))[1][3];
 		$this->assertSame('Zoë 日本語 🙂', $cell);
 	}
+
+	public function testUploadedFilesAreListedByName(): void {
+		$definitions = [1 => self::definition(['f_cv' => ['type' => 'file', 'label' => 'CV']])];
+		$entries = [['id' => 1, 'versionId' => 1, 'userId' => null, 'submittedAt' => 0, 'data' => ['f_cv' => [
+			['name' => 'cv.pdf', 'size' => 1, 'mime' => 'application/pdf', 'storage' => 'files', 'ref' => '9'],
+			['name' => '=cmd.pdf', 'size' => 1, 'mime' => 'application/pdf', 'storage' => 'app', 'ref' => 'abc'],
+		]]]];
+		$rows = self::parse(CsvExporter::build($entries, $definitions));
+		// Only a cell that starts with a formula character is neutralised, and this one starts with a letter.
+		$this->assertSame('cv.pdf, =cmd.pdf', $rows[1][3]);
+	}
 }

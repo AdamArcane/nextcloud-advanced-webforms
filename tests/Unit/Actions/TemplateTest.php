@@ -61,4 +61,14 @@ class TemplateTest extends TestCase {
 		$out = Template::render('https://example.com/thanks?n={f_name}', self::FIELDS, ['f_name' => 'A&b=c d/é'], Template::URL);
 		$this->assertSame('https://example.com/thanks?n=A%26b%3Dc%20d%2F%C3%A9', $out);
 	}
+
+	public function testUploadedFilesShowTheirNamesOnly(): void {
+		$field = ['type' => 'file', 'label' => 'CV'];
+		$value = [
+			['name' => 'cv.pdf', 'size' => 10, 'mime' => 'application/pdf', 'storage' => 'files', 'ref' => '12'],
+			['name' => 'letter.docx', 'size' => 20, 'mime' => 'x', 'storage' => 'app', 'ref' => 'tok'],
+		];
+		$this->assertSame('cv.pdf, letter.docx', Template::display($field, $value));
+		$this->assertSame('Files: cv.pdf, letter.docx', Template::render('Files: {f_cv}', ['f_cv' => $field], ['f_cv' => $value]));
+	}
 }

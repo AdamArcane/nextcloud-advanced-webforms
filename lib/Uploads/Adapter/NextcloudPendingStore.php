@@ -33,7 +33,10 @@ final class NextcloudPendingStore implements PendingStorePort {
 		try {
 			$this->folder()->newFile($token, $stream);
 		} finally {
-			fclose($stream);
+			// Nextcloud closes a stream it was given once it has written it.
+			if (is_resource($stream)) {
+				fclose($stream);
+			}
 		}
 	}
 

@@ -20,7 +20,9 @@ rules semantics, actions, versioning and the submit algorithm.
 - v1 scope: rules engine (show/hide/require, nested AND/OR), after-submit actions
   (email, webhook, message, redirect), 12-column grid layout. Any user can create
   forms. Public link only. No payments.
-- Deferred: multi-page, theming, anonymous file uploads, Nextcloud Tables as an
+- File uploads are in (docs/SCHEMA.md 4.6): per field audience and storage, limited by the
+  owner's own Nextcloud permissions, checked on publish and on every submission.
+- Deferred: theming, Nextcloud Tables as an
   optional entry storage backend (all entry access goes through `EntryMapper`).
 - Never use em dashes in any text written for Adam.
 - Commits are authored as Adam (repo-local git config) with the Claude

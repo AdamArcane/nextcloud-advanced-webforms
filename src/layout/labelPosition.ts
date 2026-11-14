@@ -8,7 +8,7 @@ import type { FormField, FormSettings, LabelPosition } from '../types.ts'
 export const LABEL_POSITIONS: readonly LabelPosition[] = ['above', 'inline', 'hidden']
 
 /** Types whose label belongs to a group or to the control itself, so a side label reads badly (docs/SCHEMA.md 4.2). */
-const NO_INLINE_TYPES = new Set(['textarea', 'radio', 'checkboxes', 'checkbox'])
+const NO_INLINE_TYPES = new Set(['textarea', 'radio', 'checkboxes', 'checkbox', 'file'])
 
 export function supportsInline(type: string): boolean {
 	return !NO_INLINE_TYPES.has(type)

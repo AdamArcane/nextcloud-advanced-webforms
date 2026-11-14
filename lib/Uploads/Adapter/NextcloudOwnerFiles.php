@@ -33,17 +33,27 @@ final class NextcloudOwnerFiles implements OwnerFilesPort {
 	}
 
 	public function canWrite(string $ownerId, string $folder): bool {
+		if (!$this->plain($folder)) {
+			return false;
+		}
 		$node = $this->nearestExisting($ownerId, $folder);
 		return $node instanceof Folder && $node->isCreatable();
 	}
 
 	public function canShareByLink(string $ownerId, string $folder): bool {
 		$user = $this->users->get($ownerId);
-		if ($user === null || !$this->shares->shareApiAllowLinks($user)) {
+		if (!$this->plain($folder) || $user === null || !$this->shares->shareApiAllowLinks($user)) {
 			return false;
 		}
 		$node = $this->nearestExisting($ownerId, $folder);
-		return $node instanceof Folder && $node->isShareable();
+		if (!$node instanceof Folder) {
+			return false;
+		}
+		$home = $this->root->getUserFolder($ownerId);
+		$exists = $node->getPath() === $home->getPath() . '/' . $folder;
+		// A folder that exists must be shareable itself. One that will be created is the owner's own, so
+		// it is shareable wherever it goes, unless it would sit inside a share that cannot be re-shared.
+		return $exists ? $node->isShareable() : ($node->getPath() === $home->getPath() || $node->isShareable());
 	}
 
 	public function store(string $ownerId, string $folder, string $subfolder, string $name, $stream): int {
@@ -66,7 +76,26 @@ final class NextcloudOwnerFiles implements OwnerFilesPort {
 	}
 
 	public function delete(string $ownerId, int $fileId): void {
-		$this->file($ownerId, $fileId)?->delete();
+		$file = $this->file($ownerId, $fileId);
+		if ($file === null) {
+			return;
+		}
+		$parent = $file->getParent();
+		$file->delete();
+		// The per-response folder this app made goes with its last file; any other folder stays.
+		if (str_starts_with($parent->getName(), 'Response ') && $parent->getDirectoryListing() === []) {
+			$parent->delete();
+		}
+	}
+
+	/** A folder path without `.` or `..` parts: the owner's home is the only place it can lead. */
+	private function plain(string $folder): bool {
+		foreach (explode('/', $folder) as $part) {
+			if ($part === '' || $part === '.' || $part === '..') {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	private function file(string $ownerId, int $fileId): ?File {

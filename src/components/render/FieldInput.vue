@@ -7,6 +7,8 @@
 import type { FormField, LabelPosition } from '../../types.ts'
 
 import { computed } from 'vue'
+import FileInput from './FileInput.vue'
+import type { UploadState } from './uploadState.ts'
 import MarkdownText from './MarkdownText.ts'
 
 const props = defineProps<{
@@ -21,6 +23,11 @@ const props = defineProps<{
 	labelPosition?: LabelPosition
 	/** Leave out the asterisk after the label. The control is still marked required for assistive tech. */
 	hideRequiredIndicator?: boolean
+	/** What an upload field needs to send its files. */
+	uploads?: UploadState
+	signedIn?: boolean
+	preview?: boolean
+	uploadLimit?: number
 }>()
 
 const emit = defineEmits<{
@@ -134,7 +141,16 @@ function toggleOption(value: string, event: Event) {
 			<label :for="domId" class="af-label" :class="{ 'af-sr-only': hiddenLabel }">
 				{{ field.label }}<span v-if="required && !hideRequiredIndicator" aria-hidden="true"> *</span>
 			</label>
-			<textarea v-if="field.type === 'textarea'"
+			<FileInput v-if="field.type === 'file' && uploads"
+				:field-id="fieldId"
+				:field="field"
+				:uploads="uploads"
+				:signed-in="signedIn === true"
+				:preview="preview === true"
+				:limit="uploadLimit"
+				:described-by="describedBy"
+				:required="required" />
+			<textarea v-else-if="field.type === 'textarea'"
 				:id="domId"
 				rows="5"
 				:value="stringValue"

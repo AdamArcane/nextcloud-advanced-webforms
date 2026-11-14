@@ -13,7 +13,8 @@ import Icon from '../common/Icon.vue'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { computed, ref, watch } from 'vue'
 import { listDeliveries, retryDelivery } from '../../api/forms.ts'
-import { answerLines, formatTime, previewLines } from '../../entries/format.ts'
+import { answerLines, entryFileUrl, formatTime, previewLines } from '../../entries/format.ts'
+import { formatSize } from '../../uploads.ts'
 import DeliveryRow from './DeliveryRow.vue'
 
 const props = defineProps<{
@@ -91,7 +92,15 @@ async function retry(delivery: Delivery): Promise<void> {
 				<template v-for="line in lines" :key="line.id">
 					<dt>{{ line.label }}</dt>
 					<dd :class="{ 'af-response__none': !line.answered }">
-						{{ line.answered ? line.value : '—' }}
+						<ul v-if="line.files.length > 0" class="af-response__files">
+							<li v-for="(file, index) in line.files" :key="index">
+								<a :href="entryFileUrl(formId, entry.id, line.id, index)" download>{{ file.name }}</a>
+								<span class="af-response__size">{{ formatSize(file.size) }}</span>
+							</li>
+						</ul>
+						<template v-else>
+							{{ line.answered ? line.value : '—' }}
+						</template>
 					</dd>
 				</template>
 			</dl>
@@ -225,6 +234,18 @@ async function retry(delivery: Delivery): Promise<void> {
 .af-response__answers dt {
 	color: var(--color-text-maxcontrast);
 	overflow-wrap: anywhere;
+}
+
+.af-response__files {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.af-response__size {
+	margin-left: 8px;
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
 }
 
 .af-response__answers dd {

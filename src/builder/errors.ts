@@ -64,6 +64,18 @@ export function describeError(code: string): string {
 			return t('advancedforms', 'The signing secret is not valid. Generate a new one.')
 		case 'too_many_actions':
 			return t('advancedforms', 'This form has too many actions.')
+		case 'field_upload_invalid':
+			return t('advancedforms', 'One of the upload settings is not valid.')
+		case 'field_upload_folder_invalid':
+			return t('advancedforms', 'The upload folder is not valid. Use a folder path like Documents/Applications.')
+		case 'field_upload_accept_invalid':
+			return t('advancedforms', 'Choose which kinds of files this field accepts.')
+		case 'field_upload_type_denied':
+			return t('advancedforms', 'Programs, scripts and web pages can never be uploaded.')
+		case 'upload_destination_unavailable':
+			return t('advancedforms', 'You cannot save files to this folder. Choose a folder you can write to.')
+		case 'upload_anonymous_not_allowed':
+			return t('advancedforms', 'You are not allowed to let anyone upload into your files. Limit this field to signed-in users, or keep the files in the app.')
 		case 'too_large':
 			return t('advancedforms', 'This form is too large.')
 		default:

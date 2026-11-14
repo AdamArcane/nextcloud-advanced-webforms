@@ -178,6 +178,7 @@ Input types (produce a value):
 | `checkbox` | boolean | single yes/no, `required` means must be true |
 | `date` | string | `YYYY-MM-DD` |
 | `time` | string | `HH:MM` 24 hour |
+| `file` | list of files | uploaded files, see 4.6 |
 
 Display types (no value, cannot be rule sources, can be rule targets):
 
@@ -187,7 +188,7 @@ Display types (no value, cannot be rule sources, can be rule targets):
 | `paragraph` | `text` (limited markdown, see 4.5), `align` |
 | `divider` | none |
 
-Deferred: file upload, hidden fields, rating, matrix, signature.
+Deferred: hidden fields, rating, matrix, signature.
 
 Common properties for input fields: `label` (required), `description`,
 `required` (default false), `defaultValue`, `labelPosition`, `hideLabel` (default false).
@@ -271,6 +272,50 @@ and action messages stay plain text.
 - The server stores the markdown source only. The renderer parses it with HTML
   disabled, then passes the result through an allowlist sanitizer. The builder
   preview and the public page must use the same renderer.
+
+### 4.6 File uploads (DECISION)
+
+A `file` field takes one or more uploaded files. Properties (all optional):
+
+| property | meaning |
+| --- | --- |
+| `maxFiles` | 1 to 10, default 1 |
+| `maxSizeMb` | largest single file, 1 to 100, default 10. The server's PHP upload limit also applies |
+| `accept` | list of groups (`images`, `documents`, `archives`, `audio`, `video`) and extra extensions like `.dwg`. Default `images` and `documents` |
+| `audience` | `anyone` (default) or `login` (signed-in users only) |
+| `storage` | `files` (default) saves into the form owner's Nextcloud Files, `app` keeps files in the app's own storage |
+| `folder` | for `storage: files`, a folder path in the owner's Files. Default `Advanced Forms/<form title>` |
+
+A file field has no `placeholder` and no `defaultValue`. In rules it can only be tested with
+`empty` and `not_empty`.
+
+**Always refused**, whatever `accept` says: programs, scripts and web pages (`php`, `phtml`, `phar`,
+`exe`, `dll`, `bat`, `sh`, `py`, `js`, `html`, `htm`, `svg`, and similar), a name with such an
+extension anywhere in it (`shell.php.jpg`), and content that sniffs as an executable, script or web
+page, whatever the file is called.
+
+**Flow.** The browser uploads each file on its own to
+`POST /api/v1/public/{token}/upload` (multipart: `file`, `fieldId`, `versionId`, `fillToken`) and gets
+back an upload id. The form is submitted with the ids as the field's value. Until then the file waits
+in the app's storage and in the `advforms_uploads` table. On submit the server checks every id (it must
+be unused, uploaded for this form and this field), stores the files, and replaces the ids with file
+descriptors `{ name, size, mime, storage, ref }` in the response. If any file cannot be stored nothing
+is kept and the respondent can submit again with the same uploads. Waiting uploads that are never
+submitted are removed after 25 hours by a background job. Each form may have 200 MB waiting at a time.
+
+**Permissions.** Where files go and who may send them are limited by what the form owner may do.
+`folder` must be somewhere the owner can write, and `audience: anyone` with `storage: files` is only
+allowed if the owner may share that folder by public link (a public upload is what that amounts to),
+which also respects the administrator's sharing settings. This is checked when the draft is saved (as a
+warning), when it is published (as an error), and again at every submission, because the owner's access
+can change. Files are always written as the owner, so Nextcloud's own rules (quota, antivirus, file
+locking) apply. `folder` and `storage` are never sent to respondents.
+
+**After the fact.** Each response with files in `storage: files` gets its own subfolder
+`Response <date time> <id>` in the field's folder. Deleting a response, or the form, deletes its files
+(into the owner's trash bin) and the subfolder. Owners download files from the Responses view, always
+as attachments. Emails and CSV show file names only; webhook payloads carry `name`, `size` and `mime`
+for each file, never where it is stored.
 
 ## 5. Layout: pages > rows > cells (DECISION)
 
