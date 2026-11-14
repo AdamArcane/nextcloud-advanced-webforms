@@ -1,0 +1,9 @@
+version = 1
+SPDX-PackageName = "nextcloud-advanced-forms"
+SPDX-PackageDownloadLocation = "https://github.com/AdamArcane/nextcloud-advanced-forms"
+
+[[annotations]]
+path = ["package.json", "package-lock.json", "composer.json", "tsconfig.json", ".gitignore", ".editorconfig", "img/**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Adam and Advanced Forms contributors"
+SPDX-License-Identifier = "AGPL-3.0-or-later"

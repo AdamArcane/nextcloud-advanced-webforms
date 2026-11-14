@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<!--
+  - SPDX-FileCopyrightText: 2026 Adam and Advanced Forms contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+	<id>advancedforms</id>
+	<name>Advanced Forms</name>
+	<summary>Forms with conditional logic, grid layouts, and after-submit actions</summary>
+	<description><![CDATA[**Forms with the features larger form builders have, self-hosted.**
+
+- **Rules engine:** show, hide, or require fields based on earlier answers, with nested AND/OR conditions.
+- **Grid layout:** put several fields on one row, responsive on small screens.
+- **After-submit actions:** confirmation email, webhook, confirmation message, or redirect, each with optional conditions.
+- **Your data stays on your server.**
+
+This app is in early development.
+	]]></description>
+
+	<version>0.1.0</version>
+	<licence>AGPL-3.0-or-later</licence>
+
+	<author>Adam</author>
+
+	<namespace>AdvancedForms</namespace>
+
+	<category>tools</category>
+	<category>organization</category>
+
+	<website>https://github.com/AdamArcane/nextcloud-advanced-forms</website>
+	<bugs>https://github.com/AdamArcane/nextcloud-advanced-forms/issues</bugs>
+	<repository type="git">https://github.com/AdamArcane/nextcloud-advanced-forms</repository>
+
+	<dependencies>
+		<php min-version="8.2" />
+		<nextcloud min-version="35" max-version="35" />
+	</dependencies>
+
+	<navigations>
+		<navigation>
+			<name>Advanced Forms</name>
+			<route>advancedforms.page.index</route>
+		</navigation>
+	</navigations>
+</info>

@@ -1,0 +1,15 @@
+{
+  "name": "adamarcane/nextcloud-advanced-forms",
+  "description": "Advanced forms app for Nextcloud",
+  "type": "project",
+  "license": "AGPL-3.0-or-later",
+  "config": {
+    "sort-packages": true,
+    "platform": {
+      "php": "8.2"
+    }
+  },
+  "scripts": {
+    "lint": "find lib -name '*.php' -print0 | xargs -0 -n1 php -l"
+  }
+}
