@@ -5,5 +5,5 @@ SPDX-PackageDownloadLocation = "https://github.com/AdamArcane/nextcloud-advanced
 [[annotations]]
 path = ["package.json", "package-lock.json", "composer.json", "tsconfig.json", ".gitignore", ".editorconfig", "img/**"]
 precedence = "aggregate"
-SPDX-FileCopyrightText = "2026 Adam and Advanced Forms contributors"
+SPDX-FileCopyrightText = "2026 ArcaneX"
 SPDX-License-Identifier = "AGPL-3.0-or-later"

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  - SPDX-FileCopyrightText: 2026 Adam and Advanced Forms contributors
+  - SPDX-FileCopyrightText: 2026 ArcaneX
   - SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 <info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -33,7 +33,7 @@ This app is in early development.
 	<repository type="git">https://github.com/AdamArcane/nextcloud-advanced-forms</repository>
 
 	<dependencies>
-		<php min-version="8.2" />
+		<php min-version="8.3" />
 		<nextcloud min-version="35" max-version="35" />
 	</dependencies>
 

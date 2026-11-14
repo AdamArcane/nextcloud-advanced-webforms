@@ -1,5 +1,5 @@
 <!--
-  - SPDX-FileCopyrightText: 2026 Adam and Advanced Forms contributors
+  - SPDX-FileCopyrightText: 2026 ArcaneX
   - SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 
@@ -26,8 +26,9 @@ submit algorithm are specified in [docs/SCHEMA.md](docs/SCHEMA.md).
 
 ## Development
 
-Requirements: Nextcloud 35, PHP 8.2 or newer, Node 24 or newer (a build
-dependency declares it; the build also ran on Node 22 with an engine warning).
+Requirements: Nextcloud 35, PHP 8.3 or newer (Nextcloud 35 dropped 8.2), Node 24
+or newer (a build dependency declares it; the build also ran on Node 22 with an
+engine warning).
 
 ```
 git clone https://github.com/AdamArcane/nextcloud-advanced-forms advancedforms
