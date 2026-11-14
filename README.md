@@ -9,9 +9,10 @@ Forms with conditional logic, grid layouts, and after-submit actions, for
 Nextcloud. Your data stays on your server.
 
 **Status: early development.** The app installs and shows an empty page. The
-data format, rules engine, validation, and the owner and public APIs are
-written. The builder and renderer are not built yet, and the backend has not yet
-been run on a real Nextcloud server.
+data format, rules engine, validation, the owner and public APIs, and the public
+form page (live rules, grid layout, markdown paragraphs) are written. The
+builder, entries view and after-submit actions are not built yet, and none of it
+has been run on a real Nextcloud server.
 
 ## Planned for v1
 
@@ -54,6 +55,7 @@ occ app:enable advancedforms
 Useful commands:
 
 - `npm run watch` rebuilds on every change.
+- `npm test` runs the frontend tests, including the shared rule vectors.
 - `npm run typecheck` type checks the frontend.
 - `composer lint` syntax checks the PHP code.
 

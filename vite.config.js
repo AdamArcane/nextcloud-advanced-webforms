@@ -8,4 +8,5 @@ import { join, resolve } from 'path'
 
 export default createAppConfig({
 	main: resolve(join('src', 'main.ts')),
+	public: resolve(join('src', 'public.ts')),
 })

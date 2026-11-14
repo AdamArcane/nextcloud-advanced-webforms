@@ -13,9 +13,9 @@ use OCA\AdvancedForms\AppInfo\Application;
 use OCA\AdvancedForms\Exception\NotFoundException;
 use OCA\AdvancedForms\Exception\ValidationException;
 use OCA\AdvancedForms\Service\FormService;
-use OCP\AppFramework\ApiController;
+use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
-use OCP\AppFramework\Http\Attribute\ApiRoute;
+use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -25,7 +25,7 @@ use OCP\IUserSession;
  * Owner API for managing forms and reading entries. Any logged-in user may
  * create forms; every call is scoped to the forms that user owns.
  */
-class FormController extends ApiController {
+class FormController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private readonly FormService $service,
@@ -35,7 +35,7 @@ class FormController extends ApiController {
 	}
 
 	#[NoAdminRequired]
-	#[ApiRoute(verb: 'GET', url: '/api/v1/forms')]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/forms')]
 	public function index(): JSONResponse {
 		$forms = array_map(
 			fn ($form): array => $this->service->toArray($form),
@@ -45,7 +45,7 @@ class FormController extends ApiController {
 	}
 
 	#[NoAdminRequired]
-	#[ApiRoute(verb: 'POST', url: '/api/v1/forms')]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/forms')]
 	public function create(string $title = ''): JSONResponse {
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
 			$this->service->toArray($this->service->create($this->userId(), $title), true),
@@ -54,7 +54,7 @@ class FormController extends ApiController {
 	}
 
 	#[NoAdminRequired]
-	#[ApiRoute(verb: 'GET', url: '/api/v1/forms/{id}')]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/forms/{id}')]
 	public function show(int $id): JSONResponse {
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
 			$this->service->toArray($this->service->get($this->userId(), $id), true),
@@ -65,7 +65,7 @@ class FormController extends ApiController {
 	 * @param array<string, mixed> $definition
 	 */
 	#[NoAdminRequired]
-	#[ApiRoute(verb: 'PUT', url: '/api/v1/forms/{id}/draft')]
+	#[FrontpageRoute(verb: 'PUT', url: '/api/v1/forms/{id}/draft')]
 	public function saveDraft(int $id, array $definition = []): JSONResponse {
 		return $this->guard(function () use ($id, $definition): JSONResponse {
 			$saved = $this->service->saveDraft($this->userId(), $id, $definition);
@@ -78,7 +78,7 @@ class FormController extends ApiController {
 	}
 
 	#[NoAdminRequired]
-	#[ApiRoute(verb: 'POST', url: '/api/v1/forms/{id}/publish')]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/forms/{id}/publish')]
 	public function publish(int $id): JSONResponse {
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
 			$this->service->toArray($this->service->publish($this->userId(), $id), true),
@@ -86,7 +86,7 @@ class FormController extends ApiController {
 	}
 
 	#[NoAdminRequired]
-	#[ApiRoute(verb: 'PUT', url: '/api/v1/forms/{id}/status')]
+	#[FrontpageRoute(verb: 'PUT', url: '/api/v1/forms/{id}/status')]
 	public function setStatus(int $id, int $status = -1): JSONResponse {
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
 			$this->service->toArray($this->service->setStatus($this->userId(), $id, $status)),
@@ -94,7 +94,7 @@ class FormController extends ApiController {
 	}
 
 	#[NoAdminRequired]
-	#[ApiRoute(verb: 'DELETE', url: '/api/v1/forms/{id}')]
+	#[FrontpageRoute(verb: 'DELETE', url: '/api/v1/forms/{id}')]
 	public function destroy(int $id): JSONResponse {
 		return $this->guard(function () use ($id): JSONResponse {
 			$this->service->delete($this->userId(), $id);
@@ -103,7 +103,7 @@ class FormController extends ApiController {
 	}
 
 	#[NoAdminRequired]
-	#[ApiRoute(verb: 'GET', url: '/api/v1/forms/{id}/entries')]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/forms/{id}/entries')]
 	public function entries(int $id, int $limit = 50, int $offset = 0): JSONResponse {
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
 			$this->service->listEntries($this->userId(), $id, $limit, $offset),
@@ -111,7 +111,7 @@ class FormController extends ApiController {
 	}
 
 	#[NoAdminRequired]
-	#[ApiRoute(verb: 'DELETE', url: '/api/v1/forms/{id}/entries/{entryId}')]
+	#[FrontpageRoute(verb: 'DELETE', url: '/api/v1/forms/{id}/entries/{entryId}')]
 	public function destroyEntry(int $id, int $entryId): JSONResponse {
 		return $this->guard(function () use ($id, $entryId): JSONResponse {
 			$this->service->deleteEntry($this->userId(), $id, $entryId);

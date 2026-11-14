@@ -15,10 +15,10 @@ use OCA\AdvancedForms\Exception\LoginRequiredException;
 use OCA\AdvancedForms\Exception\NotFoundException;
 use OCA\AdvancedForms\Exception\ValidationException;
 use OCA\AdvancedForms\Service\SubmissionService;
-use OCP\AppFramework\ApiController;
+use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
-use OCP\AppFramework\Http\Attribute\ApiRoute;
+use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\Attribute\UserRateLimit;
@@ -31,7 +31,7 @@ use OCP\IUserSession;
  * login. Submitting keeps CSRF protection on: the public page is served by
  * this app, so its script has a request token.
  */
-class PublicController extends ApiController {
+class PublicController extends Controller {
 	/** Upper bound for the decoded values, a cheap guard before any validation. */
 	private const MAX_VALUES_BYTES = 200 * 1024;
 
@@ -46,7 +46,7 @@ class PublicController extends ApiController {
 	#[PublicPage]
 	#[NoAdminRequired]
 	#[AnonRateLimit(limit: 60, period: 60)]
-	#[ApiRoute(verb: 'GET', url: '/api/v1/public/{token}')]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/public/{token}')]
 	public function show(string $token): JSONResponse {
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
 			$this->service->getPublic($token, $this->userId()),
@@ -60,7 +60,7 @@ class PublicController extends ApiController {
 	#[NoAdminRequired]
 	#[AnonRateLimit(limit: 10, period: 60)]
 	#[UserRateLimit(limit: 20, period: 60)]
-	#[ApiRoute(verb: 'POST', url: '/api/v1/public/{token}/submit')]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/public/{token}/submit')]
 	public function submit(
 		string $token,
 		int $versionId = 0,

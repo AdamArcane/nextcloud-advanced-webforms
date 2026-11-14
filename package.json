@@ -17,7 +17,9 @@
     "extends @nextcloud/browserslist-config"
   ],
   "dependencies": {
+    "@nextcloud/axios": "^2.6.0",
     "@nextcloud/l10n": "^3.4.1",
+    "@nextcloud/router": "^3.2.0",
     "@nextcloud/vue": "^9.14.1",
     "vue": "^3.5.45"
   },
@@ -25,7 +27,10 @@
     "@nextcloud/browserslist-config": "^3.1.2",
     "@nextcloud/vite-config": "^2.5.2",
     "@types/node": "^22.20.5",
+    "@vitejs/plugin-vue": "^6.0.11",
+    "@vue/test-utils": "^2.5.1",
     "@vue/tsconfig": "^0.9.1",
+    "happy-dom": "^21.0.4",
     "vite": "^7.3.7",
     "vitest": "^5.1.0",
     "vue-tsc": "^3.3.14"
