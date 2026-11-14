@@ -57,3 +57,21 @@ describe('dragging onto a row', () => {
 		expect(emitted[0][1]).toMatchObject({ kind: 'cell', side: 'after' })
 	})
 })
+
+describe('field toolbar', () => {
+	it('duplicates and deletes the field it sits on, without selecting it', async () => {
+		let def = emptyDefinition('T')
+		const a = addField(def, 'text', { kind: 'row', index: 0 })
+		def = addField(a.definition, 'email', { kind: 'row', index: 1 }).definition
+		const wrapper = mount(BuilderCanvas, {
+			props: { definition: def, selectedId: null, errors: [], mobile: false },
+		})
+		const second = wrapper.findAll('.af-cell')[1]
+		await second.find('button[aria-label="Duplicate field"]').trigger('click')
+		await second.find('button[aria-label="Delete field"]').trigger('click')
+		const secondId = Object.keys(def.fields)[1]
+		expect(wrapper.emitted('duplicate')![0]).toEqual([secondId])
+		expect(wrapper.emitted('remove')![0]).toEqual([secondId])
+		expect(wrapper.emitted('select')).toBeUndefined()
+	})
+})

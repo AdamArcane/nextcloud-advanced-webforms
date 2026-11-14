@@ -212,6 +212,12 @@ function select(fieldId: string): void {
 	sidebarOpen.value = true
 }
 
+/** The hover toolbar acts on its own field, which becomes the selected one (the delete dialog uses the selection). */
+function onToolbarRemove(fieldId: string): void {
+	selectedId.value = fieldId
+	confirmRemoveField.value = true
+}
+
 function onAddPage(): void {
 	if (draft.value) {
 		edit(addPage(draft.value))
@@ -259,11 +265,11 @@ function onAddBeside(type: string): void {
 	select(result.fieldId)
 }
 
-function onDuplicate(): void {
-	if (!draft.value || !selectedId.value) {
+function onDuplicate(fieldId: string | null = selectedId.value): void {
+	if (!draft.value || !fieldId) {
 		return
 	}
-	const result = duplicateField(draft.value, selectedId.value, (label) => t('advancedforms', '{label} (copy)', { label }))
+	const result = duplicateField(draft.value, fieldId, (label) => t('advancedforms', '{label} (copy)', { label }))
 	if (result) {
 		// The copy is "<label> (copy)", so its id follows that rather than staying random.
 		const named = followLabel(result.definition, result.fieldId, undefined, form.value?.retiredIds ?? [], frozenIds)
@@ -511,7 +517,9 @@ async function onDeleteConfirmed(): Promise<void> {
 				@resize="onResize"
 				@page-title="onPageTitle"
 				@move-page="onMovePage"
-				@remove-page="onRemovePage" />
+				@remove-page="onRemovePage"
+				@duplicate="onDuplicate"
+				@remove="onToolbarRemove" />
 
 			<PreviewDialog v-if="previewOpen" :definition="draft" @close="previewOpen = false" />
 

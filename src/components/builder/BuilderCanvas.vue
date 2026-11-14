@@ -13,7 +13,7 @@ import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcActionCaption from '@nextcloud/vue/components/NcActionCaption'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import { MAX_PAGES, dropField, resizeField, rulesTouching, type DropTarget } from '../../builder/definition.ts'
+import { MAX_FIELDS, MAX_PAGES, dropField, resizeField, rulesTouching, type DropTarget } from '../../builder/definition.ts'
 import { renderedLabelPosition } from '../../layout/labelPosition.ts'
 import { groupErrors } from '../../builder/errors.ts'
 import Icon from '../common/Icon.vue'
@@ -42,6 +42,9 @@ const emit = defineEmits<{
 	pageTitle: [pageId: string, title: string]
 	movePage: [pageId: string, direction: -1 | 1]
 	removePage: [pageId: string]
+	/** From the toolbar that appears over a field on hover. */
+	duplicate: [fieldId: string]
+	remove: [fieldId: string]
 }>()
 
 type Drag = { kind: 'field', fieldId: string } | { kind: 'row', rowId: string }
@@ -428,6 +431,25 @@ function codes(fieldId: string): string[] {
 									:label-position="renderedLabelPosition(definition.fields[cell.field], definition.settings)"
 									:hide-required-indicator="definition.settings.hideRequiredIndicator === true"
 									@select="emit('select', cell.field)" />
+								<div v-if="resizing === null && drag === null" class="af-cell__tools" role="toolbar" :aria-label="t('advancedforms', 'Field actions')">
+									<button type="button"
+										class="af-cell__tool"
+										draggable="false"
+										:title="t('advancedforms', 'Duplicate field')"
+										:aria-label="t('advancedforms', 'Duplicate field')"
+										:disabled="Object.keys(definition.fields).length >= MAX_FIELDS"
+										@click.stop="emit('duplicate', cell.field)">
+										<Icon :path="icons.copy" :size="18" />
+									</button>
+									<button type="button"
+										class="af-cell__tool af-cell__tool--danger"
+										draggable="false"
+										:title="t('advancedforms', 'Delete field')"
+										:aria-label="t('advancedforms', 'Delete field')"
+										@click.stop="emit('remove', cell.field)">
+										<Icon :path="icons.delete" :size="18" />
+									</button>
+								</div>
 								<span v-if="resizing?.fieldId === cell.field" class="af-cell__span">{{ cell.span }}/12</span>
 								<button class="af-cell__resize"
 									type="button"
@@ -661,6 +683,60 @@ function codes(fieldId: string): string[] {
 .af-cell__resize:focus-visible,
 .af-cell--resizing > .af-cell__resize {
 	opacity: 1;
+}
+
+.af-cell__tools {
+	position: absolute;
+	top: 6px;
+	right: 18px;
+	z-index: 2;
+	display: flex;
+	gap: 2px;
+	padding: 2px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-element);
+	background: var(--color-main-background);
+	box-shadow: 0 1px 4px var(--color-box-shadow);
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.12s ease;
+}
+
+/* Visible on hover, on keyboard focus, and for the selected field (so touch screens can reach it). */
+.af-cell:hover > .af-cell__tools,
+.af-cell:focus-within > .af-cell__tools,
+.af-cell:has(.af-card--selected) > .af-cell__tools {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+.af-cell__tool {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	min-height: 28px;
+	height: 28px;
+	padding: 0;
+	border: 0;
+	border-radius: var(--border-radius-small);
+	background: transparent;
+	color: var(--color-main-text);
+	cursor: pointer;
+}
+
+.af-cell__tool:hover:not(:disabled),
+.af-cell__tool:focus-visible {
+	background: var(--color-background-hover);
+}
+
+.af-cell__tool--danger:hover:not(:disabled) {
+	color: var(--color-error-text);
+}
+
+.af-cell__tool:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
 }
 
 .af-cell__span {

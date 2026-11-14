@@ -7,7 +7,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/components/builder/BuilderView.vue:266
+#: src/components/builder/BuilderView.vue:272
 msgid "{label} (copy)"
 msgstr ""
 
@@ -100,7 +100,7 @@ msgstr ""
 msgid "Action"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:483
+#: src/components/builder/BuilderView.vue:489
 msgid "Actions"
 msgstr ""
 
@@ -129,8 +129,8 @@ msgstr ""
 msgid "Add condition"
 msgstr ""
 
-#: src/components/builder/BuilderCanvas.vue:382
-#: src/components/builder/BuilderCanvas.vue:450
+#: src/components/builder/BuilderCanvas.vue:385
+#: src/components/builder/BuilderCanvas.vue:472
 msgid "Add field"
 msgstr ""
 
@@ -142,8 +142,8 @@ msgstr ""
 msgid "Add option"
 msgstr ""
 
-#: src/components/builder/BuilderCanvas.vue:368
-#: src/components/builder/BuilderCanvas.vue:369
+#: src/components/builder/BuilderCanvas.vue:371
+#: src/components/builder/BuilderCanvas.vue:372
 msgid "Add page"
 msgstr ""
 
@@ -155,7 +155,7 @@ msgstr ""
 msgid "Add some text."
 msgstr ""
 
-#: src/components/builder/BuilderCanvas.vue:380
+#: src/components/builder/BuilderCanvas.vue:383
 msgid "Add your first field. You can put several fields side by side later."
 msgstr ""
 
@@ -279,13 +279,13 @@ msgstr ""
 msgid "Call a webhook"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:522
-#: src/components/builder/BuilderView.vue:531
+#: src/components/builder/BuilderView.vue:530
+#: src/components/builder/BuilderView.vue:539
 #: src/components/entries/EntriesView.vue:382
 msgid "Cancel"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:444
+#: src/components/builder/BuilderView.vue:450
 msgid "Canvas width"
 msgstr ""
 
@@ -448,7 +448,7 @@ msgstr ""
 msgid "Date and time"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:523
+#: src/components/builder/BuilderView.vue:531
 #: src/components/entries/EntriesView.vue:383
 msgid "Delete"
 msgstr ""
@@ -457,16 +457,18 @@ msgstr ""
 msgid "Delete action"
 msgstr ""
 
+#: src/components/builder/BuilderCanvas.vue:447
+#: src/components/builder/BuilderCanvas.vue:448
 #: src/components/builder/FieldProperties.vue:509
 msgid "Delete field"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:532
+#: src/components/builder/BuilderView.vue:540
 #: src/components/builder/FormProperties.vue:242
 msgid "Delete form"
 msgstr ""
 
-#: src/components/builder/BuilderCanvas.vue:361
+#: src/components/builder/BuilderCanvas.vue:364
 msgid "Delete page"
 msgstr ""
 
@@ -482,11 +484,11 @@ msgstr ""
 msgid "Delete rule for all fields"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:519
+#: src/components/builder/BuilderView.vue:527
 msgid "Delete this field?"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:528
+#: src/components/builder/BuilderView.vue:536
 msgid "Delete this form?"
 msgstr ""
 
@@ -506,11 +508,11 @@ msgstr ""
 msgid "Description"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:481
+#: src/components/builder/BuilderView.vue:487
 msgid "Design"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:446
+#: src/components/builder/BuilderView.vue:452
 #: src/components/builder/PreviewDialog.vue:59
 msgid "Desktop"
 msgstr ""
@@ -532,16 +534,16 @@ msgid "Download CSV"
 msgstr ""
 
 #: src/App.vue:98
-#: src/components/builder/BuilderView.vue:419
+#: src/components/builder/BuilderView.vue:425
 msgid "Draft"
 msgstr ""
 
-#: src/components/builder/BuilderCanvas.vue:404
-#: src/components/builder/BuilderCanvas.vue:405
+#: src/components/builder/BuilderCanvas.vue:407
+#: src/components/builder/BuilderCanvas.vue:408
 msgid "Drag to move this row"
 msgstr ""
 
-#: src/components/builder/BuilderCanvas.vue:435
+#: src/components/builder/BuilderCanvas.vue:457
 msgid "Drag to resize, or use the arrow keys"
 msgstr ""
 
@@ -549,6 +551,8 @@ msgstr ""
 msgid "Dropdown"
 msgstr ""
 
+#: src/components/builder/BuilderCanvas.vue:438
+#: src/components/builder/BuilderCanvas.vue:439
 #: src/components/builder/FieldProperties.vue:503
 msgid "Duplicate field"
 msgstr ""
@@ -637,8 +641,12 @@ msgstr ""
 
 #: src/components/builder/BuilderView.vue:204
 #: src/components/builder/BuilderView.vue:206
-#: src/components/builder/BuilderView.vue:542
+#: src/components/builder/BuilderView.vue:550
 msgid "Field"
+msgstr ""
+
+#: src/components/builder/BuilderCanvas.vue:434
+msgid "Field actions"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:482
@@ -669,7 +677,7 @@ msgstr ""
 msgid "Filter deliveries"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:463
+#: src/components/builder/BuilderView.vue:469
 msgid "Fix the highlighted problems before publishing."
 msgstr ""
 
@@ -698,7 +706,7 @@ msgid "Form field · the answer given"
 msgstr ""
 
 #: src/PublicApp.vue:86
-#: src/components/builder/BuilderView.vue:395
+#: src/components/builder/BuilderView.vue:401
 msgid "Form not found"
 msgstr ""
 
@@ -722,7 +730,7 @@ msgstr ""
 msgid "Full"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:480
+#: src/components/builder/BuilderView.vue:486
 msgid "General"
 msgstr ""
 
@@ -859,7 +867,7 @@ msgstr ""
 msgid "is one of"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:396
+#: src/components/builder/BuilderView.vue:402
 msgid "It may have been deleted, or you may not have access to it."
 msgstr ""
 
@@ -925,7 +933,7 @@ msgstr ""
 msgid "Log in"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:566
+#: src/components/builder/BuilderView.vue:574
 msgid "Logic"
 msgstr ""
 
@@ -973,7 +981,7 @@ msgstr ""
 msgid "Minimum"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:447
+#: src/components/builder/BuilderView.vue:453
 #: src/components/builder/PreviewDialog.vue:61
 msgid "Mobile"
 msgstr ""
@@ -1006,19 +1014,19 @@ msgstr ""
 msgid "Move option up"
 msgstr ""
 
-#: src/components/builder/BuilderCanvas.vue:363
+#: src/components/builder/BuilderCanvas.vue:366
 msgid "Move or delete the fields on this page to delete it."
 msgstr ""
 
-#: src/components/builder/BuilderCanvas.vue:356
+#: src/components/builder/BuilderCanvas.vue:359
 msgid "Move or delete this page's fields first"
 msgstr ""
 
-#: src/components/builder/BuilderCanvas.vue:347
+#: src/components/builder/BuilderCanvas.vue:350
 msgid "Move page left"
 msgstr ""
 
-#: src/components/builder/BuilderCanvas.vue:353
+#: src/components/builder/BuilderCanvas.vue:356
 msgid "Move page right"
 msgstr ""
 
@@ -1095,8 +1103,8 @@ msgstr ""
 msgid "No deliveries match this filter."
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:563
-#: src/components/builder/BuilderView.vue:579
+#: src/components/builder/BuilderView.vue:571
+#: src/components/builder/BuilderView.vue:587
 msgid "No field selected"
 msgstr ""
 
@@ -1176,8 +1184,8 @@ msgstr ""
 msgid "Only when the answers match"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:435
-#: src/components/builder/BuilderView.vue:436
+#: src/components/builder/BuilderView.vue:441
+#: src/components/builder/BuilderView.vue:442
 msgid "Open published form"
 msgstr ""
 
@@ -1206,8 +1214,8 @@ msgstr ""
 msgid "Page"
 msgstr ""
 
-#: src/components/builder/BuilderCanvas.vue:106
-#: src/components/builder/BuilderCanvas.vue:318
+#: src/components/builder/BuilderCanvas.vue:109
+#: src/components/builder/BuilderCanvas.vue:321
 #: src/components/builder/FieldProperties.vue:467
 msgid "Page {n}"
 msgstr ""
@@ -1217,15 +1225,15 @@ msgstr ""
 msgid "Page background"
 msgstr ""
 
-#: src/components/builder/BuilderCanvas.vue:336
+#: src/components/builder/BuilderCanvas.vue:339
 msgid "Page options"
 msgstr ""
 
-#: src/components/builder/BuilderCanvas.vue:317
+#: src/components/builder/BuilderCanvas.vue:320
 msgid "Page title"
 msgstr ""
 
-#: src/components/builder/BuilderCanvas.vue:307
+#: src/components/builder/BuilderCanvas.vue:310
 msgid "Pages"
 msgstr ""
 
@@ -1281,8 +1289,8 @@ msgstr ""
 msgid "Please wait until your files have finished uploading."
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:423
-#: src/components/builder/BuilderView.vue:424
+#: src/components/builder/BuilderView.vue:429
+#: src/components/builder/BuilderView.vue:430
 #: src/components/builder/PreviewDialog.vue:44
 msgid "Preview"
 msgstr ""
@@ -1312,7 +1320,7 @@ msgstr ""
 msgid "Public link"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:453
+#: src/components/builder/BuilderView.vue:459
 msgid "Publish"
 msgstr ""
 
@@ -1321,11 +1329,11 @@ msgid "Publish the form to get a link you can share."
 msgstr ""
 
 #: src/App.vue:96
-#: src/components/builder/BuilderView.vue:417
+#: src/components/builder/BuilderView.vue:423
 msgid "Published"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:453
+#: src/components/builder/BuilderView.vue:459
 msgid "Publishing…"
 msgstr ""
 
@@ -1361,7 +1369,7 @@ msgstr ""
 msgid "Remove option"
 msgstr ""
 
-#: src/components/builder/BuilderCanvas.vue:341
+#: src/components/builder/BuilderCanvas.vue:344
 msgid "Rename page"
 msgstr ""
 
@@ -1373,7 +1381,7 @@ msgstr ""
 msgid "Required"
 msgstr ""
 
-#: src/components/builder/BuilderCanvas.vue:436
+#: src/components/builder/BuilderCanvas.vue:458
 msgid "Resize field"
 msgstr ""
 
@@ -1399,7 +1407,7 @@ msgstr ""
 msgid "Right"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:520
+#: src/components/builder/BuilderView.vue:528
 msgid "Rules that use this field will be updated or removed. Responses already received keep their answers."
 msgstr ""
 
@@ -1420,11 +1428,11 @@ msgstr ""
 msgid "Search field types"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:564
+#: src/components/builder/BuilderView.vue:572
 msgid "Select a field on the canvas to edit it."
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:580
+#: src/components/builder/BuilderView.vue:588
 msgid "Select a field on the canvas to set up its rules."
 msgstr ""
 
@@ -1486,11 +1494,11 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:478
+#: src/components/builder/BuilderView.vue:484
 msgid "Settings section"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:482
+#: src/components/builder/BuilderView.vue:488
 msgid "Sharing"
 msgstr ""
 
@@ -1585,7 +1593,7 @@ msgstr ""
 msgid "Standard"
 msgstr ""
 
-#: src/components/builder/BuilderCanvas.vue:379
+#: src/components/builder/BuilderCanvas.vue:382
 msgid "Start your form"
 msgstr ""
 
@@ -1663,7 +1671,7 @@ msgstr ""
 msgid "The file could not be saved. Please try again later or contact the form owner."
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:529
+#: src/components/builder/BuilderView.vue:537
 msgid "The form and all of its responses will be deleted. This cannot be undone."
 msgstr ""
 
@@ -1671,7 +1679,7 @@ msgstr ""
 msgid "The form could not be loaded. Please try again later."
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:469
+#: src/components/builder/BuilderView.vue:475
 msgid "The form could not be published."
 msgstr ""
 
@@ -1856,7 +1864,7 @@ msgstr ""
 msgid "This number is too small."
 msgstr ""
 
-#: src/components/builder/BuilderCanvas.vue:334
+#: src/components/builder/BuilderCanvas.vue:337
 msgid "This page has a problem"
 msgstr ""
 
@@ -2089,6 +2097,6 @@ msgstr ""
 msgid "Your Files"
 msgstr ""
 
-#: src/components/builder/BuilderView.vue:460
+#: src/components/builder/BuilderView.vue:466
 msgid "Your latest changes could not be saved. Check your connection; they will be retried when you edit again."
 msgstr ""
