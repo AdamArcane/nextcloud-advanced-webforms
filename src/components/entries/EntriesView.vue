@@ -180,6 +180,10 @@ async function refreshDeliveries(): Promise<void> {
 	}
 }
 
+/** Waiting for two minutes past the planned time: nothing is picking them up. */
+const OVERDUE_SECONDS = 120
+const overdue = computed(() => deliveries.value.some((row) => row.status === 'queued' && row.nextAttemptAt !== null && row.nextAttemptAt < now.value - OVERDUE_SECONDS))
+
 let refreshTimer: ReturnType<typeof setInterval> | undefined
 
 function tick(): void {
@@ -315,20 +319,22 @@ onMounted(() => {
 					]"
 					@update:model-value="setFilter" />
 				<div class="af-entries__refresh">
-					<NcButton variant="tertiary"
+					<NcButton variant="secondary"
 						:disabled="refreshing || deliveriesLoading"
-						:aria-label="t('advancedforms', 'Refresh')"
-						:title="t('advancedforms', 'Refresh')"
 						@click="refreshDeliveries">
 						<template #icon>
 							<NcLoadingIcon v-if="refreshing" :size="20" />
 							<Icon v-else :path="icons.refresh" />
 						</template>
+						{{ t('advancedforms', 'Refresh') }}
 					</NcButton>
 					<span v-if="deliveries.some((row) => row.status === 'queued')" class="af-entries__hint">
-						{{ t('advancedforms', 'Updating automatically while deliveries are waiting.') }}
+						{{ t('advancedforms', 'This list also refreshes by itself every few seconds while deliveries are waiting.') }}
 					</span>
 				</div>
+				<NcNoteCard v-if="overdue" type="warning">
+					{{ t('advancedforms', 'Some deliveries are overdue. Nextcloud sends them with its background jobs, which do not seem to be running. Ask your administrator to switch background jobs to Cron (Administration settings, Basic settings).') }}
+				</NcNoteCard>
 
 				<div v-if="deliveriesLoading" class="af-entries__center">
 					<NcLoadingIcon :size="44" />

@@ -347,7 +347,7 @@ describe('EntriesView deliveries', () => {
 			await flushPromises()
 			await openDeliveries(wrapper)
 			expect(wrapper.text()).toContain('Waiting')
-			expect(wrapper.text()).toContain('Updating automatically')
+			expect(wrapper.text()).toContain('refreshes by itself')
 			const afterOpen = callsForList()
 
 			rows = [delivery(10, { status: 'success', attempt: 2, error: null })]
@@ -355,7 +355,7 @@ describe('EntriesView deliveries', () => {
 			await flushPromises()
 			expect(callsForList()).toBe(afterOpen + 1)
 			expect(wrapper.text()).toContain('Sent')
-			expect(wrapper.text()).not.toContain('Updating automatically')
+			expect(wrapper.text()).not.toContain('refreshes by itself')
 
 			// Nothing is waiting any more, so nothing more is fetched.
 			await vi.advanceTimersByTimeAsync(40_000)
@@ -375,12 +375,28 @@ describe('EntriesView deliveries', () => {
 			wrapper.unmount()
 		})
 
+		it('says so when waiting deliveries are long overdue, and not when they are merely waiting', async () => {
+			const nowSeconds = Math.floor(Date.now() / 1000)
+			let rows = [delivery(10, { status: 'queued', error: null, nextAttemptAt: nowSeconds + 30 })]
+			listDeliveriesMock.mockImplementation(async (_id: number, query: { status?: string }) => (query.status === 'failed' ? deliveries([]) : deliveries(rows)))
+			const wrapper = mountView()
+			await flushPromises()
+			await openDeliveries(wrapper)
+			expect(wrapper.text()).not.toContain('do not seem to be running')
+
+			rows = [delivery(10, { status: 'queued', error: null, nextAttemptAt: nowSeconds - 600 })]
+			await vi.advanceTimersByTimeAsync(10_000)
+			await flushPromises()
+			expect(wrapper.text()).toContain('do not seem to be running')
+			wrapper.unmount()
+		})
+
 		it('refreshes by hand', async () => {
 			const wrapper = mountView()
 			await flushPromises()
 			await openDeliveries(wrapper)
 			const before = callsForList()
-			await wrapper.get('button[aria-label="Refresh"]').trigger('click')
+			await wrapper.findAll('button').find((b) => b.text() === 'Refresh')!.trigger('click')
 			await flushPromises()
 			expect(callsForList()).toBe(before + 1)
 			wrapper.unmount()
