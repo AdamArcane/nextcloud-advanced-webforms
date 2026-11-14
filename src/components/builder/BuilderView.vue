@@ -21,7 +21,7 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ApiError } from '../../api/http.ts'
 import { deleteForm, getForm, publicFormUrl, publishForm, saveDraft } from '../../api/forms.ts'
-import { addField, addPage, moveFieldToPage, locateField, movePage, removePage, setPageTitle, moveField, removeField, setSpan, updateField } from '../../builder/definition.ts'
+import { addField, addPage, dropField, dropRow, resizeField, type DropTarget, moveFieldToPage, locateField, movePage, removePage, setPageTitle, moveField, removeField, setSpan, updateField } from '../../builder/definition.ts'
 import { describeError, groupErrors } from '../../builder/errors.ts'
 import { renameField } from '../../builder/fieldId.ts'
 import type { Rule } from '../../rules/types.ts'
@@ -268,6 +268,25 @@ function onSpan(span: number): void {
 	}
 }
 
+function onDrop(fieldId: string, target: DropTarget): void {
+	if (draft.value) {
+		edit(dropField(draft.value, fieldId, target))
+		select(fieldId)
+	}
+}
+
+function onDropRow(rowId: string, page: number, index: number): void {
+	if (draft.value) {
+		edit(dropRow(draft.value, rowId, page, index))
+	}
+}
+
+function onResize(fieldId: string, rawSpan: number): void {
+	if (draft.value) {
+		edit(resizeField(draft.value, fieldId, rawSpan))
+	}
+}
+
 function onMove(move: Move): void {
 	if (draft.value && selectedId.value) {
 		edit(moveField(draft.value, selectedId.value, move))
@@ -462,6 +481,9 @@ async function onDeleteConfirmed(): Promise<void> {
 				@select="select"
 				@add="onAdd"
 				@add-page="onAddPage"
+				@drop-field="onDrop"
+				@drop-row="onDropRow"
+				@resize="onResize"
 				@page-title="onPageTitle"
 				@move-page="onMovePage"
 				@remove-page="onRemovePage" />

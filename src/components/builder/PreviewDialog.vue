@@ -7,6 +7,7 @@
 import type { DraftDefinition, PublicForm } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import { computed, ref } from 'vue'
 import { cloneJson } from '../../builder/definition.ts'
@@ -28,6 +29,7 @@ type Device = 'desktop' | 'tablet' | 'mobile'
 // Widths are the usual breakpoints; the renderer's layout reacts to its own width, so this is what a phone really shows.
 const WIDTHS: Record<Device, number | null> = { desktop: null, tablet: 768, mobile: 390 }
 const device = ref<Device>('desktop')
+const validate = ref(false)
 const frameWidth = computed(() => WIDTHS[device.value])
 const stageBackground = computed(() => pageBackground(props.definition.settings.design))
 
@@ -56,11 +58,14 @@ const form = computed<PublicForm>(() => {
 					{ value: 'mobile', label: t('advancedforms', 'Mobile'), icon: icons.mobile },
 				]" />
 		</div>
+		<NcCheckboxRadioSwitch v-model="validate" type="switch" class="af-preview__validate">
+			{{ t('advancedforms', 'Check required fields, like a respondent would') }}
+		</NcCheckboxRadioSwitch>
 		<div class="af-preview__stage"
 			:class="{ 'af-preview__stage--framed': frameWidth !== null || stageBackground !== null }"
 			:style="stageBackground ? { background: stageBackground } : undefined">
 			<div class="af-preview__frame" :style="frameWidth ? { maxWidth: frameWidth + 'px' } : undefined">
-				<FormPage :form="form" preview />
+				<FormPage :form="form" preview :validate="validate" />
 			</div>
 		</div>
 	</NcDialog>
@@ -80,6 +85,10 @@ const form = computed<PublicForm>(() => {
 	flex: 1 1 260px;
 	margin: 0;
 	color: var(--color-text-maxcontrast);
+}
+
+.af-preview__validate {
+	margin-bottom: calc(var(--default-grid-baseline) * 3);
 }
 
 .af-preview__device {

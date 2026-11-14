@@ -188,6 +188,7 @@ describe('FormRenderer', () => {
 		await wrapper.find('form').trigger('submit')
 		expect(submitMock).not.toHaveBeenCalled()
 	})
+
 })
 
 describe('FormRenderer with several pages', () => {
@@ -231,10 +232,20 @@ describe('FormRenderer with several pages', () => {
 	it('lets the preview page through but never submits', async () => {
 		submitMock.mockReset()
 		const wrapper = mount(FormRenderer, { props: { form: paged, preview: true }, attachTo: document.body })
+		// f_name is required and empty, but the preview does not check.
+		await wrapper.find('form').trigger('submit')
+		expect(wrapper.find('#af-f_mail').exists()).toBe(true)
+		expect(wrapper.text()).not.toContain('required')
+		await wrapper.find('form').trigger('submit')
+		expect(submitMock).not.toHaveBeenCalled()
+	})
+
+	it('checks required fields in the preview when validation is switched on', async () => {
+		const wrapper = mount(FormRenderer, { props: { form: paged, preview: true, validate: true }, attachTo: document.body })
+		await wrapper.find('form').trigger('submit')
+		expect(wrapper.find('#af-f_mail').exists()).toBe(false)
 		await wrapper.find('#af-f_name').setValue('Ann')
 		await wrapper.find('form').trigger('submit')
 		expect(wrapper.find('#af-f_mail').exists()).toBe(true)
-		await wrapper.find('form').trigger('submit')
-		expect(submitMock).not.toHaveBeenCalled()
 	})
 })

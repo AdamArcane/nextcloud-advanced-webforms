@@ -12,8 +12,8 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcActionCaption from '@nextcloud/vue/components/NcActionCaption'
 import NcActions from '@nextcloud/vue/components/NcActions'
-import { computed, nextTick, ref, watch } from 'vue'
-import { MAX_PAGES, rulesTouching } from '../../builder/definition.ts'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { MAX_PAGES, resizeField, rulesTouching, type DropTarget } from '../../builder/definition.ts'
 import { renderedLabelPosition } from '../../layout/labelPosition.ts'
 import { groupErrors } from '../../builder/errors.ts'
 import Icon from '../common/Icon.vue'
@@ -34,12 +34,21 @@ const emit = defineEmits<{
 	/** Insert a field in a row of its own at this row index of a page. */
 	add: [type: string, rowIndex: number, pageIndex: number]
 	addPage: []
+	/** Drag and drop: a field to a new place, or a whole row to a row slot of a page. */
+	dropField: [fieldId: string, target: DropTarget]
+	dropRow: [rowId: string, page: number, index: number]
+	/** Resize a cell; the span is in fractional twelfths and is snapped by the receiver. */
+	resize: [fieldId: string, rawSpan: number]
 	pageTitle: [pageId: string, title: string]
 	movePage: [pageId: string, direction: -1 | 1]
 	removePage: [pageId: string]
 }>()
 
-const pages = computed(() => props.definition.pages)
+// While a resize handle is dragged the canvas shows the result without touching the draft;
+// one edit is emitted when the pointer is released.
+const resizing = ref<{ fieldId: string, raw: number, left: number, colWidth: number, gap: number } | null>(null)
+const view = computed(() => (resizing.value ? resizeField(props.definition, resizing.value.fieldId, resizing.value.raw) : props.definition))
+const pages = computed(() => view.value.pages)
 
 // The page being edited. Everything on the canvas happens on this one page.
 const activeId = ref(pages.value[0]?.id ?? '')
@@ -90,6 +99,113 @@ async function startRename(pageId: string) {
 	renamingId.value = pageId
 	await nextTick()
 	document.querySelector<HTMLInputElement>('.af-tab__rename')?.select()
+}
+
+// Drag and drop (native HTML5, so it needs a mouse; the properties panel keeps the button moves).
+type Drag = { kind: 'field', fieldId: string } | { kind: 'row', rowId: string }
+const drag = ref<Drag | null>(null)
+const dropHint = ref<{ key: string, side?: 'before' | 'after' } | null>(null)
+let tabTimer: ReturnType<typeof setTimeout> | undefined
+
+function startDrag(event: DragEvent, value: Drag, image?: HTMLElement | null): void {
+	drag.value = value
+	if (event.dataTransfer) {
+		event.dataTransfer.effectAllowed = 'move'
+		event.dataTransfer.setData('text/plain', value.kind === 'field' ? value.fieldId : value.rowId)
+		if (image) {
+			event.dataTransfer.setDragImage(image, 16, 16)
+		}
+	}
+}
+
+function endDrag(): void {
+	drag.value = null
+	dropHint.value = null
+	clearTimeout(tabTimer)
+}
+
+function overGap(event: DragEvent, key: string): void {
+	if (!drag.value) {
+		return
+	}
+	event.preventDefault()
+	dropHint.value = { key }
+}
+
+function dropOnGap(index: number): void {
+	const current = drag.value
+	endDrag()
+	if (current?.kind === 'field') {
+		emit('dropField', current.fieldId, { kind: 'row', page: activeIndex.value, index })
+	} else if (current?.kind === 'row') {
+		emit('dropRow', current.rowId, activeIndex.value, index)
+	}
+}
+
+function overCell(event: DragEvent, cellId: string, fieldId: string): void {
+	if (drag.value?.kind !== 'field' || drag.value.fieldId === fieldId) {
+		return
+	}
+	event.preventDefault()
+	const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+	dropHint.value = { key: cellId, side: event.clientX < rect.left + rect.width / 2 ? 'before' : 'after' }
+}
+
+function dropOnCell(cellId: string): void {
+	const current = drag.value
+	const side = dropHint.value?.side ?? 'after'
+	endDrag()
+	if (current?.kind === 'field') {
+		emit('dropField', current.fieldId, { kind: 'cell', cellId, side })
+	}
+}
+
+/** Hovering a tab while dragging opens that page, so a field can be dropped there. */
+function overTab(pageId: string): void {
+	if (drag.value && pageId !== activeId.value) {
+		clearTimeout(tabTimer)
+		tabTimer = setTimeout(() => { activeId.value = pageId }, 450)
+	}
+}
+
+onBeforeUnmount(() => clearTimeout(tabTimer))
+
+function startResize(event: PointerEvent, fieldId: string, span: number): void {
+	const handle = event.currentTarget as HTMLElement
+	const cell = handle.parentElement as HTMLElement
+	const row = cell.parentElement as HTMLElement
+	const gap = parseFloat(getComputedStyle(row).columnGap) || 0
+	handle.setPointerCapture(event.pointerId)
+	resizing.value = {
+		fieldId,
+		raw: span,
+		left: cell.getBoundingClientRect().left,
+		colWidth: (row.getBoundingClientRect().width + gap) / 12,
+		gap,
+	}
+}
+
+function moveResize(event: PointerEvent): void {
+	const state = resizing.value
+	if (state) {
+		state.raw = (event.clientX - state.left + state.gap) / state.colWidth
+	}
+}
+
+function endResize(commit: boolean): void {
+	const state = resizing.value
+	resizing.value = null
+	if (state && commit && resizeField(props.definition, state.fieldId, state.raw) !== props.definition) {
+		emit('resize', state.fieldId, state.raw)
+	}
+}
+
+function resizeKey(event: KeyboardEvent, fieldId: string, span: number): void {
+	const step = event.key === 'ArrowRight' ? 2 : event.key === 'ArrowLeft' ? -2 : 0
+	if (step !== 0) {
+		event.preventDefault()
+		emit('resize', fieldId, span + step)
+	}
 }
 
 function codes(fieldId: string): string[] {
@@ -179,27 +295,73 @@ function codes(fieldId: string): string[] {
 				</template>
 			</NcEmptyContent>
 
-			<div v-else role="tabpanel">
-				<template v-for="(row, index) in activePage.rows" :key="row.id">
-					<div class="af-gap">
-						<AddFieldMenu @pick="(type) => emit('add', type, index, activeIndex)" />
-					</div>
-					<div class="af-row">
-						<div v-for="cell in row.cells"
-							:key="cell.id"
-							class="af-cell"
-							:style="{ '--af-span': cell.span }">
-							<FieldCard v-if="definition.fields[cell.field]"
-								:field="definition.fields[cell.field]"
-								:selected="selectedId === cell.field"
-								:rule-count="rulesTouching(definition, cell.field).length"
-								:errors="codes(cell.field)"
-								:label-position="renderedLabelPosition(definition.fields[cell.field], definition.settings)"
-								@select="emit('select', cell.field)" />
+			<div v-else role="tabpanel" :class="{ 'af-dragging': drag }">
+					<template v-for="(row, index) in activePage.rows" :key="row.id">
+						<div class="af-gap"
+							:class="{ 'af-gap--over': dropHint?.key === 'gap' + index }"
+							@dragover="overGap($event, 'gap' + index)"
+							@dragleave="dropHint = null"
+							@drop.prevent="dropOnGap(index)">
+							<AddFieldMenu @pick="(type) => emit('add', type, index, activeIndex)" />
 						</div>
-					</div>
-				</template>
-				<div class="af-canvas__add">
+						<div class="af-row"
+							:class="{ 'af-row--dragged': drag?.kind === 'row' && drag.rowId === row.id }">
+							<span class="af-row__grip"
+								draggable="true"
+								role="img"
+								:title="t('advancedforms', 'Drag to move this row')"
+								:aria-label="t('advancedforms', 'Drag to move this row')"
+								@dragstart="startDrag($event, { kind: 'row', rowId: row.id }, ($event.currentTarget as HTMLElement).parentElement)"
+								@dragend="endDrag">
+								<Icon :path="icons.drag" :size="16" />
+							</span>
+							<div v-for="cell in row.cells"
+								:key="cell.id"
+								class="af-cell"
+								:class="{
+									'af-cell--before': dropHint?.key === cell.id && dropHint.side === 'before',
+									'af-cell--after': dropHint?.key === cell.id && dropHint.side === 'after',
+									'af-cell--dragged': drag?.kind === 'field' && drag.fieldId === cell.field,
+									'af-cell--resizing': resizing?.fieldId === cell.field,
+								}"
+								:style="{ '--af-span': cell.span }"
+								:draggable="resizing === null"
+								@dragstart.self="startDrag($event, { kind: 'field', fieldId: cell.field })"
+								@dragend="endDrag"
+								@dragover="overCell($event, cell.id, cell.field)"
+								@dragleave="dropHint = null"
+								@drop.prevent="dropOnCell(cell.id)">
+								<FieldCard v-if="definition.fields[cell.field]"
+									:field="definition.fields[cell.field]"
+									:selected="selectedId === cell.field"
+									:rule-count="rulesTouching(definition, cell.field).length"
+									:errors="codes(cell.field)"
+									:label-position="renderedLabelPosition(definition.fields[cell.field], definition.settings)"
+									@select="emit('select', cell.field)" />
+								<span v-if="resizing?.fieldId === cell.field" class="af-cell__span">{{ cell.span }}/12</span>
+								<button class="af-cell__resize"
+									type="button"
+									draggable="false"
+									:title="t('advancedforms', 'Drag to resize, or use the arrow keys')"
+									:aria-label="t('advancedforms', 'Resize field')"
+									@mousedown.prevent
+									@dragstart.prevent.stop
+									@click.stop
+									@pointerdown.prevent.stop="startResize($event, cell.field, cell.span)"
+									@pointermove="moveResize"
+									@pointerup="endResize(true)"
+									@pointercancel="endResize(false)"
+									@keydown="resizeKey($event, cell.field, cell.span)" />
+							</div>
+						</div>
+					</template>
+				<div v-if="drag"
+						class="af-gap af-gap--end"
+						:class="{ 'af-gap--over': dropHint?.key === 'gapend' }"
+						@dragover="overGap($event, 'gapend')"
+						@dragleave="dropHint = null"
+						@drop.prevent="dropOnGap(activePage.rows.length)" />
+					<div class="af-canvas__add">
 					<AddFieldMenu :label="t('advancedforms', 'Add field')"
 						variant="secondary"
 						@pick="(type) => emit('add', type, activePage.rows.length, activeIndex)" />
@@ -234,12 +396,14 @@ function codes(fieldId: string): string[] {
 }
 
 .af-row {
+	position: relative;
 	display: grid;
 	grid-template-columns: repeat(12, minmax(0, 1fr));
 	gap: calc(var(--default-grid-baseline) * 2);
 }
 
 .af-cell {
+	position: relative;
 	grid-column: span var(--af-span, 12);
 	min-width: 0;
 	container-type: inline-size;
@@ -344,5 +508,127 @@ function codes(fieldId: string): string[] {
 
 .af-canvas__empty {
 	padding: calc(var(--default-grid-baseline) * 8) 0;
+}
+</style>
+
+<style scoped>
+.af-row__grip {
+	position: absolute;
+	top: 50%;
+	left: -16px;
+	display: flex;
+	align-items: center;
+	height: 32px;
+	margin-top: -16px;
+	color: var(--color-text-maxcontrast);
+	cursor: grab;
+	opacity: 0;
+	transition: opacity 0.12s ease;
+}
+
+.af-row:hover > .af-row__grip,
+.af-dragging .af-row__grip {
+	opacity: 1;
+}
+
+.af-row--dragged,
+.af-cell--dragged {
+	opacity: 0.4;
+}
+
+.af-dragging .af-gap {
+	height: calc(var(--default-grid-baseline) * 6);
+}
+
+.af-gap--over {
+	border-radius: var(--border-radius-small);
+	background: var(--color-primary-element-light);
+	box-shadow: inset 0 0 0 2px var(--color-primary-element);
+}
+
+.af-gap--end {
+	margin-top: calc(var(--default-grid-baseline) * 2);
+}
+
+/* Where a dragged field would land: a bar on the side of the cell it would sit beside. */
+.af-cell--before::before,
+.af-cell--after::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 4px;
+	border-radius: 2px;
+	background: var(--color-primary-element);
+	z-index: 2;
+}
+
+.af-cell--before::before {
+	left: -5px;
+}
+
+.af-cell--after::after {
+	right: -5px;
+}
+
+.af-cell__resize {
+	position: absolute;
+	top: 0;
+	right: -6px;
+	bottom: 0;
+	z-index: 1;
+	width: 10px;
+	min-height: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	cursor: col-resize;
+	touch-action: none;
+	opacity: 0;
+}
+
+.af-cell__resize::after {
+	content: '';
+	position: absolute;
+	top: 25%;
+	bottom: 25%;
+	left: 3px;
+	width: 4px;
+	border-radius: 2px;
+	background: var(--color-primary-element);
+}
+
+.af-cell:hover > .af-cell__resize,
+.af-cell__resize:focus-visible,
+.af-cell--resizing > .af-cell__resize {
+	opacity: 1;
+}
+
+.af-cell__span {
+	position: absolute;
+	top: 4px;
+	right: 12px;
+	z-index: 2;
+	padding: 0 calc(var(--default-grid-baseline) * 1.5);
+	border-radius: var(--border-radius-pill);
+	background: var(--color-primary-element);
+	color: var(--color-primary-element-text);
+	font-size: 12px;
+	line-height: 20px;
+	pointer-events: none;
+}
+
+@container (max-width: 600px) {
+	.af-cell__resize,
+	.af-row__grip {
+		display: none;
+	}
+}
+
+@media (hover: none) {
+	.af-cell__resize,
+	.af-row__grip {
+		display: none;
+	}
 }
 </style>

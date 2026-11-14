@@ -436,3 +436,158 @@ export function moveFieldToPage(definition: DraftDefinition, fieldId: string, pa
 	next.pages[pageIndex].rows.push({ id: rowId, cells: [{ ...from.cell, span: ROW_WIDTH }] })
 	return next
 }
+
+export type DropTarget =
+	/** A new full-width row at this index of a page (0 = top, rows.length = bottom). */
+	| { kind: 'row', page: number, index: number }
+	/** Beside an existing cell, in its row if there is room. */
+	| { kind: 'cell', cellId: string, side: 'before' | 'after' }
+
+/**
+ * Drag and drop a field. Dropped between rows it gets a row of its own; dropped
+ * beside another cell it joins that row (shrunk to fit), or lands in a row of its
+ * own next to it when the row is full. Works across pages.
+ */
+export function dropField(definition: DraftDefinition, fieldId: string, target: DropTarget): DraftDefinition {
+	const at = locateField(definition, fieldId)
+	if (!at) {
+		return definition
+	}
+	const next = clone(definition)
+	const src = locateField(next, fieldId)!
+	const srcRows = rowsOf(next, src.pageIndex)
+
+	/** Take the cell out of its row, dropping the row if that empties it. */
+	const detach = (): void => {
+		src.row.cells.splice(src.cellIndex, 1)
+		if (src.row.cells.length === 0) {
+			srcRows.splice(srcRows.indexOf(src.row), 1)
+		}
+	}
+	const newRow = (rows: LayoutRow[], index: number): void => {
+		rows.splice(index, 0, { id: randomId('r', allIds(next)), cells: [{ ...src.cell, span: ROW_WIDTH }] })
+	}
+
+	if (target.kind === 'row') {
+		const rows = rowsOf(next, target.page)
+		if (target.page < 0 || target.page >= next.pages.length) {
+			return definition
+		}
+		let index = Math.max(0, Math.min(target.index, rows.length))
+		const alone = src.row.cells.length === 1
+		if (alone && src.pageIndex === target.page && (index === src.rowIndex || index === src.rowIndex + 1)) {
+			return definition
+		}
+		if (alone && src.pageIndex === target.page && src.rowIndex < index) {
+			index--
+		}
+		detach()
+		newRow(rows, index)
+		return next
+	}
+
+	const tgt = ((): CellLocation | null => {
+		for (let p = 0; p < next.pages.length; p++) {
+			for (let r = 0; r < next.pages[p].rows.length; r++) {
+				const c = next.pages[p].rows[r].cells.findIndex((cell) => cell.id === target.cellId)
+				if (c !== -1) {
+					return { pageIndex: p, rowIndex: r, cellIndex: c, row: next.pages[p].rows[r], cell: next.pages[p].rows[r].cells[c] }
+				}
+			}
+		}
+		return null
+	})()
+	if (!tgt || tgt.cell.id === src.cell.id) {
+		return definition
+	}
+
+	if (tgt.row === src.row) {
+		const cells = src.row.cells
+		cells.splice(src.cellIndex, 1)
+		const at = cells.findIndex((cell) => cell.id === tgt.cell.id)
+		cells.splice(at + (target.side === 'after' ? 1 : 0), 0, src.cell)
+		return next
+	}
+
+	const span = largestSpanWithin(Math.min(src.cell.span, ROW_WIDTH - rowUsed(tgt.row)))
+	if (span === null) {
+		// No room: its own row, above or below the one it was dropped beside.
+		const tgtRows = rowsOf(next, tgt.pageIndex)
+		const anchor = tgt.row
+		detach()
+		newRow(tgtRows, tgtRows.indexOf(anchor) + (target.side === 'after' ? 1 : 0))
+		return next
+	}
+	detach()
+	const at2 = tgt.row.cells.findIndex((cell) => cell.id === tgt.cell.id)
+	tgt.row.cells.splice(at2 + (target.side === 'after' ? 1 : 0), 0, { ...src.cell, span })
+	return next
+}
+
+/**
+ * Resize a field's cell to the allowed span nearest `rawSpan` (twelfths, may be
+ * fractional, as from a drag). The next cell in the row gives or takes the
+ * difference so the row stays full whenever that gives it a valid width.
+ */
+export function resizeField(definition: DraftDefinition, fieldId: string, rawSpan: number): DraftDefinition {
+	const at = locateField(definition, fieldId)
+	if (!at) {
+		return definition
+	}
+	const cells = at.row.cells
+	const following = cells[at.cellIndex + 1]
+	const current = at.cell.span
+	const used = rowUsed(at.row)
+	const options: { span: number, following?: number }[] = []
+	for (const span of SPANS) {
+		if (following) {
+			const fill = ROW_WIDTH - (used - current - following.span) - span
+			if ((SPANS as readonly number[]).includes(fill)) {
+				options.push({ span, following: fill })
+				continue
+			}
+		}
+		if (span <= current + (ROW_WIDTH - used)) {
+			options.push({ span })
+		}
+	}
+	let best = options[0]
+	for (const option of options) {
+		if (Math.abs(option.span - rawSpan) < Math.abs(best.span - rawSpan)) {
+			best = option
+		}
+	}
+	if (!best || (best.span === current && (best.following === undefined || best.following === following?.span))) {
+		return definition
+	}
+	const next = clone(definition)
+	const loc = locateField(next, fieldId)!
+	loc.cell.span = best.span
+	if (best.following !== undefined) {
+		loc.row.cells[loc.cellIndex + 1].span = best.following
+	}
+	return next
+}
+
+/** Move a whole row (all its cells) to a row slot of a page, which may be another page. */
+export function dropRow(definition: DraftDefinition, rowId: string, page: number, index: number): DraftDefinition {
+	if (page < 0 || page >= definition.pages.length) {
+		return definition
+	}
+	const fromPage = definition.pages.findIndex((candidate) => candidate.rows.some((row) => row.id === rowId))
+	if (fromPage === -1) {
+		return definition
+	}
+	const fromIndex = definition.pages[fromPage].rows.findIndex((row) => row.id === rowId)
+	if (fromPage === page && (index === fromIndex || index === fromIndex + 1)) {
+		return definition
+	}
+	const next = clone(definition)
+	const [row] = next.pages[fromPage].rows.splice(fromIndex, 1)
+	let at = Math.max(0, Math.min(index, next.pages[page].rows.length + (fromPage === page ? 1 : 0)))
+	if (fromPage === page && fromIndex < at) {
+		at--
+	}
+	next.pages[page].rows.splice(at, 0, row)
+	return next
+}

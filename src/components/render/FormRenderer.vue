@@ -23,6 +23,8 @@ const props = defineProps<{
 	form: PublicForm
 	/** Disables submitting, used by the builder preview. */
 	preview?: boolean
+	/** In the preview: check required fields as a respondent would. Off by default there. */
+	validate?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -125,9 +127,13 @@ function pageFieldIds(index: number): string[] {
 	return (pages.value[index]?.rows ?? []).flatMap((row) => row.cells.map((cell) => cell.field))
 }
 
+/** Required fields are checked for respondents always, and in the preview only when `validate` is on. */
+const checking = computed(() => !props.preview || props.validate === true)
+
 async function goNext() {
 	clearErrors()
-	if (!checkRequired(pageFieldIds(currentIndex.value))) {
+	// The preview only checks when asked to, so you can look at pages without filling them in.
+	if (checking.value && !checkRequired(pageFieldIds(currentIndex.value))) {
 		await focusFirstError()
 		return
 	}
@@ -155,10 +161,18 @@ async function onSubmit() {
 		await goNext()
 		return
 	}
+	clearErrors()
 	if (props.preview) {
+		// Nothing is sent from the preview, but it can still show what respondents would be told.
+		if (checking.value && !checkRequired(visible.value)) {
+			const first = pages.value.findIndex((_, index) => pageFieldIds(index).some((id) => fieldErrors[id]))
+			if (first !== -1) {
+				pageIndex.value = first
+			}
+			await focusFirstError()
+		}
 		return
 	}
-	clearErrors()
 
 	const submitted: Record<string, unknown> = {}
 	for (const id of visible.value) {
@@ -276,7 +290,7 @@ async function showError(error: unknown) {
 				type="submit"
 				variant="primary"
 				:style="submitStyle"
-				:disabled="submitting || preview">
+				:disabled="submitting">
 				{{ submitLabel }}
 			</NcButton>
 		</div>

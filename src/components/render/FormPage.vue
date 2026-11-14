@@ -14,6 +14,8 @@ const props = defineProps<{
 	form: PublicForm
 	/** The builder preview: nothing is submitted. */
 	preview?: boolean
+	/** Preview only: check required fields. */
+	validate?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -38,7 +40,7 @@ const style = computed(() => ({
 				{{ form.definition.description }}
 			</p>
 		</header>
-		<FormRenderer :form="form" :preview="preview" @refresh-token="emit('refreshToken')" />
+		<FormRenderer :form="form" :preview="preview" :validate="validate" @refresh-token="emit('refreshToken')" />
 	</div>
 </template>
 
