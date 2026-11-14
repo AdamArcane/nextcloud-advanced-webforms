@@ -30,6 +30,16 @@ export function messageFor(code: string): string {
 			return t('advancedforms', 'Enter a valid time.')
 		case 'too_long':
 			return t('advancedforms', 'This text is too long.')
+		case 'too_short':
+			return t('advancedforms', 'This text is too short.')
+		case 'date_too_early':
+			return t('advancedforms', 'This date is too early.')
+		case 'date_too_late':
+			return t('advancedforms', 'This date is too late.')
+		case 'time_too_early':
+			return t('advancedforms', 'This time is too early.')
+		case 'time_too_late':
+			return t('advancedforms', 'This time is too late.')
 		case 'too_few':
 			return t('advancedforms', 'Select more options.')
 		case 'too_many':

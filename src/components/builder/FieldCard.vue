@@ -12,6 +12,8 @@ import { describeError } from '../../builder/errors.ts'
 import { fieldTypeName } from '../../builder/fieldTypeNames.ts'
 import { fieldTypeIcon } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
+import MarkdownText from '../render/MarkdownText.ts'
+import '../render/typography.css'
 
 const props = defineProps<{
 	field: FormField
@@ -37,6 +39,18 @@ const inlineLabel = computed(() => props.labelPosition === 'inline')
 const typeLabel = computed(() => fieldTypeName(props.field.type))
 
 const alignStyle = computed(() => (props.field.align === 'center' || props.field.align === 'end' ? { textAlign: props.field.align } : undefined))
+
+const headingTag = computed(() => 'h' + ([1, 2, 3, 4, 5, 6].includes(props.field.level ?? 2) ? (props.field.level ?? 2) : 2))
+
+/** Radio buttons and checkboxes in as many columns as the field asks for. */
+const columnStyle = computed(() => (props.field.columns && props.field.columns > 1
+	? { display: 'grid', gridTemplateColumns: `repeat(${props.field.columns}, minmax(0, 1fr))`, columnGap: '16px' }
+	: undefined))
+const shownOptions = computed(() => 3 * Math.max(1, props.field.columns ?? 1))
+/** A textarea is as tall as the lines it shows. */
+const areaStyle = computed(() => (props.field.type === 'textarea'
+	? { minHeight: `calc(${Math.min(20, Math.max(2, props.field.rows ?? 5))} * 1.5em + 16px)` }
+	: undefined))
 
 const title = computed(() => props.field.label || props.field.text || typeLabel.value)
 </script>
@@ -66,13 +80,13 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 		</div>
 
 		<template v-if="isDisplay">
-			<hr v-if="field.type === 'divider'" class="af-card__divider">
-			<p v-else-if="field.type === 'heading'" class="af-card__heading" :style="alignStyle">
+			<hr v-if="field.type === 'divider'"
+				class="af-divider af-card__divider"
+				:class="field.style && field.style !== 'solid' ? 'af-divider--' + field.style : undefined">
+			<component :is="headingTag" v-else-if="field.type === 'heading'" class="af-heading" :style="alignStyle">
 				{{ field.text }}
-			</p>
-			<p v-else class="af-card__text" :style="alignStyle">
-				{{ field.text }}
-			</p>
+			</component>
+			<MarkdownText v-else :source="field.text ?? ''" :style="alignStyle" />
 		</template>
 
 		<div v-else class="af-card__body" :class="{ 'af-card__body--inline': inlineLabel }">
@@ -85,17 +99,20 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 					<Icon :path="fieldTypeIcon('file')" :size="18" />
 					{{ (field.maxFiles ?? 1) > 1 ? t('advancedforms', 'Choose files') : t('advancedforms', 'Choose a file') }}
 				</span>
-				<span v-else-if="hasOptions && field.type !== 'select'" class="af-card__choices" aria-hidden="true">
-					<span v-for="option in (field.options ?? []).slice(0, 3)" :key="option.value" class="af-card__choice">
+				<span v-else-if="hasOptions && field.type !== 'select'" class="af-card__choices" :style="columnStyle" aria-hidden="true">
+					<span v-for="option in (field.options ?? []).slice(0, shownOptions)" :key="option.value" class="af-card__choice">
 						<span class="af-card__dot" :class="{ 'af-card__dot--square': field.type === 'checkboxes' }" />{{ option.label }}
 					</span>
-					<span v-if="(field.options ?? []).length > 3" class="af-card__more">+{{ (field.options ?? []).length - 3 }}</span>
+					<span v-if="(field.options ?? []).length > shownOptions" class="af-card__more">+{{ (field.options ?? []).length - shownOptions }}</span>
 				</span>
 				<span v-else
 					class="af-card__fake"
 					:class="{ 'af-card__fake--area': field.type === 'textarea' }"
+					:style="areaStyle"
 					aria-hidden="true">
+					<span v-if="field.type === 'number' && field.prefix" class="af-card__affix">{{ field.prefix }}</span>
 					<span class="af-card__placeholder">{{ field.placeholder }}</span>
+					<span v-if="field.type === 'number' && field.suffix" class="af-card__affix af-card__affix--end">{{ field.suffix }}</span>
 					<span v-if="field.type === 'select'" class="af-card__chevron" />
 				</span>
 				<span v-if="field.description" class="af-card__help">{{ field.description }}</span>
@@ -272,6 +289,15 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 	color: var(--color-text-maxcontrast);
 }
 
+.af-card__affix {
+	margin-inline-end: calc(var(--default-grid-baseline) * 2);
+}
+
+.af-card__affix--end {
+	margin-inline: auto 0;
+	padding-inline-start: calc(var(--default-grid-baseline) * 2);
+}
+
 .af-card__chevron {
 	width: 8px;
 	height: 8px;
@@ -309,23 +335,9 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 	font-size: 13px;
 }
 
-.af-card__divider {
-	width: 100%;
-	margin: calc(var(--default-grid-baseline) * 2) 0;
-	border: 0;
-	border-top: 1px solid var(--color-border-maxcontrast);
-}
-
-.af-card__heading {
+/* The preview shows the real thing, so the card adds no spacing of its own around it. */
+.af-card :deep(.af-heading) {
 	margin: 0;
-	font-size: 20px;
-	font-weight: bold;
-}
-
-.af-card__text {
-	margin: 0;
-	white-space: pre-line;
-	color: var(--color-text-maxcontrast);
 }
 
 .af-card__errors {

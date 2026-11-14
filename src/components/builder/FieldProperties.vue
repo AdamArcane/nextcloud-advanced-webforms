@@ -63,15 +63,16 @@ const labelChoice = computed(() => {
 	return field.value?.hideLabel === true ? 'hidden' : 'default'
 })
 const labelOptions = computed(() => [
-	{ value: 'default', label: t('advancedforms', 'Form') },
-	{ value: 'above', label: t('advancedforms', 'Above') },
+	{ value: 'default', label: t('advancedforms', 'Form'), icon: icons.labelForm },
+	{ value: 'above', label: t('advancedforms', 'Above'), icon: icons.labelAbove },
 	{
 		value: 'inline',
 		label: t('advancedforms', 'Beside'),
+		icon: icons.labelBeside,
 		disabled: !supportsInline(type.value),
 		title: supportsInline(type.value) ? undefined : t('advancedforms', 'Not available for this type of field'),
 	},
-	{ value: 'hidden', label: t('advancedforms', 'Hidden') },
+	{ value: 'hidden', label: t('advancedforms', 'Hidden'), icon: icons.labelHidden },
 ])
 
 function positionName(position: string): string {
@@ -101,10 +102,17 @@ const labelHint = computed(() => {
 })
 
 /** Setting a position replaces the older hideLabel flag, so the two never disagree. */
+const headingIcons = [icons.heading1, icons.heading2, icons.heading3, icons.heading4, icons.heading5, icons.heading6]
+const columnIcons = [icons.columns1, icons.columns2, icons.columns3, icons.columns4]
+const lineOptions = computed(() => [
+	{ value: 'solid', label: t('advancedforms', 'Solid'), icon: icons.lineSolid },
+	{ value: 'dashed', label: t('advancedforms', 'Dashed'), icon: icons.lineDashed },
+	{ value: 'dotted', label: t('advancedforms', 'Dotted'), icon: icons.lineDotted },
+])
 const alignOptions = computed(() => [
-	{ value: 'start', label: t('advancedforms', 'Left') },
-	{ value: 'center', label: t('advancedforms', 'Center') },
-	{ value: 'end', label: t('advancedforms', 'Right') },
+	{ value: 'start', label: t('advancedforms', 'Left'), icon: icons.alignStart },
+	{ value: 'center', label: t('advancedforms', 'Center'), icon: icons.alignCenter },
+	{ value: 'end', label: t('advancedforms', 'Right'), icon: icons.alignEnd },
 ])
 
 /** Start is the default, so it is stored as no value at all. */
@@ -163,6 +171,12 @@ function number(key: keyof FormField, value: string | number): void {
 	const str = String(value).trim()
 	const parsed = Number(str)
 	emit('update', { [key]: str === '' || Number.isNaN(parsed) ? undefined : parsed } as Partial<FormField>)
+}
+
+function setRows(value: string | number): void {
+	const parsed = Math.round(Number(String(value).trim()))
+	// Five is the default, so it is stored as no value.
+	emit('update', { rows: String(value).trim() === '' || Number.isNaN(parsed) || parsed === 5 ? undefined : Math.min(20, Math.max(2, parsed)) })
 }
 
 // Upload fields (docs/SCHEMA.md 4.6)
@@ -278,21 +292,22 @@ const moves: { move: Move, label: string, icon: string }[] = [
 					:label="t('advancedforms', 'Heading text')"
 					@update:model-value="(value: string | number) => emit('update', { text: String(value) })" />
 				<div class="af-props__group">
-					<span class="af-props__caption">{{ t('advancedforms', 'Size') }}</span>
+					<span class="af-props__caption">{{ t('advancedforms', 'Heading level') }}</span>
 					<SegmentedControl :model-value="field.level ?? 2"
-						:group-label="t('advancedforms', 'Heading size')"
-						:options="[
-							{ value: 2, label: t('advancedforms', 'Large') },
-							{ value: 3, label: t('advancedforms', 'Medium') },
-							{ value: 4, label: t('advancedforms', 'Small') },
-						]"
+						:group-label="t('advancedforms', 'Heading level')"
+						:options="[1, 2, 3, 4, 5, 6].map((level) => ({ value: level, label: t('advancedforms', 'Heading {level}', { level }), icon: headingIcons[level - 1] }))"
+					icon-only
 						@update:model-value="(value) => emit('update', { level: Number(value) })" />
+					<p class="af-props__hint">
+						{{ t('advancedforms', 'H1 is the largest and H6 the smallest. Keep headings in order for screen readers. The form title is already a level 1 heading, so H2 is usually the right start.') }}
+					</p>
 				</div>
 				<div class="af-props__group">
 					<span class="af-props__caption">{{ t('advancedforms', 'Alignment') }}</span>
 					<SegmentedControl :model-value="field.align ?? 'start'"
 						:group-label="t('advancedforms', 'Text alignment')"
 						:options="alignOptions"
+						icon-only
 						@update:model-value="(value) => setAlign(String(value))" />
 				</div>
 			</template>
@@ -308,13 +323,19 @@ const moves: { move: Move, label: string, icon: string }[] = [
 					<SegmentedControl :model-value="field.align ?? 'start'"
 						:group-label="t('advancedforms', 'Text alignment')"
 						:options="alignOptions"
+						icon-only
 						@update:model-value="(value) => setAlign(String(value))" />
 				</div>
 			</template>
 
-			<p v-else class="af-props__hint">
-				{{ t('advancedforms', 'A divider has no settings.') }}
-			</p>
+			<div v-else class="af-props__group">
+				<span class="af-props__caption">{{ t('advancedforms', 'Line style') }}</span>
+				<SegmentedControl :model-value="field.style ?? 'solid'"
+					:group-label="t('advancedforms', 'Line style')"
+					:options="lineOptions"
+					icon-only
+					@update:model-value="(value) => emit('update', { style: value === 'dashed' || value === 'dotted' ? value : undefined })" />
+			</div>
 		</section>
 
 		<section v-if="type === 'file'" class="af-props__section">
@@ -359,8 +380,8 @@ const moves: { move: Move, label: string, icon: string }[] = [
 			<SegmentedControl :model-value="field.audience ?? 'anyone'"
 				:group-label="t('advancedforms', 'Who can upload')"
 				:options="[
-					{ value: 'anyone', label: t('advancedforms', 'Anyone') },
-					{ value: 'login', label: t('advancedforms', 'Signed-in users') },
+					{ value: 'anyone', label: t('advancedforms', 'Anyone'), icon: icons.audienceAnyone },
+					{ value: 'login', label: t('advancedforms', 'Signed-in users'), icon: icons.audienceLogin },
 				]"
 				@update:model-value="(value) => emit('update', { audience: value === 'login' ? 'login' : undefined })" />
 			<p class="af-props__hint">
@@ -375,8 +396,8 @@ const moves: { move: Move, label: string, icon: string }[] = [
 			<SegmentedControl :model-value="uploadStorage"
 				:group-label="t('advancedforms', 'Where files are saved')"
 				:options="[
-					{ value: 'files', label: t('advancedforms', 'Your Files') },
-					{ value: 'app', label: t('advancedforms', 'App only') },
+					{ value: 'files', label: t('advancedforms', 'Your Files'), icon: icons.storageFiles },
+					{ value: 'app', label: t('advancedforms', 'App only'), icon: icons.storageApp },
 				]"
 				@update:model-value="(value) => emit('update', { storage: value === 'app' ? 'app' : undefined })" />
 			<template v-if="uploadStorage === 'files'">
@@ -396,19 +417,65 @@ const moves: { move: Move, label: string, icon: string }[] = [
 			</p>
 		</section>
 
-		<section v-if="type === 'text' || type === 'textarea' || type === 'number' || type === 'checkboxes' || hasOptions" class="af-props__section">
+		<section v-if="['text', 'textarea', 'number', 'date', 'time'].includes(type) || hasOptions" class="af-props__section">
 			<h3 class="af-props__heading">
 				{{ hasOptions ? t('advancedforms', 'Options') : t('advancedforms', 'Limits') }}
 			</h3>
 			<OptionsEditor v-if="hasOptions"
 				:options="field.options ?? []"
 				@update:options="(options) => emit('update', { options })" />
-			<NcTextField v-if="type === 'text' || type === 'textarea'"
-				:model-value="field.maxLength === undefined ? '' : String(field.maxLength)"
+			<template v-if="type === 'text' || type === 'textarea'">
+				<NcTextField :model-value="field.minLength === undefined ? '' : String(field.minLength)"
+					type="number"
+					:label="t('advancedforms', 'Minimum length')"
+					@update:model-value="(value: string | number) => number('minLength', value)" />
+				<NcTextField :model-value="field.maxLength === undefined ? '' : String(field.maxLength)"
+					type="number"
+					:label="t('advancedforms', 'Maximum length')"
+					@update:model-value="(value: string | number) => number('maxLength', value)" />
+			</template>
+			<NcTextField v-if="type === 'textarea'"
+				:model-value="String(field.rows ?? 5)"
 				type="number"
-				:label="t('advancedforms', 'Maximum length')"
-				@update:model-value="(value: string | number) => number('maxLength', value)" />
+				min="2"
+				max="20"
+				:label="t('advancedforms', 'Visible lines (2 to 20)')"
+				@update:model-value="(value: string | number) => setRows(value)" />
+			<template v-if="type === 'date' || type === 'time'">
+				<div class="af-props__group">
+					<label class="af-props__caption" for="af-props-min">{{ type === 'date' ? t('advancedforms', 'Earliest date') : t('advancedforms', 'Earliest time') }}</label>
+					<input id="af-props-min"
+						:type="type"
+						:value="typeof field.min === 'string' ? field.min : ''"
+						:max="typeof field.max === 'string' ? field.max : undefined"
+						@change="text('min', ($event.target as HTMLInputElement).value)">
+				</div>
+				<div class="af-props__group">
+					<label class="af-props__caption" for="af-props-max">{{ type === 'date' ? t('advancedforms', 'Latest date') : t('advancedforms', 'Latest time') }}</label>
+					<input id="af-props-max"
+						:type="type"
+						:value="typeof field.max === 'string' ? field.max : ''"
+						:min="typeof field.min === 'string' ? field.min : undefined"
+						@change="text('max', ($event.target as HTMLInputElement).value)">
+				</div>
+			</template>
+			<div v-if="type === 'radio' || type === 'checkboxes'" class="af-props__group">
+				<span class="af-props__caption">{{ t('advancedforms', 'Columns') }}</span>
+				<SegmentedControl :model-value="field.columns ?? 1"
+					:group-label="t('advancedforms', 'Columns')"
+					:options="[1, 2, 3, 4].map((n) => ({ value: n, label: t('advancedforms', '{n} columns', { n }), icon: columnIcons[n - 1] }))"
+					icon-only
+					@update:model-value="(value) => emit('update', { columns: Number(value) > 1 ? Number(value) : undefined })" />
+			</div>
 			<template v-if="type === 'number'">
+				<NcTextField :model-value="field.prefix ?? ''"
+					:label="t('advancedforms', 'Text before the number')"
+					:placeholder="t('advancedforms', '$')"
+					@update:model-value="(value: string | number) => text('prefix', String(value).slice(0, 16))" />
+				<NcTextField :model-value="field.suffix ?? ''"
+					:label="t('advancedforms', 'Text after the number')"
+					:placeholder="t('advancedforms', 'kg')"
+					@update:model-value="(value: string | number) => text('suffix', String(value).slice(0, 16))" />
 				<NcTextField :model-value="field.min === undefined ? '' : String(field.min)"
 					type="number"
 					:label="t('advancedforms', 'Minimum')"

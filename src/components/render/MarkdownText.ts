@@ -8,6 +8,7 @@ import type { Block, Inline } from '../../markdown/parse.ts'
 
 import { defineComponent, h } from 'vue'
 import { parseMarkdown } from '../../markdown/parse.ts'
+import './typography.css'
 
 function inline(nodes: Inline[]): (VNode | string)[] {
 	return nodes.map((node) => {

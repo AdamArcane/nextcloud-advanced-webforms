@@ -182,27 +182,27 @@ Input types (produce a value):
 
 | type | value type | notes |
 | --- | --- | --- |
-| `text` | string | single line, optional `maxLength` |
-| `textarea` | string | multi line, optional `maxLength` |
+| `text` | string | single line, optional `minLength`, `maxLength` |
+| `textarea` | string | multi line, optional `minLength`, `maxLength`, `rows` (2 to 20, default 5) |
 | `email` | string | validated as an email address |
 | `phone` | string | validated as a phone number, see 4.4 |
 | `url` | string | a web address, see 4.4a |
-| `number` | number | optional `min`, `max`, `step` |
+| `number` | number | optional `min`, `max`, `step`, and `prefix`, `suffix` (up to 16 characters, display only, such as `$` or `kg`) |
 | `select` | string | one of `options[].value` |
-| `radio` | string | one of `options[].value` |
-| `checkboxes` | string[] | subset of `options[].value`, optional `minSelected`, `maxSelected` |
+| `radio` | string | one of `options[].value`, optional `columns` (1 to 4) |
+| `checkboxes` | string[] | subset of `options[].value`, optional `minSelected`, `maxSelected`, `columns` (1 to 4) |
 | `checkbox` | boolean | single yes/no, `required` means must be true |
-| `date` | string | `YYYY-MM-DD` |
-| `time` | string | `HH:MM` 24 hour |
+| `date` | string | `YYYY-MM-DD`, optional `min` and `max` (same format, inclusive) |
+| `time` | string | `HH:MM` 24 hour, optional `min` and `max` (same format, inclusive) |
 | `file` | list of files | uploaded files, see 4.6 |
 
 Display types (no value, cannot be rule sources, can be rule targets):
 
 | type | properties |
 | --- | --- |
-| `heading` | `text`, `level` (2 to 4), `align` |
+| `heading` | `text`, `level` (1 to 6, default 2, rendered as `h1` to `h6`), `align` |
 | `paragraph` | `text` (limited markdown, see 4.5), `align` |
-| `divider` | none |
+| `divider` | `style` (`solid` default, `dashed`, `dotted`) |
 
 Deferred: hidden fields, rating, matrix, signature.
 
@@ -211,6 +211,12 @@ Common properties for input fields: `label` (required), `description`,
 
 `placeholder` (optional string) is supported on `text`, `textarea`, `email`,
 `number`, `phone`, `url`, and `select` (for `select` it is the empty-choice prompt).
+
+`minLength`, `prefix`, `suffix`, `rows`, `columns`, `min` and `max` on a date or time, and `style` are
+validated by the definition validator and are rejected on any other type (`unknown_property`). The
+server enforces the value limits on submit: `too_short`, `date_too_early`, `date_too_late`,
+`time_too_early`, `time_too_late`. `prefix`, `suffix`, `rows`, `columns` and `style` only change how the
+field looks.
 
 `align` on a `heading` or `paragraph` is `start` (default), `center` or `end`. It aligns the
 text only; the field still fills its cell. It is `start` and `end` rather than left and right so

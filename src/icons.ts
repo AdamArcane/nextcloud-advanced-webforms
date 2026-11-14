@@ -5,6 +5,20 @@
 
 // Only the icons the app uses are imported, so the bundle keeps just those paths.
 import {
+	mdiPackageVariantClosed,
+	mdiFolderOutline,
+	mdiAccountLockOutline,
+	mdiEyeOffOutline,
+	mdiFormatHorizontalAlignLeft,
+	mdiFormatVerticalAlignTop,
+	mdiFormatHeader6,
+	mdiFormatHeader5,
+	mdiFormatHeader4,
+	mdiFormatHeader3,
+	mdiFormatHeader2,
+	mdiFormatAlignRight,
+	mdiFormatAlignCenter,
+	mdiFormatAlignLeft,
 	mdiAccountOutline,
 	mdiAlertCircle,
 	mdiArrowDown,
@@ -110,6 +124,32 @@ export const icons = {
 	moveRight: mdiArrowRight,
 	joinAbove: mdiArrowCollapseUp,
 	ownRow: mdiTableRowPlusAfter,
+	/** Text alignment. Start and end follow the reading direction, so they read as left and right here. */
+	alignStart: mdiFormatAlignLeft,
+	alignCenter: mdiFormatAlignCenter,
+	alignEnd: mdiFormatAlignRight,
+	heading1: mdiFormatHeader1,
+	heading2: mdiFormatHeader2,
+	heading3: mdiFormatHeader3,
+	heading4: mdiFormatHeader4,
+	heading5: mdiFormatHeader5,
+	heading6: mdiFormatHeader6,
+	labelAbove: mdiFormatVerticalAlignTop,
+	labelBeside: mdiFormatHorizontalAlignLeft,
+	labelHidden: mdiEyeOffOutline,
+	labelForm: mdiFormTextbox,
+	audienceAnyone: mdiWeb,
+	audienceLogin: mdiAccountLockOutline,
+	storageFiles: mdiFolderOutline,
+	storageApp: mdiPackageVariantClosed,
+	/** Line styles and column counts have no stock icon, so these are drawn on a 24 grid. */
+	lineSolid: 'M3 11h18v2H3z',
+	lineDashed: 'M2 11h5v2H2zM9.5 11h5v2h-5zM17 11h5v2h-5z',
+	lineDotted: 'M3 11h2v2H3zM8 11h2v2H8zM13 11h2v2h-2zM18 11h2v2h-2z',
+	columns1: 'M5 4h14v16H5z',
+	columns2: 'M4 4h7v16H4zM13 4h7v16h-7z',
+	columns3: 'M3 4h5v16H3zM9.5 4h5v16h-5zM16 4h5v16h-5z',
+	columns4: 'M3 4h3.5v16H3zM8.5 4H12v16H8.5zM13 4h3.5v16H13zM18 4h3v16h-3z',
 } as const
 
 /** One icon per field type, shown in the add menu and on the canvas. */

@@ -25,9 +25,20 @@ export type FormField = {
 	hideLabel?: boolean
 	labelPosition?: LabelPosition
 	placeholder?: string
+	minLength?: number
 	maxLength?: number
-	min?: number
-	max?: number
+	/** Rows shown by a textarea (2 to 20). */
+	rows?: number
+	/** A number for `number` fields; `YYYY-MM-DD` for `date`; `HH:MM` for `time`. */
+	min?: number | string
+	max?: number | string
+	/** Text shown before or after a number input, such as a currency sign or a unit. */
+	prefix?: string
+	suffix?: string
+	/** Columns used to lay out radio buttons or checkboxes (1 to 4). */
+	columns?: number
+	/** Line style of a divider. Default solid. */
+	style?: 'solid' | 'dashed' | 'dotted'
 	step?: number
 	options?: FieldOption[]
 	minSelected?: number

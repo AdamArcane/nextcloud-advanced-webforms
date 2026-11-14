@@ -196,10 +196,13 @@ final class DefinitionValidator {
 			$allowed[] = 'placeholder';
 		}
 		$extra = match ($type) {
-			FieldType::TEXT, FieldType::TEXTAREA => ['maxLength'],
-			FieldType::NUMBER => ['min', 'max', 'step'],
-			FieldType::SELECT, FieldType::RADIO => ['options'],
-			FieldType::CHECKBOXES => ['options', 'minSelected', 'maxSelected'],
+			FieldType::TEXT => ['minLength', 'maxLength'],
+			FieldType::TEXTAREA => ['minLength', 'maxLength', 'rows'],
+			FieldType::NUMBER => ['min', 'max', 'step', 'prefix', 'suffix'],
+			FieldType::DATE, FieldType::TIME => ['min', 'max'],
+			FieldType::SELECT => ['options'],
+			FieldType::RADIO => ['options', 'columns'],
+			FieldType::CHECKBOXES => ['options', 'minSelected', 'maxSelected', 'columns'],
 			FieldType::FILE => ['maxFiles', 'maxSizeMb', 'accept', 'audience', 'storage', 'folder'],
 			default => [],
 		};
@@ -230,12 +233,29 @@ final class DefinitionValidator {
 			$this->options($field['options'] ?? null, $path . '.options');
 		}
 		if ($type === FieldType::TEXT || $type === FieldType::TEXTAREA) {
-			if (array_key_exists('maxLength', $field) && (!is_int($field['maxLength']) || $field['maxLength'] < 1)) {
-				$this->err('field_limit_invalid', $path . '.maxLength');
+			foreach (['minLength', 'maxLength'] as $key) {
+				if (array_key_exists($key, $field) && (!is_int($field[$key]) || $field[$key] < 1)) {
+					$this->err('field_limit_invalid', $path . '.' . $key);
+				}
 			}
+			if (is_int($field['minLength'] ?? null) && is_int($field['maxLength'] ?? null) && $field['minLength'] > $field['maxLength']) {
+				$this->err('field_limit_invalid', $path . '.minLength');
+			}
+			if ($type === FieldType::TEXTAREA && array_key_exists('rows', $field) && (!is_int($field['rows']) || $field['rows'] < 2 || $field['rows'] > 20)) {
+				$this->err('field_limit_invalid', $path . '.rows');
+			}
+		}
+		if ($type === FieldType::DATE || $type === FieldType::TIME) {
+			$this->dateTimeLimits($field, $type, $path);
+		}
+		if (($type === FieldType::RADIO || $type === FieldType::CHECKBOXES)
+			&& array_key_exists('columns', $field) && (!is_int($field['columns']) || $field['columns'] < 1 || $field['columns'] > 4)) {
+			$this->err('field_limit_invalid', $path . '.columns');
 		}
 		if ($type === FieldType::NUMBER) {
 			$this->numberLimits($field, $path);
+			$this->optionalString($field, 'prefix', 16, 'field_limit_invalid', $path . '.');
+			$this->optionalString($field, 'suffix', 16, 'field_limit_invalid', $path . '.');
 		}
 		if ($type === FieldType::CHECKBOXES) {
 			$this->selectionLimits($field, $path);
@@ -310,6 +330,23 @@ final class DefinitionValidator {
 	}
 
 	/**
+	 * Earliest and latest allowed date or time, written the way the value is stored.
+	 *
+	 * @param array<string, mixed> $field
+	 */
+	private function dateTimeLimits(array $field, string $type, string $path): void {
+		$valid = $type === FieldType::DATE ? FieldValueValidator::isDate(...) : FieldValueValidator::isTime(...);
+		foreach (['min', 'max'] as $key) {
+			if (array_key_exists($key, $field) && !$valid($field[$key])) {
+				$this->err('field_limit_invalid', $path . '.' . $key);
+			}
+		}
+		if ($valid($field['min'] ?? null) && $valid($field['max'] ?? null) && $field['min'] > $field['max']) {
+			$this->err('field_limit_invalid', $path . '.min');
+		}
+	}
+
+	/**
 	 * @param array<string, mixed> $field
 	 */
 	private function selectionLimits(array $field, string $path): void {
@@ -358,6 +395,7 @@ final class DefinitionValidator {
 		$allowed = match ($type) {
 			FieldType::HEADING => ['type', 'text', 'level', 'align'],
 			FieldType::PARAGRAPH => ['type', 'text', 'align'],
+			FieldType::DIVIDER => ['type', 'style'],
 			default => ['type'],
 		};
 		foreach (array_keys($field) as $key) {
@@ -366,6 +404,9 @@ final class DefinitionValidator {
 			}
 		}
 		if ($type === FieldType::DIVIDER) {
+			if (array_key_exists('style', $field) && !in_array($field['style'], ['solid', 'dashed', 'dotted'], true)) {
+				$this->err('field_limit_invalid', $path . '.style');
+			}
 			return;
 		}
 		$text = $field['text'] ?? null;
@@ -376,7 +417,7 @@ final class DefinitionValidator {
 		if (array_key_exists('align', $field) && !in_array($field['align'], ['start', 'center', 'end'], true)) {
 			$this->err('field_align_invalid', $path . '.align');
 		}
-		if ($type === FieldType::HEADING && !in_array($field['level'] ?? 2, [2, 3, 4], true)) {
+		if ($type === FieldType::HEADING && !in_array($field['level'] ?? 2, [1, 2, 3, 4, 5, 6], true)) {
 			$this->err('field_level_invalid', $path . '.level');
 		}
 	}

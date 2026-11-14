@@ -241,10 +241,67 @@ class DefinitionValidatorTest extends TestCase {
 
 	public function testHeadingLevel(): void {
 		$this->assertSame(['field_level_invalid'], $this->codes(static function (array $d): array {
-			$d['fields']['f_head'] = ['type' => 'heading', 'text' => 'Hi', 'level' => 1];
+			$d['fields']['f_head'] = ['type' => 'heading', 'text' => 'Hi', 'level' => 7];
 			$d['pages'][0]['rows'][] = ['id' => 'r_9', 'cells' => [['id' => 'c_9', 'span' => 12, 'field' => 'f_head']]];
 			return $d;
 		}));
+	}
+
+	public function testHeadingLevelsOneToSixAreAccepted(): void {
+		foreach ([1, 2, 3, 4, 5, 6] as $level) {
+			$this->assertSame([], $this->codes(static function (array $d) use ($level): array {
+				$d['fields']['f_head'] = ['type' => 'heading', 'text' => 'Hi', 'level' => $level];
+				$d['pages'][0]['rows'][] = ['id' => 'r_9', 'cells' => [['id' => 'c_9', 'span' => 12, 'field' => 'f_head']]];
+				return $d;
+			}), 'level ' . $level);
+		}
+	}
+
+	/**
+	 * @return array<string, array{array<string, mixed>, list<string>}>
+	 */
+	public static function typeProperties(): array {
+		return [
+			'text min length' => [['type' => 'text', 'label' => 'A', 'minLength' => 2, 'maxLength' => 5], []],
+			'text min above max' => [['type' => 'text', 'label' => 'A', 'minLength' => 6, 'maxLength' => 5], ['field_limit_invalid']],
+			'text min length zero' => [['type' => 'text', 'label' => 'A', 'minLength' => 0], ['field_limit_invalid']],
+			'textarea rows' => [['type' => 'textarea', 'label' => 'A', 'rows' => 8], []],
+			'textarea rows too many' => [['type' => 'textarea', 'label' => 'A', 'rows' => 21], ['field_limit_invalid']],
+			'text has no rows' => [['type' => 'text', 'label' => 'A', 'rows' => 8], ['unknown_property']],
+			'number affixes' => [['type' => 'number', 'label' => 'A', 'prefix' => '$', 'suffix' => 'kg'], []],
+			'number affix too long' => [['type' => 'number', 'label' => 'A', 'prefix' => str_repeat('x', 17)], ['field_limit_invalid']],
+			'date limits' => [['type' => 'date', 'label' => 'A', 'min' => '2026-01-01', 'max' => '2026-12-31'], []],
+			'date limits reversed' => [['type' => 'date', 'label' => 'A', 'min' => '2026-12-31', 'max' => '2026-01-01'], ['field_limit_invalid']],
+			'date limit not a date' => [['type' => 'date', 'label' => 'A', 'min' => '2026-02-30'], ['field_limit_invalid']],
+			'time limits' => [['type' => 'time', 'label' => 'A', 'min' => '09:00', 'max' => '17:30'], []],
+			'time limit bad' => [['type' => 'time', 'label' => 'A', 'max' => '25:00'], ['field_limit_invalid']],
+			'radio columns' => [['type' => 'radio', 'label' => 'A', 'options' => [['value' => 'aa', 'label' => 'A']], 'columns' => 3], []],
+			'checkboxes columns too many' => [['type' => 'checkboxes', 'label' => 'A', 'options' => [['value' => 'aa', 'label' => 'A']], 'columns' => 5], ['field_limit_invalid']],
+			'select has no columns' => [['type' => 'select', 'label' => 'A', 'options' => [['value' => 'aa', 'label' => 'A']], 'columns' => 2], ['unknown_property']],
+		];
+	}
+
+	/**
+	 * @param array<string, mixed> $field
+	 * @param list<string> $expected
+	 */
+	#[\PHPUnit\Framework\Attributes\DataProvider('typeProperties')]
+	public function testTypeSpecificProperties(array $field, array $expected): void {
+		$this->assertSame($expected, $this->codes(static function (array $d) use ($field): array {
+			$d['fields']['f_extra'] = $field;
+			$d['pages'][0]['rows'][] = ['id' => 'r_9', 'cells' => [['id' => 'c_9', 'span' => 12, 'field' => 'f_extra']]];
+			return $d;
+		}));
+	}
+
+	public function testDividerStyle(): void {
+		foreach (['solid' => [], 'dotted' => [], 'wavy' => ['field_limit_invalid']] as $style => $expected) {
+			$this->assertSame($expected, $this->codes(static function (array $d) use ($style): array {
+				$d['fields']['f_div'] = ['type' => 'divider', 'style' => $style];
+				$d['pages'][0]['rows'][] = ['id' => 'r_9', 'cells' => [['id' => 'c_9', 'span' => 12, 'field' => 'f_div']]];
+				return $d;
+			}), $style);
+		}
 	}
 
 	public function testTextAlignment(): void {

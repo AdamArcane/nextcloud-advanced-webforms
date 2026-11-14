@@ -10,6 +10,7 @@ import { computed } from 'vue'
 import FileInput from './FileInput.vue'
 import type { UploadState } from './uploadState.ts'
 import MarkdownText from './MarkdownText.ts'
+import './typography.css'
 
 const props = defineProps<{
 	/** Stable field id, used for DOM ids. */
@@ -62,7 +63,13 @@ const inputType = computed(() => ({
 }[props.field.type] ?? 'text'))
 /** Only headings and paragraphs align; start is the default and needs no style. */
 const alignStyle = computed(() => (props.field.align === 'center' || props.field.align === 'end' ? { textAlign: props.field.align } : undefined))
-const headingTag = computed(() => 'h' + ([2, 3, 4].includes(props.field.level ?? 2) ? (props.field.level ?? 2) : 2))
+const headingTag = computed(() => 'h' + ([1, 2, 3, 4, 5, 6].includes(props.field.level ?? 2) ? (props.field.level ?? 2) : 2))
+
+const columnStyle = computed(() => (props.field.columns && props.field.columns > 1 ? { gridTemplateColumns: `repeat(${props.field.columns}, minmax(0, 1fr))` } : undefined))
+const numberLimit = (value: unknown) => (typeof value === 'number' ? value : undefined)
+const textLimit = (value: unknown) => (typeof value === 'string' ? value : undefined)
+
+const hasAffix = computed(() => props.field.type === 'number' && Boolean(props.field.prefix || props.field.suffix))
 
 const stringValue = computed(() => (typeof props.modelValue === 'string' ? props.modelValue : ''))
 const listValue = computed(() => (Array.isArray(props.modelValue) ? props.modelValue as string[] : []))
@@ -92,7 +99,7 @@ function toggleOption(value: string, event: Event) {
 			{{ field.text }}
 		</component>
 		<MarkdownText v-else-if="field.type === 'paragraph'" :source="field.text ?? ''" :style="alignStyle" />
-		<hr v-else class="af-divider">
+		<hr v-else class="af-divider" :class="field.style && field.style !== 'solid' ? 'af-divider--' + field.style : undefined">
 	</template>
 
 	<div v-else
@@ -122,6 +129,7 @@ function toggleOption(value: string, event: Event) {
 			<p v-if="field.description" :id="domId + '-desc'" class="af-description">
 				{{ field.description }}
 			</p>
+			<div class="af-options" :style="columnStyle">
 			<label v-for="option in field.options" :key="option.value" class="af-checkbox">
 				<input v-if="field.type === 'radio'"
 					type="radio"
@@ -136,6 +144,7 @@ function toggleOption(value: string, event: Event) {
 					@change="toggleOption(option.value, $event)">
 				<span>{{ option.label }}</span>
 			</label>
+			</div>
 		</fieldset>
 
 		<template v-else>
@@ -153,7 +162,8 @@ function toggleOption(value: string, event: Event) {
 				:required="required" />
 			<textarea v-else-if="field.type === 'textarea'"
 				:id="domId"
-				rows="5"
+				:rows="field.rows ?? 5"
+				:minlength="field.minLength"
 				:value="stringValue"
 				:placeholder="field.placeholder"
 				:maxlength="field.maxLength"
@@ -175,19 +185,23 @@ function toggleOption(value: string, event: Event) {
 					{{ option.label }}
 				</option>
 			</select>
-			<input v-else
-				:id="domId"
-				:type="inputType"
-				:value="stringValue"
-				:placeholder="field.placeholder"
-				:maxlength="field.type === 'text' ? field.maxLength : undefined"
-				:min="field.type === 'number' ? field.min : undefined"
-				:max="field.type === 'number' ? field.max : undefined"
-				:step="field.type === 'number' ? (field.step ?? 'any') : undefined"
-				:aria-required="required || undefined"
-				:aria-invalid="error ? true : undefined"
-				:aria-describedby="describedBy"
-				@input="onInput">
+			<div v-else class="af-input" :class="{ 'af-input--affixed': hasAffix }">
+				<span v-if="field.type === 'number' && field.prefix" class="af-affix" aria-hidden="true">{{ field.prefix }}</span>
+				<input :id="domId"
+					:type="inputType"
+					:value="stringValue"
+					:placeholder="field.placeholder"
+					:minlength="field.type === 'text' ? field.minLength : undefined"
+					:maxlength="field.type === 'text' ? field.maxLength : undefined"
+					:min="field.type === 'number' ? numberLimit(field.min) : (field.type === 'date' || field.type === 'time' ? textLimit(field.min) : undefined)"
+					:max="field.type === 'number' ? numberLimit(field.max) : (field.type === 'date' || field.type === 'time' ? textLimit(field.max) : undefined)"
+					:step="field.type === 'number' ? (field.step ?? 'any') : undefined"
+					:aria-required="required || undefined"
+					:aria-invalid="error ? true : undefined"
+					:aria-describedby="describedBy"
+					@input="onInput">
+				<span v-if="field.type === 'number' && field.suffix" class="af-affix" aria-hidden="true">{{ field.suffix }}</span>
+			</div>
 		</template>
 
 		<p v-if="field.description && !isGroup" :id="domId + '-desc'" class="af-description">
@@ -261,6 +275,28 @@ function toggleOption(value: string, event: Event) {
 	box-sizing: border-box;
 }
 
+.af-options {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	column-gap: 16px;
+}
+
+.af-input--affixed {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.af-input--affixed input {
+	flex: 1;
+	min-width: 0;
+}
+
+.af-affix {
+	color: var(--color-text-maxcontrast);
+	white-space: nowrap;
+}
+
 .af-checkbox {
 	display: flex;
 	align-items: center;
@@ -287,16 +323,6 @@ function toggleOption(value: string, event: Event) {
 .af-field--error textarea,
 .af-field--error select {
 	border-color: var(--color-error);
-}
-
-.af-heading {
-	margin: 8px 0;
-}
-
-.af-divider {
-	margin: 16px 0;
-	border: 0;
-	border-top: 1px solid var(--color-border);
 }
 
 /* Hidden visually but still announced by screen readers. */

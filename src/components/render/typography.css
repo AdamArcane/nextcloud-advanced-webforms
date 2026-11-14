@@ -1,0 +1,85 @@
+/*
+ * SPDX-FileCopyrightText: 2026 ArcaneX
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * How headings, paragraphs and dividers look. Shared by the public form and the
+ * builder cards so the preview matches what respondents see.
+ */
+
+.af-heading {
+	margin: 8px 0;
+	font-weight: 700;
+	line-height: 1.3;
+	overflow-wrap: anywhere;
+}
+
+h1.af-heading { font-size: 2rem; }
+h2.af-heading { font-size: 1.5rem; }
+h3.af-heading { font-size: 1.25rem; }
+h4.af-heading { font-size: 1.1rem; }
+h5.af-heading { font-size: 1rem; }
+h6.af-heading {
+	font-size: 0.85rem;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--color-text-maxcontrast);
+}
+
+.af-markdown {
+	line-height: 1.6;
+	overflow-wrap: anywhere;
+}
+
+.af-markdown p {
+	margin: 0 0 0.75em;
+}
+
+.af-markdown ul,
+.af-markdown ol {
+	margin: 0 0 0.75em;
+	padding-inline-start: 1.5em;
+}
+
+.af-markdown ul {
+	list-style: disc;
+}
+
+.af-markdown ol {
+	list-style: decimal;
+}
+
+.af-markdown li {
+	margin: 0 0 0.25em;
+}
+
+.af-markdown > :last-child {
+	margin-bottom: 0;
+}
+
+.af-markdown strong {
+	font-weight: 700;
+}
+
+.af-markdown em {
+	font-style: italic;
+}
+
+.af-markdown a {
+	color: var(--color-primary-element-text, var(--color-primary-element));
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.af-divider {
+	margin: 16px 0;
+	border: 0;
+	border-top: 1px solid var(--color-border);
+}
+
+.af-divider--dashed {
+	border-top-style: dashed;
+}
+
+.af-divider--dotted {
+	border-top-style: dotted;
+}

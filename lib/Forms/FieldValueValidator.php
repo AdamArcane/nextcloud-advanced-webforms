@@ -45,8 +45,8 @@ final class FieldValueValidator {
 			FieldType::SELECT, FieldType::RADIO => self::choice($field, $raw),
 			FieldType::CHECKBOXES => self::multi($field, $raw),
 			FieldType::CHECKBOX => is_bool($raw) || $raw === null ? [$raw, null] : [null, 'invalid_type'],
-			FieldType::DATE => self::date($raw),
-			FieldType::TIME => self::time($raw),
+			FieldType::DATE => self::date($field, $raw),
+			FieldType::TIME => self::time($field, $raw),
 			FieldType::FILE => self::files($field, $raw),
 			default => [null, 'invalid_type'],
 		};
@@ -107,7 +107,13 @@ final class FieldValueValidator {
 		if (is_int($field['maxLength'] ?? null) && $field['maxLength'] >= 1) {
 			$max = min($cap, $field['maxLength']);
 		}
-		return mb_strlen($value) > $max ? [null, 'too_long'] : [$value, null];
+		if (mb_strlen($value) > $max) {
+			return [null, 'too_long'];
+		}
+		if (is_int($field['minLength'] ?? null) && $field['minLength'] >= 1 && mb_strlen($value) < $field['minLength']) {
+			return [null, 'too_short'];
+		}
+		return [$value, null];
 	}
 
 	/**
@@ -265,28 +271,55 @@ final class FieldValueValidator {
 	}
 
 	/**
+	 * @param array<string, mixed> $field
 	 * @return array{0: string|null, 1: string|null}
 	 */
-	private static function date(mixed $raw): array {
+	private static function date(array $field, mixed $raw): array {
 		if ($raw === null || $raw === '') {
 			return [null, null];
 		}
-		if (!is_string($raw) || preg_match('/^(\d{4})-(\d{2})-(\d{2})$/D', $raw, $m) !== 1) {
+		if (!self::isDate($raw)) {
 			return [null, 'invalid_date'];
 		}
-		return checkdate((int)$m[2], (int)$m[3], (int)$m[1]) ? [$raw, null] : [null, 'invalid_date'];
+		// ISO dates sort the same as text, so a string comparison is a date comparison.
+		if (self::isDate($field['min'] ?? null) && $raw < $field['min']) {
+			return [null, 'date_too_early'];
+		}
+		if (self::isDate($field['max'] ?? null) && $raw > $field['max']) {
+			return [null, 'date_too_late'];
+		}
+		return [$raw, null];
 	}
 
 	/**
+	 * @param array<string, mixed> $field
 	 * @return array{0: string|null, 1: string|null}
 	 */
-	private static function time(mixed $raw): array {
+	private static function time(array $field, mixed $raw): array {
 		if ($raw === null || $raw === '') {
 			return [null, null];
 		}
-		if (!is_string($raw) || preg_match('/^([01]\d|2[0-3]):[0-5]\d$/D', $raw) !== 1) {
+		if (!self::isTime($raw)) {
 			return [null, 'invalid_time'];
 		}
+		if (self::isTime($field['min'] ?? null) && $raw < $field['min']) {
+			return [null, 'time_too_early'];
+		}
+		if (self::isTime($field['max'] ?? null) && $raw > $field['max']) {
+			return [null, 'time_too_late'];
+		}
 		return [$raw, null];
+	}
+
+	/** A real calendar date as `YYYY-MM-DD`. */
+	public static function isDate(mixed $value): bool {
+		return is_string($value)
+			&& preg_match('/^(\d{4})-(\d{2})-(\d{2})$/D', $value, $m) === 1
+			&& checkdate((int)$m[2], (int)$m[3], (int)$m[1]);
+	}
+
+	/** A time of day as `HH:MM`, 24 hour. */
+	public static function isTime(mixed $value): bool {
+		return is_string($value) && preg_match('/^([01]\d|2[0-3]):[0-5]\d$/D', $value) === 1;
 	}
 }
