@@ -236,3 +236,34 @@ describe('ActionsPanel summaries', () => {
 		expect(wrapper.find('.af-action__summary').text()).toBe('Thanks {Full name}!')
 	})
 })
+
+describe('warnings on a new action', () => {
+	function webhookPanel(showErrors = false) {
+		const added = addAction(emptyDefinition('T'), 'webhook')
+		const errors = [{ code: 'action_bad_url', path: 'actions[0].url' }]
+		const wrapper = mount(ActionsPanel, {
+			props: { definition: added.definition, formId: 7, errors, showErrors },
+			attachTo: document.body,
+		})
+		return { wrapper, id: added.actionId! }
+	}
+
+	it('stays quiet until the user has been in the card', async () => {
+		const { wrapper } = webhookPanel()
+		const head = wrapper.get('.af-action__head')
+		await head.trigger('click')
+		await wrapper.setProps({})
+		expect(wrapper.find('.af-action--error').exists()).toBe(false)
+		expect(wrapper.find('.af-action__body .nc-note-card, .af-action__body [class*="notecard"]').exists()).toBe(false)
+
+		await wrapper.get('.af-action').trigger('focusout')
+		expect(wrapper.find('.af-action--error').exists()).toBe(true)
+		wrapper.unmount()
+	})
+
+	it('shows problems straight away after a failed publish', () => {
+		const { wrapper } = webhookPanel(true)
+		expect(wrapper.find('.af-action--error').exists()).toBe(true)
+		wrapper.unmount()
+	})
+})

@@ -410,6 +410,7 @@ async function onDeleteConfirmed(): Promise<void> {
 						:definition="draft"
 						:form-id="formId"
 						:errors="errors"
+						:show-errors="publishFailed"
 						@change="edit" />
 					<FormProperties v-else
 						:section="settingsTab"

@@ -20,6 +20,8 @@ const props = defineProps<{
 	definition: DraftDefinition
 	formId: number
 	errors: DefinitionError[]
+	/** Show problems on every card, e.g. after a failed publish. */
+	showErrors?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -100,6 +102,7 @@ async function generateSecret(index: number): Promise<void> {
 			:definition="definition"
 			:expanded="expandedId === action.id"
 			:error-codes="codesFor(index)"
+			:show-errors="showErrors"
 			:unreachable="unreachable.has(action.id)"
 			:revealed-secret="revealed?.actionId === action.id ? revealed.secret : null"
 			:secret-busy="secretBusyId === action.id"

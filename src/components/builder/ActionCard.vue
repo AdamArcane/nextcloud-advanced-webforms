@@ -15,7 +15,7 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { defaultWhen, emailFields, readablePlaceholders, setWhen, unknownPlaceholders, usesResponseSlot, withPlaceholder } from '../../builder/actions.ts'
 import { describeError } from '../../builder/errors.ts'
 import { actionLabel } from '../../builder/labels.ts'
@@ -35,6 +35,8 @@ const props = defineProps<{
 	definition: DraftDefinition
 	expanded: boolean
 	errorCodes: string[]
+	/** Show problems even on a card nobody has touched, e.g. after a failed publish. */
+	showErrors?: boolean
 	/** A message or redirect that an earlier one always pre-empts. */
 	unreachable: boolean
 	/** A freshly generated secret to show once, for this action. */
@@ -119,11 +121,16 @@ function setRecipientKind(kind: string): void {
 }
 
 const recipientField = computed(() => (typeof email.value.to === 'object' ? email.value.to.field : null))
+
+// A freshly added action is incomplete by nature; warn only once the user has been in it (or tried to publish).
+const touched = ref(false)
+const visibleErrors = computed(() => (props.showErrors || touched.value ? props.errorCodes : []))
 </script>
 
 <template>
 	<article class="af-action"
-		:class="{ 'af-action--error': errorCodes.length > 0, 'af-action--open': expanded }">
+		:class="{ 'af-action--error': visibleErrors.length > 0, 'af-action--open': expanded }"
+		@focusout="touched = true">
 		<button type="button"
 			class="af-action__head"
 			:aria-expanded="expanded"
@@ -137,8 +144,8 @@ const recipientField = computed(() => (typeof email.value.to === 'object' ? emai
 		</button>
 
 		<div v-if="expanded" class="af-action__body">
-			<NcNoteCard v-if="errorCodes.length > 0" type="warning">
-				<p v-for="code in errorCodes" :key="code">
+			<NcNoteCard v-if="visibleErrors.length > 0" type="warning">
+				<p v-for="code in visibleErrors" :key="code">
 					{{ describeError(code) }}
 				</p>
 			</NcNoteCard>
