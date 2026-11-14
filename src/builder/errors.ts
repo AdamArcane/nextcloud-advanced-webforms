@@ -76,6 +76,12 @@ export function describeError(code: string): string {
 			return t('advancedforms', 'You cannot save files to this folder. Choose a folder you can write to.')
 		case 'upload_anonymous_not_allowed':
 			return t('advancedforms', 'You are not allowed to let anyone upload into your files. Limit this field to signed-in users, or keep the files in the app.')
+		case 'import_not_a_form':
+			return t('advancedforms', 'This file is not an Advanced Forms export.')
+		case 'import_too_new':
+			return t('advancedforms', 'This file was made by a newer version of Advanced Forms. Update the app to import it.')
+		case 'not_published_yet':
+			return t('advancedforms', 'This form has not been published yet.')
 		case 'too_large':
 			return t('advancedforms', 'This form is too large.')
 		default:

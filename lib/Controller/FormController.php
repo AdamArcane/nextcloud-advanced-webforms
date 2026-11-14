@@ -71,6 +71,47 @@ class FormController extends Controller {
 	}
 
 	/**
+	 * Download the form as a file: `source` is `draft` or `published`. Webhook secrets are never included.
+	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/forms/{id}/export')]
+	public function exportForm(int $id, string $source = 'draft'): DataDownloadResponse|JSONResponse {
+		try {
+			$file = $this->service->exportForm($this->userId(), $id, $source);
+		} catch (NotFoundException) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		} catch (ValidationException $e) {
+			return new JSONResponse(['error' => 'validation', 'errors' => $e->getErrors()], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+		$response = new DataDownloadResponse(
+			json_encode($file['package'], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+			$file['filename'],
+			'application/json; charset=utf-8',
+		);
+		$response->addHeader('Cache-Control', 'no-store');
+		return $response;
+	}
+
+	/**
+	 * Create a new draft form from an export file. Never changes an existing form.
+	 *
+	 * @param array<string, mixed> $package
+	 */
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/forms/import')]
+	public function importForm(array $package = []): JSONResponse {
+		return $this->guard(function () use ($package): JSONResponse {
+			$imported = $this->service->importForm($this->userId(), $package);
+			return new JSONResponse([
+				'form' => $this->service->toArray($imported['form'], true),
+				// Not blocking for a draft, but publishing will refuse these.
+				'errors' => $imported['errors'],
+			], Http::STATUS_CREATED);
+		});
+	}
+
+	/**
 	 * @param array<string, mixed> $definition
 	 */
 	#[NoAdminRequired]

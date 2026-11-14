@@ -58,6 +58,7 @@ import {
 	mdiTableRowPlusAfter,
 	mdiWeb,
 	mdiWebhook,
+	mdiTrayArrowUp,
 } from '@mdi/js'
 
 export const icons = {
@@ -77,6 +78,7 @@ export const icons = {
 	design: mdiPalette,
 	desktop: mdiMonitor,
 	download: mdiDownload,
+	import: mdiTrayArrowUp,
 	edit: mdiPencil,
 	mail: mdiEmailOutline,
 	logic: mdiSourceBranch,

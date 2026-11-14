@@ -23,6 +23,7 @@ use OCA\AdvancedForms\Uploads\UploadRejected;
 use OCA\AdvancedForms\Uploads\UploadService;
 use OCA\AdvancedForms\Exception\ValidationException;
 use OCA\AdvancedForms\Forms\DefinitionValidator;
+use OCA\AdvancedForms\Forms\FormPackage;
 use OCA\AdvancedForms\Forms\JsonShape;
 use OCA\AdvancedForms\Forms\RetiredIds;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -92,6 +93,59 @@ class FormService {
 		$form->setCreatedAt($now);
 		$form->setUpdatedAt($now);
 		return $this->forms->insert($form);
+	}
+
+	/**
+	 * The form as an export file (docs/SCHEMA.md section 13): its draft, or its latest published version.
+	 *
+	 * @return array{package: array<string, mixed>, filename: string}
+	 * @throws NotFoundException
+	 * @throws ValidationException
+	 */
+	public function exportForm(string $userId, int $id, string $source): array {
+		$form = $this->get($userId, $id);
+		if ($source === FormPackage::SOURCE_PUBLISHED) {
+			$latestId = $form->getLatestVersionId();
+			if ($latestId === null) {
+				throw new ValidationException([['code' => 'not_published_yet', 'path' => 'source']]);
+			}
+			$definition = $this->versions->find($latestId)->getDefinitionArray();
+		} elseif ($source === FormPackage::SOURCE_DRAFT) {
+			$definition = $form->getDraftDefinition();
+		} else {
+			throw new ValidationException([['code' => 'source_invalid', 'path' => 'source']]);
+		}
+
+		$slug = trim((string)preg_replace('/[^a-z0-9]+/', '-', strtolower($form->getTitle())), '-');
+		return [
+			'package' => FormPackage::build($definition, $source, $this->time->getTime()),
+			'filename' => ($slug !== '' ? $slug : 'form') . '.advancedforms.json',
+		];
+	}
+
+	/**
+	 * Create a new draft form from an export file. It never touches an existing form. The definition goes
+	 * through the normal draft save, so problems come back as warnings and publishing stays the gate.
+	 *
+	 * @param array<string, mixed> $package
+	 * @return array{form: Form, errors: list<array{code: string, path: string}>}
+	 * @throws ValidationException
+	 */
+	public function importForm(string $userId, array $package): array {
+		$definition = FormPackage::parse($package);
+		$title = $definition['title'] ?? null;
+		if (!is_string($title) || trim($title) === '' || mb_strlen($title) > 255) {
+			throw new ValidationException([['code' => 'title_invalid', 'path' => 'definition.title']]);
+		}
+
+		$form = $this->create($userId, trim($title));
+		try {
+			return $this->saveDraft($userId, $form->getId(), $definition);
+		} catch (ValidationException $e) {
+			// Nothing half-made is left behind for a file that is refused.
+			$this->forms->delete($form);
+			throw $e;
+		}
 	}
 
 	/**

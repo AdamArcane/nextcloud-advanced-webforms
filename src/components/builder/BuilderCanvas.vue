@@ -306,77 +306,76 @@ function codes(fieldId: string): string[] {
 
 <template>
 	<div class="af-canvas" :class="{ 'af-canvas--mobile': mobile }">
-		<div class="af-canvas__paper">
-			<div class="af-tabs" role="tablist" :aria-label="t('advancedforms', 'Pages')">
-				<div v-for="(page, index) in pages"
-					:key="page.id"
-					class="af-tab"
-					:class="{ 'af-tab--active': page.id === activeId }">
-					<input v-if="renamingId === page.id"
-						class="af-tab__rename"
-						type="text"
-						maxlength="255"
-						:value="page.title ?? ''"
-						:aria-label="t('advancedforms', 'Page title')"
-						:placeholder="t('advancedforms', 'Page {n}', { n: index + 1 })"
-						@input="emit('pageTitle', page.id, ($event.target as HTMLInputElement).value)"
-						@keydown.enter="renamingId = null"
-						@keydown.esc="renamingId = null"
-						@blur="renamingId = null">
-					<button v-else
-						class="af-tab__label"
-						type="button"
-						role="tab"
-						:aria-selected="page.id === activeId"
-						@click="activeId = page.id"
-						@dblclick="startRename(page.id)">
-						{{ tabName(index) }}
-						<span v-if="pagesWithErrors.has(page.id)"
-							class="af-tab__error"
-							role="img"
-							:aria-label="t('advancedforms', 'This page has a problem')" />
-					</button>
-					<NcActions v-if="page.id === activeId" :aria-label="t('advancedforms', 'Page options')" force-menu>
-						<NcActionButton @click="startRename(page.id)">
-							<template #icon>
-								<Icon :path="icons.edit" />
-							</template>
-							{{ t('advancedforms', 'Rename page') }}
-						</NcActionButton>
-						<NcActionButton :disabled="index === 0" @click="emit('movePage', page.id, -1)">
-							<template #icon>
-								<Icon :path="icons.arrowLeft" />
-							</template>
-							{{ t('advancedforms', 'Move page left') }}
-						</NcActionButton>
-						<NcActionButton :disabled="index === pages.length - 1" @click="emit('movePage', page.id, 1)">
-							<template #icon>
-								<Icon :path="icons.arrowRight" />
-							</template>
-							{{ t('advancedforms', 'Move page right') }}
-						</NcActionButton>
-						<NcActionButton :disabled="pages.length === 1 || page.rows.length > 0"
-							:title="page.rows.length > 0 ? t('advancedforms', 'Move or delete this page\'s fields first') : undefined"
-							@click="emit('removePage', page.id)">
-							<template #icon>
-								<Icon :path="icons.delete" />
-							</template>
-							{{ t('advancedforms', 'Delete page') }}
-						</NcActionButton>
-						<NcActionCaption v-if="page.rows.length > 0" :name="t('advancedforms', 'Move or delete the fields on this page to delete it.')" />
-					</NcActions>
-				</div>
-				<NcButton variant="tertiary"
-					:disabled="pages.length >= MAX_PAGES"
-					:aria-label="t('advancedforms', 'Add page')"
-					:title="t('advancedforms', 'Add page')"
-					@click="emit('addPage')">
-					<template #icon>
-						<Icon :path="icons.add" />
-					</template>
-				</NcButton>
+		<div class="af-tabs" role="tablist" :aria-label="t('advancedforms', 'Pages')">
+			<div v-for="(page, index) in pages"
+				:key="page.id"
+				class="af-tab"
+				:class="{ 'af-tab--active': page.id === activeId }">
+				<input v-if="renamingId === page.id"
+					class="af-tab__rename"
+					type="text"
+					maxlength="255"
+					:value="page.title ?? ''"
+					:aria-label="t('advancedforms', 'Page title')"
+					:placeholder="t('advancedforms', 'Page {n}', { n: index + 1 })"
+					@input="emit('pageTitle', page.id, ($event.target as HTMLInputElement).value)"
+					@keydown.enter="renamingId = null"
+					@keydown.esc="renamingId = null"
+					@blur="renamingId = null">
+				<button v-else
+					class="af-tab__label"
+					type="button"
+					role="tab"
+					:aria-selected="page.id === activeId"
+					@click="activeId = page.id"
+					@dblclick="startRename(page.id)">
+					{{ tabName(index) }}
+					<span v-if="pagesWithErrors.has(page.id)"
+						class="af-tab__error"
+						role="img"
+						:aria-label="t('advancedforms', 'This page has a problem')" />
+				</button>
+				<NcActions v-if="page.id === activeId" :aria-label="t('advancedforms', 'Page options')" force-menu>
+					<NcActionButton @click="startRename(page.id)">
+						<template #icon>
+							<Icon :path="icons.edit" :inline="false" />
+						</template>
+						{{ t('advancedforms', 'Rename page') }}
+					</NcActionButton>
+					<NcActionButton :disabled="index === 0" @click="emit('movePage', page.id, -1)">
+						<template #icon>
+							<Icon :path="icons.arrowLeft" :inline="false" />
+						</template>
+						{{ t('advancedforms', 'Move page left') }}
+					</NcActionButton>
+					<NcActionButton :disabled="index === pages.length - 1" @click="emit('movePage', page.id, 1)">
+						<template #icon>
+							<Icon :path="icons.arrowRight" :inline="false" />
+						</template>
+						{{ t('advancedforms', 'Move page right') }}
+					</NcActionButton>
+					<NcActionButton :disabled="pages.length === 1 || page.rows.length > 0"
+						:title="page.rows.length > 0 ? t('advancedforms', 'Move or delete this page\'s fields first') : undefined"
+						@click="emit('removePage', page.id)">
+						<template #icon>
+							<Icon :path="icons.delete" :inline="false" />
+						</template>
+						{{ t('advancedforms', 'Delete page') }}
+					</NcActionButton>
+					<NcActionCaption v-if="page.rows.length > 0" :name="t('advancedforms', 'Move or delete the fields on this page to delete it.')" />
+				</NcActions>
 			</div>
-
+			<NcButton variant="tertiary"
+				:disabled="pages.length >= MAX_PAGES"
+				:aria-label="t('advancedforms', 'Add page')"
+				:title="t('advancedforms', 'Add page')"
+				@click="emit('addPage')">
+				<template #icon>
+					<Icon :path="icons.add" />
+				</template>
+			</NcButton>
+		</div>
+		<div class="af-canvas__paper">
 			<NcEmptyContent v-if="isEmpty"
 				class="af-canvas__empty"
 				:name="t('advancedforms', 'Start your form')"
@@ -481,7 +480,8 @@ function codes(fieldId: string): string[] {
 <style scoped>
 .af-canvas {
 	display: flex;
-	justify-content: center;
+	flex-direction: column;
+	align-items: center;
 	padding: calc(var(--default-grid-baseline) * 6) calc(var(--default-grid-baseline) * 4) calc(var(--default-grid-baseline) * 12);
 }
 
@@ -553,13 +553,17 @@ function codes(fieldId: string): string[] {
 	}
 }
 
+/* The page tabs sit above the paper at full width, so the mobile preview does not squeeze them. */
 .af-tabs {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
 	gap: calc(var(--default-grid-baseline) * 1);
-	margin-bottom: calc(var(--default-grid-baseline) * 4);
+	box-sizing: border-box;
+	width: 100%;
+	max-width: 760px;
+	margin-bottom: calc(var(--default-grid-baseline) * 3);
 	border-bottom: 1px solid var(--color-border);
-	overflow-x: auto;
 }
 
 .af-tab {

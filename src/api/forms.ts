@@ -96,3 +96,15 @@ export function retryDelivery(id: number, logId: number): Promise<Delivery> {
 export function exportUrl(id: number): string {
 	return generateUrl('/apps/advancedforms/api/v1/forms/{id}/entries/export', { id })
 }
+
+export type ExportSource = 'draft' | 'published'
+
+/** Where the form export download lives. Opened as a link, so the session cookie authenticates it. */
+export function formExportUrl(id: number, source: ExportSource): string {
+	return generateUrl('/apps/advancedforms/api/v1/forms/{id}/export', { id }) + '?source=' + source
+}
+
+/** Create a new draft form from the parsed contents of an export file. Rejects with an ApiError. */
+export function importForm(pkg: unknown): Promise<SaveResult> {
+	return call(axios.post<SaveResult>(url('/forms/import'), { package: pkg }))
+}

@@ -727,3 +727,43 @@ vectors first, and both test suites must pass.
    differ. The server is authoritative, so the worst case is the browser briefly
    showing a different field set than the server accepts. Revisit only if a real
    mismatch shows up.
+
+## 13. Import and export (DECISION)
+
+A form can be saved to a file and brought back, on the same server or another one. The menu on each
+form in the sidebar offers **Export draft** and, once the form has been published, **Export published
+version**. The forms list has **Import form**.
+
+```json
+{
+  "format": "advancedforms.form",
+  "formatVersion": 1,
+  "source": "draft",
+  "exportedAt": 1763100000,
+  "definition": { "schemaVersion": 1, "title": "...", "...": "the document from section 3" }
+}
+```
+
+- `formatVersion` is the version of this wrapper. `definition.schemaVersion` is the version of the
+  definition (section 3). A file with a newer value of either is refused (`import_too_new`) so an old
+  app never guesses at a newer format. Anything that is not this wrapper is `import_not_a_form`.
+- `source` is `draft` (what the owner is editing) or `published` (the latest published version).
+  Asking for `published` before the first publish is refused (`not_published_yet`).
+- **What is in the file:** the whole definition, so title, description, settings, fields, layout,
+  rules and actions.
+- **What is never in the file:** the form id, owner, public link, status, version history, retired ids,
+  responses and the delivery log. Responses have their own CSV export (section 9.1).
+- **Secrets are never in the file.** A webhook's `secretRef` is removed on export, because the secret
+  it names lives encrypted on the exporting server and cannot be read back (section 7.2). It is also
+  removed on import, so a file from elsewhere cannot point a form at a secret it does not own. An
+  imported webhook is therefore unsigned until the owner generates a new secret for it.
+- **Email addresses** typed into an email action and upload `folder` paths are part of the definition
+  and are exported. The upload folder is checked against the importing owner's permissions like any
+  draft (section 4.6).
+- **Import always creates a new form**, as an unpublished draft owned by the importing user. It never
+  overwrites an existing form. The definition is stored through the normal draft save (section 8), so
+  structural problems come back as warnings and publishing remains the gate. A file that is refused
+  outright (for example an oversize or title-less definition) leaves nothing behind.
+- Endpoints: `GET /api/v1/forms/{id}/export?source=draft|published` (a JSON download) and
+  `POST /api/v1/forms/import` with `{ "package": <the file's contents> }`, which answers 201 with
+  `{ form, errors }` like a draft save.

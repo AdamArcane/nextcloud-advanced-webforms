@@ -7,6 +7,10 @@
 
 ## 0.3.0 - Unreleased
 
+- Import and export a whole form. Each form in the sidebar has a menu with Export draft and
+  Export published version, and the list has Import form. The file holds the definition (fields,
+  layout, rules, actions, settings) and never responses, ids, links or webhook secrets. Importing
+  always creates a new draft form and never overwrites one.
 - Website (URL) field type: http and https only, `https://` added when missing.
 - Select, radio and checkbox fields can be filled from a ready-made list (countries, US states,
   Canadian provinces, Australian states, currencies, languages, months, weekdays). Option values may

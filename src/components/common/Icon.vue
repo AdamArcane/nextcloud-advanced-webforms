@@ -10,9 +10,12 @@ import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 withDefaults(defineProps<{
 	path: string
 	size?: number
-}>(), { size: 20 })
+	// Inside NcAction* menus pass false: the menu supplies its own icon box, which keeps
+	// icons centred and aligned with the label.
+	inline?: boolean
+}>(), { size: 20, inline: true })
 </script>
 
 <template>
-	<NcIconSvgWrapper :path="path" :size="size" inline />
+	<NcIconSvgWrapper :path="path" :size="size" :inline="inline" />
 </template>
