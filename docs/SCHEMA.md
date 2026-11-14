@@ -5,7 +5,7 @@
 
 # Advanced Forms: form definition spec
 
-Status: DRAFT v0.1 (design review, no code yet)
+Status: DRAFT v0.2 (design review, no code yet)
 
 This document defines the data format everything else is built on: the form
 definition, grid layout, rules engine, after-submit actions, versioning, and
@@ -52,6 +52,7 @@ Non-goals (v1, but the format must not block them):
   "fields": {
     "f_name": { "type": "text", "label": "Name", "required": true },
     "f_email": { "type": "email", "label": "Email", "required": true },
+    "f_phone": { "type": "phone", "label": "Phone", "hideLabel": true, "placeholder": "Phone number", "required": false },
     "f_kind": {
       "type": "select",
       "label": "What do you need?",
@@ -62,7 +63,7 @@ Non-goals (v1, but the format must not block them):
       ]
     },
     "f_url": { "type": "text", "label": "Current website URL", "required": false },
-    "f_note": { "type": "paragraph", "text": "We reply within two business days." }
+    "f_note": { "type": "paragraph", "text": "We reply within **two business days**." }
   },
   "pages": [
     {
@@ -74,7 +75,8 @@ Non-goals (v1, but the format must not block them):
           { "id": "c_2", "span": 6, "field": "f_email" }
         ]},
         { "id": "r_2", "cells": [
-          { "id": "c_3", "span": 12, "field": "f_kind" }
+          { "id": "c_3", "span": 8, "field": "f_kind" },
+          { "id": "c_6", "span": 4, "field": "f_phone" }
         ]},
         { "id": "r_3", "cells": [
           { "id": "c_4", "span": 12, "field": "f_url" }
@@ -138,9 +140,10 @@ Input types (produce a value):
 
 | type | value type | notes |
 | --- | --- | --- |
-| `text` | string | single line, optional `maxLength`, `placeholder` |
+| `text` | string | single line, optional `maxLength` |
 | `textarea` | string | multi line, optional `maxLength` |
 | `email` | string | validated as an email address |
+| `phone` | string | validated as a phone number, see 4.4 |
 | `number` | number | optional `min`, `max`, `step` |
 | `select` | string | one of `options[].value` |
 | `radio` | string | one of `options[].value` |
@@ -154,28 +157,68 @@ Display types (no value, cannot be rule sources, can be rule targets):
 | type | properties |
 | --- | --- |
 | `heading` | `text`, `level` (2 to 4) |
-| `paragraph` | `text` (plain text, no HTML) |
+| `paragraph` | `text` (limited markdown, see 4.5) |
 | `divider` | none |
 
 Deferred: file upload, hidden fields, rating, matrix, signature.
 
 Common properties for input fields: `label` (required), `description`,
-`required` (default false), `defaultValue`.
+`required` (default false), `defaultValue`, `hideLabel` (default false).
 
-All text properties are plain text. The renderer must escape them. No HTML and
-no markdown in v1 (avoids stored XSS on public pages).
+`placeholder` (optional string) is supported on `text`, `textarea`, `email`,
+`number`, `phone`, and `select` (for `select` it is the empty-choice prompt).
+
+`hideLabel`: the label is visually hidden but stays in the DOM for screen
+readers (for example as a visually hidden element tied to the input). `label`
+stays required because accessibility, entry display, and exports depend on it.
+A placeholder is not a substitute for a label.
+
+All text properties are plain text and must be escaped by the renderer, with
+one exception: `paragraph.text` accepts limited markdown (section 4.5). Raw
+HTML is never interpreted anywhere (avoids stored XSS on public pages).
 
 ### 4.3 Option values
 
 `options[].value` follows the same ID pattern as field IDs and is immutable;
 `label` can change freely. Rules compare option values, never labels.
 
+### 4.4 Phone fields
+
+- Stored as a string, trimmed, as the respondent typed it (display fidelity).
+- Allowed characters: digits, spaces, and `+ ( ) - .`. A `+` is only allowed as
+  the first character.
+- Must contain 7 to 15 digits (15 is the E.164 maximum).
+- Rendered as `type="tel"`.
+- No region, carrier, or "is this number real" validation in v1 (see open
+  questions).
+
+### 4.5 Markdown in paragraphs
+
+Only `paragraph.text` accepts markdown. Labels, descriptions, option labels,
+and action messages stay plain text.
+
+- Supported: paragraphs, line breaks, bold, italic, ordered and unordered lists,
+  and links.
+- Not supported: raw HTML (not interpreted), images, headings (use the `heading`
+  type), tables, code blocks.
+- Links: only `http`, `https`, `mailto`, and `tel` schemes. Rendered with
+  `rel="noopener noreferrer nofollow"` and `target="_blank"`, so following a
+  link does not discard a half-filled form.
+- Maximum length 2000 characters.
+- The server stores the markdown source only. The renderer parses it with HTML
+  disabled, then passes the result through an allowlist sanitizer. The builder
+  preview and the public page must use the same renderer.
+
 ## 5. Layout: pages > rows > cells (DECISION)
 
 - `pages`: ordered. v1 validation requires exactly one page.
 - `rows`: ordered, each row is a horizontal band.
 - `cells`: ordered within a row. Each cell holds exactly one field.
-- `span`: integer 1 to 12. Spans in a row must sum to at most 12.
+- `span`: width in twelfths of the row. v1 allows only 3, 4, 6, 8, 9, and 12
+  (1/4, 1/3, 1/2, 2/3, 3/4, full width). Spans in a row must sum to at most 12.
+  The builder offers these as presets, not a free number. Storing twelfths keeps
+  widths exact (1/3 + 2/3 is exactly 12, while 33% + 66% is 99%), and the
+  allowed set can widen later without a migration.
 - Every field must appear in exactly one cell. Cells without a valid field are
   rejected.
 
@@ -239,6 +282,8 @@ Comparison semantics (**DECISION**, must be identical in PHP and TypeScript):
 
 - Option values (`select`, `radio`, `checkboxes`): exact string match.
 - Free text (`text`, `textarea`, `email`): trimmed, case-insensitive.
+- `phone`: compared on digits and a leading `+` only, so spacing and punctuation
+  do not matter.
 - `number`: numeric. A non-numeric stored value counts as empty.
 - `date` and `time`: lexical comparison on the normalized string formats above.
 - `checkbox`: compares as boolean (`eq` with `true` or `false`).
@@ -405,7 +450,7 @@ expected required set. A change to semantics changes the vectors first.
 
 1. Accept submissions against old versions indefinitely, or only for a grace
    window after a new publish?
-2. Should `message` support limited formatting (line breaks, links)? v1 says
+2. Should the `message` action reuse the paragraph markdown subset? v1 says
    plain text only.
 3. Do we need "hide but keep value" (hidden field values retained) for any use
    case? Current rule: hidden means discarded.
@@ -416,3 +461,8 @@ expected required set. A change to semantics changes the vectors first.
    crypto helper; confirm the exact mechanism during implementation.
 6. Anonymous multiple-submission control: accept the limitation, or add a
    cookie-based soft limit.
+7. Phone validation depth: keep the permissive format check, or validate with a
+   phone number library (region aware). Check what Nextcloud already bundles
+   before adding a dependency.
+8. Markdown renderer and sanitizer: choose during implementation, preferring
+   whatever the Nextcloud frontend stack already provides over a new dependency.
