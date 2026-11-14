@@ -319,13 +319,20 @@ async function onDeleteConfirmed(): Promise<void> {
 		</div>
 
 		<template v-else>
-			<header class="af-bar">
+			<header class="af-bar" :class="{ 'af-bar--sidebar': view === 'edit' }">
 				<div class="af-bar__top">
 					<div class="af-bar__title">
 						<h2 class="af-bar__name">
 							{{ draft.title }}
 						</h2>
-						<span class="af-bar__status" :class="'af-bar__status--' + saveState" role="status">{{ saveLabel }}</span>
+						<!-- An icon says it at a glance; the words stay for screen readers and as a tooltip. -->
+						<span class="af-bar__status" :class="'af-bar__status--' + saveState" role="status" :title="saveLabel">
+							<NcLoadingIcon v-if="saveState === 'saving'" :size="16" />
+							<Icon v-else-if="saveState === 'error'" :path="icons.alert" :size="18" />
+							<Icon v-else-if="saveState === 'dirty'" :path="icons.unsaved" :size="18" />
+							<Icon v-else :path="icons.check" :size="18" />
+							<span class="af-sr-only">{{ saveLabel }}</span>
+						</span>
 						<span v-if="published" class="af-bar__chip">
 							{{ t('advancedforms', 'Published') }}
 						</span>
@@ -364,7 +371,7 @@ async function onDeleteConfirmed(): Promise<void> {
 							{ value: 'mobile', label: t('advancedforms', 'Mobile'), icon: icons.mobile },
 						]"
 						icon-only />
-					<span v-else />
+					<span v-else class="af-bar__device" />
 					<NcButton variant="primary" class="af-bar__publish" :disabled="!canPublish" @click="publish">
 						{{ publishing ? t('advancedforms', 'Publishing…') : t('advancedforms', 'Publish') }}
 					</NcButton>
@@ -552,8 +559,22 @@ async function onDeleteConfirmed(): Promise<void> {
 }
 
 .af-bar__status {
+	display: inline-flex;
+	align-items: center;
 	color: var(--color-text-maxcontrast);
-	font-size: 13px;
+}
+
+.af-sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+}
+
+.af-bar__status--saved {
+	color: var(--color-success-text);
 }
 
 .af-bar__status--error {
@@ -579,9 +600,22 @@ async function onDeleteConfirmed(): Promise<void> {
 	min-width: 84px;
 }
 
+/* Nextcloud pins the sidebar toggle to the top right corner on narrow screens; keep the icons clear of it. */
+@media (max-width: 1024px) {
+	.af-bar--sidebar .af-bar__top {
+		padding-inline-end: var(--default-clickable-area);
+	}
+}
+
+/* On a phone the canvas already is phone-sized, so the device switch and the Published chip only take room. */
 @media (max-width: 700px) {
 	.af-bar__tools {
-		grid-template-columns: auto 1fr auto;
+		grid-template-columns: 1fr auto;
+	}
+
+	.af-bar__device,
+	.af-bar__chip {
+		display: none;
 	}
 }
 
