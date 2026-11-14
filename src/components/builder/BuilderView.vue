@@ -11,9 +11,6 @@ import { t } from '@nextcloud/l10n'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
 import NcAppSidebar from '@nextcloud/vue/components/NcAppSidebar'
 import NcAppSidebarTab from '@nextcloud/vue/components/NcAppSidebarTab'
-import NcActionButton from '@nextcloud/vue/components/NcActionButton'
-import NcActionLink from '@nextcloud/vue/components/NcActionLink'
-import NcActions from '@nextcloud/vue/components/NcActions'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import { icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
@@ -162,9 +159,6 @@ const saveLabel = computed(() => {
 const published = computed(() => form.value?.status === FORM_STATUS_PUBLISHED)
 const shareUrl = computed(() => (form.value?.publicToken ? publicFormUrl(form.value.publicToken) : null))
 const hasChanges = computed(() => form.value?.hasUnpublishedChanges !== false)
-const publishLabel = computed(() => (form.value?.latestVersionId == null
-	? t('advancedforms', 'Publish')
-	: t('advancedforms', 'Publish changes')))
 const canPublish = computed(() => !publishing.value && saveState.value !== 'error' && (hasChanges.value || !published.value))
 
 async function publish(): Promise<void> {
@@ -334,65 +328,52 @@ async function onDeleteConfirmed(): Promise<void> {
 
 		<template v-else>
 			<header class="af-bar">
-				<div class="af-bar__title">
-					<h2 class="af-bar__name">
-						{{ draft.title }}
-					</h2>
-					<span class="af-bar__status" :class="'af-bar__status--' + saveState" role="status">{{ saveLabel }}</span>
-					<span v-if="published" class="af-bar__chip">
-						{{ t('advancedforms', 'Published') }}
-					</span>
-					<span v-else class="af-bar__chip af-bar__chip--quiet">{{ t('advancedforms', 'Draft') }}</span>
-				</div>
-				<SegmentedControl v-model="canvasWidth"
-					class="af-bar__device"
-					:group-label="t('advancedforms', 'Canvas width')"
-					:options="[
-						{ value: 'desktop', label: t('advancedforms', 'Desktop'), icon: icons.desktop },
-						{ value: 'mobile', label: t('advancedforms', 'Mobile'), icon: icons.mobile },
-					]"
-					icon-only />
-				<div class="af-bar__actions">
-					<FormNav :form-id="formId" active="edit" />
-					<NcButton variant="tertiary"
-						class="af-bar__preview"
-						:aria-label="t('advancedforms', 'Preview')"
-						:title="t('advancedforms', 'Preview')"
-						@click="previewOpen = true">
-						<template #icon>
-							<Icon :path="icons.preview" />
-						</template>
-					</NcButton>
-					<div class="af-bar__split">
-						<NcButton variant="primary"
-							class="af-bar__split-main"
-							:disabled="!canPublish"
-							@click="publish">
-							{{ publishing ? t('advancedforms', 'Publishing…') : publishLabel }}
-						</NcButton>
-						<NcActions class="af-bar__split-more"
-							variant="primary"
-							:aria-label="t('advancedforms', 'More publishing options')">
-							<template #icon>
-								<Icon :path="icons.chevronDown" />
-							</template>
-							<NcActionLink v-if="published && shareUrl"
-								:href="shareUrl"
-								target="_blank"
-								rel="noopener">
-								<template #icon>
-									<Icon :path="icons.openNew" />
-								</template>
-								{{ t('advancedforms', 'Open published form') }}
-							</NcActionLink>
-							<NcActionButton v-else disabled>
-								<template #icon>
-									<Icon :path="icons.openNew" />
-								</template>
-								{{ t('advancedforms', 'Publish to get a public link') }}
-							</NcActionButton>
-						</NcActions>
+				<div class="af-bar__top">
+					<div class="af-bar__title">
+						<h2 class="af-bar__name">
+							{{ draft.title }}
+						</h2>
+						<span class="af-bar__status" :class="'af-bar__status--' + saveState" role="status">{{ saveLabel }}</span>
+						<span v-if="published" class="af-bar__chip">
+							{{ t('advancedforms', 'Published') }}
+						</span>
+						<span v-else class="af-bar__chip af-bar__chip--quiet">{{ t('advancedforms', 'Draft') }}</span>
 					</div>
+					<div class="af-bar__icons">
+						<NcButton variant="tertiary"
+							:aria-label="t('advancedforms', 'Preview')"
+							:title="t('advancedforms', 'Preview')"
+							@click="previewOpen = true">
+							<template #icon>
+								<Icon :path="icons.preview" />
+							</template>
+						</NcButton>
+						<NcButton v-if="published && shareUrl"
+							variant="tertiary"
+							:href="shareUrl"
+							target="_blank"
+							rel="noopener"
+							:aria-label="t('advancedforms', 'Open published form')"
+							:title="t('advancedforms', 'Open published form')">
+							<template #icon>
+								<Icon :path="icons.openNew" />
+							</template>
+						</NcButton>
+					</div>
+				</div>
+				<div class="af-bar__tools">
+					<FormNav :form-id="formId" active="edit" />
+					<SegmentedControl v-model="canvasWidth"
+						class="af-bar__device"
+						:group-label="t('advancedforms', 'Canvas width')"
+						:options="[
+							{ value: 'desktop', label: t('advancedforms', 'Desktop'), icon: icons.desktop },
+							{ value: 'mobile', label: t('advancedforms', 'Mobile'), icon: icons.mobile },
+						]"
+						icon-only />
+					<NcButton variant="primary" class="af-bar__publish" :disabled="!canPublish" @click="publish">
+						{{ publishing ? t('advancedforms', 'Publishing…') : t('advancedforms', 'Publish') }}
+					</NcButton>
 				</div>
 			</header>
 
@@ -521,14 +502,41 @@ async function onDeleteConfirmed(): Promise<void> {
 
 .af-bar {
 	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	justify-content: space-between;
-	gap: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 4);
+	flex-direction: column;
+	gap: calc(var(--default-grid-baseline) * 2);
 	/* Leave room for the sidebar toggle that Nextcloud pins to the top corner. */
 	padding: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 4) calc(var(--default-grid-baseline) * 2) calc(var(--default-clickable-area) + var(--default-grid-baseline) * 4);
 	border-bottom: 1px solid var(--color-border);
 	background: var(--color-main-background);
+}
+
+.af-bar__top {
+	display: flex;
+	align-items: center;
+	gap: calc(var(--default-grid-baseline) * 2);
+	min-width: 0;
+}
+
+.af-bar__icons {
+	display: flex;
+	flex: 0 0 auto;
+	gap: 2px;
+}
+
+/* View switch on the left, device in the middle, Publish on the right. */
+.af-bar__tools {
+	display: grid;
+	grid-template-columns: 1fr auto 1fr;
+	align-items: center;
+	gap: calc(var(--default-grid-baseline) * 2);
+}
+
+.af-bar__tools > :first-child {
+	justify-self: start;
+}
+
+.af-bar__publish {
+	justify-self: end;
 }
 
 .af-bar__title {
@@ -572,39 +580,14 @@ async function onDeleteConfirmed(): Promise<void> {
 	color: var(--color-text-maxcontrast);
 }
 
-.af-bar__actions {
-	display: flex;
-	align-items: center;
-	gap: var(--default-grid-baseline);
-}
-
 .af-bar__device {
+	justify-self: center;
 	min-width: 84px;
 }
 
-/* Publish and its menu arrow read as one button. */
-.af-bar__split {
-	display: inline-flex;
-	align-items: center;
-	gap: 1px;
-}
-
-.af-bar__split-main:deep(.button-vue) {
-	border-start-end-radius: 0;
-	border-end-end-radius: 0;
-}
-
-.af-bar__split-more:deep(.button-vue) {
-	border-start-start-radius: 0;
-	border-end-start-radius: 0;
-	width: calc(var(--default-clickable-area) - 10px);
-	min-width: 0;
-	padding: 0;
-}
-
 @media (max-width: 700px) {
-	.af-bar__actions {
-		flex-wrap: wrap;
+	.af-bar__tools {
+		grid-template-columns: auto 1fr auto;
 	}
 }
 
