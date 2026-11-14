@@ -14,7 +14,7 @@ import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { computed } from 'vue'
-import { defaultWhen, emailFields, setWhen, unknownPlaceholders, usesResponseSlot, withPlaceholder } from '../../builder/actions.ts'
+import { defaultWhen, emailFields, readablePlaceholders, setWhen, unknownPlaceholders, usesResponseSlot, withPlaceholder } from '../../builder/actions.ts'
 import { describeError } from '../../builder/errors.ts'
 import { actionLabel } from '../../builder/labels.ts'
 import { sourceFields } from '../../builder/rules.ts'
@@ -54,14 +54,14 @@ const title = computed(() => actionLabel(props.action.type))
 const summary = computed(() => {
 	const action = props.action
 	switch (action.type) {
-		case 'message': return action.text
-		case 'redirect': return action.url
+		case 'message': return readablePlaceholders(action.text, props.definition)
+		case 'redirect': return readablePlaceholders(action.url, props.definition)
 		case 'webhook': return action.url
 		default: {
 			const to = typeof action.to === 'string'
 				? action.to
 				: (props.definition.fields[action.to.field]?.label || t('advancedforms', 'the respondent'))
-			return t('advancedforms', 'To {to}: {subject}', { to: to || '…', subject: action.subject })
+			return t('advancedforms', 'To {to}: {subject}', { to: to || '…', subject: readablePlaceholders(action.subject, props.definition) })
 		}
 	}
 })

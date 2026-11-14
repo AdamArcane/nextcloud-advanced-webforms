@@ -16,6 +16,7 @@ import {
 	moveAction,
 	removeAction,
 	setWhen,
+	readablePlaceholders,
 	unknownPlaceholders,
 	unreachableResponseActions,
 	updateAction,
@@ -155,5 +156,21 @@ describe('errors and lookups', () => {
 	it('lists email fields for recipients', () => {
 		const { def, email } = form()
 		expect(emailFields(def).map((f) => f.id)).toEqual([email])
+	})
+})
+
+describe('readablePlaceholders', () => {
+	it('shows field labels instead of ids, and leaves unknown ones visible', () => {
+		const { def, name } = form()
+		def.fields[name].label = 'Full name'
+		expect(readablePlaceholders(`Hi {${name}}, see {f_gone}.`, def)).toBe('Hi {Full name}, see {f_gone}.')
+		expect(readablePlaceholders('plain', def)).toBe('plain')
+	})
+
+	it('does not touch the stored text', () => {
+		const { def, name } = form()
+		const text = `Hi {${name}}`
+		readablePlaceholders(text, def)
+		expect(text).toBe(`Hi {${name}}`)
 	})
 })

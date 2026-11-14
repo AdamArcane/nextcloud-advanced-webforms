@@ -136,3 +136,16 @@ export function unknownPlaceholders(text: string, definition: DraftDefinition): 
 	}
 	return unknown
 }
+
+/**
+ * `text` with each `{fieldId}` shown as `{Field label}`, for summaries. Display
+ * only: the stored text keeps the ids, because labels can change. Unknown ids
+ * are left as they are so a broken placeholder stays visible.
+ */
+export function readablePlaceholders(text: string, definition: DraftDefinition): string {
+	return text.replace(/\{([^{}]*)\}/g, (whole, id: string) => {
+		const field = definition.fields[id]
+		const label = field?.label || field?.text
+		return label ? '{' + label + '}' : whole
+	})
+}

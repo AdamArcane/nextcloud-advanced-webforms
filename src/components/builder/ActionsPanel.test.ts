@@ -225,3 +225,14 @@ describe('ActionsPanel', () => {
 		expect(wrapper.text()).toContain('{f_gone}')
 	})
 })
+
+describe('ActionsPanel summaries', () => {
+	it('shows answers by their field label in the collapsed summary', () => {
+		const { def, name } = base()
+		def.fields[name].label = 'Full name'
+		let withMessage = addAction(def, 'message').definition
+		withMessage = updateAction(withMessage, 0, { ...withMessage.actions[0], text: `Thanks {${name}}!` } as FormAction)
+		const wrapper = mountPanel(withMessage)
+		expect(wrapper.find('.af-action__summary').text()).toBe('Thanks {Full name}!')
+	})
+})
