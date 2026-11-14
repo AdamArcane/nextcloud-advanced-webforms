@@ -43,6 +43,18 @@ msgstr ""
 msgid "A group of conditions is empty or nested too deeply."
 msgstr ""
 
+#: src/builder/fieldTypeNames.ts:49
+msgid "A line between sections"
+msgstr ""
+
+#: src/builder/fieldTypeNames.ts:36
+msgid "A message or a longer answer"
+msgstr ""
+
+#: src/builder/fieldTypeNames.ts:35
+msgid "A name or a short answer"
+msgstr ""
+
 #: src/components/builder/FieldProperties.vue:128
 msgid "A published field used this ID before it was deleted, so it cannot be used again."
 msgstr ""
@@ -53,6 +65,14 @@ msgstr ""
 
 #: src/components/builder/ActionCard.vue:332
 msgid "A secret is set"
+msgstr ""
+
+#: src/builder/fieldTypeNames.ts:43
+msgid "A single yes or no"
+msgstr ""
+
+#: src/builder/fieldTypeNames.ts:47
+msgid "A title for a section"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:66
@@ -84,7 +104,8 @@ msgstr ""
 msgid "Add a field beside this one"
 msgstr ""
 
-#: src/components/builder/AddFieldMenu.vue:51
+#: src/components/builder/AddFieldMenu.vue:74
+#: src/components/builder/AddFieldMenu.vue:75
 msgid "Add a field here"
 msgstr ""
 
@@ -142,6 +163,7 @@ msgstr ""
 msgid "Adds an answer to the end of the body."
 msgstr ""
 
+#: src/builder/fieldTypeNames.ts:59
 #: src/components/builder/FieldProperties.vue:476
 msgid "Advanced"
 msgstr ""
@@ -202,6 +224,10 @@ msgstr ""
 
 #: src/components/builder/FieldProperties.vue:169
 msgid "Archives (zip, 7z)"
+msgstr ""
+
+#: src/builder/fieldTypeNames.ts:46
+msgid "Attach files to the response"
 msgstr ""
 
 #: src/components/entries/DeliveryRow.vue:62
@@ -267,16 +293,27 @@ msgstr ""
 msgid "Change ID"
 msgstr ""
 
-#: src/components/builder/AddFieldMenu.vue:38
-#: src/components/builder/FieldCard.vue:46
+#: src/builder/fieldTypeNames.ts:21
 msgid "Checkbox"
+msgstr ""
+
+#: src/builder/fieldTypeNames.ts:38
+msgid "Checked to be a phone number"
+msgstr ""
+
+#: src/builder/fieldTypeNames.ts:37
+msgid "Checked to be an email address"
+msgstr ""
+
+#: src/builder/fieldTypeNames.ts:57
+msgid "Choices"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:208
 msgid "Choose {name}"
 msgstr ""
 
-#: src/components/builder/FieldCard.vue:102
+#: src/components/builder/FieldCard.vue:86
 #: src/components/render/FileInput.vue:83
 msgid "Choose a file"
 msgstr ""
@@ -297,7 +334,7 @@ msgstr ""
 msgid "Choose at most"
 msgstr ""
 
-#: src/components/builder/FieldCard.vue:102
+#: src/components/builder/FieldCard.vue:86
 #: src/components/render/FileInput.vue:83
 msgid "Choose files"
 msgstr ""
@@ -339,11 +376,11 @@ msgid "Comparison"
 msgstr ""
 
 #: src/components/builder/ActionCard.vue:221
-#: src/components/builder/FieldCard.vue:74
+#: src/components/builder/FieldCard.vue:58
 msgid "Conditional"
 msgstr ""
 
-#: src/components/builder/AddFieldMenu.vue:66
+#: src/builder/fieldTypeNames.ts:60
 msgid "Content"
 msgstr ""
 
@@ -399,9 +436,12 @@ msgstr ""
 msgid "Create your first form"
 msgstr ""
 
-#: src/components/builder/AddFieldMenu.vue:39
-#: src/components/builder/FieldCard.vue:47
+#: src/builder/fieldTypeNames.ts:22
 msgid "Date"
+msgstr ""
+
+#: src/builder/fieldTypeNames.ts:58
+msgid "Date and time"
 msgstr ""
 
 #: src/components/builder/BuilderView.vue:498
@@ -471,8 +511,7 @@ msgstr ""
 msgid "Desktop"
 msgstr ""
 
-#: src/components/builder/AddFieldMenu.vue:43
-#: src/components/builder/FieldCard.vue:51
+#: src/builder/fieldTypeNames.ts:27
 msgid "Divider"
 msgstr ""
 
@@ -502,8 +541,7 @@ msgstr ""
 msgid "Drag to resize, or use the arrow keys"
 msgstr ""
 
-#: src/components/builder/AddFieldMenu.vue:35
-#: src/components/builder/FieldCard.vue:43
+#: src/builder/fieldTypeNames.ts:18
 msgid "Dropdown"
 msgstr ""
 
@@ -527,12 +565,11 @@ msgstr ""
 msgid "Edit"
 msgstr ""
 
-#: src/components/builder/FieldCard.vue:66
+#: src/components/builder/FieldCard.vue:50
 msgid "Edit field: {name}"
 msgstr ""
 
-#: src/components/builder/AddFieldMenu.vue:32
-#: src/components/builder/FieldCard.vue:40
+#: src/builder/fieldTypeNames.ts:15
 #: src/entries/deliveryText.ts:21
 msgid "Email"
 msgstr ""
@@ -602,6 +639,10 @@ msgstr ""
 
 #: src/components/builder/FieldProperties.vue:441
 msgid "Field width"
+msgstr ""
+
+#: src/builder/fieldTypeNames.ts:24
+msgid "File upload"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:319
@@ -689,8 +730,7 @@ msgstr ""
 msgid "Give this field a label."
 msgstr ""
 
-#: src/components/builder/AddFieldMenu.vue:41
-#: src/components/builder/FieldCard.vue:49
+#: src/builder/fieldTypeNames.ts:25
 msgid "Heading"
 msgstr ""
 
@@ -749,10 +789,6 @@ msgstr ""
 
 #: src/builder/labels.ts:17
 msgid "includes"
-msgstr ""
-
-#: src/components/builder/AddFieldMenu.vue:56
-msgid "Inputs"
 msgstr ""
 
 #: src/components/builder/PlaceholderMenu.vue:28
@@ -823,11 +859,11 @@ msgstr ""
 msgid "Label"
 msgstr ""
 
-#: src/components/builder/FieldCard.vue:80
+#: src/components/builder/FieldCard.vue:64
 msgid "Label beside"
 msgstr ""
 
-#: src/components/builder/FieldCard.vue:77
+#: src/components/builder/FieldCard.vue:61
 msgid "Label hidden"
 msgstr ""
 
@@ -889,8 +925,7 @@ msgstr ""
 msgid "Login required"
 msgstr ""
 
-#: src/components/builder/AddFieldMenu.vue:31
-#: src/components/builder/FieldCard.vue:39
+#: src/builder/fieldTypeNames.ts:14
 msgid "Long text"
 msgstr ""
 
@@ -995,8 +1030,7 @@ msgstr ""
 msgid "Moves above the field when there is not enough room."
 msgstr ""
 
-#: src/components/builder/AddFieldMenu.vue:37
-#: src/components/builder/FieldCard.vue:45
+#: src/builder/fieldTypeNames.ts:20
 msgid "Multiple choice"
 msgstr ""
 
@@ -1058,6 +1092,10 @@ msgstr ""
 msgid "No field selected"
 msgstr ""
 
+#: src/components/builder/AddFieldMenu.vue:107
+msgid "No field type matches that."
+msgstr ""
+
 #: src/components/entries/EntriesView.vue:278
 msgid "No responses yet"
 msgstr ""
@@ -1094,8 +1132,7 @@ msgstr ""
 msgid "Nothing was sent for this response."
 msgstr ""
 
-#: src/components/builder/AddFieldMenu.vue:34
-#: src/components/builder/FieldCard.vue:42
+#: src/builder/fieldTypeNames.ts:17
 msgid "Number"
 msgstr ""
 
@@ -1184,18 +1221,36 @@ msgstr ""
 msgid "Pages"
 msgstr ""
 
-#: src/components/builder/AddFieldMenu.vue:42
-#: src/components/builder/FieldCard.vue:50
+#: src/builder/fieldTypeNames.ts:26
 msgid "Paragraph"
 msgstr ""
 
-#: src/components/builder/AddFieldMenu.vue:33
-#: src/components/builder/FieldCard.vue:41
+#: src/builder/fieldTypeNames.ts:16
 msgid "Phone"
+msgstr ""
+
+#: src/builder/fieldTypeNames.ts:44
+msgid "Pick a day"
+msgstr ""
+
+#: src/builder/fieldTypeNames.ts:45
+msgid "Pick a time"
 msgstr ""
 
 #: src/components/builder/ActionCard.vue:262
 msgid "Pick an email field or type an address"
+msgstr ""
+
+#: src/builder/fieldTypeNames.ts:42
+msgid "Pick any number of options"
+msgstr ""
+
+#: src/builder/fieldTypeNames.ts:40
+msgid "Pick one from a list"
+msgstr ""
+
+#: src/builder/fieldTypeNames.ts:41
+msgid "Pick one, all options visible"
 msgstr ""
 
 #: src/components/builder/ActionCard.vue:293
@@ -1352,6 +1407,11 @@ msgstr ""
 msgid "Saving…"
 msgstr ""
 
+#: src/components/builder/AddFieldMenu.vue:87
+#: src/components/builder/AddFieldMenu.vue:88
+msgid "Search field types"
+msgstr ""
+
 #: src/components/builder/BuilderView.vue:538
 msgid "Select a field on the canvas to edit it."
 msgstr ""
@@ -1426,8 +1486,7 @@ msgstr ""
 msgid "Sharing"
 msgstr ""
 
-#: src/components/builder/AddFieldMenu.vue:30
-#: src/components/builder/FieldCard.vue:38
+#: src/builder/fieldTypeNames.ts:13
 msgid "Short text"
 msgstr ""
 
@@ -1480,8 +1539,7 @@ msgstr ""
 msgid "Signing secret"
 msgstr ""
 
-#: src/components/builder/AddFieldMenu.vue:36
-#: src/components/builder/FieldCard.vue:44
+#: src/builder/fieldTypeNames.ts:19
 msgid "Single choice"
 msgstr ""
 
@@ -1500,6 +1558,10 @@ msgstr ""
 
 #: src/components/entries/EntriesView.vue:336
 msgid "Some deliveries are overdue. Nextcloud sends them with its background jobs, which do not seem to be running. Ask your administrator to switch background jobs to Cron (Administration settings, Basic settings)."
+msgstr ""
+
+#: src/builder/fieldTypeNames.ts:48
+msgid "Some explanatory text"
 msgstr ""
 
 #: src/entries/deliveryText.ts:46
@@ -1547,6 +1609,7 @@ msgstr ""
 msgid "Tablet"
 msgstr ""
 
+#: src/builder/fieldTypeNames.ts:56
 #: src/components/builder/FieldProperties.vue:299
 msgid "Text"
 msgstr ""
@@ -1688,7 +1751,7 @@ msgstr ""
 msgid "This answer is not valid."
 msgstr ""
 
-#: src/components/builder/FieldCard.vue:73
+#: src/components/builder/FieldCard.vue:57
 msgid "This field has conditional logic"
 msgstr ""
 
@@ -1801,8 +1864,7 @@ msgstr ""
 msgid "Ticked"
 msgstr ""
 
-#: src/components/builder/AddFieldMenu.vue:40
-#: src/components/builder/FieldCard.vue:48
+#: src/builder/fieldTypeNames.ts:23
 msgid "Time"
 msgstr ""
 
@@ -1849,7 +1911,7 @@ msgid "Unsaved changes"
 msgstr ""
 
 #: src/components/builder/ConditionRow.vue:44
-#: src/components/builder/FieldCard.vue:96
+#: src/components/builder/FieldCard.vue:80
 #: src/components/builder/LogicPanel.vue:34
 msgid "Untitled field"
 msgstr ""
@@ -1957,6 +2019,10 @@ msgstr ""
 
 #: src/components/builder/FormProperties.vue:135
 msgid "Width only applies on larger screens. On phones the form fills the screen and fields sit one under another."
+msgstr ""
+
+#: src/builder/fieldTypeNames.ts:39
+msgid "With optional minimum and maximum"
 msgstr ""
 
 #: src/components/builder/LogicPanel.vue:82

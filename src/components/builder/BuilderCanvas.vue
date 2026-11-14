@@ -517,7 +517,8 @@ function codes(fieldId: string): string[] {
 }
 
 .af-gap:hover :deep(.button-vue),
-.af-gap:focus-within :deep(.button-vue) {
+.af-gap:focus-within :deep(.button-vue),
+.af-gap :deep(.button-vue[aria-expanded='true']) {
 	opacity: 1;
 	pointer-events: auto;
 }

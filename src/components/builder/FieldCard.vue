@@ -9,6 +9,7 @@ import type { FormField, LabelPosition } from '../../types.ts'
 import { t } from '@nextcloud/l10n'
 import { computed } from 'vue'
 import { describeError } from '../../builder/errors.ts'
+import { fieldTypeName } from '../../builder/fieldTypeNames.ts'
 import { fieldTypeIcon } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
 
@@ -33,25 +34,7 @@ const hasOptions = computed(() => ['select', 'radio', 'checkboxes'].includes(pro
 const hiddenLabel = computed(() => props.labelPosition === 'hidden')
 const inlineLabel = computed(() => props.labelPosition === 'inline')
 
-const typeLabel = computed(() => {
-	switch (props.field.type) {
-		case 'text': return t('advancedforms', 'Short text')
-		case 'textarea': return t('advancedforms', 'Long text')
-		case 'email': return t('advancedforms', 'Email')
-		case 'phone': return t('advancedforms', 'Phone')
-		case 'number': return t('advancedforms', 'Number')
-		case 'select': return t('advancedforms', 'Dropdown')
-		case 'radio': return t('advancedforms', 'Single choice')
-		case 'checkboxes': return t('advancedforms', 'Multiple choice')
-		case 'checkbox': return t('advancedforms', 'Checkbox')
-		case 'date': return t('advancedforms', 'Date')
-		case 'time': return t('advancedforms', 'Time')
-		case 'file': return t('advancedforms', 'File upload')
-		case 'heading': return t('advancedforms', 'Heading')
-		case 'paragraph': return t('advancedforms', 'Paragraph')
-		default: return t('advancedforms', 'Divider')
-	}
-})
+const typeLabel = computed(() => fieldTypeName(props.field.type))
 
 const alignStyle = computed(() => (props.field.align === 'center' || props.field.align === 'end' ? { textAlign: props.field.align } : undefined))
 

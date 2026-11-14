@@ -14,29 +14,39 @@ import type { Condition, Rule } from '../rules/types.ts'
 export const SPANS = [3, 4, 6, 8, 9, 12] as const
 const ROW_WIDTH = 12
 
+/** How the add menu groups field types. Names are in fieldTypeNames.ts. */
+export type FieldGroup = 'text' | 'choice' | 'datetime' | 'advanced' | 'content'
+
+/** The order the groups appear in. */
+export const FIELD_GROUPS: readonly FieldGroup[] = ['text', 'choice', 'datetime', 'advanced', 'content']
+
 export interface FieldTypeInfo {
 	type: string
+	/** English name, used for ids and tests. The words people read come from fieldTypeNames.ts. */
 	label: string
+	group: FieldGroup
 	/** Display types hold no value. */
 	display?: boolean
 }
 
+// To add a field type: an entry here, a name and icon (fieldTypeNames.ts, icons.ts), a default in
+// defaultField below, and its rendering on the canvas and the public form.
 export const FIELD_TYPES: readonly FieldTypeInfo[] = [
-	{ type: 'text', label: 'Short text' },
-	{ type: 'textarea', label: 'Long text' },
-	{ type: 'email', label: 'Email' },
-	{ type: 'phone', label: 'Phone' },
-	{ type: 'number', label: 'Number' },
-	{ type: 'select', label: 'Dropdown' },
-	{ type: 'radio', label: 'Single choice' },
-	{ type: 'checkboxes', label: 'Multiple choice' },
-	{ type: 'checkbox', label: 'Checkbox' },
-	{ type: 'date', label: 'Date' },
-	{ type: 'time', label: 'Time' },
-	{ type: 'file', label: 'File upload' },
-	{ type: 'heading', label: 'Heading', display: true },
-	{ type: 'paragraph', label: 'Paragraph', display: true },
-	{ type: 'divider', label: 'Divider', display: true },
+	{ type: 'text', label: 'Short text', group: 'text' },
+	{ type: 'textarea', label: 'Long text', group: 'text' },
+	{ type: 'email', label: 'Email', group: 'text' },
+	{ type: 'phone', label: 'Phone', group: 'text' },
+	{ type: 'number', label: 'Number', group: 'text' },
+	{ type: 'select', label: 'Dropdown', group: 'choice' },
+	{ type: 'radio', label: 'Single choice', group: 'choice' },
+	{ type: 'checkboxes', label: 'Multiple choice', group: 'choice' },
+	{ type: 'checkbox', label: 'Checkbox', group: 'choice' },
+	{ type: 'date', label: 'Date', group: 'datetime' },
+	{ type: 'time', label: 'Time', group: 'datetime' },
+	{ type: 'file', label: 'File upload', group: 'advanced' },
+	{ type: 'heading', label: 'Heading', group: 'content', display: true },
+	{ type: 'paragraph', label: 'Paragraph', group: 'content', display: true },
+	{ type: 'divider', label: 'Divider', group: 'content', display: true },
 ]
 
 export function fieldTypeInfo(type: string): FieldTypeInfo | undefined {
