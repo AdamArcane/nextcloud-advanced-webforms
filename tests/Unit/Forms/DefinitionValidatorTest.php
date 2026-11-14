@@ -182,6 +182,18 @@ class DefinitionValidatorTest extends TestCase {
 		}));
 	}
 
+	public function testOptionValuesMayBeTwoCharactersButNotOne(): void {
+		$this->assertSame([], $this->codes(static function (array $d): array {
+			$d['fields']['f_kind']['options'][1]['value'] = 'us';
+			$d['rules'][0]['when']['all'][0]['value'] = 'us';
+			return $d;
+		}));
+		$this->assertContains('option_bad_value', $this->codes(static function (array $d): array {
+			$d['fields']['f_kind']['options'][1]['value'] = 'u';
+			return $d;
+		}));
+	}
+
 	public function testSelectNeedsOptions(): void {
 		$codes = $this->codes(static function (array $d): array {
 			$d['fields']['f_kind']['options'] = [];

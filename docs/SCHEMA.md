@@ -248,8 +248,16 @@ HTML is never interpreted anywhere (avoids stored XSS on public pages).
 
 ### 4.3 Option values
 
-`options[].value` follows the same ID pattern as field IDs and is immutable;
-`label` can change freely. Rules compare option values, never labels.
+`options[].value` matches `^[a-z][a-z0-9_]{1,31}$` (like field IDs, but two
+characters are allowed so codes such as `us` or `de` work) and is immutable;
+`label` can change freely. Rules compare option values, never labels. A field has
+at most 300 options.
+
+The builder can fill the options from a built-in list (countries, US states,
+Canadian provinces, Australian states, months, weekdays, currencies, languages).
+The list is copied into the field, so it never changes under an existing form.
+Values are lowercase standard codes (`us`, `us_ca`, `eur`, `january`); labels are
+in the owner's language where the browser can translate them.
 
 ### 4.4 Phone fields
 

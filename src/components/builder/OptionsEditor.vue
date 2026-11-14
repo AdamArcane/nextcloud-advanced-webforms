@@ -6,10 +6,13 @@
 <script setup lang="ts">
 import type { FieldOption } from '../../types.ts'
 
-import { t } from '@nextcloud/l10n'
+import { getCanonicalLocale, t } from '@nextcloud/l10n'
+import NcActionButton from '@nextcloud/vue/components/NcActionButton'
+import NcActions from '@nextcloud/vue/components/NcActions'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { randomId } from '../../builder/definition.ts'
+import { OPTION_LIST_IDS, optionList, type OptionListId } from '../../builder/optionLists.ts'
 
 const props = defineProps<{
 	options: FieldOption[]
@@ -31,6 +34,22 @@ function add(): void {
 	// The value is the option's identity (rules compare it), so it is generated once and never edited.
 	const value = randomId('opt', new Set(props.options.map((option) => option.value)))
 	commit([...props.options, { value, label: t('advancedforms', 'Option {n}', { n: props.options.length + 1 }) }])
+}
+
+const listNames: Record<OptionListId, () => string> = {
+	countries: () => t('advancedforms', 'Countries'),
+	usStates: () => t('advancedforms', 'US states'),
+	caProvinces: () => t('advancedforms', 'Canadian provinces'),
+	auStates: () => t('advancedforms', 'Australian states'),
+	currencies: () => t('advancedforms', 'Currencies'),
+	languages: () => t('advancedforms', 'Languages'),
+	months: () => t('advancedforms', 'Months'),
+	weekdays: () => t('advancedforms', 'Days of the week'),
+}
+
+/** Replace the options with a ready-made list, labelled in the owner's language. The list is copied, not linked. */
+function useList(id: OptionListId): void {
+	commit(optionList(id, getCanonicalLocale()))
 }
 
 function remove(index: number): void {
@@ -75,9 +94,19 @@ function move(index: number, by: -1 | 1): void {
 				✕
 			</NcButton>
 		</div>
-		<NcButton variant="secondary" class="af-options__add" @click="add">
-			{{ t('advancedforms', 'Add option') }}
-		</NcButton>
+		<div class="af-options__buttons">
+			<NcButton variant="secondary" @click="add">
+				{{ t('advancedforms', 'Add option') }}
+			</NcButton>
+			<NcActions :menu-name="t('advancedforms', 'Use a list')" variant="tertiary" :force-name="true">
+				<NcActionButton v-for="id in OPTION_LIST_IDS" :key="id" @click="useList(id)">
+					{{ listNames[id]() }}
+				</NcActionButton>
+			</NcActions>
+		</div>
+		<p class="af-options__note">
+			{{ t('advancedforms', 'A list replaces the options above. It is copied into this field, so you can still edit it.') }}
+		</p>
 	</div>
 </template>
 
@@ -99,8 +128,17 @@ function move(index: number, by: -1 | 1): void {
 	min-width: 0;
 }
 
-.af-options__add {
-	align-self: flex-start;
+.af-options__buttons {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--default-grid-baseline);
 	margin-top: var(--default-grid-baseline);
+}
+
+.af-options__note {
+	margin: 0;
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
 }
 </style>

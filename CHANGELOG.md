@@ -7,6 +7,9 @@
 
 ## 0.3.0 - Unreleased
 
+- Select, radio and checkbox fields can be filled from a ready-made list (countries, US states,
+  Canadian provinces, Australian states, currencies, languages, months, weekdays). Option values may
+  now be two characters, and a field may have up to 300 options.
 - File upload fields. Per field: how many files (1 to 10), the largest size, which types
   (images, documents, archives, audio, video, or listed extensions), who may upload
   (anyone or signed-in users) and where files go (a folder in the form owner's Files, or the

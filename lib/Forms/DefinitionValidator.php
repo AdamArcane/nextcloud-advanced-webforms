@@ -24,7 +24,9 @@ final class DefinitionValidator {
 	public const MAX_RULES = 100;
 	public const MAX_ACTIONS = 10;
 	public const MAX_ROWS = 100;
-	public const MAX_OPTIONS = 100;
+	public const MAX_OPTIONS = 300;
+	/** Option values may be two characters, so country and state codes (`us`, `de`) work as they are. */
+	public const OPTION_VALUE_PATTERN = '/^[a-z][a-z0-9_]{1,31}$/D';
 	public const SPANS = [3, 4, 6, 8, 9, 12];
 	public const LABEL_POSITIONS = ['above', 'inline', 'hidden'];
 	public const ACTION_TYPES = ['email', 'webhook', 'message', 'redirect'];
@@ -335,7 +337,7 @@ final class DefinitionValidator {
 				continue;
 			}
 			$value = $option['value'] ?? null;
-			if (!is_string($value) || preg_match(self::ID_PATTERN, $value) !== 1) {
+			if (!is_string($value) || preg_match(self::OPTION_VALUE_PATTERN, $value) !== 1) {
 				$this->err('option_bad_value', $optionPath . '.value');
 			} elseif (isset($seen[$value])) {
 				$this->err('option_duplicate_value', $optionPath . '.value');
