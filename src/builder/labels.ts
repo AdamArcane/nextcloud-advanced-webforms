@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+import type { ActionType } from '../types.ts'
 import type { RuleEffect } from '../rules/types.ts'
 
 import { t } from '@nextcloud/l10n'
@@ -32,5 +33,23 @@ export function effectLabel(effect: RuleEffect): string {
 		case 'show': return t('advancedforms', 'Show')
 		case 'hide': return t('advancedforms', 'Hide')
 		default: return t('advancedforms', 'Require')
+	}
+}
+
+export function actionLabel(type: ActionType): string {
+	switch (type) {
+		case 'message': return t('advancedforms', 'Show a message')
+		case 'redirect': return t('advancedforms', 'Redirect')
+		case 'email': return t('advancedforms', 'Send an email')
+		default: return t('advancedforms', 'Call a webhook')
+	}
+}
+
+export function actionHint(type: ActionType): string {
+	switch (type) {
+		case 'message': return t('advancedforms', 'Thank the respondent on the page after they send the form.')
+		case 'redirect': return t('advancedforms', 'Send the respondent to another page after they send the form.')
+		case 'email': return t('advancedforms', 'Email you, or the respondent, a copy of the answers.')
+		default: return t('advancedforms', 'Send the answers to another system, such as n8n or Zapier.')
 	}
 }

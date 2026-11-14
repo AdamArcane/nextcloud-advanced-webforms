@@ -56,3 +56,14 @@ export async function deleteForm(id: number): Promise<void> {
 export function publicFormUrl(token: string): string {
 	return window.location.origin + generateUrl('/apps/advancedforms/f/{token}', { token })
 }
+
+export interface WebhookSecret {
+	ref: string
+	/** Shown once. The server keeps it encrypted and cannot return it again. */
+	secret: string
+}
+
+/** Create a signing secret for a webhook, or replace the one under `ref`. */
+export function createWebhookSecret(id: number, ref?: string): Promise<WebhookSecret> {
+	return call(axios.post<WebhookSecret>(url('/forms/' + id + '/webhook-secret'), ref ? { ref } : {}))
+}

@@ -1,0 +1,406 @@
+<!--
+  - SPDX-FileCopyrightText: 2026 ArcaneX
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
+<script setup lang="ts">
+import type { DraftDefinition, EmailAction, FormAction, MessageAction, RedirectAction, WebhookAction } from '../../types.ts'
+
+import { t } from '@nextcloud/l10n'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
+import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
+import NcTextArea from '@nextcloud/vue/components/NcTextArea'
+import NcTextField from '@nextcloud/vue/components/NcTextField'
+import { computed } from 'vue'
+import { defaultWhen, emailFields, setWhen, unknownPlaceholders, usesResponseSlot, withPlaceholder } from '../../builder/actions.ts'
+import { describeError } from '../../builder/errors.ts'
+import { actionLabel } from '../../builder/labels.ts'
+import { sourceFields } from '../../builder/rules.ts'
+import ConditionGroup from './ConditionGroup.vue'
+import PlaceholderMenu from './PlaceholderMenu.vue'
+import SegmentedControl from './SegmentedControl.vue'
+
+const props = defineProps<{
+	action: FormAction
+	index: number
+	count: number
+	definition: DraftDefinition
+	expanded: boolean
+	errorCodes: string[]
+	/** A message or redirect that an earlier one always pre-empts. */
+	unreachable: boolean
+	/** A freshly generated secret to show once, for this action. */
+	revealedSecret: string | null
+	secretBusy: boolean
+	secretFailed: boolean
+}>()
+
+const emit = defineEmits<{
+	update: [action: FormAction]
+	remove: []
+	move: [by: -1 | 1]
+	toggle: []
+	generateSecret: []
+	dismissSecret: []
+}>()
+
+const sources = computed(() => sourceFields(props.definition))
+const emails = computed(() => emailFields(props.definition))
+const noForbidden: ReadonlySet<string> = new Set()
+
+const title = computed(() => actionLabel(props.action.type))
+const summary = computed(() => {
+	const action = props.action
+	switch (action.type) {
+		case 'message': return action.text
+		case 'redirect': return action.url
+		case 'webhook': return action.url
+		default: {
+			const to = typeof action.to === 'string'
+				? action.to
+				: (props.definition.fields[action.to.field]?.label || t('advancedforms', 'the respondent'))
+			return t('advancedforms', 'To {to}: {subject}', { to: to || '…', subject: action.subject })
+		}
+	}
+})
+
+const conditional = computed(() => props.action.when !== undefined)
+const whenGroup = computed(() => {
+	const when = props.action.when
+	return when && ('all' in when || 'any' in when) ? when : null
+})
+const canAddWhen = computed(() => defaultWhen(props.definition) !== null)
+
+/** Placeholders in the text that no longer match a field. */
+const brokenPlaceholders = computed(() => {
+	const texts: string[] = []
+	const action = props.action
+	if (action.type === 'message') {
+		texts.push(action.text)
+	} else if (action.type === 'redirect') {
+		texts.push(action.url)
+	} else if (action.type === 'email') {
+		texts.push(action.subject, action.body)
+	}
+	return [...new Set(texts.flatMap((text) => unknownPlaceholders(text, props.definition)))]
+})
+
+// The action types are a union, so narrow once per type for the template.
+const message = computed(() => props.action as MessageAction)
+const redirect = computed(() => props.action as RedirectAction)
+const email = computed(() => props.action as EmailAction)
+const webhook = computed(() => props.action as WebhookAction)
+
+function patch(changes: Record<string, unknown>): void {
+	emit('update', { ...props.action, ...changes } as FormAction)
+}
+
+function setWhenEnabled(enabled: boolean): void {
+	const next = enabled ? defaultWhen(props.definition) : null
+	emit('update', setWhen(props.action, next))
+}
+
+const recipientKind = computed(() => (typeof email.value.to === 'string' ? 'address' : 'field'))
+
+function setRecipientKind(kind: string): void {
+	if (kind === 'address') {
+		patch({ to: '' })
+	} else {
+		patch({ to: { field: emails.value[0]?.id ?? '' } })
+	}
+}
+
+const recipientField = computed(() => (typeof email.value.to === 'object' ? email.value.to.field : null))
+</script>
+
+<template>
+	<article class="af-action"
+		:class="{ 'af-action--error': errorCodes.length > 0, 'af-action--open': expanded }">
+		<button type="button"
+			class="af-action__head"
+			:aria-expanded="expanded"
+			@click="emit('toggle')">
+			<span class="af-action__title">{{ title }}</span>
+			<span v-if="usesResponseSlot(action)" class="af-action__chip">{{ t('advancedforms', 'Shown to respondent') }}</span>
+			<span v-if="conditional" class="af-action__chip">{{ t('advancedforms', 'Conditional') }}</span>
+			<span v-if="unreachable" class="af-action__chip af-action__chip--warn">{{ t('advancedforms', 'Never used') }}</span>
+			<span class="af-action__summary">{{ summary }}</span>
+			<span class="af-action__chevron" :class="{ 'af-action__chevron--open': expanded }" aria-hidden="true" />
+		</button>
+
+		<div v-if="expanded" class="af-action__body">
+			<NcNoteCard v-if="errorCodes.length > 0" type="warning">
+				<p v-for="code in errorCodes" :key="code">
+					{{ describeError(code) }}
+				</p>
+			</NcNoteCard>
+			<NcNoteCard v-if="unreachable" type="info">
+				{{ t('advancedforms', 'An earlier message or redirect always applies, so this one is never shown. Give the earlier one a condition, or move this one up.') }}
+			</NcNoteCard>
+			<NcNoteCard v-if="brokenPlaceholders.length > 0" type="warning">
+				{{ t('advancedforms', 'Uses answers that no longer exist: {names}', { names: brokenPlaceholders.map((name) => '{' + name + '}').join(', ') }) }}
+			</NcNoteCard>
+
+			<!-- Message -->
+			<template v-if="action.type === 'message'">
+				<NcTextArea :model-value="message.text"
+					:label="t('advancedforms', 'Message')"
+					rows="3"
+					@update:model-value="(value: string) => patch({ text: value })" />
+				<PlaceholderMenu :definition="definition" @pick="(id) => patch({ text: withPlaceholder(message.text, id) })" />
+			</template>
+
+			<!-- Redirect -->
+			<template v-else-if="action.type === 'redirect'">
+				<NcTextField :model-value="redirect.url"
+					:label="t('advancedforms', 'Address')"
+					:helper-text="t('advancedforms', 'Must start with https://. Answers can be added after the address, for example ?name=…')"
+					@update:model-value="(value: string | number) => patch({ url: String(value) })" />
+				<PlaceholderMenu :definition="definition" @pick="(id) => patch({ url: withPlaceholder(redirect.url, id) })" />
+			</template>
+
+			<!-- Email -->
+			<template v-else-if="action.type === 'email'">
+				<div class="af-action__group">
+					<span class="af-action__caption">{{ t('advancedforms', 'Send to') }}</span>
+					<SegmentedControl :model-value="recipientKind"
+						:group-label="t('advancedforms', 'Who receives the email')"
+						:options="[
+							{ value: 'address', label: t('advancedforms', 'An address') },
+							{ value: 'field', label: t('advancedforms', 'The respondent'), disabled: emails.length === 0, title: emails.length === 0 ? t('advancedforms', 'Add an email field first') : undefined },
+						]"
+						@update:model-value="(value) => setRecipientKind(String(value))" />
+				</div>
+				<NcTextField v-if="typeof email.to === 'string'"
+					:model-value="email.to"
+					type="email"
+					:label="t('advancedforms', 'Email address')"
+					@update:model-value="(value: string | number) => patch({ to: String(value) })" />
+				<template v-else>
+					<NcSelect :model-value="recipientField"
+						:input-label="t('advancedforms', 'Email field')"
+						:options="emails"
+						:reduce="(option: { id: string }) => option.id"
+						:clearable="false"
+						label="label"
+						@update:model-value="(id: string) => patch({ to: { field: id } })" />
+					<p class="af-action__hint">
+						{{ t('advancedforms', 'Sent to the address the respondent typed. To limit abuse, at most 30 such emails are sent per hour for this form.') }}
+					</p>
+				</template>
+				<NcTextField :model-value="email.subject"
+					:label="t('advancedforms', 'Subject')"
+					@update:model-value="(value: string | number) => patch({ subject: String(value) })" />
+				<NcTextArea :model-value="email.body"
+					:label="t('advancedforms', 'Body')"
+					rows="6"
+					@update:model-value="(value: string) => patch({ body: value })" />
+				<div class="af-action__inserts">
+					<PlaceholderMenu :definition="definition" @pick="(id) => patch({ body: withPlaceholder(email.body, id) })" />
+					<span class="af-action__hint">{{ t('advancedforms', 'Adds an answer to the end of the body.') }}</span>
+				</div>
+			</template>
+
+			<!-- Webhook -->
+			<template v-else>
+				<NcTextField :model-value="webhook.url"
+					:label="t('advancedforms', 'Webhook address')"
+					:helper-text="t('advancedforms', 'Must start with https://. Nextcloud blocks addresses on private networks unless an administrator allows them.')"
+					@update:model-value="(value: string | number) => patch({ url: String(value) })" />
+
+				<div class="af-action__group">
+					<span class="af-action__caption">{{ t('advancedforms', 'Signing secret') }}</span>
+					<p class="af-action__hint">
+						{{ t('advancedforms', 'Each request is signed so the receiver can check it came from this form. The signature is in the X-AdvancedForms-Signature header.') }}
+					</p>
+					<NcNoteCard v-if="revealedSecret" type="success">
+						<p><strong>{{ t('advancedforms', 'Copy this secret now. It will not be shown again.') }}</strong></p>
+						<code class="af-action__secret">{{ revealedSecret }}</code>
+						<NcButton variant="tertiary" @click="emit('dismissSecret')">
+							{{ t('advancedforms', 'I have copied it') }}
+						</NcButton>
+					</NcNoteCard>
+					<NcNoteCard v-if="secretFailed" type="error">
+						{{ t('advancedforms', 'Could not create a secret. Try again.') }}
+					</NcNoteCard>
+					<div class="af-action__row">
+						<span v-if="webhook.secretRef && !revealedSecret" class="af-action__ok">{{ t('advancedforms', 'A secret is set') }}</span>
+						<NcButton variant="secondary" :disabled="secretBusy" @click="emit('generateSecret')">
+							{{ webhook.secretRef ? t('advancedforms', 'Generate a new secret') : t('advancedforms', 'Generate a secret') }}
+						</NcButton>
+					</div>
+					<p v-if="!webhook.secretRef" class="af-action__hint">
+						{{ t('advancedforms', 'Without a secret the request is sent unsigned.') }}
+					</p>
+				</div>
+			</template>
+
+			<!-- When -->
+			<div class="af-action__group">
+				<NcCheckboxRadioSwitch type="switch"
+					:model-value="conditional"
+					:disabled="!conditional && !canAddWhen"
+					@update:model-value="setWhenEnabled">
+					{{ t('advancedforms', 'Only when the answers match') }}
+				</NcCheckboxRadioSwitch>
+				<ConditionGroup v-if="whenGroup"
+					:node="whenGroup"
+					:depth="1"
+					:definition="definition"
+					:sources="sources"
+					:forbidden="noForbidden"
+					:removable="false"
+					@update="(when) => emit('update', setWhen(action, when))"
+					@remove="setWhenEnabled(false)" />
+			</div>
+
+			<div class="af-action__footer">
+				<NcButton variant="tertiary" :disabled="index === 0" :aria-label="t('advancedforms', 'Move action up')" @click="emit('move', -1)">
+					↑
+				</NcButton>
+				<NcButton variant="tertiary" :disabled="index === count - 1" :aria-label="t('advancedforms', 'Move action down')" @click="emit('move', 1)">
+					↓
+				</NcButton>
+				<NcButton variant="tertiary" @click="emit('remove')">
+					{{ t('advancedforms', 'Delete action') }}
+				</NcButton>
+			</div>
+		</div>
+	</article>
+</template>
+
+<style scoped>
+.af-action {
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large);
+	background: var(--color-main-background);
+	transition: border-color 0.12s ease;
+}
+
+.af-action--error {
+	border-color: var(--color-error);
+}
+
+.af-action__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--default-grid-baseline) calc(var(--default-grid-baseline) * 2);
+	position: relative;
+	width: 100%;
+	box-sizing: border-box;
+	padding: calc(var(--default-grid-baseline) * 3) calc(var(--default-grid-baseline) * 8) calc(var(--default-grid-baseline) * 3) calc(var(--default-grid-baseline) * 3);
+	border: 0;
+	border-radius: var(--border-radius-large);
+	background: transparent;
+	color: var(--color-main-text);
+	font: inherit;
+	text-align: start;
+	cursor: pointer;
+}
+
+.af-action__head:hover {
+	background: var(--color-background-hover);
+}
+
+.af-action__head:focus-visible {
+	outline: 2px solid var(--color-main-text);
+	outline-offset: -2px;
+}
+
+.af-action__title {
+	font-weight: bold;
+}
+
+.af-action__summary {
+	flex: 1 1 100%;
+	overflow: hidden;
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.af-action__chip {
+	padding: 0 calc(var(--default-grid-baseline) * 1.5);
+	border-radius: var(--border-radius-pill);
+	background: var(--color-primary-element-light);
+	color: var(--color-primary-element-light-text);
+	font-size: 12px;
+	line-height: 20px;
+}
+
+.af-action__chip--warn {
+	background: var(--color-warning);
+	color: var(--color-warning-text);
+}
+
+.af-action__chevron {
+	position: absolute;
+	inset-inline-end: calc(var(--default-grid-baseline) * 4);
+	top: calc(var(--default-grid-baseline) * 4.5);
+	width: 8px;
+	height: 8px;
+	border-right: 2px solid var(--color-text-maxcontrast);
+	border-bottom: 2px solid var(--color-text-maxcontrast);
+	transform: rotate(45deg);
+	transition: transform 0.15s ease;
+}
+
+.af-action__chevron--open {
+	transform: rotate(225deg);
+}
+
+.af-action__body {
+	display: flex;
+	flex-direction: column;
+	gap: calc(var(--default-grid-baseline) * 3);
+	padding: 0 calc(var(--default-grid-baseline) * 3) calc(var(--default-grid-baseline) * 3);
+}
+
+.af-action__group {
+	display: flex;
+	flex-direction: column;
+	gap: var(--default-grid-baseline);
+}
+
+.af-action__caption {
+	font-weight: bold;
+}
+
+.af-action__hint {
+	margin: 0;
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+}
+
+.af-action__inserts,
+.af-action__row,
+.af-action__footer {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--default-grid-baseline);
+}
+
+.af-action__footer {
+	justify-content: flex-end;
+}
+
+.af-action__ok {
+	color: var(--color-success-text);
+}
+
+.af-action__secret {
+	display: block;
+	margin: var(--default-grid-baseline) 0;
+	padding: var(--default-grid-baseline) calc(var(--default-grid-baseline) * 2);
+	border-radius: var(--border-radius-element);
+	background: var(--color-background-dark);
+	color: var(--color-main-text);
+	overflow-wrap: anywhere;
+	user-select: all;
+}
+</style>

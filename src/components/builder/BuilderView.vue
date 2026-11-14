@@ -23,6 +23,7 @@ import { addField, locateField, moveField, removeField, setSpan, updateField } f
 import { describeError, groupErrors } from '../../builder/errors.ts'
 import type { Rule } from '../../rules/types.ts'
 import { FORM_STATUS_PUBLISHED } from '../../types.ts'
+import ActionsPanel from './ActionsPanel.vue'
 import BuilderCanvas from './BuilderCanvas.vue'
 import FieldProperties from './FieldProperties.vue'
 import FormProperties from './FormProperties.vue'
@@ -52,7 +53,7 @@ const publishFailed = ref(false)
 
 const selectedId = ref<string | null>(null)
 const sidebarOpen = ref(true)
-const tab = ref<'field' | 'logic' | 'form'>('form')
+const tab = ref<'field' | 'logic' | 'actions' | 'form'>('form')
 const canvasWidth = ref<'desktop' | 'mobile'>('desktop')
 const mobile = computed(() => canvasWidth.value === 'mobile')
 const previewOpen = ref(false)
@@ -189,9 +190,21 @@ const errorGroups = computed(() => groupErrors(errors.value))
 const formErrors = computed(() => errorGroups.value.get('') ?? [])
 const selectedField = computed(() => (selectedId.value && draft.value ? draft.value.fields[selectedId.value] : undefined))
 const selectedCodes = computed(() => (selectedId.value ? (errorGroups.value.get(selectedId.value) ?? []).map((e) => e.code) : []))
-const sidebarName = computed(() => (tab.value !== 'form' && selectedField.value
-	? (selectedField.value.label || selectedField.value.text || t('advancedforms', 'Field'))
-	: t('advancedforms', 'Form settings')))
+const sidebarName = computed(() => {
+	if (tab.value === 'actions') {
+		return t('advancedforms', 'After submitting')
+	}
+	if ((tab.value === 'field' || tab.value === 'logic') && selectedField.value) {
+		return selectedField.value.label || selectedField.value.text || t('advancedforms', 'Field')
+	}
+	return t('advancedforms', 'Form settings')
+})
+const sidebarSubname = computed(() => {
+	if (tab.value === 'actions') {
+		return t('advancedforms', 'Messages, emails and webhooks')
+	}
+	return tab.value === 'form' ? t('advancedforms', 'Applies to the whole form') : undefined
+})
 
 function select(fieldId: string): void {
 	selectedId.value = fieldId
@@ -388,7 +401,7 @@ function openSettings(): void {
 		v-model:active="tab"
 		v-model:open="sidebarOpen"
 		:name="sidebarName"
-		:subname="tab !== 'form' ? undefined : t('advancedforms', 'Applies to the whole form')">
+		:subname="sidebarSubname">
 		<NcAppSidebarTab id="field" :name="t('advancedforms', 'Field')" :order="1">
 			<FieldProperties v-if="selectedId && selectedField"
 				:key="selectedId"
@@ -418,7 +431,13 @@ function openSettings(): void {
 				:name="t('advancedforms', 'No field selected')"
 				:description="t('advancedforms', 'Select a field on the canvas to set up its rules.')" />
 		</NcAppSidebarTab>
-		<NcAppSidebarTab id="form" :name="t('advancedforms', 'Form')" :order="3">
+		<NcAppSidebarTab id="actions" :name="t('advancedforms', 'Actions')" :order="3">
+			<ActionsPanel :definition="draft"
+				:form-id="formId"
+				:errors="errors"
+				@change="edit" />
+		</NcAppSidebarTab>
+		<NcAppSidebarTab id="form" :name="t('advancedforms', 'Form')" :order="4">
 			<FormProperties :definition="draft"
 				:share-url="shareUrl"
 				@title="onTitle"

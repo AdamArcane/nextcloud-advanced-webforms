@@ -52,6 +52,18 @@ export function describeError(code: string): string {
 		case 'cond_bad_shape':
 		case 'cond_too_deep':
 			return t('advancedforms', 'A group of conditions is empty or nested too deeply.')
+		case 'action_bad_recipient':
+			return t('advancedforms', 'Choose who should receive this email.')
+		case 'action_text_invalid':
+			return t('advancedforms', 'Fill in all the text for this action.')
+		case 'action_bad_url':
+			return t('advancedforms', 'Enter a full address starting with https://.')
+		case 'action_unknown_placeholder':
+			return t('advancedforms', 'The text uses a field that does not exist.')
+		case 'action_bad_secret':
+			return t('advancedforms', 'The signing secret is not valid. Generate a new one.')
+		case 'too_many_actions':
+			return t('advancedforms', 'This form has too many actions.')
 		case 'too_large':
 			return t('advancedforms', 'This form is too large.')
 		default:

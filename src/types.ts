@@ -4,7 +4,7 @@
  */
 
 import type { LayoutPage } from './layout/visibleLayout.ts'
-import type { Rule } from './rules/types.ts'
+import type { Condition, Rule } from './rules/types.ts'
 
 /** Where a field's label sits (docs/SCHEMA.md 4.2). */
 export type LabelPosition = 'above' | 'inline' | 'hidden'
@@ -72,6 +72,42 @@ export interface FieldError {
 	code: string
 }
 
+export type ActionType = 'message' | 'redirect' | 'email' | 'webhook'
+
+interface ActionBase {
+	/** Stable id, unique in the form. */
+	id: string
+	/** Only run when this holds for the submitted answers (docs/SCHEMA.md 7.1). */
+	when?: Condition
+}
+
+export interface MessageAction extends ActionBase {
+	type: 'message'
+	text: string
+}
+
+export interface RedirectAction extends ActionBase {
+	type: 'redirect'
+	url: string
+}
+
+export interface EmailAction extends ActionBase {
+	type: 'email'
+	/** A fixed address, or the answer to an email field. */
+	to: string | { field: string }
+	subject: string
+	body: string
+}
+
+export interface WebhookAction extends ActionBase {
+	type: 'webhook'
+	url: string
+	/** Names the signing secret kept on the server. The secret itself is never in the definition. */
+	secretRef?: string
+}
+
+export type FormAction = MessageAction | RedirectAction | EmailAction | WebhookAction
+
 /** The owner's editable definition (docs/SCHEMA.md section 3), including `actions`. */
 export interface DraftDefinition {
 	schemaVersion: number
@@ -81,7 +117,7 @@ export interface DraftDefinition {
 	fields: Record<string, FormField>
 	pages: LayoutPage[]
 	rules: Rule[]
-	actions: unknown[]
+	actions: FormAction[]
 }
 
 export const FORM_STATUS_UNPUBLISHED = 0

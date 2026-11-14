@@ -1,0 +1,179 @@
+<!--
+  - SPDX-FileCopyrightText: 2026 ArcaneX
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
+<script setup lang="ts">
+import type { ActionType, DefinitionError, DraftDefinition, FormAction } from '../../types.ts'
+
+import { t } from '@nextcloud/l10n'
+import NcButton from '@nextcloud/vue/components/NcButton'
+import { computed, ref } from 'vue'
+import { createWebhookSecret } from '../../api/forms.ts'
+import { ACTION_TYPES, addAction, errorActionIndex, MAX_ACTIONS, moveAction, removeAction, unreachableResponseActions, updateAction } from '../../builder/actions.ts'
+import { actionHint, actionLabel } from '../../builder/labels.ts'
+import ActionCard from './ActionCard.vue'
+
+const props = defineProps<{
+	definition: DraftDefinition
+	formId: number
+	errors: DefinitionError[]
+}>()
+
+const emit = defineEmits<{
+	/** The whole definition with the actions changed. */
+	change: [definition: DraftDefinition]
+}>()
+
+const expandedId = ref<string | null>(null)
+const revealed = ref<{ actionId: string, secret: string } | null>(null)
+const secretBusyId = ref<string | null>(null)
+const secretFailedId = ref<string | null>(null)
+
+const unreachable = computed(() => new Set(unreachableResponseActions(props.definition)))
+const full = computed(() => props.definition.actions.length >= MAX_ACTIONS)
+
+function codesFor(index: number): string[] {
+	return props.errors.filter((error) => errorActionIndex(error.path) === index).map((error) => error.code)
+}
+
+function add(type: ActionType): void {
+	const result = addAction(props.definition, type)
+	if (result.actionId) {
+		emit('change', result.definition)
+		expandedId.value = result.actionId
+	}
+}
+
+function toggle(id: string): void {
+	expandedId.value = expandedId.value === id ? null : id
+}
+
+function update(index: number, action: FormAction): void {
+	emit('change', updateAction(props.definition, index, action))
+}
+
+function remove(index: number): void {
+	const id = props.definition.actions[index]?.id
+	emit('change', removeAction(props.definition, index))
+	if (id && expandedId.value === id) {
+		expandedId.value = null
+	}
+	if (id && revealed.value?.actionId === id) {
+		revealed.value = null
+	}
+}
+
+async function generateSecret(index: number): Promise<void> {
+	const action = props.definition.actions[index]
+	if (!action || action.type !== 'webhook') {
+		return
+	}
+	secretBusyId.value = action.id
+	secretFailedId.value = null
+	try {
+		// Passing the existing reference replaces that secret, so the action keeps pointing at the new one.
+		const created = await createWebhookSecret(props.formId, action.secretRef)
+		revealed.value = { actionId: action.id, secret: created.secret }
+		emit('change', updateAction(props.definition, index, { ...action, secretRef: created.ref }))
+	} catch {
+		secretFailedId.value = action.id
+	} finally {
+		secretBusyId.value = null
+	}
+}
+</script>
+
+<template>
+	<div class="af-actions">
+		<p class="af-actions__intro">
+			{{ t('advancedforms', 'Choose what happens after someone sends the form. Emails and webhooks are sent in the background, so a slow mail server never holds up the respondent.') }}
+		</p>
+
+		<ActionCard v-for="(action, index) in definition.actions"
+			:key="action.id"
+			:action="action"
+			:index="index"
+			:count="definition.actions.length"
+			:definition="definition"
+			:expanded="expandedId === action.id"
+			:error-codes="codesFor(index)"
+			:unreachable="unreachable.has(action.id)"
+			:revealed-secret="revealed?.actionId === action.id ? revealed.secret : null"
+			:secret-busy="secretBusyId === action.id"
+			:secret-failed="secretFailedId === action.id"
+			@toggle="toggle(action.id)"
+			@update="(next) => update(index, next)"
+			@remove="remove(index)"
+			@move="(by) => emit('change', moveAction(definition, index, by))"
+			@generate-secret="generateSecret(index)"
+			@dismiss-secret="revealed = null" />
+
+		<p v-if="definition.actions.length === 0" class="af-actions__empty">
+			{{ t('advancedforms', 'No actions yet. Respondents will see a default thank-you.') }}
+		</p>
+
+		<section class="af-actions__add">
+			<h3 class="af-actions__heading">
+				{{ t('advancedforms', 'Add an action') }}
+			</h3>
+			<div class="af-actions__choices">
+				<NcButton v-for="type in ACTION_TYPES"
+					:key="type"
+					variant="secondary"
+					:disabled="full"
+					:title="actionHint(type)"
+					@click="add(type)">
+					{{ actionLabel(type) }}
+				</NcButton>
+			</div>
+			<p v-if="full" class="af-actions__hint">
+				{{ t('advancedforms', 'A form can have up to {max} actions.', { max: MAX_ACTIONS }) }}
+			</p>
+			<p v-else class="af-actions__hint">
+				{{ t('advancedforms', 'If several messages or redirects match, the first one is shown. Emails and webhooks all run.') }}
+			</p>
+		</section>
+	</div>
+</template>
+
+<style scoped>
+.af-actions {
+	display: flex;
+	flex-direction: column;
+	gap: calc(var(--default-grid-baseline) * 3);
+	padding: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 3) calc(var(--default-grid-baseline) * 6);
+}
+
+.af-actions__intro,
+.af-actions__empty,
+.af-actions__hint {
+	margin: 0;
+	color: var(--color-text-maxcontrast);
+}
+
+.af-actions__hint {
+	font-size: 13px;
+}
+
+.af-actions__add {
+	display: flex;
+	flex-direction: column;
+	gap: var(--default-grid-baseline);
+}
+
+.af-actions__heading {
+	margin: 0;
+	font-size: 14px;
+	font-weight: bold;
+	color: var(--color-text-maxcontrast);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.af-actions__choices {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--default-grid-baseline);
+}
+</style>
