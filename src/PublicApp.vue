@@ -11,9 +11,10 @@ import { generateUrl } from '@nextcloud/router'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watchEffect } from 'vue'
 import { ApiError, fetchPublicForm } from './api/public.ts'
-import FormRenderer from './components/render/FormRenderer.vue'
+import { pageBackground } from './design.ts'
+import FormPage from './components/render/FormPage.vue'
 
 const props = defineProps<{
 	token: string
@@ -30,6 +31,22 @@ const loginUrl = generateUrl('/login?redirect_url={url}', {
 })
 
 onMounted(load)
+
+// Nextcloud paints its own background on the page; a form can ask for a plain colour instead.
+watchEffect(() => {
+	const colour = pageBackground(form.value?.definition.settings?.design)
+	if (colour) {
+		document.body.style.setProperty('background', colour, 'important')
+		document.body.style.setProperty('background-image', 'none', 'important')
+	} else {
+		document.body.style.removeProperty('background')
+		document.body.style.removeProperty('background-image')
+	}
+})
+onBeforeUnmount(() => {
+	document.body.style.removeProperty('background')
+	document.body.style.removeProperty('background-image')
+})
 
 async function load() {
 	try {
@@ -86,25 +103,33 @@ async function refreshToken() {
 		</NcNoteCard>
 
 		<template v-else-if="form">
-			<h1>{{ form.definition.title }}</h1>
-			<p v-if="form.definition.description" class="af-intro">
-				{{ form.definition.description }}
-			</p>
-			<FormRenderer :form="form" @refresh-token="refreshToken" />
+			<FormPage :form="form" @refresh-token="refreshToken" />
 		</template>
 	</main>
 </template>
 
 <style scoped>
 .af-public {
-	max-width: 760px;
-	margin: 0 auto;
+	box-sizing: border-box;
+	width: 100%;
 	padding: 24px 16px 48px;
+	/* Centre the form column in the page. */
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 }
+</style>
 
-.af-intro {
-	margin-bottom: 24px;
-	color: var(--color-text-maxcontrast);
-	white-space: pre-line;
+<style>
+/*
+ * Nextcloud's public layout shrink-wraps its content. The form is a size container
+ * (so cells can stack by their own width), and a size container has no intrinsic
+ * width, so without an explicit one the page collapses to its padding.
+ */
+#advancedforms-public {
+	box-sizing: border-box;
+	flex: 1 1 100%;
+	width: 100%;
+	min-width: 0;
 }
 </style>

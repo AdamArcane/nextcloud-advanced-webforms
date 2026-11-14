@@ -81,11 +81,14 @@ final class CsvExporter {
 	 */
 	private static function layoutOrder(array $definition): array {
 		$order = [];
-		$rows = $definition['pages'][0]['rows'] ?? [];
-		foreach (is_array($rows) ? $rows : [] as $row) {
-			foreach (is_array($row['cells'] ?? null) ? $row['cells'] : [] as $cell) {
-				if (is_array($cell) && is_string($cell['field'] ?? null)) {
-					$order[] = $cell['field'];
+		$pages = $definition['pages'] ?? [];
+		foreach (is_array($pages) ? $pages : [] as $page) {
+			$rows = is_array($page) ? ($page['rows'] ?? []) : [];
+			foreach (is_array($rows) ? $rows : [] as $row) {
+				foreach (is_array($row['cells'] ?? null) ? $row['cells'] : [] as $cell) {
+					if (is_array($cell) && is_string($cell['field'] ?? null)) {
+						$order[] = $cell['field'];
+					}
 				}
 			}
 		}

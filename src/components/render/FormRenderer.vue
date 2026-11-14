@@ -12,7 +12,7 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, nextTick, reactive, ref } from 'vue'
 import { ApiError, submitPublicForm } from '../../api/public.ts'
 import { renderedLabelPosition } from '../../layout/labelPosition.ts'
-import { visibleLayout } from '../../layout/visibleLayout.ts'
+import { visiblePages } from '../../layout/visibleLayout.ts'
 import { evaluateRules } from '../../rules/engine.ts'
 import { isInputType } from '../../rules/fieldTypes.ts'
 import FieldInput from './FieldInput.vue'
@@ -70,7 +70,14 @@ const state = computed(() => {
 })
 const visible = computed(() => new Set(state.value.visible))
 const required = computed(() => new Set(state.value.required))
-const rows = computed(() => visibleLayout(definition.value.pages, visible.value))
+const pages = computed(() => visiblePages(definition.value.pages, visible.value))
+const pageIndex = ref(0)
+// Hiding fields can remove pages, so never point past the end.
+const currentIndex = computed(() => Math.min(pageIndex.value, Math.max(0, pages.value.length - 1)))
+const currentPage = computed(() => pages.value[currentIndex.value])
+const rows = computed(() => currentPage.value?.rows ?? [])
+const isFirst = computed(() => currentIndex.value === 0)
+const isLast = computed(() => currentIndex.value >= pages.value.length - 1)
 
 const submitLabel = computed(() => definition.value.settings?.submitLabel || t('advancedforms', 'Send'))
 
@@ -99,24 +106,66 @@ async function focusFirstError() {
 	}
 }
 
+/** Mark empty required fields among `ids`, returning whether all were fine. */
+function checkRequired(ids: Iterable<string>): boolean {
+	let ok = true
+	for (const id of ids) {
+		const field = fields.value[id]
+		if (visible.value.has(id) && isInputType(field.type) && required.value.has(id) && isEmpty(field, values[id])) {
+			fieldErrors[id] = messageFor('required')
+			ok = false
+		}
+	}
+	return ok
+}
+
+function pageFieldIds(index: number): string[] {
+	return (pages.value[index]?.rows ?? []).flatMap((row) => row.cells.map((cell) => cell.field))
+}
+
+async function goNext() {
+	clearErrors()
+	if (!checkRequired(pageFieldIds(currentIndex.value))) {
+		await focusFirstError()
+		return
+	}
+	pageIndex.value = currentIndex.value + 1
+	await scrollToTop()
+}
+
+async function goBack() {
+	clearErrors()
+	pageIndex.value = Math.max(0, currentIndex.value - 1)
+	await scrollToTop()
+}
+
+async function scrollToTop() {
+	await nextTick()
+	document.querySelector<HTMLElement>('.af-form')?.scrollIntoView?.({ block: 'start' })
+}
+
 async function onSubmit() {
 	if (props.preview || submitting.value) {
+		return
+	}
+	if (!isLast.value) {
+		await goNext()
 		return
 	}
 	clearErrors()
 
 	const submitted: Record<string, unknown> = {}
 	for (const id of visible.value) {
-		const field = fields.value[id]
-		if (!isInputType(field.type)) {
-			continue
+		if (isInputType(fields.value[id].type)) {
+			submitted[id] = values[id]
 		}
-		if (required.value.has(id) && isEmpty(field, values[id])) {
-			fieldErrors[id] = messageFor('required')
-		}
-		submitted[id] = values[id]
 	}
-	if (Object.keys(fieldErrors).length > 0) {
+	if (!checkRequired(visible.value)) {
+		// An error may sit on an earlier page: go to the first one that has one.
+		const first = pages.value.findIndex((_, index) => pageFieldIds(index).some((id) => fieldErrors[id]))
+		if (first !== -1) {
+			pageIndex.value = first
+		}
 		await focusFirstError()
 		return
 	}
@@ -210,14 +259,23 @@ async function showError(error: unknown) {
 			{{ formError }}
 		</NcNoteCard>
 
-		<NcButton type="submit" variant="primary" :disabled="submitting || preview">
-			{{ submitLabel }}
-		</NcButton>
+		<div class="af-actions">
+			<NcButton v-if="!isFirst" variant="tertiary" :disabled="submitting" @click="goBack">
+				{{ t('advancedforms', 'Back') }}
+			</NcButton>
+			<NcButton v-if="!isLast" type="submit" variant="primary">
+				{{ t('advancedforms', 'Next') }}
+			</NcButton>
+			<NcButton v-else type="submit" variant="primary" :disabled="submitting || preview">
+				{{ submitLabel }}
+			</NcButton>
+		</div>
 	</form>
 </template>
 
 <style scoped>
 .af-form {
+	width: 100%;
 	container-type: inline-size;
 }
 
@@ -239,6 +297,20 @@ async function showError(error: unknown) {
 	.af-cell {
 		grid-column: 1 / -1;
 	}
+}
+
+.af-actions {
+	display: flex;
+	gap: 8px;
+}
+
+.af-progress {
+	margin: 0 0 8px;
+	color: var(--color-text-maxcontrast);
+}
+
+.af-page-title {
+	margin: 0 0 16px;
 }
 
 .af-hp {

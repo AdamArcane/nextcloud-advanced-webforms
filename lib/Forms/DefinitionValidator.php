@@ -29,7 +29,8 @@ final class DefinitionValidator {
 	public const LABEL_POSITIONS = ['above', 'inline', 'hidden'];
 	public const ACTION_TYPES = ['email', 'webhook', 'message', 'redirect'];
 
-	private const SETTINGS_KEYS = ['submitLabel', 'labelPosition', 'requireLogin', 'allowMultipleSubmissions', 'closedMessage'];
+	private const SETTINGS_KEYS = ['submitLabel', 'labelPosition', 'requireLogin', 'allowMultipleSubmissions', 'closedMessage', 'design'];
+	private const MAX_PAGES = 20;
 	private const TOP_KEYS = ['schemaVersion', 'title', 'description', 'settings', 'fields', 'pages', 'rules', 'actions'];
 	private const COMMON_INPUT_KEYS = ['type', 'label', 'description', 'required', 'defaultValue', 'labelPosition', 'hideLabel'];
 	private const PLACEHOLDER_TYPES = [FieldType::TEXT, FieldType::TEXTAREA, FieldType::EMAIL, FieldType::NUMBER, FieldType::PHONE, FieldType::SELECT];
@@ -110,6 +111,8 @@ final class DefinitionValidator {
 			$path = 'settings.' . $key;
 			if (!in_array($key, self::SETTINGS_KEYS, true)) {
 				$this->err('unknown_property', $path);
+			} elseif ($key === 'design') {
+				$this->design($value, $path);
 			} elseif ($key === 'labelPosition') {
 				if (!in_array($value, self::LABEL_POSITIONS, true)) {
 					$this->err('settings_invalid', $path);
@@ -120,6 +123,27 @@ final class DefinitionValidator {
 				}
 			} elseif (!is_string($value) || mb_strlen($value) > ($key === 'submitLabel' ? 64 : 500)) {
 				$this->err('settings_invalid', $path);
+			}
+		}
+	}
+
+	private function design(mixed $design, string $path): void {
+		if (!is_array($design) || ($design !== [] && array_is_list($design))) {
+			$this->err('settings_invalid', $path);
+			return;
+		}
+		foreach ($design as $key => $value) {
+			$valid = match ($key) {
+				'width' => in_array($value, ['narrow', 'standard', 'wide'], true),
+				'card' => is_bool($value),
+				'background' => in_array($value, ['default', 'plain', 'color'], true),
+				'backgroundColor', 'accentColor' => is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1,
+				default => null,
+			};
+			if ($valid === null) {
+				$this->err('unknown_property', $path . '.' . $key);
+			} elseif (!$valid) {
+				$this->err('settings_invalid', $path . '.' . $key);
 			}
 		}
 	}
@@ -313,31 +337,45 @@ final class DefinitionValidator {
 	 * @param array<string, array<string, mixed>> $fields
 	 */
 	private function layout(mixed $pages, array $fields): void {
-		if (!is_array($pages) || !array_is_list($pages) || count($pages) !== 1) {
-			$this->err('pages_must_be_single', 'pages');
-			return;
-		}
-		$page = $pages[0];
-		if (!is_array($page) || array_diff(array_keys($page), ['id', 'title', 'rows']) !== []) {
-			$this->err('page_invalid', 'pages[0]');
+		if (!is_array($pages) || !array_is_list($pages) || $pages === [] || count($pages) > self::MAX_PAGES) {
+			$this->err('pages_invalid', 'pages');
 			return;
 		}
 		$ids = [];
-		$this->layoutId($page['id'] ?? null, 'pages[0].id', $ids);
-		if (array_key_exists('title', $page) && $page['title'] !== null
-			&& (!is_string($page['title']) || mb_strlen($page['title']) > 255)) {
-			$this->err('page_invalid', 'pages[0].title');
+		$placed = [];
+		foreach ($pages as $p => $page) {
+			$pagePath = 'pages[' . $p . ']';
+			if (!is_array($page) || array_diff(array_keys($page), ['id', 'title', 'rows']) !== []) {
+				$this->err('page_invalid', $pagePath);
+				continue;
+			}
+			$this->layoutId($page['id'] ?? null, $pagePath . '.id', $ids);
+			if (array_key_exists('title', $page) && $page['title'] !== null
+				&& (!is_string($page['title']) || mb_strlen($page['title']) > 255)) {
+				$this->err('page_invalid', $pagePath . '.title');
+			}
+			$this->pageRows($page['rows'] ?? null, $pagePath, $fields, $ids, $placed);
 		}
 
-		$rows = $page['rows'] ?? null;
+		foreach (array_keys($fields) as $id) {
+			if (!isset($placed[$id])) {
+				$this->err('field_not_placed', 'fields.' . $id);
+			}
+		}
+	}
+
+	/**
+	 * @param array<string, array<string, mixed>> $fields
+	 * @param array<string, true> $ids
+	 * @param array<string, true> $placed
+	 */
+	private function pageRows(mixed $rows, string $pagePath, array $fields, array &$ids, array &$placed): void {
 		if (!is_array($rows) || !array_is_list($rows) || count($rows) > self::MAX_ROWS) {
-			$this->err('rows_invalid', 'pages[0].rows');
+			$this->err('rows_invalid', $pagePath . '.rows');
 			return;
 		}
-
-		$placed = [];
 		foreach ($rows as $r => $row) {
-			$rowPath = 'pages[0].rows[' . $r . ']';
+			$rowPath = $pagePath . '.rows[' . $r . ']';
 			if (!is_array($row) || array_diff(array_keys($row), ['id', 'cells']) !== []) {
 				$this->err('row_invalid', $rowPath);
 				continue;
@@ -373,12 +411,6 @@ final class DefinitionValidator {
 			}
 			if ($sum > 12) {
 				$this->err('row_too_wide', $rowPath);
-			}
-		}
-
-		foreach (array_keys($fields) as $id) {
-			if (!isset($placed[$id])) {
-				$this->err('field_not_placed', 'fields.' . $id);
 			}
 		}
 	}

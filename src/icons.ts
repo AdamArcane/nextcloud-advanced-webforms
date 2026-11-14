@@ -52,6 +52,7 @@ import {
 	mdiTablet,
 	mdiTextBoxOutline,
 	mdiTextLong,
+	mdiPalette,
 	mdiTune,
 	mdiWebhook,
 } from '@mdi/js'
@@ -69,6 +70,7 @@ export const icons = {
 	close: mdiClose,
 	copy: mdiContentCopy,
 	delete: mdiDelete,
+	design: mdiPalette,
 	desktop: mdiMonitor,
 	download: mdiDownload,
 	edit: mdiPencil,

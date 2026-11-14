@@ -58,9 +58,38 @@ class DefinitionValidatorTest extends TestCase {
 		}));
 	}
 
-	public function testTwoPagesRejected(): void {
-		$this->assertSame(['pages_must_be_single'], $this->codes(static function (array $d): array {
+	public function testSecondPageMayHoldFields(): void {
+		$this->assertSame([], $this->codes(static function (array $d): array {
+			$page = ['id' => 'p_2', 'title' => 'More', 'rows' => $d['pages'][0]['rows']];
+			$d['pages'][0]['rows'] = [];
+			$d['pages'][] = $page;
+			return $d;
+		}));
+	}
+
+	public function testCopiedPageRejected(): void {
+		$codes = $this->codes(static function (array $d): array {
 			$d['pages'][] = $d['pages'][0];
+			return $d;
+		});
+		$this->assertContains('layout_duplicate_id', $codes);
+		$this->assertContains('field_placed_twice', $codes);
+	}
+
+	public function testNoPagesRejected(): void {
+		$this->assertSame(['pages_invalid'], $this->codes(static function (array $d): array {
+			$d['pages'] = [];
+			return $d;
+		}));
+	}
+
+	public function testDesignSettings(): void {
+		$this->assertSame([], $this->codes(static function (array $d): array {
+			$d['settings']['design'] = ['width' => 'wide', 'card' => false, 'background' => 'color', 'backgroundColor' => '#112233', 'accentColor' => '#FF8800'];
+			return $d;
+		}));
+		$this->assertSame(['settings_invalid', 'settings_invalid', 'unknown_property'], $this->codes(static function (array $d): array {
+			$d['settings']['design'] = ['width' => 'huge', 'accentColor' => 'red; background:url(x)', 'logo' => 'x'];
 			return $d;
 		}));
 	}

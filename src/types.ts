@@ -36,7 +36,22 @@ export type FormField = {
 	level?: number
 }
 
+/** How the public page looks (docs/SCHEMA.md 3). Every key is optional; unset means the default. */
+export interface FormDesign {
+	/** Width of the form column. Default `standard`. */
+	width?: 'narrow' | 'standard' | 'wide'
+	/** Put the form on a card (default) or straight on the page. */
+	card?: boolean
+	/** `default` keeps Nextcloud's own page background. */
+	background?: 'default' | 'plain' | 'color'
+	/** `#rrggbb`, used when `background` is `color`. */
+	backgroundColor?: string
+	/** `#rrggbb`, used for buttons and focus. */
+	accentColor?: string
+}
+
 export interface FormSettings {
+	design?: FormDesign
 	submitLabel?: string
 	labelPosition?: LabelPosition
 	requireLogin?: boolean

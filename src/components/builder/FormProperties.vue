@@ -4,7 +4,7 @@
 -->
 
 <script setup lang="ts">
-import type { DraftDefinition, FormSettings } from '../../types.ts'
+import type { DraftDefinition, FormDesign, FormSettings } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -14,11 +14,12 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { ref } from 'vue'
+import { DEFAULT_ACCENT, DEFAULT_BACKGROUND_COLOR, safeColor } from '../../design.ts'
 import SegmentedControl from './SegmentedControl.vue'
 
 defineProps<{
 	/** Which page of the settings to show. */
-	section: 'general' | 'sharing'
+	section: 'general' | 'design' | 'sharing'
 	definition: DraftDefinition
 	/** The public link, once the form has been published. */
 	shareUrl: string | null
@@ -49,6 +50,17 @@ async function copy(url: string): Promise<void> {
 	setTimeout(() => {
 		copied.value = false
 	}, 2000)
+}
+
+/** Change one design option; `undefined` puts it back to the default, and an empty design is dropped. */
+function setDesign(current: FormDesign | undefined, patch: Partial<FormDesign>): void {
+	const next: Record<string, unknown> = { ...current, ...patch }
+	for (const key of Object.keys(next)) {
+		if (next[key] === undefined) {
+			delete next[key]
+		}
+	}
+	emit('settings', { design: Object.keys(next).length > 0 ? next as FormDesign : undefined })
 }
 
 function str(value: string | number): string | undefined {
@@ -95,6 +107,70 @@ function str(value: string | number): string | undefined {
 				:placeholder="t('advancedforms', 'Send')"
 				@update:model-value="(value: string | number) => emit('settings', { submitLabel: str(value) })" />
 		</section>
+
+		<template v-if="section === 'design'">
+			<section class="af-form-props__section">
+				<h3 class="af-form-props__heading">
+					{{ t('advancedforms', 'Layout') }}
+				</h3>
+				<SegmentedControl :model-value="definition.settings.design?.width ?? 'standard'"
+					:group-label="t('advancedforms', 'Form width')"
+					:options="[
+						{ value: 'narrow', label: t('advancedforms', 'Narrow') },
+						{ value: 'standard', label: t('advancedforms', 'Standard') },
+						{ value: 'wide', label: t('advancedforms', 'Wide') },
+					]"
+					@update:model-value="(value) => setDesign(definition.settings.design, { width: value === 'standard' ? undefined : value as FormDesign['width'] })" />
+				<NcCheckboxRadioSwitch type="switch"
+					:model-value="definition.settings.design?.card !== false"
+					@update:model-value="(value: boolean) => setDesign(definition.settings.design, { card: value ? undefined : false })">
+					{{ t('advancedforms', 'Show the form on a card') }}
+				</NcCheckboxRadioSwitch>
+				<p class="af-form-props__hint">
+					{{ t('advancedforms', 'Width only applies on larger screens. On phones the form fills the screen and fields sit one under another.') }}
+				</p>
+			</section>
+
+			<section class="af-form-props__section">
+				<h3 class="af-form-props__heading">
+					{{ t('advancedforms', 'Page background') }}
+				</h3>
+				<SegmentedControl :model-value="definition.settings.design?.background ?? 'default'"
+					:group-label="t('advancedforms', 'Page background')"
+					:options="[
+						{ value: 'default', label: t('advancedforms', 'Nextcloud') },
+						{ value: 'plain', label: t('advancedforms', 'Plain') },
+						{ value: 'color', label: t('advancedforms', 'Colour') },
+					]"
+					@update:model-value="(value) => setDesign(definition.settings.design, { background: value === 'default' ? undefined : value as FormDesign['background'] })" />
+				<label v-if="definition.settings.design?.background === 'color'" class="af-form-props__color">
+					<input type="color"
+						:value="safeColor(definition.settings.design?.backgroundColor) ?? DEFAULT_BACKGROUND_COLOR"
+						@input="setDesign(definition.settings.design, { backgroundColor: ($event.target as HTMLInputElement).value })">
+					{{ t('advancedforms', 'Background colour') }}
+				</label>
+			</section>
+
+			<section class="af-form-props__section">
+				<h3 class="af-form-props__heading">
+					{{ t('advancedforms', 'Accent colour') }}
+				</h3>
+				<label class="af-form-props__color">
+					<input type="color"
+						:value="safeColor(definition.settings.design?.accentColor) ?? DEFAULT_ACCENT"
+						@input="setDesign(definition.settings.design, { accentColor: ($event.target as HTMLInputElement).value })">
+					{{ t('advancedforms', 'Buttons and highlights') }}
+				</label>
+				<NcButton v-if="definition.settings.design?.accentColor"
+					variant="tertiary"
+					@click="setDesign(definition.settings.design, { accentColor: undefined })">
+					{{ t('advancedforms', 'Use the Nextcloud colour') }}
+				</NcButton>
+				<p class="af-form-props__hint">
+					{{ t('advancedforms', 'Use Preview to see the result.') }}
+				</p>
+			</section>
+		</template>
 
 		<section v-if="section === 'sharing'" class="af-form-props__section">
 			<h3 class="af-form-props__heading">
@@ -168,6 +244,19 @@ function str(value: string | number): string | undefined {
 	color: var(--color-text-maxcontrast);
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
+}
+
+.af-form-props__color {
+	display: flex;
+	align-items: center;
+	gap: calc(var(--default-grid-baseline) * 2);
+}
+
+.af-form-props__color input {
+	width: 44px;
+	height: 34px;
+	padding: 0;
+	cursor: pointer;
 }
 
 .af-form-props__hint {

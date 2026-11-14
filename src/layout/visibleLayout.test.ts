@@ -6,7 +6,7 @@
 import type { LayoutRow } from './visibleLayout.ts'
 
 import { describe, expect, it } from 'vitest'
-import { visibleLayout } from './visibleLayout.ts'
+import { visibleLayout, visiblePages } from './visibleLayout.ts'
 
 const pages = [{
 	id: 'p_1',
@@ -40,5 +40,18 @@ describe('visibleLayout', () => {
 	it('handles an empty form', () => {
 		expect(visibleLayout(pages, new Set())).toEqual([])
 		expect(visibleLayout([], new Set(['f_a']))).toEqual([])
+	})
+})
+
+describe('visiblePages', () => {
+	const two = [
+		pages[0],
+		{ id: 'p_2', title: 'More', rows: [{ id: 'r_9', cells: [{ id: 'c_9', span: 12, field: 'f_z' }] }] },
+	]
+
+	it('skips pages with nothing visible', () => {
+		expect(visiblePages(two, new Set(['f_a'])).map((page) => page.id)).toEqual(['p_1'])
+		expect(visiblePages(two, new Set(['f_z'])).map((page) => page.id)).toEqual(['p_2'])
+		expect(visiblePages(two, new Set(['f_a', 'f_z']))).toHaveLength(2)
 	})
 })

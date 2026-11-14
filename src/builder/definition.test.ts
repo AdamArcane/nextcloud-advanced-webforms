@@ -8,6 +8,10 @@ import type { DraftDefinition } from '../types.ts'
 import { describe, expect, it } from 'vitest'
 import {
 	addField,
+	addPage,
+	movePage,
+	removePage,
+	setPageTitle,
 	allowedSpans,
 	canMove,
 	emptyDefinition,
@@ -224,5 +228,48 @@ describe('reactive input', () => {
 		const { definition, fieldId } = addField(def, 'text', { kind: 'row', index: 0 })
 		expect(Object.keys(definition.fields)).toEqual([fieldId])
 		expect(() => removeField(reactive(definition), fieldId)).not.toThrow()
+	})
+})
+
+describe('pages', () => {
+	function twoPages() {
+		let def = emptyDefinition('T')
+		const a = addField(def, 'text', { kind: 'row', index: 0 })
+		def = addPage(a.definition)
+		const b = addField(def, 'email', { kind: 'row', index: 0, page: 1 })
+		return { def: b.definition, a: a.fieldId, b: b.fieldId }
+	}
+
+	it('adds a page with a unique id and places fields on it', () => {
+		const { def, a, b } = twoPages()
+		expect(def.pages).toHaveLength(2)
+		expect(def.pages[1].rows[0].cells[0].field).toBe(b)
+		expect(locateField(def, b)?.pageIndex).toBe(1)
+		expect(fieldOrder(def)).toEqual([a, b])
+		expect(def.pages[1].id).toMatch(ID)
+	})
+
+	it('moves pages and sets titles', () => {
+		const { def } = twoPages()
+		const moved = movePage(def, def.pages[1].id, -1)
+		expect(moved.pages[0].id).toBe(def.pages[1].id)
+		expect(movePage(def, def.pages[0].id, -1)).toBe(def)
+		expect(setPageTitle(def, def.pages[0].id, 'Intro').pages[0].title).toBe('Intro')
+		expect(setPageTitle(def, def.pages[0].id, '  ').pages[0].title).toBeNull()
+	})
+
+	it('removes a page with its fields, but never the last page', () => {
+		const { def, b } = twoPages()
+		const next = removePage(def, def.pages[1].id)
+		expect(next.pages).toHaveLength(1)
+		expect(b in next.fields).toBe(false)
+		expect(removePage(next, next.pages[0].id)).toBe(next)
+	})
+
+	it('removes a field from any page', () => {
+		const { def, b } = twoPages()
+		const next = removeField(def, b)
+		expect(next.pages[1].rows).toEqual([])
+		expect(next.pages).toHaveLength(2)
 	})
 })

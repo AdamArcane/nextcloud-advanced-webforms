@@ -10,8 +10,9 @@ import { t } from '@nextcloud/l10n'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import { computed, ref } from 'vue'
 import { cloneJson } from '../../builder/definition.ts'
+import { pageBackground } from '../../design.ts'
 import { icons } from '../../icons.ts'
-import FormRenderer from '../render/FormRenderer.vue'
+import FormPage from '../render/FormPage.vue'
 import SegmentedControl from './SegmentedControl.vue'
 
 const props = defineProps<{
@@ -28,6 +29,7 @@ type Device = 'desktop' | 'tablet' | 'mobile'
 const WIDTHS: Record<Device, number | null> = { desktop: null, tablet: 768, mobile: 390 }
 const device = ref<Device>('desktop')
 const frameWidth = computed(() => WIDTHS[device.value])
+const stageBackground = computed(() => pageBackground(props.definition.settings.design))
 
 // The same renderer the public page uses, so rules and layout behave exactly as respondents will see them.
 const form = computed<PublicForm>(() => {
@@ -54,9 +56,11 @@ const form = computed<PublicForm>(() => {
 					{ value: 'mobile', label: t('advancedforms', 'Mobile'), icon: icons.mobile },
 				]" />
 		</div>
-		<div class="af-preview__stage" :class="{ 'af-preview__stage--framed': frameWidth !== null }">
+		<div class="af-preview__stage"
+			:class="{ 'af-preview__stage--framed': frameWidth !== null || stageBackground !== null }"
+			:style="stageBackground ? { background: stageBackground } : undefined">
 			<div class="af-preview__frame" :style="frameWidth ? { maxWidth: frameWidth + 'px' } : undefined">
-				<FormRenderer :form="form" preview />
+				<FormPage :form="form" preview />
 			</div>
 		</div>
 	</NcDialog>
@@ -106,5 +110,12 @@ const form = computed<PublicForm>(() => {
 	border: 1px solid var(--color-border);
 	border-radius: var(--border-radius-large);
 	background: var(--color-main-background);
+}
+
+/* A card or a coloured page already frames the form; the device frame must not add a second box. */
+.af-preview__stage--framed:not(:has(.af-preview__frame[style])) .af-preview__frame {
+	padding: 0;
+	border: 0;
+	background: none;
 }
 </style>

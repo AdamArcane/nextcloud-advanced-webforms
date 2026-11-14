@@ -7,6 +7,9 @@
 
 ## 0.2.0 - Unreleased
 
+- Multi-page forms: the builder can add, title, reorder and delete pages (up to 20), and
+  respondents step through them with Back and Next. Required fields are checked per page,
+  and pages whose fields are all hidden by rules are skipped.
 - Email recipients can be the form owner or the signed-in respondent, looked up from
   the Nextcloud account when sent, besides a fixed address or an email field. The
   recipient is one dropdown that also accepts a typed address.

@@ -7,7 +7,7 @@
 // and never mutates its input, so callers can keep the old one for undo.
 
 import type { DraftDefinition, FormField } from '../types.ts'
-import type { LayoutCell, LayoutRow } from '../layout/visibleLayout.ts'
+import type { LayoutCell, LayoutRow, LayoutPage } from '../layout/visibleLayout.ts'
 import type { Condition, Rule } from '../rules/types.ts'
 
 /** Spans the schema allows (docs/SCHEMA.md section 5), in twelfths of a row. */
@@ -70,10 +70,13 @@ function allIds(definition: DraftDefinition): Set<string> {
 	for (const rule of definition.rules) {
 		ids.add(rule.id)
 	}
-	for (const row of definition.pages[0]?.rows ?? []) {
-		ids.add(row.id)
-		for (const cell of row.cells) {
-			ids.add(cell.id)
+	for (const page of definition.pages) {
+		ids.add(page.id)
+		for (const row of page.rows) {
+			ids.add(row.id)
+			for (const cell of row.cells) {
+				ids.add(cell.id)
+			}
 		}
 	}
 	return ids
@@ -117,9 +120,12 @@ export function largestSpanWithin(space: number): number | null {
 	return best
 }
 
-function rowsOf(definition: DraftDefinition): LayoutRow[] {
-	return definition.pages[0]?.rows ?? []
+function rowsOf(definition: DraftDefinition, pageIndex = 0): LayoutRow[] {
+	return definition.pages[pageIndex]?.rows ?? []
 }
+
+/** The most pages a form may have (lib/Forms/DefinitionValidator.php). */
+export const MAX_PAGES = 20
 
 function rowUsed(row: LayoutRow, ignoreCellId?: string): number {
 	return row.cells.reduce((sum, cell) => (cell.id === ignoreCellId ? sum : sum + cell.span), 0)
@@ -138,8 +144,8 @@ function clone(definition: DraftDefinition): DraftDefinition {
 }
 
 export type Placement =
-	/** A new row of its own at this row index (0 = top, rows.length = bottom). */
-	| { kind: 'row', index: number }
+	/** A new row of its own at this row index (0 = top, rows.length = bottom) of a page (default the first). */
+	| { kind: 'row', index: number, page?: number }
 	/** At the end of an existing row, if there is room; otherwise in a new row below it. */
 	| { kind: 'join', rowId: string }
 
@@ -163,8 +169,10 @@ export function addField(definition: DraftDefinition, type: string, placement: P
 		return value
 	})
 
-	const rows = rowsOf(next)
+	let rows = rowsOf(next, placement.kind === 'row' ? placement.page ?? 0 : 0)
 	if (placement.kind === 'join') {
+		const joinPage = next.pages.find((page) => page.rows.some((row) => row.id === placement.rowId))
+		rows = joinPage?.rows ?? rows
 		const index = rows.findIndex((row) => row.id === placement.rowId)
 		const row = rows[index]
 		const span = row ? largestSpanWithin(ROW_WIDTH - rowUsed(row)) : null
@@ -233,8 +241,7 @@ function pruneRules(rules: Rule[], fieldId: string): Rule[] {
 export function removeField(definition: DraftDefinition, fieldId: string): DraftDefinition {
 	const next = clone(definition)
 	delete next.fields[fieldId]
-	const page = next.pages[0]
-	if (page) {
+	for (const page of next.pages) {
 		for (const row of page.rows) {
 			row.cells = row.cells.filter((cell) => cell.field !== fieldId)
 		}
@@ -245,6 +252,7 @@ export function removeField(definition: DraftDefinition, fieldId: string): Draft
 }
 
 export interface CellLocation {
+	pageIndex: number
 	rowIndex: number
 	cellIndex: number
 	row: LayoutRow
@@ -252,11 +260,13 @@ export interface CellLocation {
 }
 
 export function locateField(definition: DraftDefinition, fieldId: string): CellLocation | null {
-	const rows = rowsOf(definition)
-	for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
-		const cellIndex = rows[rowIndex].cells.findIndex((cell) => cell.field === fieldId)
-		if (cellIndex !== -1) {
-			return { rowIndex, cellIndex, row: rows[rowIndex], cell: rows[rowIndex].cells[cellIndex] }
+	for (let pageIndex = 0; pageIndex < definition.pages.length; pageIndex++) {
+		const rows = rowsOf(definition, pageIndex)
+		for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+			const cellIndex = rows[rowIndex].cells.findIndex((cell) => cell.field === fieldId)
+			if (cellIndex !== -1) {
+				return { pageIndex, rowIndex, cellIndex, row: rows[rowIndex], cell: rows[rowIndex].cells[cellIndex] }
+			}
 		}
 	}
 	return null
@@ -270,7 +280,7 @@ export function canMove(definition: DraftDefinition, fieldId: string, move: Move
 	if (!at) {
 		return false
 	}
-	const rows = rowsOf(definition)
+	const rows = rowsOf(definition, at.pageIndex)
 	switch (move) {
 		case 'rowUp':
 			return at.rowIndex > 0
@@ -300,7 +310,7 @@ export function moveField(definition: DraftDefinition, fieldId: string, move: Mo
 	}
 	const next = clone(definition)
 	const at = locateField(next, fieldId)!
-	const rows = rowsOf(next)
+	const rows = rowsOf(next, at.pageIndex)
 	switch (move) {
 		case 'rowUp':
 		case 'rowDown': {
@@ -361,5 +371,59 @@ export function rulesTouching(definition: DraftDefinition, fieldId: string): Rul
 
 /** Field ids in layout order (top to bottom, left to right). */
 export function fieldOrder(definition: DraftDefinition): string[] {
-	return rowsOf(definition).flatMap((row) => row.cells.map((cell) => cell.field))
+	return definition.pages.flatMap((page) => page.rows.flatMap((row) => row.cells.map((cell) => cell.field)))
+}
+
+/** Add an empty page at the end, or at `index`. */
+export function addPage(definition: DraftDefinition, index = definition.pages.length): DraftDefinition {
+	if (definition.pages.length >= MAX_PAGES) {
+		return definition
+	}
+	const next = clone(definition)
+	const page: LayoutPage = { id: randomId('p', allIds(next)), title: null, rows: [] }
+	next.pages.splice(Math.max(0, Math.min(index, next.pages.length)), 0, page)
+	return next
+}
+
+/** Set a page's title. An empty title is stored as null. */
+export function setPageTitle(definition: DraftDefinition, pageId: string, title: string): DraftDefinition {
+	const next = clone(definition)
+	const page = next.pages.find((candidate) => candidate.id === pageId)
+	if (!page) {
+		return definition
+	}
+	page.title = title.trim() === '' ? null : title
+	return next
+}
+
+/** Move a page one step earlier (-1) or later (1). */
+export function movePage(definition: DraftDefinition, pageId: string, direction: -1 | 1): DraftDefinition {
+	const from = definition.pages.findIndex((page) => page.id === pageId)
+	const to = from + direction
+	if (from === -1 || to < 0 || to >= definition.pages.length) {
+		return definition
+	}
+	const next = clone(definition)
+	;[next.pages[from], next.pages[to]] = [next.pages[to], next.pages[from]]
+	return next
+}
+
+/**
+ * Remove a page and every field on it (with their rules, like removeField).
+ * The last remaining page cannot be removed.
+ */
+export function removePage(definition: DraftDefinition, pageId: string): DraftDefinition {
+	const page = definition.pages.find((candidate) => candidate.id === pageId)
+	if (!page || definition.pages.length <= 1) {
+		return definition
+	}
+	let next = definition
+	for (const row of page.rows) {
+		for (const cell of row.cells) {
+			next = removeField(next, cell.field)
+		}
+	}
+	next = clone(next)
+	next.pages = next.pages.filter((candidate) => candidate.id !== pageId)
+	return next
 }

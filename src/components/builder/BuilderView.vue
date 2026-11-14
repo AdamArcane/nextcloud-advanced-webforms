@@ -21,7 +21,7 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ApiError } from '../../api/http.ts'
 import { deleteForm, getForm, publicFormUrl, publishForm, saveDraft } from '../../api/forms.ts'
-import { addField, locateField, moveField, removeField, setSpan, updateField } from '../../builder/definition.ts'
+import { addField, addPage, locateField, movePage, removePage, setPageTitle, moveField, removeField, setSpan, updateField } from '../../builder/definition.ts'
 import { describeError, groupErrors } from '../../builder/errors.ts'
 import { renameField } from '../../builder/fieldId.ts'
 import type { Rule } from '../../rules/types.ts'
@@ -62,7 +62,7 @@ const selectedId = ref<string | null>(null)
 const wide = typeof window.matchMedia === 'function' && window.matchMedia('(min-width: 1024px)').matches
 const sidebarOpen = ref(wide)
 const tab = ref<'field' | 'logic'>('field')
-const settingsTab = ref<'general' | 'sharing' | 'actions'>('general')
+const settingsTab = ref<'general' | 'design' | 'sharing' | 'actions'>('general')
 const canvasWidth = ref<'desktop' | 'mobile'>('desktop')
 const mobile = computed(() => canvasWidth.value === 'mobile')
 const previewOpen = ref(false)
@@ -209,11 +209,46 @@ function select(fieldId: string): void {
 	sidebarOpen.value = true
 }
 
-function onAdd(type: string, rowIndex: number): void {
+function onAddPage(): void {
+	if (draft.value) {
+		edit(addPage(draft.value))
+	}
+}
+
+function onPageTitle(pageId: string, title: string): void {
+	if (draft.value) {
+		edit(setPageTitle(draft.value, pageId, title))
+	}
+}
+
+function onMovePage(pageId: string, direction: -1 | 1): void {
+	if (draft.value) {
+		edit(movePage(draft.value, pageId, direction))
+	}
+}
+
+function onRemovePage(pageId: string): void {
 	if (!draft.value) {
 		return
 	}
-	const result = addField(draft.value, type, { kind: 'row', index: rowIndex })
+	const page = draft.value.pages.find((candidate) => candidate.id === pageId)
+	const hasFields = page?.rows.length ? true : false
+	// Deleting a page with fields also deletes their answers' place in the form, so ask first.
+	if (hasFields && !window.confirm(t('advancedforms', 'Delete this page and all of its fields?'))) {
+		return
+	}
+	const next = removePage(draft.value, pageId)
+	if (selectedId.value && !(selectedId.value in next.fields)) {
+		selectedId.value = null
+	}
+	edit(next)
+}
+
+function onAdd(type: string, rowIndex: number, pageIndex = 0): void {
+	if (!draft.value) {
+		return
+	}
+	const result = addField(draft.value, type, { kind: 'row', index: rowIndex, page: pageIndex })
 	edit(result.definition)
 	select(result.fieldId)
 }
@@ -403,6 +438,7 @@ async function onDeleteConfirmed(): Promise<void> {
 						:group-label="t('advancedforms', 'Settings section')"
 						:options="[
 							{ value: 'general', label: t('advancedforms', 'General'), icon: icons.settings },
+							{ value: 'design', label: t('advancedforms', 'Design'), icon: icons.design },
 							{ value: 'sharing', label: t('advancedforms', 'Sharing'), icon: icons.share },
 							{ value: 'actions', label: t('advancedforms', 'Actions'), icon: icons.tabActions },
 						]" />
@@ -428,7 +464,11 @@ async function onDeleteConfirmed(): Promise<void> {
 				:errors="errors"
 				:mobile="mobile"
 				@select="select"
-				@add="onAdd" />
+				@add="onAdd"
+				@add-page="onAddPage"
+				@page-title="onPageTitle"
+				@move-page="onMovePage"
+				@remove-page="onRemovePage" />
 
 			<PreviewDialog v-if="previewOpen" :definition="draft" @close="previewOpen = false" />
 

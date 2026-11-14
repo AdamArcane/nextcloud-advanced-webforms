@@ -189,3 +189,42 @@ describe('FormRenderer', () => {
 		expect(submitMock).not.toHaveBeenCalled()
 	})
 })
+
+describe('FormRenderer with several pages', () => {
+	const paged: PublicForm = {
+		...form,
+		definition: {
+			...form.definition,
+			fields: {
+				f_name: { type: 'text', label: 'Name', required: true },
+				f_mail: { type: 'text', label: 'Mail' },
+			},
+			rules: [],
+			pages: [
+				{ id: 'p_1', title: 'About you', rows: [{ id: 'r_1', cells: [{ id: 'c_1', span: 12, field: 'f_name' }] }] },
+				{ id: 'p_2', title: null, rows: [{ id: 'r_2', cells: [{ id: 'c_2', span: 12, field: 'f_mail' }] }] },
+			],
+		},
+	}
+
+	it('steps through pages, checking required fields before moving on', async () => {
+		submitMock.mockResolvedValue({ message: null, redirect: null })
+		const wrapper = mount(FormRenderer, { props: { form: paged }, attachTo: document.body })
+		expect(wrapper.find('#af-f_mail').exists()).toBe(false)
+		expect(wrapper.find('button[type=submit]').text()).toBe('Next')
+
+		await wrapper.find('form').trigger('submit')
+		expect(wrapper.find('#af-f_mail').exists()).toBe(false)
+
+		await wrapper.find('#af-f_name').setValue('Ann')
+		await wrapper.find('form').trigger('submit')
+		expect(wrapper.find('#af-f_mail').exists()).toBe(true)
+		expect(wrapper.find('button[type=submit]').text()).toBe('Send it')
+		expect(submitMock).not.toHaveBeenCalled()
+
+		await wrapper.find('form').trigger('submit')
+		await flushPromises()
+		expect(submitMock).toHaveBeenCalledTimes(1)
+		expect(submitMock.mock.calls[0][1].values).toEqual({ f_name: 'Ann', f_mail: '' })
+	})
+})

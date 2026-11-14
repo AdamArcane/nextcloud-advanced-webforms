@@ -8,10 +8,13 @@ import type { DraftDefinition } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
+import NcButton from '@nextcloud/vue/components/NcButton'
 import { computed } from 'vue'
-import { rulesTouching } from '../../builder/definition.ts'
+import { MAX_PAGES, rulesTouching } from '../../builder/definition.ts'
 import { renderedLabelPosition } from '../../layout/labelPosition.ts'
 import { groupErrors } from '../../builder/errors.ts'
+import Icon from '../common/Icon.vue'
+import { icons } from '../../icons.ts'
 import AddFieldMenu from './AddFieldMenu.vue'
 import FieldCard from './FieldCard.vue'
 
@@ -25,11 +28,17 @@ const props = defineProps<{
 
 const emit = defineEmits<{
 	select: [fieldId: string]
-	/** Insert a field in a row of its own at this row index. */
-	add: [type: string, rowIndex: number]
+	/** Insert a field in a row of its own at this row index of a page. */
+	add: [type: string, rowIndex: number, pageIndex: number]
+	addPage: []
+	pageTitle: [pageId: string, title: string]
+	movePage: [pageId: string, direction: -1 | 1]
+	removePage: [pageId: string]
 }>()
 
-const rows = computed(() => props.definition.pages[0]?.rows ?? [])
+const pages = computed(() => props.definition.pages)
+const multiPage = computed(() => pages.value.length > 1)
+const isEmpty = computed(() => pages.value.every((page) => page.rows.length === 0) && !multiPage.value)
 const errorsByField = computed(() => groupErrors(props.errors))
 
 function codes(fieldId: string): string[] {
@@ -40,41 +49,78 @@ function codes(fieldId: string): string[] {
 <template>
 	<div class="af-canvas" :class="{ 'af-canvas--mobile': mobile }">
 		<div class="af-canvas__paper">
-			<NcEmptyContent v-if="rows.length === 0"
-				class="af-canvas__empty"
-				:name="t('advancedforms', 'Start your form')"
-				:description="t('advancedforms', 'Add your first field. You can put several fields side by side later.')">
-				<template #action>
-					<AddFieldMenu :label="t('advancedforms', 'Add field')" variant="primary" @pick="(type) => emit('add', type, 0)" />
-				</template>
-			</NcEmptyContent>
+			<NcEmptyContent v-if="isEmpty"
+					class="af-canvas__empty"
+					:name="t('advancedforms', 'Start your form')"
+					:description="t('advancedforms', 'Add your first field. You can put several fields side by side later.')">
+					<template #action>
+						<AddFieldMenu :label="t('advancedforms', 'Add field')" variant="primary" @pick="(type) => emit('add', type, 0, 0)" />
+					</template>
+				</NcEmptyContent>
 
-			<template v-else>
-				<template v-for="(row, index) in rows" :key="row.id">
-					<div class="af-gap">
-						<AddFieldMenu @pick="(type) => emit('add', type, index)" />
-					</div>
-					<div class="af-row">
-						<div v-for="cell in row.cells"
-							:key="cell.id"
-							class="af-cell"
-							:style="{ '--af-span': cell.span }">
-							<FieldCard v-if="definition.fields[cell.field]"
-								:field="definition.fields[cell.field]"
-								:selected="selectedId === cell.field"
-								:rule-count="rulesTouching(definition, cell.field).length"
-								:errors="codes(cell.field)"
-								:label-position="renderedLabelPosition(definition.fields[cell.field], definition.settings)"
-								@select="emit('select', cell.field)" />
+				<template v-else>
+					<section v-for="(page, pageIndex) in pages" :key="page.id" class="af-page" :class="{ 'af-page--multi': multiPage }">
+						<header v-if="multiPage" class="af-page__header">
+							<span class="af-page__number">{{ t('advancedforms', 'Page {n} of {total}', { n: pageIndex + 1, total: pages.length }) }}</span>
+							<input class="af-page__title"
+								type="text"
+								maxlength="255"
+								:value="page.title ?? ''"
+								:aria-label="t('advancedforms', 'Page title')"
+								:placeholder="t('advancedforms', 'Page title (optional)')"
+								@input="emit('pageTitle', page.id, ($event.target as HTMLInputElement).value)">
+							<NcButton variant="tertiary" :aria-label="t('advancedforms', 'Move page up')" :disabled="pageIndex === 0" @click="emit('movePage', page.id, -1)">
+								<template #icon>
+									<Icon :path="icons.arrowUp" />
+								</template>
+							</NcButton>
+							<NcButton variant="tertiary" :aria-label="t('advancedforms', 'Move page down')" :disabled="pageIndex === pages.length - 1" @click="emit('movePage', page.id, 1)">
+								<template #icon>
+									<Icon :path="icons.arrowDown" />
+								</template>
+							</NcButton>
+							<NcButton variant="tertiary" :aria-label="t('advancedforms', 'Delete page')" @click="emit('removePage', page.id)">
+								<template #icon>
+									<Icon :path="icons.delete" />
+								</template>
+							</NcButton>
+						</header>
+
+						<template v-for="(row, index) in page.rows" :key="row.id">
+							<div class="af-gap">
+								<AddFieldMenu @pick="(type) => emit('add', type, index, pageIndex)" />
+							</div>
+							<div class="af-row">
+								<div v-for="cell in row.cells"
+									:key="cell.id"
+									class="af-cell"
+									:style="{ '--af-span': cell.span }">
+									<FieldCard v-if="definition.fields[cell.field]"
+										:field="definition.fields[cell.field]"
+										:selected="selectedId === cell.field"
+										:rule-count="rulesTouching(definition, cell.field).length"
+										:errors="codes(cell.field)"
+										:label-position="renderedLabelPosition(definition.fields[cell.field], definition.settings)"
+										@select="emit('select', cell.field)" />
+								</div>
+							</div>
+						</template>
+						<div class="af-canvas__add">
+							<AddFieldMenu :label="t('advancedforms', 'Add field')"
+								variant="secondary"
+								@pick="(type) => emit('add', type, page.rows.length, pageIndex)" />
 						</div>
+					</section>
+
+					<div class="af-canvas__add-page">
+						<NcButton variant="tertiary" :disabled="pages.length >= MAX_PAGES" @click="emit('addPage')">
+							<template #icon>
+								<Icon :path="icons.add" />
+							</template>
+							{{ t('advancedforms', 'Add page') }}
+						</NcButton>
 					</div>
 				</template>
-				<div class="af-canvas__add">
-					<AddFieldMenu :label="t('advancedforms', 'Add field')"
-						variant="secondary"
-						@pick="(type) => emit('add', type, rows.length)" />
-				</div>
-			</template>
 		</div>
 	</div>
 </template>
@@ -149,6 +195,37 @@ function codes(fieldId: string): string[] {
 		opacity: 0.6;
 		pointer-events: auto;
 	}
+}
+
+.af-page--multi {
+	margin-bottom: calc(var(--default-grid-baseline) * 4);
+	padding: calc(var(--default-grid-baseline) * 3);
+	border: 1px dashed var(--color-border-dark);
+	border-radius: var(--border-radius-large);
+}
+
+.af-page__header {
+	display: flex;
+	align-items: center;
+	gap: calc(var(--default-grid-baseline) * 2);
+	margin-bottom: calc(var(--default-grid-baseline) * 2);
+}
+
+.af-page__number {
+	flex: none;
+	color: var(--color-text-maxcontrast);
+	font-size: 0.9em;
+}
+
+.af-page__title {
+	flex: 1;
+	min-width: 0;
+	font-weight: bold;
+}
+
+.af-canvas__add-page {
+	display: flex;
+	justify-content: center;
 }
 
 .af-canvas__add {

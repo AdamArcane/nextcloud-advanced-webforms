@@ -24,7 +24,6 @@ Goals (v1):
 
 Non-goals (v1, but the format must not block them):
 
-- Multi-page forms (schema reserves `pages`, v1 allows exactly one).
 - Theming and custom CSS.
 - Payments, calculations, PDF generation.
 - Anonymous file uploads.
@@ -48,7 +47,8 @@ Non-goals (v1, but the format must not block them):
     "labelPosition": "above",
     "requireLogin": false,
     "allowMultipleSubmissions": true,
-    "closedMessage": "This form is no longer accepting responses."
+    "closedMessage": "This form is no longer accepting responses.",
+    "design": { "width": "standard", "card": true, "background": "default", "accentColor": "#0082c9" }
   },
   "fields": {
     "f_name": { "type": "text", "label": "Name", "required": true, "labelPosition": "inline" },
@@ -121,6 +121,11 @@ Non-goals (v1, but the format must not block them):
 
 `schemaVersion` is the version of this format, not of the form. It lets later
 releases migrate stored definitions.
+
+`settings.design` is optional and every key in it too: `width` (`narrow`,
+`standard`, `wide`), `card` (boolean), `background` (`default`, `plain`,
+`color`), `backgroundColor` and `accentColor` (`#rrggbb` only, so a value can
+never carry CSS).
 
 ## 4. Fields
 
@@ -258,7 +263,9 @@ and action messages stay plain text.
 
 ## 5. Layout: pages > rows > cells (DECISION)
 
-- `pages`: ordered. v1 validation requires exactly one page.
+- `pages`: ordered, 1 to 20. Each page is shown as one step; respondents move
+  through them with Back and Next. A page whose fields are all hidden by rules
+  is skipped. `title` is optional. A field appears in exactly one cell on one page.
 - `rows`: ordered, each row is a horizontal band.
 - `cells`: ordered within a row. Each cell holds exactly one field.
 - `span`: width in twelfths of the row. v1 allows only 3, 4, 6, 8, 9, and 12
