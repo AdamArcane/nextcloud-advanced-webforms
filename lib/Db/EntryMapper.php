@@ -13,6 +13,7 @@ use OCA\AdvancedForms\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\QBMapper;
 use OCP\DB\Exception;
+use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 
 /**
@@ -85,6 +86,19 @@ class EntryMapper extends QBMapper {
 		$total = (int)$result->fetchOne();
 		$result->closeCursor();
 		return $total;
+	}
+
+	/**
+	 * Remove a deleted account's name from the responses it gave, keeping the answers.
+	 *
+	 * @throws Exception
+	 */
+	public function anonymizeUser(string $userId): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->update($this->getTableName())
+			->set('user_id', $qb->createNamedParameter(null, IQueryBuilder::PARAM_NULL))
+			->where($qb->expr()->eq('user_id', $qb->createNamedParameter($userId)));
+		$qb->executeStatement();
 	}
 
 	/**
