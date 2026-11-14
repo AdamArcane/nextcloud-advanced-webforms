@@ -27,26 +27,26 @@ function segment(wrapper: ReturnType<typeof mount>, group: string, label: string
 describe('label position in the field editor', () => {
 	it('follows the form by default', () => {
 		const { def, id } = withField('text')
-		const wrapper = mount(FieldProperties, { props: { definition: def, fieldId: id, errorCodes: [] } })
+		const wrapper = mount(FieldProperties, { props: { section: 'general' as const, definition: def, fieldId: id, errorCodes: [] } })
 		expect(segment(wrapper, 'Label position', 'Form').attributes('aria-checked')).toBe('true')
 		expect(wrapper.text()).toContain('Following the form setting: above the field.')
 	})
 
 	it('explains what the form setting means for this field', () => {
 		const { def, id } = withField('text', {}, { labelPosition: 'inline' })
-		const wrapper = mount(FieldProperties, { props: { definition: def, fieldId: id, errorCodes: [] } })
+		const wrapper = mount(FieldProperties, { props: { section: 'general' as const, definition: def, fieldId: id, errorCodes: [] } })
 		expect(wrapper.text()).toContain('beside the field')
 	})
 
 	it('says when a type cannot go beside and the label stays above', () => {
 		const { def, id } = withField('textarea', {}, { labelPosition: 'inline' })
-		const wrapper = mount(FieldProperties, { props: { definition: def, fieldId: id, errorCodes: [] } })
+		const wrapper = mount(FieldProperties, { props: { section: 'general' as const, definition: def, fieldId: id, errorCodes: [] } })
 		expect(wrapper.text()).toContain('stays above this kind of field')
 	})
 
 	it('emits the chosen position and clears the older hideLabel flag', async () => {
 		const { def, id } = withField('text', { hideLabel: true })
-		const wrapper = mount(FieldProperties, { props: { definition: def, fieldId: id, errorCodes: [] } })
+		const wrapper = mount(FieldProperties, { props: { section: 'general' as const, definition: def, fieldId: id, errorCodes: [] } })
 		// The older flag shows as Hidden.
 		expect(segment(wrapper, 'Label position', 'Hidden').attributes('aria-checked')).toBe('true')
 		await segment(wrapper, 'Label position', 'Beside').trigger('click')
@@ -55,7 +55,7 @@ describe('label position in the field editor', () => {
 
 	it('returns to the form default by removing the property', async () => {
 		const { def, id } = withField('text', { labelPosition: 'above' })
-		const wrapper = mount(FieldProperties, { props: { definition: def, fieldId: id, errorCodes: [] } })
+		const wrapper = mount(FieldProperties, { props: { section: 'general' as const, definition: def, fieldId: id, errorCodes: [] } })
 		await segment(wrapper, 'Label position', 'Form').trigger('click')
 		expect(wrapper.emitted('update')![0][0]).toEqual({ labelPosition: undefined, hideLabel: undefined })
 	})
@@ -63,18 +63,18 @@ describe('label position in the field editor', () => {
 	it('does not offer Beside for fields that cannot use it', () => {
 		for (const type of ['textarea', 'radio', 'checkboxes', 'checkbox']) {
 			const { def, id } = withField(type)
-			const wrapper = mount(FieldProperties, { props: { definition: def, fieldId: id, errorCodes: [] } })
+			const wrapper = mount(FieldProperties, { props: { section: 'general' as const, definition: def, fieldId: id, errorCodes: [] } })
 			expect(segment(wrapper, 'Label position', 'Beside').attributes('disabled')).toBeDefined()
 			expect(segment(wrapper, 'Label position', 'Above').attributes('disabled')).toBeUndefined()
 		}
 		const { def, id } = withField('email')
-		const wrapper = mount(FieldProperties, { props: { definition: def, fieldId: id, errorCodes: [] } })
+		const wrapper = mount(FieldProperties, { props: { section: 'general' as const, definition: def, fieldId: id, errorCodes: [] } })
 		expect(segment(wrapper, 'Label position', 'Beside').attributes('disabled')).toBeUndefined()
 	})
 
 	it('does not show a label position for display fields', () => {
 		const { def, id } = withField('paragraph')
-		const wrapper = mount(FieldProperties, { props: { definition: def, fieldId: id, errorCodes: [] } })
+		const wrapper = mount(FieldProperties, { props: { section: 'general' as const, definition: def, fieldId: id, errorCodes: [] } })
 		expect(wrapper.text()).not.toContain('Label position')
 	})
 })
@@ -82,7 +82,7 @@ describe('label position in the field editor', () => {
 describe('label position for the whole form', () => {
 	it('shows the current default and emits changes, leaving above as the absence of a setting', async () => {
 		const def = emptyDefinition('T')
-		const wrapper = mount(FormProperties, { props: { definition: def, shareUrl: null } })
+		const wrapper = mount(FormProperties, { props: { section: 'general' as const, definition: def, shareUrl: null } })
 		const group = 'Label position for the whole form'
 		expect(segment(wrapper, group, 'Above').attributes('aria-checked')).toBe('true')
 
@@ -99,7 +99,7 @@ describe('label position for the whole form', () => {
 	it('reflects a saved default', () => {
 		const def = emptyDefinition('T')
 		def.settings = { labelPosition: 'inline' }
-		const wrapper = mount(FormProperties, { props: { definition: def, shareUrl: null } })
+		const wrapper = mount(FormProperties, { props: { section: 'general' as const, definition: def, shareUrl: null } })
 		expect(segment(wrapper, 'Label position for the whole form', 'Beside').attributes('aria-checked')).toBe('true')
 	})
 })

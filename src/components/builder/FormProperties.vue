@@ -17,6 +17,8 @@ import { ref } from 'vue'
 import SegmentedControl from './SegmentedControl.vue'
 
 defineProps<{
+	/** Which page of the settings to show. */
+	section: 'general' | 'sharing'
 	definition: DraftDefinition
 	/** The public link, once the form has been published. */
 	shareUrl: string | null
@@ -57,7 +59,7 @@ function str(value: string | number): string | undefined {
 
 <template>
 	<div class="af-form-props">
-		<section class="af-form-props__section">
+		<section v-if="section === 'general'" class="af-form-props__section">
 			<NcTextField :model-value="definition.title"
 				:label="t('advancedforms', 'Title')"
 				@update:model-value="(value: string | number) => emit('title', String(value))" />
@@ -67,7 +69,7 @@ function str(value: string | number): string | undefined {
 				@update:model-value="(value: string) => emit('description', value)" />
 		</section>
 
-		<section class="af-form-props__section">
+		<section v-if="section === 'general'" class="af-form-props__section">
 			<h3 class="af-form-props__heading">
 				{{ t('advancedforms', 'Labels') }}
 			</h3>
@@ -84,7 +86,7 @@ function str(value: string | number): string | undefined {
 			</p>
 		</section>
 
-		<section class="af-form-props__section">
+		<section v-if="section === 'general'" class="af-form-props__section">
 			<h3 class="af-form-props__heading">
 				{{ t('advancedforms', 'Submitting') }}
 			</h3>
@@ -92,24 +94,11 @@ function str(value: string | number): string | undefined {
 				:label="t('advancedforms', 'Submit button text')"
 				:placeholder="t('advancedforms', 'Send')"
 				@update:model-value="(value: string | number) => emit('settings', { submitLabel: str(value) })" />
-			<NcTextField :model-value="definition.settings.closedMessage ?? ''"
-				:label="t('advancedforms', 'Message when closed')"
-				@update:model-value="(value: string | number) => emit('settings', { closedMessage: str(value) })" />
-			<NcCheckboxRadioSwitch type="switch"
-				:model-value="definition.settings.requireLogin === true"
-				@update:model-value="(value: boolean) => emit('settings', { requireLogin: value ? true : undefined })">
-				{{ t('advancedforms', 'Only logged-in users can respond') }}
-			</NcCheckboxRadioSwitch>
-			<NcCheckboxRadioSwitch type="switch"
-				:model-value="definition.settings.allowMultipleSubmissions !== false"
-				@update:model-value="(value: boolean) => emit('settings', { allowMultipleSubmissions: value ? undefined : false })">
-				{{ t('advancedforms', 'Allow more than one response per person') }}
-			</NcCheckboxRadioSwitch>
 		</section>
 
-		<section class="af-form-props__section">
+		<section v-if="section === 'sharing'" class="af-form-props__section">
 			<h3 class="af-form-props__heading">
-				{{ t('advancedforms', 'Share') }}
+				{{ t('advancedforms', 'Public link') }}
 			</h3>
 			<template v-if="shareUrl">
 				<NcTextField :model-value="shareUrl"
@@ -128,9 +117,26 @@ function str(value: string | number): string | undefined {
 			</p>
 		</section>
 
-		<slot />
+		<section v-if="section === 'sharing'" class="af-form-props__section">
+			<h3 class="af-form-props__heading">
+				{{ t('advancedforms', 'Who can respond') }}
+			</h3>
+			<NcCheckboxRadioSwitch type="switch"
+				:model-value="definition.settings.requireLogin === true"
+				@update:model-value="(value: boolean) => emit('settings', { requireLogin: value ? true : undefined })">
+				{{ t('advancedforms', 'Only logged-in users can respond') }}
+			</NcCheckboxRadioSwitch>
+			<NcCheckboxRadioSwitch type="switch"
+				:model-value="definition.settings.allowMultipleSubmissions !== false"
+				@update:model-value="(value: boolean) => emit('settings', { allowMultipleSubmissions: value ? undefined : false })">
+				{{ t('advancedforms', 'Allow more than one response per person') }}
+			</NcCheckboxRadioSwitch>
+			<NcTextField :model-value="definition.settings.closedMessage ?? ''"
+				:label="t('advancedforms', 'Message when closed')"
+				@update:model-value="(value: string | number) => emit('settings', { closedMessage: str(value) })" />
+		</section>
 
-		<section class="af-form-props__section">
+		<section v-if="section === 'general'" class="af-form-props__section">
 			<NcButton variant="error" @click="emit('delete')">
 				<template #icon>
 					<Icon :path="icons.delete" />

@@ -76,8 +76,14 @@ describe('BuilderView', () => {
 		const settings = mountView('settings')
 		await flushPromises()
 		expect(settings.findComponent({ name: 'FormProperties' }).exists()).toBe(true)
-		expect(settings.findComponent({ name: 'ActionsPanel' }).exists()).toBe(true)
 		expect(settings.findComponent({ name: 'BuilderCanvas' }).exists()).toBe(false)
+
+		// Actions live on their own tab of the settings page.
+		expect(settings.findComponent({ name: 'ActionsPanel' }).exists()).toBe(false)
+		const actionsTab = settings.findAll('[role=radio]').find((node) => node.text().includes('Actions'))!
+		await actionsTab.trigger('click')
+		expect(settings.findComponent({ name: 'ActionsPanel' }).exists()).toBe(true)
+		expect(settings.findComponent({ name: 'FormProperties' }).exists()).toBe(false)
 		settings.unmount()
 	})
 

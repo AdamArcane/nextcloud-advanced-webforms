@@ -62,6 +62,7 @@ const selectedId = ref<string | null>(null)
 const wide = typeof window.matchMedia === 'function' && window.matchMedia('(min-width: 1024px)').matches
 const sidebarOpen = ref(wide)
 const tab = ref<'field' | 'logic'>('field')
+const settingsTab = ref<'general' | 'sharing' | 'actions'>('general')
 const canvasWidth = ref<'desktop' | 'mobile'>('desktop')
 const mobile = computed(() => canvasWidth.value === 'mobile')
 const previewOpen = ref(false)
@@ -396,22 +397,28 @@ async function onDeleteConfirmed(): Promise<void> {
 
 			<div v-if="view === 'settings'" class="af-settings">
 				<div class="af-settings__inner">
-					<FormProperties :definition="draft"
+					<SegmentedControl v-model="settingsTab"
+						class="af-settings__tabs"
+						collapse
+						:group-label="t('advancedforms', 'Settings section')"
+						:options="[
+							{ value: 'general', label: t('advancedforms', 'General'), icon: icons.settings },
+							{ value: 'sharing', label: t('advancedforms', 'Sharing'), icon: icons.share },
+							{ value: 'actions', label: t('advancedforms', 'Actions'), icon: icons.tabActions },
+						]" />
+					<ActionsPanel v-if="settingsTab === 'actions'"
+						:definition="draft"
+						:form-id="formId"
+						:errors="errors"
+						@change="edit" />
+					<FormProperties v-else
+						:section="settingsTab"
+						:definition="draft"
 						:share-url="shareUrl"
 						@title="onTitle"
 						@description="onDescription"
 						@settings="onSettings"
-						@delete="confirmDeleteForm = true">
-						<section class="af-settings__actions">
-							<h3 class="af-settings__heading">
-								{{ t('advancedforms', 'After submitting') }}
-							</h3>
-							<ActionsPanel :definition="draft"
-								:form-id="formId"
-								:errors="errors"
-								@change="edit" />
-						</section>
-					</FormProperties>
+						@delete="confirmDeleteForm = true" />
 				</div>
 			</div>
 			<BuilderCanvas v-else
@@ -558,13 +565,9 @@ async function onDeleteConfirmed(): Promise<void> {
 	padding: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 8);
 }
 
-.af-settings__heading {
-	margin: 0 0 calc(var(--default-grid-baseline) * 2);
-	font-size: 14px;
-	font-weight: bold;
-	color: var(--color-text-maxcontrast);
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
+.af-settings__tabs {
+	max-width: 420px;
+	margin: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 3) 0;
 }
 
 .af-builder__notes {
