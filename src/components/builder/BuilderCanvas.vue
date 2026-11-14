@@ -630,10 +630,11 @@ function codes(fieldId: string): string[] {
 .af-cell__resize {
 	position: absolute;
 	top: 0;
-	right: -6px;
+	right: 0;
 	bottom: 0;
 	z-index: 1;
-	width: 10px;
+	/* Inside the cell: each cell is its own stacking context (container-type), so the next cell would cover anything overhanging. */
+	width: 14px;
 	min-height: 0;
 	padding: 0;
 	border: 0;
@@ -648,7 +649,7 @@ function codes(fieldId: string): string[] {
 	position: absolute;
 	top: 25%;
 	bottom: 25%;
-	left: 3px;
+	right: 3px;
 	width: 4px;
 	border-radius: 2px;
 	background: var(--color-primary-element);
