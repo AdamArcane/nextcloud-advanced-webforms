@@ -5,7 +5,7 @@
 
 # Changelog
 
-## 0.1.0 - Unreleased
+## 0.1.1 - Unreleased
 
 - Initial app skeleton: app metadata, empty page, database schema for forms,
   versions, entries, and the action log.
