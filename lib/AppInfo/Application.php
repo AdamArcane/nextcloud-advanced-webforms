@@ -9,6 +9,12 @@ declare(strict_types=1);
 
 namespace OCA\AdvancedForms\AppInfo;
 
+use OCA\AdvancedForms\Actions\Adapter\NextcloudHttp;
+use OCA\AdvancedForms\Actions\Adapter\NextcloudMail;
+use OCA\AdvancedForms\Actions\Adapter\NextcloudSecrets;
+use OCA\AdvancedForms\Actions\Ports\HttpPort;
+use OCA\AdvancedForms\Actions\Ports\MailPort;
+use OCA\AdvancedForms\Actions\Ports\SecretPort;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -25,7 +31,11 @@ class Application extends App implements IBootstrap {
 	}
 
 	public function register(IRegistrationContext $context): void {
-		// Services, listeners, and middleware are registered here as they are added.
+		// The action runner depends on small interfaces so it can be tested without a server;
+		// these bind them to Nextcloud's mailer, HTTP client and encrypted config.
+		$context->registerServiceAlias(MailPort::class, NextcloudMail::class);
+		$context->registerServiceAlias(HttpPort::class, NextcloudHttp::class);
+		$context->registerServiceAlias(SecretPort::class, NextcloudSecrets::class);
 	}
 
 	public function boot(IBootContext $context): void {

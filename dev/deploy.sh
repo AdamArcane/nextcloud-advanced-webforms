@@ -30,5 +30,10 @@ ssh "$TARGET" 'cd /opt/nc-dev && docker compose exec -T app sh -c "printf \"<Loc
 ssh "$TARGET" 'cd /opt/nc-dev && docker compose exec -T app apachectl graceful'
 
 OCC='cd /opt/nc-dev && docker compose exec -T -u www-data app php occ'
+# Route outgoing mail to Mailpit (web UI on port 8025) so email actions can be tried without a real mail server.
+ssh "$TARGET" "$OCC config:system:set mail_smtpmode --value=smtp && $OCC config:system:set mail_smtphost --value=mailpit && $OCC config:system:set mail_smtpport --value=1025 --type=integer && $OCC config:system:set mail_from_address --value=forms && $OCC config:system:set mail_domain --value=nc-dev.test" >/dev/null
+
+# Applies a new app version and any new migrations; does nothing when there is nothing to do.
+ssh "$TARGET" "$OCC upgrade" | tail -3
 ssh "$TARGET" "$OCC app:enable advancedforms && $OCC app:list | grep -A1 advancedforms"
 echo "Deployed. Logs: ssh $TARGET 'cd /opt/nc-dev && docker compose logs -f app'"

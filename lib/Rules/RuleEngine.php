@@ -79,6 +79,26 @@ final class RuleEngine {
 	}
 
 	/**
+	 * Evaluate one condition tree against submitted values, for after-submit
+	 * action conditions (docs/SCHEMA.md section 7.1). The values are the entry's
+	 * post-visibility data, so hidden fields are already absent and read as empty.
+	 *
+	 * @param array<string, array<string, mixed>> $fields the definition's fields
+	 * @param array<string, mixed> $values answers keyed by field ID
+	 */
+	public function matchesCondition(array $fields, mixed $condition, array $values): bool {
+		/** @var array<string, string|float|bool|list<string>|null> $effective */
+		$effective = [];
+		foreach ($fields as $id => $field) {
+			$type = is_array($field) && is_string($field['type'] ?? null) ? $field['type'] : '';
+			if (FieldType::isInput($type)) {
+				$effective[(string)$id] = ValueNormalizer::normalize($type, $values[$id] ?? null);
+			}
+		}
+		return $this->matches($condition, $fields, $effective);
+	}
+
+	/**
 	 * @param list<mixed> $conditions
 	 * @param array<string, array<string, mixed>> $fields
 	 * @param array<string, string|float|bool|list<string>|null> $effective

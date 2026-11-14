@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\AdvancedForms\Controller;
 
+use OCA\AdvancedForms\Actions\Adapter\NextcloudSecrets;
 use OCA\AdvancedForms\AppInfo\Application;
 use OCA\AdvancedForms\Exception\NotFoundException;
 use OCA\AdvancedForms\Exception\ValidationException;
@@ -30,6 +31,7 @@ class FormController extends Controller {
 		IRequest $request,
 		private readonly FormService $service,
 		private readonly IUserSession $userSession,
+		private readonly NextcloudSecrets $secrets,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 	}
@@ -116,6 +118,30 @@ class FormController extends Controller {
 		return $this->guard(function () use ($id, $entryId): JSONResponse {
 			$this->service->deleteEntry($this->userId(), $id, $entryId);
 			return new JSONResponse([], Http::STATUS_NO_CONTENT);
+		});
+	}
+
+	/**
+	 * Create or replace a webhook signing secret. The value is in this response
+	 * only; it is stored encrypted and cannot be read back.
+	 */
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/forms/{id}/webhook-secret')]
+	public function createWebhookSecret(int $id, string $ref = ''): JSONResponse {
+		return $this->guard(function () use ($id, $ref): JSONResponse {
+			$form = $this->service->get($this->userId(), $id);
+			$response = new JSONResponse($this->secrets->generate($form->getId(), $ref === '' ? null : $ref), Http::STATUS_CREATED);
+			$response->addHeader('Cache-Control', 'no-store');
+			return $response;
+		});
+	}
+
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/forms/{id}/webhook-secret/{ref}')]
+	public function webhookSecretExists(int $id, string $ref): JSONResponse {
+		return $this->guard(function () use ($id, $ref): JSONResponse {
+			$form = $this->service->get($this->userId(), $id);
+			return new JSONResponse(['exists' => $this->secrets->exists($form->getId(), $ref)]);
 		});
 	}
 

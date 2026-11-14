@@ -5,7 +5,7 @@
 
 # Changelog
 
-## 0.1.1 - Unreleased
+## 0.2.0 - Unreleased
 
 - Initial app skeleton: app metadata, empty page, database schema for forms,
   versions, entries, and the action log.
@@ -15,3 +15,8 @@
   a rules editor (show, hide, require) with nested All/Any groups.
 - Label position: above, beside, or hidden, set for the whole form and per field.
   `hideLabel` still works and means the same as `hidden`.
+- After-submit actions: message and redirect (resolved in the submit response),
+  and email and webhook (queued, sent in the background, retried with backoff,
+  logged). Webhooks are signed with HMAC-SHA256 and use Nextcloud's HTTP client
+  so its private-address protection applies. Respondent-addressed email is
+  capped per form per hour. Actions tab in the builder.

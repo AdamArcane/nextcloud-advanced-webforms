@@ -8,11 +8,12 @@
 Forms with conditional logic, grid layouts, and after-submit actions, for
 Nextcloud. Your data stays on your server.
 
-**Status: early development.** The app installs and shows an empty page. The
-data format, rules engine, validation, the owner and public APIs, and the public
-form page (live rules, grid layout, markdown paragraphs) are written. The
-builder, entries view and after-submit actions are not built yet, and none of it
-has been run on a real Nextcloud server.
+**Status: early development.** You can build a form (fields, grid layout, label
+position, conditional rules, after-submit actions), publish it, and collect
+responses on a development Nextcloud server. Not built yet: the entries view
+(browsing responses and the action log) and exports. Webhook delivery to a
+receiver on a public address is implemented and unit tested, but has not been
+exercised end to end on a real server.
 
 ## Planned for v1
 
@@ -20,7 +21,7 @@ has been run on a real Nextcloud server.
   nested AND/OR conditions.
 - Grid layout: several fields per row, responsive.
 - Label position: above, beside, or hidden, set for the form and per field.
-- After-submit actions: email, webhook, confirmation message, redirect.
+- After-submit actions: confirmation message, redirect, email and signed webhooks (sent in the background with retries), each with optional conditions.
 - Public forms by link, and forms for logged-in users.
 
 ## Planned later

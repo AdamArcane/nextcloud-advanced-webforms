@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\AdvancedForms\Service;
 
+use OCA\AdvancedForms\Actions\Adapter\NextcloudSecrets;
 use OCA\AdvancedForms\Db\ActionLogMapper;
 use OCA\AdvancedForms\Db\EntryMapper;
 use OCA\AdvancedForms\Db\Form;
@@ -39,6 +40,7 @@ class FormService {
 		private readonly DefinitionValidator $validator,
 		private readonly ITimeFactory $time,
 		private readonly ISecureRandom $random,
+		private readonly NextcloudSecrets $secrets,
 	) {
 	}
 
@@ -207,6 +209,7 @@ class FormService {
 		$form = $this->get($userId, $id);
 		$this->entries->deleteByForm($form->getId());
 		$this->actionLog->deleteByForm($form->getId());
+		$this->secrets->deleteForForm($form->getId());
 		$this->versions->deleteByForm($form->getId());
 		$this->forms->delete($form);
 	}

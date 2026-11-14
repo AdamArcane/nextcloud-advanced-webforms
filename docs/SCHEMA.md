@@ -411,13 +411,32 @@ condition group (same format as rules) evaluated against the submitted
   - `subject`, `body`: plain text with `{field_id}` placeholders.
   - Sent through Nextcloud's configured mailer.
   - Recipient from respondent input is only allowed from an `email` field and is
-    always rate limited per form, because it is an abuse vector (spam relay).
+    always rate limited per form, because it is an abuse vector (spam relay):
+    at most 30 such emails per form per hour, beyond which the delivery is
+    logged as skipped (`rate_limited`). Mail to a fixed owner address is not
+    capped.
+  - If the respondent left the email field empty or gave an invalid address,
+    the delivery is logged as skipped (`no_recipient`).
   - Placeholder values are inserted as plain text, and header injection
     (newlines) is stripped from `subject`.
 - `webhook`:
   - `url`: https URL set by the form owner (no placeholders in the URL).
-  - POST with a JSON body (section 7.3), HMAC-SHA256 signature header computed
-    with a per-action secret, 10 second timeout.
+  - POST with a JSON body (section 7.3), 10 second timeout, redirects are not
+    followed.
+  - Signing: if the action has a `secretRef`, the request carries
+    `X-AdvancedForms-Timestamp` (Unix seconds) and `X-AdvancedForms-Signature`,
+    which is `sha256=` followed by the hex HMAC-SHA256 of `<timestamp>.<body>`
+    with the secret. The timestamp is part of what is signed, so a captured
+    request cannot be replayed with a fresh one; receivers should also reject
+    stale timestamps. Without a `secretRef` the request is unsigned.
+  - Other headers: `X-AdvancedForms-Event: entry.created` and
+    `X-AdvancedForms-Delivery: <log row id>`.
+  - Secrets never appear in a definition, only the reference. The value is
+    created by the owner API (`POST /forms/{id}/webhook-secret`), returned once,
+    and stored encrypted as a sensitive app config value. It cannot be read
+    back; regenerating under the same reference replaces it. Deleting the form
+    deletes its secrets. A webhook whose `secretRef` has no stored secret fails
+    without sending anything.
   - Must use Nextcloud's HTTP client so its local-address (SSRF) protection
     applies. Targets on private networks are blocked unless the admin allows it.
 - `message`: confirmation text shown to the respondent. If several match, the
@@ -450,9 +469,17 @@ Hidden or unanswered fields are omitted from `data`.
 - Actions never run inside the submit request. After the entry is committed,
   one queued background job per matching action is created.
 - Action failure never fails or rolls back the submission.
-- Each job retries with backoff (limit to be tuned, initial proposal: 5 tries).
-- Every attempt is recorded in an action log (entry, action, status, attempt,
-  error, time). The owner can view it and retry manually.
+- Deliveries are rows in the action log, worked through by a background job.
+  A job queued at submit time sends them at the next background run, and a
+  one-minute timed job picks up retries.
+- Each delivery is tried up to 5 times, waiting 1 minute, 5 minutes, 30 minutes
+  and 2 hours between attempts. A rejected request (a 4xx other than 408 or
+  429, a missing secret) is not retried. A 5xx, 408, 429, or a network error is.
+- The log row records status (`queued`, `success`, `failed`, `skipped`), the
+  number of attempts, the last error, and when it is next due. There is at most
+  one row per action per entry. A worker reserves a row for 5 minutes while it
+  runs, so a crashed worker's delivery becomes due again instead of stuck.
+- The owner can view the log and retry manually (not built yet).
 - `message` and `redirect` are the exception: they are resolved synchronously
   and returned in the submit response, because the respondent needs them now.
 
@@ -542,8 +569,7 @@ vectors first, and both test suites must pass.
 4. Per-form limits (maximum fields, maximum rules, maximum actions) to bound
    evaluation cost on public forms. Proposed starting values: 100 fields,
    100 rules, 10 actions.
-5. Webhook secret storage: per-action secret kept encrypted with Nextcloud's
-   crypto helper; confirm the exact mechanism during implementation.
+5. Webhook secret storage: decided, see section 7.2.
 6. Anonymous multiple-submission control: accept the limitation, or add a
    cookie-based soft limit.
 7. Phone validation depth: keep the permissive format check, or validate with a
