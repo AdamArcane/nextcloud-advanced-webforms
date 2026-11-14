@@ -17,7 +17,7 @@ import { computed, nextTick, onMounted, ref } from 'vue'
 import { icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
 import { deleteEntry, exportUrl, listDeliveries, listEntries, retryDelivery } from '../../api/forms.ts'
-import FormNav from '../FormNav.vue'
+import FormBar from '../FormBar.vue'
 import SegmentedControl from '../builder/SegmentedControl.vue'
 import DeliveryRow from './DeliveryRow.vue'
 import ResponseCard from './ResponseCard.vue'
@@ -187,23 +187,19 @@ onMounted(() => {
 
 <template>
 	<NcAppContent class="af-entries">
-		<header class="af-entries__bar">
-			<div class="af-entries__title">
-				<h2 class="af-entries__name">
-					{{ title }}
-				</h2>
+		<FormBar :form-id="formId" active="responses" :title="title">
+			<template #meta>
 				<span class="af-entries__count">{{ t('advancedforms', '{n} responses', { n: total }) }}</span>
-			</div>
-			<div class="af-entries__actions">
-				<FormNav :form-id="formId" active="responses" />
+			</template>
+			<template #end>
 				<NcButton variant="secondary" :href="exportUrl(formId)" :disabled="total === 0">
 					<template #icon>
 						<Icon :path="icons.download" />
 					</template>
 					{{ t('advancedforms', 'Download CSV') }}
 				</NcButton>
-			</div>
-		</header>
+			</template>
+		</FormBar>
 
 		<div class="af-entries__body">
 			<SegmentedControl :model-value="tab"
@@ -333,47 +329,10 @@ onMounted(() => {
 	flex-direction: column;
 }
 
-.af-entries__bar {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	justify-content: space-between;
-	gap: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 4);
-	/* Leave room for the navigation toggle Nextcloud pins to the top corner. */
-	padding: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 4) calc(var(--default-grid-baseline) * 2) calc(var(--default-clickable-area) + var(--default-grid-baseline) * 4);
-	border-bottom: 1px solid var(--color-border);
-	background: var(--color-main-background);
-}
-
-.af-entries__title {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: baseline;
-	gap: var(--default-grid-baseline) calc(var(--default-grid-baseline) * 3);
-	min-width: 0;
-}
-
-.af-entries__name {
-	max-width: 32ch;
-	margin: 0;
-	overflow: hidden;
-	font-size: 20px;
-	font-weight: bold;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
 .af-entries__count,
 .af-entries__hint {
 	color: var(--color-text-maxcontrast);
 	font-size: 13px;
-}
-
-.af-entries__actions {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: calc(var(--default-grid-baseline) * 2);
 }
 
 .af-entries__body {

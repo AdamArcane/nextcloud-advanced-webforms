@@ -66,7 +66,7 @@ const emit = defineEmits<{
 	flex: 1 1 0;
 	min-width: 0;
 	min-height: calc(var(--default-clickable-area) - 6px);
-	padding: 0 var(--default-grid-baseline);
+	padding: 0 calc(var(--default-grid-baseline) * 3);
 	border: 0;
 	border-radius: calc(var(--border-radius-element) - 2px);
 	background: transparent;

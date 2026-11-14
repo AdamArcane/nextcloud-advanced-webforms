@@ -27,7 +27,7 @@ import { renameField } from '../../builder/fieldId.ts'
 import type { Rule } from '../../rules/types.ts'
 import { FORM_STATUS_PUBLISHED } from '../../types.ts'
 import ActionsPanel from './ActionsPanel.vue'
-import FormNav from '../FormNav.vue'
+import FormBar from '../FormBar.vue'
 import BuilderCanvas from './BuilderCanvas.vue'
 import FieldProperties from './FieldProperties.vue'
 import FormProperties from './FormProperties.vue'
@@ -324,64 +324,60 @@ async function onDeleteConfirmed(): Promise<void> {
 		</div>
 
 		<template v-else>
-			<header class="af-bar" :class="{ 'af-bar--sidebar': view === 'edit' }">
-				<div class="af-bar__top">
-					<div class="af-bar__title">
-						<h2 class="af-bar__name">
-							{{ draft.title }}
-						</h2>
-						<!-- An icon says it at a glance; the words stay for screen readers and as a tooltip. -->
-						<span class="af-bar__status" :class="'af-bar__status--' + saveState" role="status" :title="saveLabel">
-							<NcLoadingIcon v-if="saveState === 'saving'" :size="16" />
-							<Icon v-else-if="saveState === 'error'" :path="icons.alert" :size="18" />
-							<Icon v-else-if="saveState === 'dirty'" :path="icons.unsaved" :size="18" />
-							<Icon v-else :path="icons.check" :size="18" />
-							<span class="af-sr-only">{{ saveLabel }}</span>
-						</span>
-						<span v-if="published" class="af-bar__chip">
-							{{ t('advancedforms', 'Published') }}
-						</span>
-						<span v-else class="af-bar__chip af-bar__chip--quiet">{{ t('advancedforms', 'Draft') }}</span>
-					</div>
-					<div class="af-bar__icons">
-						<NcButton variant="tertiary"
-							:aria-label="t('advancedforms', 'Preview')"
-							:title="t('advancedforms', 'Preview')"
-							@click="previewOpen = true">
-							<template #icon>
-								<Icon :path="icons.preview" />
-							</template>
-						</NcButton>
-						<NcButton v-if="published && shareUrl"
-							variant="tertiary"
-							:href="shareUrl"
-							target="_blank"
-							rel="noopener"
-							:aria-label="t('advancedforms', 'Open published form')"
-							:title="t('advancedforms', 'Open published form')">
-							<template #icon>
-								<Icon :path="icons.openNew" />
-							</template>
-						</NcButton>
-					</div>
-				</div>
-				<div class="af-bar__tools">
-					<FormNav :form-id="formId" active="edit" />
-					<SegmentedControl v-if="view === 'edit'"
-						v-model="canvasWidth"
-						class="af-bar__device"
+			<FormBar :form-id="formId"
+				:active="view"
+				:title="draft.title"
+				sidebar-toggle>
+				<template #meta>
+					<!-- An icon says it at a glance; the words stay for screen readers and as a tooltip. -->
+					<span class="af-bar__status" :class="'af-bar__status--' + saveState" role="status" :title="saveLabel">
+						<NcLoadingIcon v-if="saveState === 'saving'" :size="16" />
+						<Icon v-else-if="saveState === 'error'" :path="icons.alert" :size="18" />
+						<Icon v-else-if="saveState === 'dirty'" :path="icons.unsaved" :size="18" />
+						<Icon v-else :path="icons.check" :size="18" />
+						<span class="af-sr-only">{{ saveLabel }}</span>
+					</span>
+					<span v-if="published" class="af-bar__chip">
+						{{ t('advancedforms', 'Published') }}
+					</span>
+					<span v-else class="af-bar__chip af-bar__chip--quiet">{{ t('advancedforms', 'Draft') }}</span>
+				</template>
+				<template #icons>
+					<NcButton variant="tertiary"
+						:aria-label="t('advancedforms', 'Preview')"
+						:title="t('advancedforms', 'Preview')"
+						@click="previewOpen = true">
+						<template #icon>
+							<Icon :path="icons.preview" />
+						</template>
+					</NcButton>
+					<NcButton v-if="published && shareUrl"
+						variant="tertiary"
+						:href="shareUrl"
+						target="_blank"
+						rel="noopener"
+						:aria-label="t('advancedforms', 'Open published form')"
+						:title="t('advancedforms', 'Open published form')">
+						<template #icon>
+							<Icon :path="icons.openNew" />
+						</template>
+					</NcButton>
+				</template>
+				<template v-if="view === 'edit'" #center>
+					<SegmentedControl v-model="canvasWidth"
 						:group-label="t('advancedforms', 'Canvas width')"
 						:options="[
 							{ value: 'desktop', label: t('advancedforms', 'Desktop'), icon: icons.desktop },
 							{ value: 'mobile', label: t('advancedforms', 'Mobile'), icon: icons.mobile },
 						]"
 						icon-only />
-					<span v-else class="af-bar__device" />
-					<NcButton variant="primary" class="af-bar__publish" :disabled="!canPublish" @click="publish">
+				</template>
+				<template #end>
+					<NcButton variant="primary" :disabled="!canPublish" @click="publish">
 						{{ publishing ? t('advancedforms', 'Publishing…') : t('advancedforms', 'Publish') }}
 					</NcButton>
-				</div>
-			</header>
+				</template>
+			</FormBar>
 
 			<div class="af-builder__notes">
 				<NcNoteCard v-if="saveState === 'error'" type="error">
@@ -506,63 +502,6 @@ async function onDeleteConfirmed(): Promise<void> {
 	height: 100%;
 }
 
-.af-bar {
-	display: flex;
-	flex-direction: column;
-	gap: calc(var(--default-grid-baseline) * 2);
-	/* Leave room for the sidebar toggle that Nextcloud pins to the top corner. */
-	padding: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 4) calc(var(--default-grid-baseline) * 2) calc(var(--default-clickable-area) + var(--default-grid-baseline) * 4);
-	border-bottom: 1px solid var(--color-border);
-	background: var(--color-main-background);
-}
-
-.af-bar__top {
-	display: flex;
-	align-items: center;
-	gap: calc(var(--default-grid-baseline) * 2);
-	min-width: 0;
-}
-
-.af-bar__icons {
-	display: flex;
-	flex: 0 0 auto;
-	gap: 2px;
-}
-
-/* View switch on the left, device in the middle, Publish on the right. */
-.af-bar__tools {
-	display: grid;
-	grid-template-columns: 1fr auto 1fr;
-	align-items: center;
-	gap: calc(var(--default-grid-baseline) * 2);
-}
-
-.af-bar__tools > :first-child {
-	justify-self: start;
-}
-
-.af-bar__publish {
-	justify-self: end;
-}
-
-.af-bar__title {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: var(--default-grid-baseline) calc(var(--default-grid-baseline) * 3);
-	min-width: 0;
-}
-
-.af-bar__name {
-	margin: 0;
-	font-size: 20px;
-	font-weight: bold;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	max-width: 32ch;
-}
-
 .af-bar__status {
 	display: inline-flex;
 	align-items: center;
@@ -600,25 +539,8 @@ async function onDeleteConfirmed(): Promise<void> {
 	color: var(--color-text-maxcontrast);
 }
 
-.af-bar__device {
-	justify-self: center;
-	min-width: 84px;
-}
-
-/* Nextcloud pins the sidebar toggle to the top right corner on narrow screens; keep the icons clear of it. */
-@media (max-width: 1024px) {
-	.af-bar--sidebar .af-bar__top {
-		padding-inline-end: var(--default-clickable-area);
-	}
-}
-
-/* On a phone the canvas already is phone-sized, so the device switch and the Published chip only take room. */
+/* On a phone the Published chip only takes room. */
 @media (max-width: 700px) {
-	.af-bar__tools {
-		grid-template-columns: 1fr auto;
-	}
-
-	.af-bar__device,
 	.af-bar__chip {
 		display: none;
 	}

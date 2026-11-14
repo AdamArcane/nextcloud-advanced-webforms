@@ -34,12 +34,6 @@ function go(view: string | number): void {
 
 <style scoped>
 .af-formnav {
-	min-width: 200px;
-}
-
-@media (max-width: 700px) {
-	.af-formnav {
-		min-width: 0;
-	}
+	min-width: 0;
 }
 </style>
