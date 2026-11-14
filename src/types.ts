@@ -58,6 +58,8 @@ export interface FormSettings {
 	labelPosition?: LabelPosition
 	requireLogin?: boolean
 	allowMultipleSubmissions?: boolean
+	/** Leave out the asterisk after required labels. Screen readers are still told. Default false. */
+	hideRequiredIndicator?: boolean
 	closedMessage?: string
 }
 

@@ -426,6 +426,7 @@ function codes(fieldId: string): string[] {
 									:rule-count="rulesTouching(definition, cell.field).length"
 									:errors="codes(cell.field)"
 									:label-position="renderedLabelPosition(definition.fields[cell.field], definition.settings)"
+									:hide-required-indicator="definition.settings.hideRequiredIndicator === true"
 									@select="emit('select', cell.field)" />
 								<span v-if="resizing?.fieldId === cell.field" class="af-cell__span">{{ cell.span }}/12</span>
 								<button class="af-cell__resize"

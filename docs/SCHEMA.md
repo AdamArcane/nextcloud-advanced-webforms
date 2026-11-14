@@ -47,6 +47,7 @@ Non-goals (v1, but the format must not block them):
     "labelPosition": "above",
     "requireLogin": false,
     "allowMultipleSubmissions": true,
+    "hideRequiredIndicator": false,
     "closedMessage": "This form is no longer accepting responses.",
     "design": { "width": "standard", "card": true, "background": "default", "accentColor": "#0082c9" }
   },
@@ -121,6 +122,11 @@ Non-goals (v1, but the format must not block them):
 
 `schemaVersion` is the version of this format, not of the form. It lets later
 releases migrate stored definitions.
+
+`settings.hideRequiredIndicator` (boolean, default false) leaves out the asterisk
+after the labels of required fields. It only changes how the label is drawn: the
+field is still required, still marked required for assistive technology, and
+still validated.
 
 `settings.design` is optional and every key in it too: `width` (`narrow`,
 `standard`, `wide`), `card` (boolean), `background` (`default`, `plain`,

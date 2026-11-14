@@ -19,6 +19,8 @@ const props = defineProps<{
 	error: string | null
 	/** The position to draw, after fallbacks (see renderedLabelPosition). */
 	labelPosition?: LabelPosition
+	/** Leave out the asterisk after the label. The control is still marked required for assistive tech. */
+	hideRequiredIndicator?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -98,14 +100,14 @@ function toggleOption(value: string, event: Event) {
 					:aria-invalid="error ? true : undefined"
 					:aria-describedby="describedBy"
 					@change="onCheckbox">
-				<span :class="{ 'af-sr-only': hiddenLabel }">{{ field.label }}<span v-if="required" aria-hidden="true"> *</span></span>
+				<span :class="{ 'af-sr-only': hiddenLabel }">{{ field.label }}<span v-if="required && !hideRequiredIndicator" aria-hidden="true"> *</span></span>
 			</label>
 		</template>
 
 		<!-- Groups use fieldset and legend so the label names the whole group. -->
 		<fieldset v-else-if="isGroup" class="af-group" :aria-describedby="describedBy" :aria-invalid="error ? true : undefined">
 			<legend :class="{ 'af-sr-only': hiddenLabel }">
-				{{ field.label }}<span v-if="required" aria-hidden="true"> *</span>
+				{{ field.label }}<span v-if="required && !hideRequiredIndicator" aria-hidden="true"> *</span>
 			</legend>
 			<p v-if="field.description" :id="domId + '-desc'" class="af-description">
 				{{ field.description }}
@@ -128,7 +130,7 @@ function toggleOption(value: string, event: Event) {
 
 		<template v-else>
 			<label :for="domId" class="af-label" :class="{ 'af-sr-only': hiddenLabel }">
-				{{ field.label }}<span v-if="required" aria-hidden="true"> *</span>
+				{{ field.label }}<span v-if="required && !hideRequiredIndicator" aria-hidden="true"> *</span>
 			</label>
 			<textarea v-if="field.type === 'textarea'"
 				:id="domId"

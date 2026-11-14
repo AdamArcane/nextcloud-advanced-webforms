@@ -83,6 +83,17 @@ class DefinitionValidatorTest extends TestCase {
 		}));
 	}
 
+	public function testHideRequiredIndicatorSetting(): void {
+		$this->assertSame([], $this->codes(static function (array $d): array {
+			$d['settings']['hideRequiredIndicator'] = true;
+			return $d;
+		}));
+		$this->assertSame(['settings_invalid'], $this->codes(static function (array $d): array {
+			$d['settings']['hideRequiredIndicator'] = 'yes';
+			return $d;
+		}));
+	}
+
 	public function testDesignSettings(): void {
 		$this->assertSame([], $this->codes(static function (array $d): array {
 			$d['settings']['design'] = ['width' => 'wide', 'card' => false, 'background' => 'color', 'backgroundColor' => '#112233', 'accentColor' => '#FF8800', 'buttonColor' => '#00aa55'];

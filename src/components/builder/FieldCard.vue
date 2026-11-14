@@ -20,6 +20,7 @@ const props = defineProps<{
 	errors: string[]
 	/** The position respondents will see, after the form default and fallbacks. */
 	labelPosition: LabelPosition
+	hideRequiredIndicator?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -90,7 +91,7 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 
 		<div v-else class="af-card__body" :class="{ 'af-card__body--inline': inlineLabel }">
 			<span class="af-card__label" :class="{ 'af-card__label--hidden': hiddenLabel }">
-				{{ field.label || t('advancedforms', 'Untitled field') }}<span v-if="required" class="af-card__star" aria-hidden="true"> *</span>
+				{{ field.label || t('advancedforms', 'Untitled field') }}<span v-if="required && !hideRequiredIndicator" class="af-card__star" aria-hidden="true"> *</span>
 			</span>
 			<span class="af-card__control">
 				<span v-if="field.type === 'checkbox'" class="af-card__fake af-card__fake--box" aria-hidden="true" />

@@ -262,7 +262,8 @@ async function showError(error: unknown) {
 					:field="fields[cell.field]"
 					:required="required.has(cell.field)"
 					:error="fieldErrors[cell.field] ?? null"
-					:label-position="renderedLabelPosition(fields[cell.field], definition.settings)" />
+					:label-position="renderedLabelPosition(fields[cell.field], definition.settings)"
+					:hide-required-indicator="definition.settings?.hideRequiredIndicator === true" />
 			</div>
 		</div>
 

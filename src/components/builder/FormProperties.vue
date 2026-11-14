@@ -96,6 +96,11 @@ function str(value: string | number): string | undefined {
 			<p class="af-form-props__hint">
 				{{ t('advancedforms', 'Each field can override this. Beside labels stay above long text and choice fields.') }}
 			</p>
+			<NcCheckboxRadioSwitch type="switch"
+				:model-value="definition.settings.hideRequiredIndicator === true"
+				@update:model-value="(value: boolean) => emit('settings', { hideRequiredIndicator: value ? true : undefined })">
+				{{ t('advancedforms', 'Hide the required indicator (*)') }}
+			</NcCheckboxRadioSwitch>
 		</section>
 
 		<section v-if="section === 'general'" class="af-form-props__section">

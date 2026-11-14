@@ -89,3 +89,17 @@ describe('label position in the public renderer', () => {
 		}
 	})
 })
+
+describe('required indicator', () => {
+	const fields: Record<string, FormField> = { f_name: { type: 'text', label: 'Name', required: true } }
+
+	it('shows an asterisk by default', () => {
+		expect(render({}, fields).find('label').text()).toContain('*')
+	})
+
+	it('can be hidden, while the control stays marked required', () => {
+		const wrapper = render({ hideRequiredIndicator: true }, fields)
+		expect(wrapper.find('label').text()).not.toContain('*')
+		expect(wrapper.find('input').attributes('aria-required')).toBe('true')
+	})
+})
