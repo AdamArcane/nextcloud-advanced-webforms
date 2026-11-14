@@ -12,6 +12,7 @@ import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwit
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { ref } from 'vue'
+import SegmentedControl from './SegmentedControl.vue'
 
 defineProps<{
 	definition: DraftDefinition
@@ -62,6 +63,23 @@ function str(value: string | number): string | undefined {
 				:label="t('advancedforms', 'Description')"
 				rows="3"
 				@update:model-value="(value: string) => emit('description', value)" />
+		</section>
+
+		<section class="af-form-props__section">
+			<h3 class="af-form-props__heading">
+				{{ t('advancedforms', 'Labels') }}
+			</h3>
+			<SegmentedControl :model-value="definition.settings.labelPosition ?? 'above'"
+				:group-label="t('advancedforms', 'Label position for the whole form')"
+				:options="[
+					{ value: 'above', label: t('advancedforms', 'Above') },
+					{ value: 'inline', label: t('advancedforms', 'Beside') },
+					{ value: 'hidden', label: t('advancedforms', 'Hidden') },
+				]"
+				@update:model-value="(value) => emit('settings', { labelPosition: value === 'above' ? undefined : value as 'inline' | 'hidden' })" />
+			<p class="af-form-props__hint">
+				{{ t('advancedforms', 'Each field can override this. Beside labels stay above long text and choice fields.') }}
+			</p>
 		</section>
 
 		<section class="af-form-props__section">

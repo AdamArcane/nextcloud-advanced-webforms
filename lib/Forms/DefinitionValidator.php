@@ -26,11 +26,12 @@ final class DefinitionValidator {
 	public const MAX_ROWS = 100;
 	public const MAX_OPTIONS = 100;
 	public const SPANS = [3, 4, 6, 8, 9, 12];
+	public const LABEL_POSITIONS = ['above', 'inline', 'hidden'];
 	public const ACTION_TYPES = ['email', 'webhook', 'message', 'redirect'];
 
-	private const SETTINGS_KEYS = ['submitLabel', 'requireLogin', 'allowMultipleSubmissions', 'closedMessage'];
+	private const SETTINGS_KEYS = ['submitLabel', 'labelPosition', 'requireLogin', 'allowMultipleSubmissions', 'closedMessage'];
 	private const TOP_KEYS = ['schemaVersion', 'title', 'description', 'settings', 'fields', 'pages', 'rules', 'actions'];
-	private const COMMON_INPUT_KEYS = ['type', 'label', 'description', 'required', 'defaultValue', 'hideLabel'];
+	private const COMMON_INPUT_KEYS = ['type', 'label', 'description', 'required', 'defaultValue', 'labelPosition', 'hideLabel'];
 	private const PLACEHOLDER_TYPES = [FieldType::TEXT, FieldType::TEXTAREA, FieldType::EMAIL, FieldType::NUMBER, FieldType::PHONE, FieldType::SELECT];
 
 	/** @var list<array{code: string, path: string}> */
@@ -109,6 +110,10 @@ final class DefinitionValidator {
 			$path = 'settings.' . $key;
 			if (!in_array($key, self::SETTINGS_KEYS, true)) {
 				$this->err('unknown_property', $path);
+			} elseif ($key === 'labelPosition') {
+				if (!in_array($value, self::LABEL_POSITIONS, true)) {
+					$this->err('settings_invalid', $path);
+				}
 			} elseif (in_array($key, ['requireLogin', 'allowMultipleSubmissions'], true)) {
 				if (!is_bool($value)) {
 					$this->err('settings_invalid', $path);
@@ -185,6 +190,9 @@ final class DefinitionValidator {
 		}
 		$this->optionalString($field, 'description', 1000, 'field_description_invalid', $path . '.');
 		$this->optionalString($field, 'placeholder', 255, 'field_placeholder_invalid', $path . '.');
+		if (array_key_exists('labelPosition', $field) && !in_array($field['labelPosition'], self::LABEL_POSITIONS, true)) {
+			$this->err('field_label_position_invalid', $path . '.labelPosition');
+		}
 		foreach (['required', 'hideLabel'] as $flag) {
 			if (array_key_exists($flag, $field) && !is_bool($field[$flag])) {
 				$this->err('field_flag_invalid', $path . '.' . $flag);

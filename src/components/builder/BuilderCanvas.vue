@@ -10,6 +10,7 @@ import { t } from '@nextcloud/l10n'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import { computed } from 'vue'
 import { rulesTouching } from '../../builder/definition.ts'
+import { renderedLabelPosition } from '../../layout/labelPosition.ts'
 import { groupErrors } from '../../builder/errors.ts'
 import AddFieldMenu from './AddFieldMenu.vue'
 import FieldCard from './FieldCard.vue'
@@ -63,6 +64,7 @@ function codes(fieldId: string): string[] {
 								:selected="selectedId === cell.field"
 								:rule-count="rulesTouching(definition, cell.field).length"
 								:errors="codes(cell.field)"
+								:label-position="renderedLabelPosition(definition.fields[cell.field], definition.settings)"
 								@select="emit('select', cell.field)" />
 						</div>
 					</div>
@@ -110,6 +112,7 @@ function codes(fieldId: string): string[] {
 .af-cell {
 	grid-column: span var(--af-span, 12);
 	min-width: 0;
+	container-type: inline-size;
 }
 
 /* Same breakpoint as the public renderer (docs/SCHEMA.md section 5). */

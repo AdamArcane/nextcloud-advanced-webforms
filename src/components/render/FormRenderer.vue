@@ -11,6 +11,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, nextTick, reactive, ref } from 'vue'
 import { ApiError, submitPublicForm } from '../../api/public.ts'
+import { renderedLabelPosition } from '../../layout/labelPosition.ts'
 import { visibleLayout } from '../../layout/visibleLayout.ts'
 import { evaluateRules } from '../../rules/engine.ts'
 import { isInputType } from '../../rules/fieldTypes.ts'
@@ -191,7 +192,8 @@ async function showError(error: unknown) {
 					:field-id="cell.field"
 					:field="fields[cell.field]"
 					:required="required.has(cell.field)"
-					:error="fieldErrors[cell.field] ?? null" />
+					:error="fieldErrors[cell.field] ?? null"
+					:label-position="renderedLabelPosition(fields[cell.field], definition.settings)" />
 			</div>
 		</div>
 
@@ -228,6 +230,8 @@ async function showError(error: unknown) {
 .af-cell {
 	grid-column: span var(--af-span, 12);
 	min-width: 0;
+	/* Lets a field decide by its own width whether a side label fits. */
+	container-type: inline-size;
 }
 
 /* Narrow containers stack every cell, in document order (docs/SCHEMA.md section 5). */

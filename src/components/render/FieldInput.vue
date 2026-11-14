@@ -4,7 +4,7 @@
 -->
 
 <script setup lang="ts">
-import type { FormField } from '../../types.ts'
+import type { FormField, LabelPosition } from '../../types.ts'
 
 import { computed } from 'vue'
 import MarkdownText from './MarkdownText.ts'
@@ -17,11 +17,16 @@ const props = defineProps<{
 	required: boolean
 	/** Already translated message, or null. */
 	error: string | null
+	/** The position to draw, after fallbacks (see renderedLabelPosition). */
+	labelPosition?: LabelPosition
 }>()
 
 const emit = defineEmits<{
 	'update:modelValue': [value: unknown]
 }>()
+
+const hiddenLabel = computed(() => props.labelPosition === 'hidden')
+const inlineLabel = computed(() => props.labelPosition === 'inline')
 
 const domId = computed(() => 'af-' + props.fieldId)
 const describedBy = computed(() => {
@@ -78,7 +83,11 @@ function toggleOption(value: string, event: Event) {
 		<hr v-else class="af-divider">
 	</template>
 
-	<div v-else class="af-field" :data-field="fieldId" :class="{ 'af-field--error': error }">
+	<div v-else
+		class="af-field"
+		:data-field="fieldId"
+		:data-label-position="props.labelPosition ?? 'above'"
+		:class="{ 'af-field--error': error, 'af-field--inline': inlineLabel }">
 		<!-- A single checkbox carries its own label text. -->
 		<template v-if="field.type === 'checkbox'">
 			<label class="af-checkbox">
@@ -89,13 +98,13 @@ function toggleOption(value: string, event: Event) {
 					:aria-invalid="error ? true : undefined"
 					:aria-describedby="describedBy"
 					@change="onCheckbox">
-				<span :class="{ 'af-sr-only': field.hideLabel }">{{ field.label }}<span v-if="required" aria-hidden="true"> *</span></span>
+				<span :class="{ 'af-sr-only': hiddenLabel }">{{ field.label }}<span v-if="required" aria-hidden="true"> *</span></span>
 			</label>
 		</template>
 
 		<!-- Groups use fieldset and legend so the label names the whole group. -->
 		<fieldset v-else-if="isGroup" class="af-group" :aria-describedby="describedBy" :aria-invalid="error ? true : undefined">
-			<legend :class="{ 'af-sr-only': field.hideLabel }">
+			<legend :class="{ 'af-sr-only': hiddenLabel }">
 				{{ field.label }}<span v-if="required" aria-hidden="true"> *</span>
 			</legend>
 			<p v-if="field.description" :id="domId + '-desc'" class="af-description">
@@ -118,7 +127,7 @@ function toggleOption(value: string, event: Event) {
 		</fieldset>
 
 		<template v-else>
-			<label :for="domId" class="af-label" :class="{ 'af-sr-only': field.hideLabel }">
+			<label :for="domId" class="af-label" :class="{ 'af-sr-only': hiddenLabel }">
 				{{ field.label }}<span v-if="required" aria-hidden="true"> *</span>
 			</label>
 			<textarea v-if="field.type === 'textarea'"
@@ -172,6 +181,43 @@ function toggleOption(value: string, event: Event) {
 <style scoped>
 .af-field {
 	margin-bottom: 16px;
+}
+
+/* Label beside the input. The label takes a fixed share, the input and its help and error text share the rest. */
+.af-field--inline {
+	display: grid;
+	grid-template-columns: minmax(7rem, 32%) minmax(0, 1fr);
+	column-gap: 16px;
+	align-items: start;
+}
+
+.af-field--inline > .af-label {
+	grid-column: 1;
+	margin: 0;
+	/* Line the text up with the middle of the input. */
+	padding-top: calc((var(--default-clickable-area, 34px) - 1.5em) / 2);
+	overflow-wrap: anywhere;
+}
+
+.af-field--inline > :not(.af-label) {
+	grid-column: 2;
+}
+
+.af-field--inline > .af-description,
+.af-field--inline > .af-error {
+	margin-top: 0;
+}
+
+/* A narrow field (a quarter-width cell, or a phone) gets its label above instead (docs/SCHEMA.md 4.2). */
+@container (max-width: 380px) {
+	.af-field--inline {
+		display: block;
+	}
+
+	.af-field--inline > .af-label {
+		margin-bottom: 4px;
+		padding-top: 0;
+	}
 }
 
 .af-label,

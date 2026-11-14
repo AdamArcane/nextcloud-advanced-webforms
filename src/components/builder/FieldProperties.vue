@@ -16,6 +16,7 @@ import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { computed } from 'vue'
 import { allowedSpans, canMove, locateField, SPANS } from '../../builder/definition.ts'
 import { describeError } from '../../builder/errors.ts'
+import { renderedLabelPosition, requestedLabelPosition, supportsInline } from '../../layout/labelPosition.ts'
 import AddFieldMenu from './AddFieldMenu.vue'
 import OptionsEditor from './OptionsEditor.vue'
 import SegmentedControl from './SegmentedControl.vue'
@@ -41,6 +42,59 @@ const isDisplay = computed(() => ['heading', 'paragraph', 'divider'].includes(ty
 const hasPlaceholder = computed(() => ['text', 'textarea', 'email', 'number', 'phone', 'select'].includes(type.value))
 const hasOptions = computed(() => ['select', 'radio', 'checkboxes'].includes(type.value))
 const hasLabel = computed(() => !isDisplay.value)
+
+// The segment shown: what this field sets itself, or "Form" when it follows the form-wide default.
+const labelChoice = computed(() => {
+	if (field.value?.labelPosition) {
+		return field.value.labelPosition
+	}
+	return field.value?.hideLabel === true ? 'hidden' : 'default'
+})
+const labelOptions = computed(() => [
+	{ value: 'default', label: t('advancedforms', 'Form') },
+	{ value: 'above', label: t('advancedforms', 'Above') },
+	{
+		value: 'inline',
+		label: t('advancedforms', 'Beside'),
+		disabled: !supportsInline(type.value),
+		title: supportsInline(type.value) ? undefined : t('advancedforms', 'Not available for this type of field'),
+	},
+	{ value: 'hidden', label: t('advancedforms', 'Hidden') },
+])
+
+function positionName(position: string): string {
+	switch (position) {
+		case 'inline': return t('advancedforms', 'beside the field')
+		case 'hidden': return t('advancedforms', 'hidden')
+		default: return t('advancedforms', 'above the field')
+	}
+}
+
+const labelHint = computed(() => {
+	const rendered = renderedLabelPosition(field.value, props.definition.settings)
+	if (labelChoice.value === 'default') {
+		const formWide = requestedLabelPosition({ type: type.value }, props.definition.settings)
+		if (formWide === 'inline' && rendered !== 'inline') {
+			return t('advancedforms', 'Following the form setting. The label stays above this kind of field.')
+		}
+		return t('advancedforms', 'Following the form setting: {position}.', { position: positionName(rendered) })
+	}
+	if (labelChoice.value === 'hidden') {
+		return t('advancedforms', 'Not shown, but still read by screen readers.')
+	}
+	if (labelChoice.value === 'inline') {
+		return t('advancedforms', 'Moves above the field when there is not enough room.')
+	}
+	return t('advancedforms', 'Always above the field.')
+})
+
+/** Setting a position replaces the older hideLabel flag, so the two never disagree. */
+function setLabelPosition(choice: string): void {
+	emit('update', {
+		labelPosition: choice === 'default' ? undefined : choice as FormField['labelPosition'],
+		hideLabel: undefined,
+	})
+}
 
 const spanLabels: Record<number, string> = { 3: '¼', 4: '⅓', 6: '½', 8: '⅔', 9: '¾', 12: t('advancedforms', 'Full') }
 const allowed = computed(() => allowedSpans(props.definition, props.fieldId))
@@ -103,14 +157,16 @@ const moves: { move: Move, label: string }[] = [
 					@update:model-value="(value: boolean) => emit('update', { required: value })">
 					{{ type === 'checkbox' ? t('advancedforms', 'Must be ticked') : t('advancedforms', 'Required') }}
 				</NcCheckboxRadioSwitch>
-				<NcCheckboxRadioSwitch type="switch"
-					:model-value="field.hideLabel === true"
-					@update:model-value="(value: boolean) => emit('update', { hideLabel: value ? true : undefined })">
-					{{ t('advancedforms', 'Hide label') }}
-				</NcCheckboxRadioSwitch>
-				<p v-if="field.hideLabel" class="af-props__hint">
-					{{ t('advancedforms', 'The label is hidden from view but still read by screen readers.') }}
-				</p>
+				<div class="af-props__group">
+					<span class="af-props__caption">{{ t('advancedforms', 'Label position') }}</span>
+					<SegmentedControl :model-value="labelChoice"
+						:group-label="t('advancedforms', 'Label position')"
+						:options="labelOptions"
+						@update:model-value="(value) => setLabelPosition(String(value))" />
+					<p class="af-props__hint">
+						{{ labelHint }}
+					</p>
+				</div>
 			</template>
 
 			<template v-else-if="type === 'heading'">

@@ -251,4 +251,45 @@ class DefinitionValidatorTest extends TestCase {
 			return $d;
 		}));
 	}
+
+	public function testEveryLabelPositionIsAcceptedForTheFormAndForAField(): void {
+		foreach (DefinitionValidator::LABEL_POSITIONS as $position) {
+			$this->assertSame([], $this->codes(static function (array $d) use ($position): array {
+				$d['settings']['labelPosition'] = $position;
+				$d['fields']['f_email']['labelPosition'] = $position;
+				return $d;
+			}), $position);
+		}
+	}
+
+	public function testUnknownFormLabelPositionIsRejected(): void {
+		$this->assertSame(['settings_invalid'], $this->codes(static function (array $d): array {
+			$d['settings']['labelPosition'] = 'left';
+			return $d;
+		}));
+	}
+
+	public function testUnknownFieldLabelPositionIsRejected(): void {
+		foreach (['left', '', true, 1, null, ['above']] as $bad) {
+			$this->assertSame(['field_label_position_invalid'], $this->codes(static function (array $d) use ($bad): array {
+				$d['fields']['f_email']['labelPosition'] = $bad;
+				return $d;
+			}), var_export($bad, true));
+		}
+	}
+
+	public function testDisplayFieldsHaveNoLabelPosition(): void {
+		$this->assertSame(['unknown_property'], $this->codes(static function (array $d): array {
+			$d['fields']['f_note']['labelPosition'] = 'above';
+			return $d;
+		}));
+	}
+
+	public function testHideLabelStillWorksAlongsideLabelPosition(): void {
+		$this->assertSame([], $this->codes(static function (array $d): array {
+			$d['fields']['f_phone']['hideLabel'] = true;
+			$d['fields']['f_phone']['labelPosition'] = 'inline';
+			return $d;
+		}));
+	}
 }

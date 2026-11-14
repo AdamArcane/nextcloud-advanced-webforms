@@ -19,13 +19,13 @@ has been run on a real Nextcloud server.
 - Rules engine: show, hide, or require fields based on earlier answers, with
   nested AND/OR conditions.
 - Grid layout: several fields per row, responsive.
+- Label position: above, beside, or hidden, set for the form and per field.
 - After-submit actions: email, webhook, confirmation message, redirect.
 - Public forms by link, and forms for logged-in users.
 
 ## Planned later
 
 - Store submissions in Nextcloud Tables (optional backend).
-- Label position (above, inline, or hidden), set per form and per field.
 - Multi-page forms, theming, anonymous file uploads.
 
 ## Design

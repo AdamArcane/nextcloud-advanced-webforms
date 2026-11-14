@@ -45,12 +45,13 @@ Non-goals (v1, but the format must not block them):
   "description": "Tell us about your project.",
   "settings": {
     "submitLabel": "Send",
+    "labelPosition": "above",
     "requireLogin": false,
     "allowMultipleSubmissions": true,
     "closedMessage": "This form is no longer accepting responses."
   },
   "fields": {
-    "f_name": { "type": "text", "label": "Name", "required": true },
+    "f_name": { "type": "text", "label": "Name", "required": true, "labelPosition": "inline" },
     "f_email": { "type": "email", "label": "Email", "required": true },
     "f_phone": { "type": "phone", "label": "Phone", "hideLabel": true, "placeholder": "Phone number", "required": false },
     "f_kind": {
@@ -163,15 +164,47 @@ Display types (no value, cannot be rule sources, can be rule targets):
 Deferred: file upload, hidden fields, rating, matrix, signature.
 
 Common properties for input fields: `label` (required), `description`,
-`required` (default false), `defaultValue`, `hideLabel` (default false).
+`required` (default false), `defaultValue`, `labelPosition`, `hideLabel` (default false).
 
 `placeholder` (optional string) is supported on `text`, `textarea`, `email`,
 `number`, `phone`, and `select` (for `select` it is the empty-choice prompt).
 
-`hideLabel`: the label is visually hidden but stays in the DOM for screen
-readers (for example as a visually hidden element tied to the input). `label`
-stays required because accessibility, entry display, and exports depend on it.
-A placeholder is not a substitute for a label.
+`label` stays required for every input field, whatever its position, because
+accessibility, entry display, and exports depend on it. A placeholder is not a
+substitute for a label.
+
+#### Label position
+
+`labelPosition` is one of:
+
+| value | meaning |
+| --- | --- |
+| `above` | the label sits above the input (the default) |
+| `inline` | the label sits beside the input, in a two-column row |
+| `hidden` | the label is visually hidden but stays in the DOM for screen readers (for example as a visually hidden element tied to the input) |
+
+It can be set for the whole form with `settings.labelPosition` and overridden
+per input field with `labelPosition`. Display types (`heading`, `paragraph`,
+`divider`) have no label and reject the property. The position used for a field
+is the first of these that is set:
+
+1. the field's `labelPosition`
+2. `hidden`, if the field has `hideLabel: true` (the older flag, kept so existing
+   definitions keep working; it means the same as `labelPosition: "hidden"`)
+3. `settings.labelPosition`
+4. `above`
+
+Renderer contract:
+
+- `inline` is a request, not a guarantee. When the field's own box is narrow
+  (about 380 px) the label moves above the input, so a quarter-width field or a
+  phone never gets a cramped two-column row.
+- `inline` always renders as `above` for `textarea`, `radio`, `checkboxes`, and
+  `checkbox`. Their label either belongs to a group or is part of the control,
+  and a side label reads badly next to a tall or multi-line control.
+- `hidden` applies to every input type. For `checkbox` the text beside the box is
+  the label, so it is hidden visually and still read by screen readers.
+- The position never changes how a value is stored, validated, or exported.
 
 All text properties are plain text and must be escaped by the renderer, with
 one exception: `paragraph.text` accepts limited markdown (section 4.5). Raw
@@ -527,12 +560,3 @@ vectors first, and both test suites must pass.
    differ. The server is authoritative, so the worst case is the browser briefly
    showing a different field set than the server accepts. Revisit only if a real
    mismatch shows up.
-11. Label position. Proposed: `settings.labelPosition` sets the form default and
-   an optional per-field `labelPosition` overrides it, both one of `above`
-   (today's behaviour and the default), `inline` (label beside the input), or
-   `hidden` (visually hidden, still in the DOM for screen readers, as
-   `hideLabel` is today). `hideLabel: true` would stay as an alias for
-   `labelPosition: "hidden"` so existing definitions keep working. Open points:
-   how `inline` collapses on narrow containers (probably back to `above`), and
-   how it applies to groups (`radio`, `checkboxes`) and `checkbox`, whose label
-   is part of the control. Not in v1 unless the builder needs it first.

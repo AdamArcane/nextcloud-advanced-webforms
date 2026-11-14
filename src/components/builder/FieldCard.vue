@@ -4,7 +4,7 @@
 -->
 
 <script setup lang="ts">
-import type { FormField } from '../../types.ts'
+import type { FormField, LabelPosition } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
 import { computed } from 'vue'
@@ -16,6 +16,8 @@ const props = defineProps<{
 	/** Number of rules that show, hide or require this field. */
 	ruleCount: number
 	errors: string[]
+	/** The position respondents will see, after the form default and fallbacks. */
+	labelPosition: LabelPosition
 }>()
 
 const emit = defineEmits<{
@@ -25,7 +27,8 @@ const emit = defineEmits<{
 const isDisplay = computed(() => ['heading', 'paragraph', 'divider'].includes(props.field.type))
 const required = computed(() => props.field.required === true)
 const hasOptions = computed(() => ['select', 'radio', 'checkboxes'].includes(props.field.type))
-const hiddenLabel = computed(() => props.field.hideLabel === true)
+const hiddenLabel = computed(() => props.labelPosition === 'hidden')
+const inlineLabel = computed(() => props.labelPosition === 'inline')
 
 const typeLabel = computed(() => {
 	switch (props.field.type) {
@@ -67,6 +70,9 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 			<span v-if="hiddenLabel" class="af-card__badge af-card__badge--quiet">
 				{{ t('advancedforms', 'Label hidden') }}
 			</span>
+			<span v-else-if="inlineLabel" class="af-card__badge af-card__badge--quiet">
+				{{ t('advancedforms', 'Label beside') }}
+			</span>
 		</div>
 
 		<template v-if="isDisplay">
@@ -79,26 +85,28 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 			</p>
 		</template>
 
-		<template v-else>
+		<div v-else class="af-card__body" :class="{ 'af-card__body--inline': inlineLabel }">
 			<span class="af-card__label" :class="{ 'af-card__label--hidden': hiddenLabel }">
 				{{ field.label || t('advancedforms', 'Untitled field') }}<span v-if="required" class="af-card__star" aria-hidden="true"> *</span>
 			</span>
-			<span v-if="field.description" class="af-card__help">{{ field.description }}</span>
-			<span v-if="field.type === 'checkbox'" class="af-card__fake af-card__fake--box" aria-hidden="true" />
-			<span v-else-if="hasOptions && field.type !== 'select'" class="af-card__choices" aria-hidden="true">
-				<span v-for="option in (field.options ?? []).slice(0, 3)" :key="option.value" class="af-card__choice">
-					<span class="af-card__dot" :class="{ 'af-card__dot--square': field.type === 'checkboxes' }" />{{ option.label }}
+			<span class="af-card__control">
+				<span v-if="field.type === 'checkbox'" class="af-card__fake af-card__fake--box" aria-hidden="true" />
+				<span v-else-if="hasOptions && field.type !== 'select'" class="af-card__choices" aria-hidden="true">
+					<span v-for="option in (field.options ?? []).slice(0, 3)" :key="option.value" class="af-card__choice">
+						<span class="af-card__dot" :class="{ 'af-card__dot--square': field.type === 'checkboxes' }" />{{ option.label }}
+					</span>
+					<span v-if="(field.options ?? []).length > 3" class="af-card__more">+{{ (field.options ?? []).length - 3 }}</span>
 				</span>
-				<span v-if="(field.options ?? []).length > 3" class="af-card__more">+{{ (field.options ?? []).length - 3 }}</span>
+				<span v-else
+					class="af-card__fake"
+					:class="{ 'af-card__fake--area': field.type === 'textarea' }"
+					aria-hidden="true">
+					<span class="af-card__placeholder">{{ field.placeholder }}</span>
+					<span v-if="field.type === 'select'" class="af-card__chevron" />
+				</span>
+				<span v-if="field.description" class="af-card__help">{{ field.description }}</span>
 			</span>
-			<span v-else
-				class="af-card__fake"
-				:class="{ 'af-card__fake--area': field.type === 'textarea' }"
-				aria-hidden="true">
-				<span class="af-card__placeholder">{{ field.placeholder }}</span>
-				<span v-if="field.type === 'select'" class="af-card__chevron" />
-			</span>
-		</template>
+		</div>
 
 		<ul v-if="errors.length > 0" class="af-card__errors">
 			<li v-for="code in errors" :key="code">
@@ -171,6 +179,42 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 .af-card__badge--quiet {
 	background: var(--color-background-dark);
 	color: var(--color-text-maxcontrast);
+}
+
+.af-card__body {
+	display: flex;
+	flex-direction: column;
+	gap: calc(var(--default-grid-baseline) * 1);
+}
+
+.af-card__control {
+	display: flex;
+	flex-direction: column;
+	gap: calc(var(--default-grid-baseline) * 1);
+	min-width: 0;
+}
+
+/* The same side-by-side arrangement as the public form, and the same fallback when the card is narrow. */
+.af-card__body--inline {
+	display: grid;
+	grid-template-columns: minmax(4.5rem, 32%) minmax(0, 1fr);
+	column-gap: calc(var(--default-grid-baseline) * 3);
+	align-items: start;
+}
+
+.af-card__body--inline > .af-card__label {
+	padding-top: calc((var(--default-clickable-area) - 1.5em) / 2);
+}
+
+@container (max-width: 380px) {
+	.af-card__body--inline {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.af-card__body--inline > .af-card__label {
+		padding-top: 0;
+	}
 }
 
 .af-card__label {

@@ -6,6 +6,9 @@
 import type { LayoutPage } from './layout/visibleLayout.ts'
 import type { Rule } from './rules/types.ts'
 
+/** Where a field's label sits (docs/SCHEMA.md 4.2). */
+export type LabelPosition = 'above' | 'inline' | 'hidden'
+
 export interface FieldOption {
 	value: string
 	label: string
@@ -18,7 +21,9 @@ export type FormField = {
 	description?: string
 	required?: boolean
 	defaultValue?: unknown
+	/** Older flag, the same as `labelPosition: 'hidden'`. */
 	hideLabel?: boolean
+	labelPosition?: LabelPosition
 	placeholder?: string
 	maxLength?: number
 	min?: number
@@ -33,6 +38,7 @@ export type FormField = {
 
 export interface FormSettings {
 	submitLabel?: string
+	labelPosition?: LabelPosition
 	requireLogin?: boolean
 	allowMultipleSubmissions?: boolean
 	closedMessage?: string
