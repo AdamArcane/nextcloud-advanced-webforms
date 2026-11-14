@@ -46,7 +46,7 @@ const emit = defineEmits<{
 
 type Drag = { kind: 'field', fieldId: string } | { kind: 'row', rowId: string }
 const drag = ref<Drag | null>(null)
-const dropHint = ref<{ key: string, cellId?: string, side?: 'before' | 'after' } | null>(null)
+const dropHint = ref<{ key: string, gap?: number, cellId?: string, side?: 'before' | 'after' } | null>(null)
 // While a resize handle is dragged the canvas shows the result without touching the draft;
 // one edit is emitted when the pointer is released.
 const resizing = ref<{ fieldId: string, raw: number, left: number, colWidth: number, gap: number } | null>(null)
@@ -119,6 +119,7 @@ let tabTimer: ReturnType<typeof setTimeout> | undefined
 
 function startDrag(event: DragEvent, value: Drag, image?: HTMLElement | null): void {
 	drag.value = value
+	takeSnapshot()
 	if (event.dataTransfer) {
 		event.dataTransfer.effectAllowed = 'move'
 		event.dataTransfer.setData('text/plain', value.kind === 'field' ? value.fieldId : value.rowId)
@@ -134,43 +135,102 @@ function endDrag(): void {
 	clearTimeout(tabTimer)
 }
 
-function overGap(event: DragEvent, key: string): void {
-	if (!drag.value) {
+// Hit testing uses the layout as it was when the drag began. The preview reflows the canvas
+// under the pointer, so testing against the live DOM would make the target jump around.
+interface Snapshot {
+	rows: { id: string, top: number, bottom: number, cells: { id: string, field: string, left: number, right: number }[] }[]
+}
+let snapshot: Snapshot | null = null
+const panel = ref<HTMLElement | null>(null)
+
+function takeSnapshot(): void {
+	const el = panel.value
+	if (!el) {
+		snapshot = null
 		return
 	}
-	event.preventDefault()
-	dropHint.value = { key }
+	const box = el.getBoundingClientRect()
+	snapshot = {
+		rows: [...el.querySelectorAll<HTMLElement>('.af-row')].map((row) => {
+			const r = row.getBoundingClientRect()
+			return {
+				id: row.dataset.rowId ?? '',
+				top: r.top - box.top,
+				bottom: r.bottom - box.top,
+				cells: [...row.querySelectorAll<HTMLElement>(':scope > .af-cell')].map((cell) => {
+					const c = cell.getBoundingClientRect()
+					return { id: cell.dataset.cellId ?? '', field: cell.dataset.field ?? '', left: c.left - box.left, right: c.right - box.left }
+				}),
+			}
+		}),
+	}
 }
 
-function dropOnGap(index: number): void {
+// Switching page mid-drag (tab hover) changes what is under the pointer.
+watch(activeId, async () => {
+	if (drag.value) {
+		dropHint.value = null
+		await nextTick()
+		takeSnapshot()
+	}
+})
+
+function overPanel(event: DragEvent): void {
 	const current = drag.value
-	endDrag()
-	if (current?.kind === 'field') {
-		emit('dropField', current.fieldId, { kind: 'row', page: activeIndex.value, index })
-	} else if (current?.kind === 'row') {
-		emit('dropRow', current.rowId, activeIndex.value, index)
-	}
-}
-
-function overCell(event: DragEvent, cellId: string, fieldId: string): void {
-	if (drag.value?.kind !== 'field' || drag.value.fieldId === fieldId) {
+	const el = panel.value
+	if (!current || !el || !snapshot) {
 		return
 	}
 	event.preventDefault()
-	const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
-	const x = (event.clientX - rect.left) / rect.width
-	const previous = dropHint.value?.cellId === cellId ? dropHint.value.side : undefined
+	const box = el.getBoundingClientRect()
+	const x = event.clientX - box.left
+	const y = event.clientY - box.top
+	const rows = snapshot.rows
+	let at = rows.findIndex((row) => y < row.bottom)
+	if (at === -1) {
+		at = rows.length
+	}
+	const row = rows[at]
+	const gap = (index: number) => { dropHint.value = { key: 'gap' + index, gap: index } }
+	if (!row || y < row.top) {
+		return gap(at)
+	}
+	const rel = (y - row.top) / (row.bottom - row.top)
+	if (current.kind === 'row') {
+		return gap(rel < 0.5 ? at : at + 1)
+	}
+	// The top and bottom edge of a row mean "a row of its own"; the middle means "beside this field".
+	if (rel < 0.22) {
+		return gap(at)
+	}
+	if (rel > 0.78) {
+		return gap(at + 1)
+	}
+	const cell = row.cells.find((c) => x >= c.left && x <= c.right)
+		?? row.cells.reduce((best, c) => (Math.min(Math.abs(x - c.left), Math.abs(x - c.right)) < Math.min(Math.abs(x - best.left), Math.abs(x - best.right)) ? c : best))
+	if (cell.field === current.fieldId) {
+		return
+	}
+	const across = (x - cell.left) / (cell.right - cell.left)
+	const previous = dropHint.value?.cellId === cell.id ? dropHint.value.side : undefined
 	// A dead zone in the middle keeps the last side, so the preview does not flicker.
-	const side = x < 0.4 ? 'before' : x > 0.6 ? 'after' : (previous ?? (x < 0.5 ? 'before' : 'after'))
-	dropHint.value = { key: cellId, cellId, side }
+	const side = across < 0.4 ? 'before' : across > 0.6 ? 'after' : (previous ?? (across < 0.5 ? 'before' : 'after'))
+	dropHint.value = { key: cell.id, cellId: cell.id, side }
 }
 
-function dropOnCell(cellId: string): void {
+function dropOnPanel(): void {
 	const current = drag.value
-	const side = dropHint.value?.side ?? 'after'
+	const hint = dropHint.value
 	endDrag()
-	if (current?.kind === 'field') {
-		emit('dropField', current.fieldId, { kind: 'cell', cellId, side })
+	if (!current || !hint) {
+		return
+	}
+	if (current.kind === 'field' && hint.cellId) {
+		emit('dropField', current.fieldId, { kind: 'cell', cellId: hint.cellId, side: hint.side ?? 'after' })
+	} else if (hint.gap !== undefined && current.kind === 'field') {
+		emit('dropField', current.fieldId, { kind: 'row', page: activeIndex.value, index: hint.gap })
+	} else if (hint.gap !== undefined && current.kind === 'row') {
+		emit('dropRow', current.rowId, activeIndex.value, hint.gap)
 	}
 }
 
@@ -323,15 +383,20 @@ function codes(fieldId: string): string[] {
 				</template>
 			</NcEmptyContent>
 
-			<div v-else role="tabpanel" :class="{ 'af-dragging': drag }" @dragleave="leavePage">
+			<div v-else
+					ref="panel"
+					role="tabpanel"
+					:class="{ 'af-dragging': drag }"
+					@dragover="overPanel"
+					@dragleave="leavePage"
+					@drop.prevent="dropOnPanel">
 					<template v-for="(row, index) in activePage.rows" :key="row.id">
 						<div class="af-gap"
-							:class="{ 'af-gap--over': dropHint?.key === 'gap' + index }"
-							@dragover="overGap($event, 'gap' + index)"
-							@drop.prevent="dropOnGap(slot(row.id, index))">
+							:class="{ 'af-gap--over': dropHint?.key === 'gap' + slot(row.id, index) }">
 							<AddFieldMenu @pick="(type) => emit('add', type, slot(row.id, index), activeIndex)" />
 						</div>
 						<div class="af-row"
+							:data-row-id="row.id"
 							:class="{ 'af-row--dragged': drag?.kind === 'row' && drag.rowId === row.id }">
 							<span class="af-row__grip"
 								draggable="true"
@@ -344,6 +409,8 @@ function codes(fieldId: string): string[] {
 							</span>
 							<div v-for="cell in row.cells"
 								:key="cell.id"
+								:data-cell-id="cell.id"
+								:data-field="cell.field"
 								class="af-cell"
 								:class="{
 									'af-cell--dragged': drag?.kind === 'field' && drag.fieldId === cell.field,
@@ -352,9 +419,7 @@ function codes(fieldId: string): string[] {
 								:style="{ '--af-span': cell.span }"
 								:draggable="resizing === null"
 								@dragstart.self="startDrag($event, { kind: 'field', fieldId: cell.field })"
-								@dragend="endDrag"
-								@dragover="overCell($event, cell.id, cell.field)"
-								@drop.prevent="dropOnCell(cell.id)">
+								@dragend="endDrag">
 								<FieldCard v-if="definition.fields[cell.field]"
 									:field="definition.fields[cell.field]"
 									:selected="selectedId === cell.field"
@@ -379,16 +444,12 @@ function codes(fieldId: string): string[] {
 							</div>
 						</div>
 					</template>
-				<div v-if="drag"
-						class="af-gap af-gap--end"
-						:class="{ 'af-gap--over': dropHint?.key === 'gapend' }"
-						@dragover="overGap($event, 'gapend')"
-						@drop.prevent="dropOnGap(definition.pages[activeIndex]?.rows.length ?? 0)" />
+					<div class="af-gap" :class="{ 'af-gap--over': dropHint?.key === 'gap' + activePage.rows.length }" />
 					<div class="af-canvas__add">
-					<AddFieldMenu :label="t('advancedforms', 'Add field')"
-						variant="secondary"
-						@pick="(type) => emit('add', type, activePage.rows.length, activeIndex)" />
-				</div>
+						<AddFieldMenu :label="t('advancedforms', 'Add field')"
+							variant="secondary"
+							@pick="(type) => emit('add', type, activePage.rows.length, activeIndex)" />
+					</div>
 			</div>
 		</div>
 	</div>
@@ -559,19 +620,12 @@ function codes(fieldId: string): string[] {
 	opacity: 0.4;
 }
 
-.af-dragging .af-gap {
-	height: calc(var(--default-grid-baseline) * 6);
-}
-
 .af-gap--over {
 	border-radius: var(--border-radius-small);
 	background: var(--color-primary-element-light);
 	box-shadow: inset 0 0 0 2px var(--color-primary-element);
 }
 
-.af-gap--end {
-	margin-top: calc(var(--default-grid-baseline) * 2);
-}
 
 .af-cell__resize {
 	position: absolute;
