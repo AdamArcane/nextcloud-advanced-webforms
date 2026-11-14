@@ -7,7 +7,7 @@
 import type { DeliveriesPage, Delivery, EntriesPage, EntryRecord, VersionDefinition } from '../../types.ts'
 
 import { flushPromises, mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import EntriesView from './EntriesView.vue'
 
 const listEntriesMock = vi.fn()
@@ -332,5 +332,58 @@ describe('EntriesView deliveries', () => {
 		await openDeliveries(wrapper)
 		expect(wrapper.text()).toContain('Nothing sent yet')
 		wrapper.unmount()
+	})
+
+	describe('refreshing deliveries', () => {
+		const callsForList = () => listDeliveriesMock.mock.calls.filter(([, query]) => query.status === undefined).length
+
+		beforeEach(() => vi.useFakeTimers())
+		afterEach(() => vi.useRealTimers())
+
+		it('keeps refreshing while something is waiting, and stops once it has settled', async () => {
+			let rows = [delivery(10, { status: 'queued', attempt: 1, error: null, nextAttemptAt: Math.floor(Date.now() / 1000) + 30 })]
+			listDeliveriesMock.mockImplementation(async (_id: number, query: { status?: string }) => (query.status === 'failed' ? deliveries([]) : deliveries(rows)))
+			const wrapper = mountView()
+			await flushPromises()
+			await openDeliveries(wrapper)
+			expect(wrapper.text()).toContain('Waiting')
+			expect(wrapper.text()).toContain('Updating automatically')
+			const afterOpen = callsForList()
+
+			rows = [delivery(10, { status: 'success', attempt: 2, error: null })]
+			await vi.advanceTimersByTimeAsync(10_000)
+			await flushPromises()
+			expect(callsForList()).toBe(afterOpen + 1)
+			expect(wrapper.text()).toContain('Sent')
+			expect(wrapper.text()).not.toContain('Updating automatically')
+
+			// Nothing is waiting any more, so nothing more is fetched.
+			await vi.advanceTimersByTimeAsync(40_000)
+			await flushPromises()
+			expect(callsForList()).toBe(afterOpen + 1)
+			wrapper.unmount()
+		})
+
+		it('does not poll while nothing is waiting, or while the responses tab is showing', async () => {
+			listDeliveriesMock.mockImplementation(async (_id: number, query: { status?: string }) => (query.status === 'failed' ? deliveries([]) : deliveries([delivery(10, { status: 'queued', error: null })])))
+			const wrapper = mountView()
+			await flushPromises()
+			const before = listDeliveriesMock.mock.calls.length
+			await vi.advanceTimersByTimeAsync(30_000)
+			await flushPromises()
+			expect(listDeliveriesMock.mock.calls.length).toBe(before)
+			wrapper.unmount()
+		})
+
+		it('refreshes by hand', async () => {
+			const wrapper = mountView()
+			await flushPromises()
+			await openDeliveries(wrapper)
+			const before = callsForList()
+			await wrapper.get('button[aria-label="Refresh"]').trigger('click')
+			await flushPromises()
+			expect(callsForList()).toBe(before + 1)
+			wrapper.unmount()
+		})
 	})
 })

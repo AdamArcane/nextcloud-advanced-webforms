@@ -73,10 +73,10 @@ describe('answer order and lines', () => {
 
 describe('inFuture', () => {
 	it('words a short wait in minutes or hours', () => {
-		expect(inFuture(1000 + 30, 1000)).toBe('in under 2 minutes')
+		expect(inFuture(1000 + 30, 1000)).toBe('in about a minute')
 		expect(inFuture(1000 + 300, 1000)).toBe('in 5 minutes')
 		expect(inFuture(1000 + 7200, 1000)).toBe('in 2 hours')
-		expect(inFuture(10, 1000)).toBe('in under 2 minutes')
+		expect(inFuture(10, 1000)).toBe('any moment now')
 	})
 })
 

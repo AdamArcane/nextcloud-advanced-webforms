@@ -13,7 +13,7 @@ import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
 import { deleteEntry, exportUrl, listDeliveries, listEntries, retryDelivery } from '../../api/forms.ts'
@@ -151,6 +151,46 @@ async function loadDeliveries(append: boolean): Promise<void> {
 	}
 }
 
+// Deliveries change on their own (the background job sends, retries, fails), so while any is
+// waiting, the list refreshes quietly. Nothing refreshes once everything has settled.
+const REFRESH_MS = 10_000
+const now = ref(Math.floor(Date.now() / 1000))
+const refreshing = ref(false)
+
+async function refreshDeliveries(): Promise<void> {
+	if (refreshing.value || deliveriesLoading.value || deliveriesMore.value) {
+		return
+	}
+	refreshing.value = true
+	try {
+		// Re-read as many rows as are on screen, so "Show more" pages are not thrown away.
+		const page = await listDeliveries(props.formId, {
+			status: filter.value === 'all' ? undefined : filter.value,
+			limit: Math.min(Math.max(PAGE, deliveries.value.length), 100),
+			offset: 0,
+		})
+		deliveryTotal.value = page.total
+		deliveries.value = page.rows
+		deliveriesFailed.value = false
+		void refreshFailedCount()
+	} catch {
+		// Keep what is on screen; the next tick tries again.
+	} finally {
+		refreshing.value = false
+	}
+}
+
+let refreshTimer: ReturnType<typeof setInterval> | undefined
+
+function tick(): void {
+	now.value = Math.floor(Date.now() / 1000)
+	if (tab.value === 'deliveries' && !document.hidden && deliveries.value.some((row) => row.status === 'queued')) {
+		void refreshDeliveries()
+	}
+}
+
+onBeforeUnmount(() => clearInterval(refreshTimer))
+
 function openTab(value: string | number): void {
 	tab.value = value as Tab
 	if (tab.value === 'deliveries' && !deliveriesLoaded) {
@@ -180,6 +220,7 @@ async function retry(delivery: Delivery): Promise<void> {
 const deliveryHasMore = computed(() => deliveries.value.length < deliveryTotal.value)
 
 onMounted(() => {
+	refreshTimer = setInterval(tick, REFRESH_MS)
 	void loadEntries(false)
 	void refreshFailedCount()
 })
@@ -273,6 +314,21 @@ onMounted(() => {
 						{ value: 'skipped', label: t('advancedforms', 'Skipped') },
 					]"
 					@update:model-value="setFilter" />
+				<div class="af-entries__refresh">
+					<NcButton variant="tertiary"
+						:disabled="refreshing || deliveriesLoading"
+						:aria-label="t('advancedforms', 'Refresh')"
+						:title="t('advancedforms', 'Refresh')"
+						@click="refreshDeliveries">
+						<template #icon>
+							<NcLoadingIcon v-if="refreshing" :size="20" />
+							<Icon v-else :path="icons.refresh" />
+						</template>
+					</NcButton>
+					<span v-if="deliveries.some((row) => row.status === 'queued')" class="af-entries__hint">
+						{{ t('advancedforms', 'Updating automatically while deliveries are waiting.') }}
+					</span>
+				</div>
 
 				<div v-if="deliveriesLoading" class="af-entries__center">
 					<NcLoadingIcon :size="44" />
@@ -300,6 +356,7 @@ onMounted(() => {
 							:delivery="delivery"
 							show-entry
 							:busy="retrying === delivery.id"
+							:now="now"
 							@retry="retry(delivery)"
 							@open-entry="showEntry(delivery.entryId)" />
 					</ul>
@@ -352,6 +409,12 @@ onMounted(() => {
 
 .af-entries__filter {
 	max-width: 520px;
+}
+
+.af-entries__refresh {
+	display: flex;
+	align-items: center;
+	gap: var(--default-grid-baseline);
 }
 
 .af-entries__list {

@@ -18,6 +18,8 @@ defineProps<{
 	/** Show which response it belongs to, with a link to it. */
 	showEntry?: boolean
 	busy?: boolean
+	/** The current time in seconds, so "next try in …" counts down while the page stays open. */
+	now?: number
 }>()
 
 const emit = defineEmits<{
@@ -49,7 +51,7 @@ const emit = defineEmits<{
 					· {{ t('advancedforms', 'Attempt {n}', { n: delivery.attempt }) }}
 				</template>
 				<template v-if="delivery.status === 'queued' && delivery.nextAttemptAt">
-					· {{ t('advancedforms', 'next try {when}', { when: inFuture(delivery.nextAttemptAt) }) }}
+					· {{ t('advancedforms', 'next try {when}', { when: inFuture(delivery.nextAttemptAt, now) }) }}
 				</template>
 			</p>
 		</div>

@@ -76,8 +76,12 @@ export function formatTime(seconds: number): string {
 /** "in 5 minutes" style text for a time a few minutes to hours ahead. */
 export function inFuture(seconds: number, now: number = Math.floor(Date.now() / 1000)): string {
 	const delta = Math.max(0, seconds - now)
+	if (delta === 0) {
+		// Due now: it goes out the next time background jobs run.
+		return t('advancedforms', 'any moment now')
+	}
 	if (delta < 90) {
-		return t('advancedforms', 'in under 2 minutes')
+		return t('advancedforms', 'in about a minute')
 	}
 	const minutes = Math.round(delta / 60)
 	return minutes < 90
