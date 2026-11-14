@@ -420,13 +420,24 @@ condition group (same format as rules) evaluated against the submitted
 ### 7.2 Types
 
 - `email`:
-  - `to`: either a static address set by the form owner, or `{ "field": "<id>" }`
-    pointing at an `email` field (confirmation to the submitter).
+  - `to` is one of:
+    - a static address set by the form owner;
+    - `{ "field": "<id>" }` pointing at an `email` field (confirmation to the
+      submitter);
+    - `{ "owner": true }`, the email address on the form owner's Nextcloud
+      account, looked up when the email is sent (skipped as `no_account_email`
+      when the account has none);
+    - `{ "respondent": true }`, the email address on the account the
+      respondent was signed in with (skipped as `not_signed_in` for an
+      anonymous response, or `no_account_email`).
+    The last two store no address in the form, so they follow account changes.
   - `subject`, `body`: plain text with `{field_id}` placeholders.
   - Sent through Nextcloud's configured mailer.
   - Recipient from respondent input is only allowed from an `email` field and is
-    always rate limited per form, because it is an abuse vector (spam relay):
-    at most 30 such emails per form per hour, beyond which the delivery is
+    always rate limited per form, because it is an abuse vector (spam relay).
+    Mail to the owner or a signed-in respondent's own account is not capped, as
+    an anonymous visitor does not choose those addresses. The cap applies to
+    the field recipient: at most 30 such emails per form per hour, beyond which the delivery is
     logged as skipped (`rate_limited`). Mail to a fixed owner address is not
     capped.
   - If the respondent left the email field empty or gave an invalid address,

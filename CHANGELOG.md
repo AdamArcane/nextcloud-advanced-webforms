@@ -7,6 +7,9 @@
 
 ## 0.2.0 - Unreleased
 
+- Email recipients can be the form owner or the signed-in respondent, looked up from
+  the Nextcloud account when sent, besides a fixed address or an email field. The
+  recipient is one dropdown that also accepts a typed address.
 - Initial app skeleton: app metadata, empty page, database schema for forms,
   versions, entries, and the action log.
 - Form definition spec in `docs/SCHEMA.md`.

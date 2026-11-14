@@ -26,6 +26,17 @@ const emit = defineEmits<{
 	retry: []
 	openEntry: []
 }>()
+
+/** The server sends `@owner` and `@respondent` for the two account recipients, so the words can be translated here. */
+function targetText(row: Delivery): string {
+	if (row.type === 'email' && row.target === '@owner') {
+		return t('advancedforms', 'Form owner')
+	}
+	if (row.type === 'email' && row.target === '@respondent') {
+		return t('advancedforms', 'Signed-in respondent')
+	}
+	return row.target ?? ''
+}
 </script>
 
 <template>
@@ -33,7 +44,7 @@ const emit = defineEmits<{
 		<div class="af-delivery__main">
 			<div class="af-delivery__line">
 				<span class="af-delivery__type">{{ typeLabel(delivery.type) }}</span>
-				<span v-if="delivery.target" class="af-delivery__target">{{ delivery.target }}</span>
+				<span v-if="delivery.target" class="af-delivery__target">{{ targetText(delivery) }}</span>
 				<span class="af-delivery__status">{{ statusLabel(delivery.status) }}</span>
 			</div>
 			<p v-if="delivery.error" class="af-delivery__error">

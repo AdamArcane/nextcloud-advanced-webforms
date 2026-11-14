@@ -5,6 +5,7 @@
 
 // Only the icons the app uses are imported, so the bundle keeps just those paths.
 import {
+	mdiAccountOutline,
 	mdiAlertCircle,
 	mdiArrowDown,
 	mdiArrowLeft,
@@ -56,6 +57,7 @@ import {
 } from '@mdi/js'
 
 export const icons = {
+	account: mdiAccountOutline,
 	add: mdiPlus,
 	alert: mdiAlertCircle,
 	arrowDown: mdiArrowDown,

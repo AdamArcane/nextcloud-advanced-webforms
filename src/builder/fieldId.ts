@@ -74,7 +74,7 @@ function renameInAction(action: FormAction, from: string, to: string): FormActio
 		case 'email':
 			renamed.subject = renameInText(renamed.subject, from, to)
 			renamed.body = renameInText(renamed.body, from, to)
-			if (typeof renamed.to === 'object' && renamed.to.field === from) {
+			if (typeof renamed.to === 'object' && 'field' in renamed.to && renamed.to.field === from) {
 				renamed.to = { field: to }
 			}
 			break

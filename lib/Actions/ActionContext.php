@@ -29,6 +29,8 @@ final class ActionContext {
 		public readonly array $data,
 		public readonly int $now,
 		public readonly int $recentEmails = 0,
+		/** The account that owns the form, for `to: { owner: true }`. */
+		public readonly string $ownerId = '',
 	) {
 	}
 }

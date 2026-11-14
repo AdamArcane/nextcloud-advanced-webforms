@@ -96,27 +96,46 @@ describe('ActionsPanel', () => {
 		const wrapper = mountPanel(addAction(def, 'email').definition)
 		await wrapper.find('.af-action__head').trigger('click')
 		expect(wrapper.text()).toContain('at most 30 such emails')
-		expect(recipientSelect(wrapper).props('modelValue')).toMatchObject({ id: email, custom: false })
+		expect(recipientSelect(wrapper).props('modelValue')).toMatchObject({ id: email, kind: 'field' })
 	})
 
-	it('takes either one of the form\'s email fields or a typed address in a single box', async () => {
+	it('offers the owner, the signed-in respondent and the email fields in one box, and takes a typed address', async () => {
 		const { def, email } = base()
 		const wrapper = mountPanel(addAction(def, 'email').definition)
 		await wrapper.find('.af-action__head').trigger('click')
-		const select = recipientSelect(wrapper)
-		expect(select.props('options')).toEqual([{ id: email, label: expect.any(String), custom: false }])
+		expect(recipientSelect(wrapper).props('options')).toEqual([
+			{ id: '@owner', label: expect.any(String), kind: 'owner' },
+			{ id: '@respondent', label: expect.any(String), kind: 'respondent' },
+			{ id: email, label: expect.any(String), kind: 'field' },
+		])
 
-		select.vm.$emit('update:modelValue', { id: 'owner@example.com', label: 'owner@example.com', custom: true })
+		recipientSelect(wrapper).vm.$emit('update:modelValue', { id: 'owner@example.com', label: 'owner@example.com', kind: 'address' })
 		expect(lastChange(wrapper).actions[0]).toMatchObject({ to: 'owner@example.com' })
 		await wrapper.setProps({ definition: lastChange(wrapper) })
-		expect(recipientSelect(wrapper).props('modelValue')).toMatchObject({ id: 'owner@example.com', custom: true })
+		expect(recipientSelect(wrapper).props('modelValue')).toMatchObject({ id: 'owner@example.com', kind: 'address' })
 		expect(wrapper.text()).not.toContain('at most 30 such emails')
 
-		recipientSelect(wrapper).vm.$emit('update:modelValue', { id: email, label: 'Email', custom: false })
+		recipientSelect(wrapper).vm.$emit('update:modelValue', { id: email, label: 'Email', kind: 'field' })
 		expect(lastChange(wrapper).actions[0]).toMatchObject({ to: { field: email } })
 
 		recipientSelect(wrapper).vm.$emit('update:modelValue', null)
 		expect(lastChange(wrapper).actions[0]).toMatchObject({ to: '' })
+	})
+
+	it('can address the form owner or the signed-in respondent, and says what each means', async () => {
+		const wrapper = mountPanel(addAction(base().def, 'email').definition)
+		await wrapper.find('.af-action__head').trigger('click')
+
+		recipientSelect(wrapper).vm.$emit('update:modelValue', { id: '@owner', label: 'Me', kind: 'owner' })
+		expect(lastChange(wrapper).actions[0]).toMatchObject({ to: { owner: true } })
+		await wrapper.setProps({ definition: lastChange(wrapper) })
+		expect(recipientSelect(wrapper).props('modelValue')).toMatchObject({ kind: 'owner' })
+		expect(wrapper.text()).toContain('email address on your Nextcloud account')
+
+		recipientSelect(wrapper).vm.$emit('update:modelValue', { id: '@respondent', label: 'Them', kind: 'respondent' })
+		expect(lastChange(wrapper).actions[0]).toMatchObject({ to: { respondent: true } })
+		await wrapper.setProps({ definition: lastChange(wrapper) })
+		expect(wrapper.text()).toContain('require login')
 	})
 
 	it('still lets you type an address when the form has no email field', async () => {
@@ -124,7 +143,7 @@ describe('ActionsPanel', () => {
 		def = addField(def, 'text', { kind: 'row', index: 0 }).definition
 		const wrapper = mountPanel(addAction(def, 'email').definition)
 		await wrapper.find('.af-action__head').trigger('click')
-		expect(recipientSelect(wrapper).props('options')).toEqual([])
+		expect(recipientSelect(wrapper).props('options').map((option: { kind: string }) => option.kind)).toEqual(['owner', 'respondent'])
 		expect(recipientSelect(wrapper).props('taggable')).toBe(true)
 	})
 

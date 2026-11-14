@@ -58,6 +58,19 @@ const emails = computed(() => emailFields(props.definition))
 const noForbidden: ReadonlySet<string> = new Set()
 
 const title = computed(() => actionLabel(props.action.type))
+function recipientSummary(to: EmailAction['to']): string {
+	if (typeof to === 'string') {
+		return to
+	}
+	if ('owner' in to) {
+		return t('advancedforms', 'you')
+	}
+	if ('respondent' in to) {
+		return t('advancedforms', 'the signed-in respondent')
+	}
+	return props.definition.fields[to.field]?.label || t('advancedforms', 'the respondent')
+}
+
 const summary = computed(() => {
 	const action = props.action
 	switch (action.type) {
@@ -65,9 +78,7 @@ const summary = computed(() => {
 		case 'redirect': return readablePlaceholders(action.url, props.definition)
 		case 'webhook': return action.url
 		default: {
-			const to = typeof action.to === 'string'
-				? action.to
-				: (props.definition.fields[action.to.field]?.label || t('advancedforms', 'the respondent'))
+			const to = recipientSummary(action.to)
 			return t('advancedforms', 'To {to}: {subject}', { to: to || '…', subject: readablePlaceholders(action.subject, props.definition) })
 		}
 	}
@@ -111,39 +122,77 @@ function setWhenEnabled(enabled: boolean): void {
 
 const MAIL_ICON: string = icons.mail
 const EMAIL_FIELD_ICON: string = fieldTypeIcon('email')
+const ACCOUNT_ICON: string = icons.account
+
+type RecipientKind = 'field' | 'address' | 'owner' | 'respondent'
 
 interface RecipientOption {
 	id: string
 	label: string
-	/** An address typed by hand rather than one of the form's email fields. */
-	custom: boolean
+	kind: RecipientKind
 }
 
-const recipientOptions = computed<RecipientOption[]>(() => emails.value.map(({ id, label }) => ({ id, label: label || id, custom: false })))
+const OWNER_OPTION: RecipientOption = { id: '@owner', label: t('advancedforms', 'Me (the form owner)'), kind: 'owner' }
+const RESPONDENT_OPTION: RecipientOption = { id: '@respondent', label: t('advancedforms', 'The signed-in respondent'), kind: 'respondent' }
 
-/** One box for both kinds of recipient: pick one of the form's email fields, or type an address. */
+// The two account entries come first; the form's email fields follow. Typing adds a fixed address.
+const recipientOptions = computed<RecipientOption[]>(() => [
+	OWNER_OPTION,
+	RESPONDENT_OPTION,
+	...emails.value.map(({ id, label }): RecipientOption => ({ id, label: label || id, kind: 'field' })),
+])
+
+/** One box for every kind of recipient. */
 const recipient = computed<RecipientOption | null>(() => {
 	const to = email.value.to
 	if (typeof to === 'string') {
-		return to === '' ? null : { id: to, label: to, custom: true }
+		return to === '' ? null : { id: to, label: to, kind: 'address' }
 	}
-	return recipientOptions.value.find((option) => option.id === to.field) ?? { id: to.field, label: to.field, custom: false }
+	if ('owner' in to) {
+		return OWNER_OPTION
+	}
+	if ('respondent' in to) {
+		return RESPONDENT_OPTION
+	}
+	return recipientOptions.value.find((option) => option.kind === 'field' && option.id === to.field) ?? { id: to.field, label: to.field, kind: 'field' }
 })
 
-const recipientIsField = computed(() => typeof email.value.to === 'object')
+const recipientKind = computed<RecipientKind>(() => recipient.value?.kind ?? 'address')
 
 function setRecipient(option: RecipientOption | null): void {
 	if (option === null) {
 		patch({ to: '' })
-	} else if (option.custom) {
-		patch({ to: option.id.trim() })
-	} else {
+	} else if (option.kind === 'owner') {
+		patch({ to: { owner: true } })
+	} else if (option.kind === 'respondent') {
+		patch({ to: { respondent: true } })
+	} else if (option.kind === 'field') {
 		patch({ to: { field: option.id } })
+	} else {
+		patch({ to: option.id.trim() })
 	}
 }
 
 function createRecipient(text: string): RecipientOption {
-	return { id: text, label: text, custom: true }
+	return { id: text, label: text, kind: 'address' }
+}
+
+function recipientTag(kind: RecipientKind): string {
+	switch (kind) {
+		case 'owner': return t('advancedforms', 'Your account email')
+		case 'respondent': return t('advancedforms', 'Their account email')
+		case 'field': return t('advancedforms', 'Form field · the answer given')
+		default: return t('advancedforms', 'Use this address')
+	}
+}
+
+function recipientIcon(kind: RecipientKind): string {
+	switch (kind) {
+		case 'owner':
+		case 'respondent': return ACCOUNT_ICON
+		case 'field': return EMAIL_FIELD_ICON
+		default: return MAIL_ICON
+	}
 }
 
 // A freshly added action is incomplete by nature; warn only once the user has been in it (or tried to publish).
@@ -218,24 +267,30 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 					@update:model-value="setRecipient">
 					<template #option="option">
 						<span class="af-recipient">
-							<Icon :path="option.custom ? MAIL_ICON : EMAIL_FIELD_ICON" :size="18" />
+							<Icon :path="recipientIcon(option.kind)" :size="18" />
 							<span class="af-recipient__label">{{ option.label }}</span>
-							<span class="af-recipient__kind">{{ option.custom ? t('advancedforms', 'Use this address') : t('advancedforms', 'Form field · the answer given') }}</span>
+							<span class="af-recipient__kind">{{ recipientTag(option.kind) }}</span>
 						</span>
 					</template>
 					<template #selected-option="option">
 						<span class="af-recipient">
 							<span class="af-recipient__label">{{ option.label }}</span>
-							<span v-if="!option.custom" class="af-recipient__kind">{{ t('advancedforms', 'Form field') }}</span>
+							<span v-if="option.kind !== 'address'" class="af-recipient__kind">{{ recipientTag(option.kind) }}</span>
 						</span>
 					</template>
 				</NcSelect>
 				<p class="af-action__hint">
-					<template v-if="recipientIsField">
+					<template v-if="recipientKind === 'field'">
 						{{ t('advancedforms', 'Sent to the address the respondent typed. To limit abuse, at most 30 such emails are sent per hour for this form.') }}
 					</template>
+					<template v-else-if="recipientKind === 'owner'">
+						{{ t('advancedforms', 'Sent to the email address on your Nextcloud account. If you change it, forms follow automatically.') }}
+					</template>
+					<template v-else-if="recipientKind === 'respondent'">
+						{{ t('advancedforms', 'Sent to the Nextcloud account the respondent is signed in with. Use it on forms that require login; otherwise anonymous responses are skipped.') }}
+					</template>
 					<template v-else>
-						{{ t('advancedforms', 'Choose one of the form\'s email fields to reply to the respondent, or type an address and press Enter.') }}
+						{{ t('advancedforms', 'Pick who receives it, or type an address and press Enter.') }}
 					</template>
 				</p>
 				<NcTextField :model-value="email.subject"

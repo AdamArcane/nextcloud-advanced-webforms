@@ -17,6 +17,7 @@ use OCA\AdvancedForms\Actions\Backoff;
 use OCA\AdvancedForms\Db\ActionLog;
 use OCA\AdvancedForms\Db\ActionLogMapper;
 use OCA\AdvancedForms\Db\EntryMapper;
+use OCA\AdvancedForms\Db\FormMapper;
 use OCA\AdvancedForms\Db\VersionMapper;
 use OCA\AdvancedForms\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
@@ -36,6 +37,7 @@ class ActionProcessor {
 		private readonly ActionLogMapper $log,
 		private readonly EntryMapper $entries,
 		private readonly VersionMapper $versions,
+		private readonly FormMapper $forms,
 		private readonly ActionRunner $runner,
 		private readonly ITimeFactory $time,
 		private readonly LoggerInterface $logger,
@@ -82,6 +84,7 @@ class ActionProcessor {
 				data: $entry->getDataArray(),
 				now: $now,
 				recentEmails: $row->getType() === 'email' ? $this->log->countRecentEmails($row->getFormId(), $now - 3600) : 0,
+				ownerId: $this->forms->find($row->getFormId())->getOwnerId(),
 			);
 			$this->runner->run($action, $context);
 

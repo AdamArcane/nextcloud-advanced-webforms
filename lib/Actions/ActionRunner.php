@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\AdvancedForms\Actions;
 
+use OCA\AdvancedForms\Actions\Ports\AccountPort;
 use OCA\AdvancedForms\Actions\Ports\HttpPort;
 use OCA\AdvancedForms\Actions\Ports\MailPort;
 use OCA\AdvancedForms\Actions\Ports\SecretPort;
@@ -32,6 +33,7 @@ final class ActionRunner {
 		private readonly MailPort $mail,
 		private readonly HttpPort $http,
 		private readonly SecretPort $secrets,
+		private readonly AccountPort $accounts,
 	) {
 	}
 
@@ -53,11 +55,27 @@ final class ActionRunner {
 	 */
 	private function email(array $action, ActionContext $context): void {
 		$to = $action['to'] ?? null;
-		$fromRespondent = is_array($to);
+		// Only an address the respondent typed is capped: it is the abuse vector. A fixed address and
+		// the accounts of the form owner or a signed-in respondent are not chosen by an anonymous visitor.
+		$fromRespondent = false;
 
 		if (is_string($to)) {
 			$address = $to;
-		} elseif ($fromRespondent && is_string($to['field'] ?? null)) {
+		} elseif (is_array($to) && ($to['owner'] ?? null) === true) {
+			$address = $context->ownerId === '' ? '' : ($this->accounts->emailOf($context->ownerId) ?? '');
+			if ($address === '') {
+				throw new ActionSkipped('no_account_email');
+			}
+		} elseif (is_array($to) && ($to['respondent'] ?? null) === true) {
+			if ($context->userId === null) {
+				throw new ActionSkipped('not_signed_in');
+			}
+			$address = $this->accounts->emailOf($context->userId) ?? '';
+			if ($address === '') {
+				throw new ActionSkipped('no_account_email');
+			}
+		} elseif (is_array($to) && is_string($to['field'] ?? null)) {
+			$fromRespondent = true;
 			$answer = $context->data[$to['field']] ?? null;
 			$address = is_string($answer) ? trim($answer) : '';
 		} else {

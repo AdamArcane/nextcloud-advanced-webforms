@@ -93,8 +93,11 @@ export interface RedirectAction extends ActionBase {
 
 export interface EmailAction extends ActionBase {
 	type: 'email'
-	/** A fixed address, or the answer to an email field. */
-	to: string | { field: string }
+	/**
+	 * A fixed address, the answer to an email field, the form owner's account email, or the
+	 * signed-in respondent's account email. The last two are looked up when the email is sent.
+	 */
+	to: string | { field: string } | { owner: true } | { respondent: true }
 	subject: string
 	body: string
 }

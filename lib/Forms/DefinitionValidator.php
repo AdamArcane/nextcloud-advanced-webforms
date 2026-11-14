@@ -468,6 +468,11 @@ final class DefinitionValidator {
 			if (filter_var($to, FILTER_VALIDATE_EMAIL) === false || strlen($to) > FieldValueValidator::MAX_EMAIL) {
 				$this->err('action_bad_recipient', $path . '.to');
 			}
+		} elseif (is_array($to) && (array_keys($to) === ['owner'] || array_keys($to) === ['respondent'])) {
+			// "The form owner" and "the signed-in respondent": resolved to their account email when sent.
+			if (reset($to) !== true) {
+				$this->err('action_bad_recipient', $path . '.to');
+			}
 		} elseif (is_array($to) && array_keys($to) === ['field']) {
 			$source = is_string($to['field']) ? ($fields[$to['field']] ?? null) : null;
 			if ($source === null || ($source['type'] ?? null) !== FieldType::EMAIL) {

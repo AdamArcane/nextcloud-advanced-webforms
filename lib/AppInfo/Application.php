@@ -12,6 +12,8 @@ namespace OCA\AdvancedForms\AppInfo;
 use OCA\AdvancedForms\Actions\Adapter\NextcloudHttp;
 use OCA\AdvancedForms\Actions\Adapter\NextcloudMail;
 use OCA\AdvancedForms\Actions\Adapter\NextcloudSecrets;
+use OCA\AdvancedForms\Actions\Adapter\NextcloudAccounts;
+use OCA\AdvancedForms\Actions\Ports\AccountPort;
 use OCA\AdvancedForms\Actions\Ports\HttpPort;
 use OCA\AdvancedForms\Actions\Ports\MailPort;
 use OCA\AdvancedForms\Actions\Ports\SecretPort;
@@ -36,6 +38,7 @@ class Application extends App implements IBootstrap {
 		$context->registerServiceAlias(MailPort::class, NextcloudMail::class);
 		$context->registerServiceAlias(HttpPort::class, NextcloudHttp::class);
 		$context->registerServiceAlias(SecretPort::class, NextcloudSecrets::class);
+		$context->registerServiceAlias(AccountPort::class, NextcloudAccounts::class);
 	}
 
 	public function boot(IBootContext $context): void {

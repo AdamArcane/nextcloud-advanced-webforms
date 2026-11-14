@@ -325,6 +325,21 @@ describe('EntriesView deliveries', () => {
 		wrapper.unmount()
 	})
 
+	it('shows the two account recipients as words, not as the raw markers', async () => {
+		listDeliveriesMock.mockResolvedValue(deliveries([
+			delivery(20, { type: 'email', target: '@owner', status: 'success', error: null }),
+			delivery(21, { type: 'email', target: '@respondent', status: 'skipped', error: 'not_signed_in' }),
+		]))
+		const wrapper = mountView()
+		await flushPromises()
+		await openDeliveries(wrapper)
+		expect(wrapper.text()).toContain('Form owner')
+		expect(wrapper.text()).toContain('Signed-in respondent')
+		expect(wrapper.text()).toContain('not signed in')
+		expect(wrapper.text()).not.toContain('@owner')
+		wrapper.unmount()
+	})
+
 	it('explains an empty filter', async () => {
 		listDeliveriesMock.mockResolvedValue(deliveries([]))
 		const wrapper = mountView()

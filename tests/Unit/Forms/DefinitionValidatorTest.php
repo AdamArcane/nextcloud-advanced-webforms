@@ -205,6 +205,21 @@ class DefinitionValidatorTest extends TestCase {
 		}));
 	}
 
+	public function testEmailActionOwnerAndRespondentRecipients(): void {
+		foreach ([['owner' => true], ['respondent' => true]] as $to) {
+			$this->assertSame([], $this->codes(static function (array $d) use ($to): array {
+				$d['actions'][0]['to'] = $to;
+				return $d;
+			}));
+		}
+		foreach ([['owner' => false], ['owner' => 'yes'], ['respondent' => 1], ['owner' => true, 'respondent' => true], ['user' => 'alice']] as $to) {
+			$this->assertSame(['action_bad_recipient'], $this->codes(static function (array $d) use ($to): array {
+				$d['actions'][0]['to'] = $to;
+				return $d;
+			}));
+		}
+	}
+
 	public function testPlaceholderMustReferenceInputField(): void {
 		$this->assertSame(['action_unknown_placeholder'], $this->codes(static function (array $d): array {
 			$d['actions'][0]['body'] = 'Hi {f_note}';

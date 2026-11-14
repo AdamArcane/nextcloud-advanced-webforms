@@ -134,6 +134,13 @@ class ActionLogService {
 				if (is_string($to)) {
 					return $to;
 				}
+				// Not an address, so the screen shows these as words (see DeliveryRow).
+				if (is_array($to) && ($to['owner'] ?? null) === true) {
+					return '@owner';
+				}
+				if (is_array($to) && ($to['respondent'] ?? null) === true) {
+					return '@respondent';
+				}
 				if (is_array($to) && is_string($to['field'] ?? null)) {
 					$label = $fields[$to['field']]['label'] ?? null;
 					return is_string($label) ? $label : null;

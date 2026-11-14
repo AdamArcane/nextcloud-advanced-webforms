@@ -13,6 +13,7 @@ use OCA\AdvancedForms\Actions\ActionContext;
 use OCA\AdvancedForms\Actions\ActionFailed;
 use OCA\AdvancedForms\Actions\ActionRunner;
 use OCA\AdvancedForms\Actions\ActionSkipped;
+use OCA\AdvancedForms\Actions\Ports\AccountPort;
 use OCA\AdvancedForms\Actions\Ports\HttpPort;
 use OCA\AdvancedForms\Actions\Ports\MailPort;
 use OCA\AdvancedForms\Actions\Ports\SecretPort;
@@ -28,6 +29,8 @@ class ActionRunnerTest extends TestCase {
 	private ?\Throwable $httpError = null;
 	private ?\Throwable $mailError = null;
 	private ?string $secret = 'topsecret';
+	/** @var array<string, string> account id => email address */
+	private array $accounts = ['alice' => 'alice@example.com', 'bob' => ''];
 
 	private function runner(): ActionRunner {
 		$test = $this;
@@ -61,7 +64,17 @@ class ActionRunnerTest extends TestCase {
 				return $t->secretFor($formId, $ref);
 			}
 		};
-		return new ActionRunner($mail, $http, $secrets);
+		$accounts = new class($test) implements AccountPort {
+			public function __construct(private TestCase $test) {
+			}
+
+			public function emailOf(string $userId): ?string {
+				/** @var ActionRunnerTest $t */
+				$t = $this->test;
+				return $t->accountEmail($userId);
+			}
+		};
+		return new ActionRunner($mail, $http, $secrets, $accounts);
 	}
 
 	public function recordMail(string $to, string $subject, string $body): void {
@@ -79,17 +92,22 @@ class ActionRunnerTest extends TestCase {
 		return $this->httpStatus;
 	}
 
+	public function accountEmail(string $userId): ?string {
+		$address = $this->accounts[$userId] ?? null;
+		return $address === '' ? null : $address;
+	}
+
 	public function secretFor(int $formId, string $ref): ?string {
 		return $formId === 7 && $ref === 'whsec_one' ? $this->secret : null;
 	}
 
-	private function context(array $data = ['f_name' => 'Ada', 'f_email' => 'ada@example.com'], int $recent = 0): ActionContext {
+	private function context(array $data = ['f_name' => 'Ada', 'f_email' => 'ada@example.com'], int $recent = 0, ?string $userId = null, string $ownerId = 'alice'): ActionContext {
 		return new ActionContext(
 			formId: 7,
 			versionId: 3,
 			entryId: 457,
 			logId: 99,
-			userId: null,
+			userId: $userId,
 			submittedAt: 1794700000,
 			fields: [
 				'f_name' => ['type' => 'text', 'label' => 'Name'],
@@ -99,6 +117,7 @@ class ActionRunnerTest extends TestCase {
 			data: $data,
 			now: 1794700100,
 			recentEmails: $recent,
+			ownerId: $ownerId,
 		);
 	}
 
@@ -112,6 +131,38 @@ class ActionRunnerTest extends TestCase {
 	public function testSendsToTheRespondentFromAnEmailField(): void {
 		$this->runner()->run(['type' => 'email', 'to' => ['field' => 'f_email'], 'subject' => 'Thanks', 'body' => 'x'], $this->context());
 		$this->assertSame('ada@example.com', $this->mails[0][0]);
+	}
+
+	public function testSendsToTheFormOwnersAccountAddressAndIsNotCapped(): void {
+		$this->runner()->run(['type' => 'email', 'to' => ['owner' => true], 'subject' => 'New: {f_name}', 'body' => 'x'], $this->context(recent: ActionRunner::MAX_RESPONDENT_EMAILS_PER_HOUR + 50));
+		$this->assertSame('alice@example.com', $this->mails[0][0]);
+	}
+
+	public function testSkipsWhenTheOwnerHasNoEmailOnTheirAccount(): void {
+		try {
+			$this->runner()->run(['type' => 'email', 'to' => ['owner' => true], 'subject' => 's', 'body' => 'b'], $this->context(ownerId: 'bob'));
+			$this->fail('expected a skip');
+		} catch (ActionSkipped $e) {
+			$this->assertSame('no_account_email', $e->getMessage());
+		}
+		$this->assertSame([], $this->mails);
+	}
+
+	public function testSendsToTheSignedInRespondentsAccountAddress(): void {
+		$this->runner()->run(['type' => 'email', 'to' => ['respondent' => true], 'subject' => 's', 'body' => 'b'], $this->context(userId: 'alice', ownerId: 'bob'));
+		$this->assertSame('alice@example.com', $this->mails[0][0]);
+	}
+
+	public function testSkipsTheRespondentAccountWhenNobodyWasSignedInOrTheAccountHasNoEmail(): void {
+		foreach ([[null, 'not_signed_in'], ['bob', 'no_account_email'], ['ghost', 'no_account_email']] as [$user, $reason]) {
+			try {
+				$this->runner()->run(['type' => 'email', 'to' => ['respondent' => true], 'subject' => 's', 'body' => 'b'], $this->context(userId: $user));
+				$this->fail('expected a skip');
+			} catch (ActionSkipped $e) {
+				$this->assertSame($reason, $e->getMessage());
+			}
+		}
+		$this->assertSame([], $this->mails);
 	}
 
 	public function testSkipsWhenTheRespondentGaveNoUsableAddress(): void {

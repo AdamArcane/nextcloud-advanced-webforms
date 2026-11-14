@@ -35,6 +35,8 @@ export function describeDeliveryError(error: string | null): string {
 	}
 	switch (error) {
 		case 'no_recipient': return t('advancedforms', 'The respondent did not give a usable email address.')
+		case 'no_account_email': return t('advancedforms', 'That Nextcloud account has no email address set.')
+		case 'not_signed_in': return t('advancedforms', 'The respondent was not signed in, so there is no account to email.')
 		case 'rate_limited': return t('advancedforms', 'Too many emails to respondents were sent for this form in the last hour.')
 		case 'secret_missing': return t('advancedforms', 'The webhook has no signing secret. Generate a new one in the Actions tab.')
 		case 'bad_url': return t('advancedforms', 'The webhook address is not valid.')
