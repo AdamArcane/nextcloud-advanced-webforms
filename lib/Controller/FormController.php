@@ -13,11 +13,15 @@ use OCA\AdvancedForms\Actions\Adapter\NextcloudSecrets;
 use OCA\AdvancedForms\AppInfo\Application;
 use OCA\AdvancedForms\Exception\NotFoundException;
 use OCA\AdvancedForms\Exception\ValidationException;
+use OCA\AdvancedForms\Service\ActionLogService;
+use OCA\AdvancedForms\Service\EntryExportService;
 use OCA\AdvancedForms\Service\FormService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUserSession;
@@ -32,6 +36,8 @@ class FormController extends Controller {
 		private readonly FormService $service,
 		private readonly IUserSession $userSession,
 		private readonly NextcloudSecrets $secrets,
+		private readonly ActionLogService $actionLog,
+		private readonly EntryExportService $export,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 	}
@@ -119,6 +125,45 @@ class FormController extends Controller {
 			$this->service->deleteEntry($this->userId(), $id, $entryId);
 			return new JSONResponse([], Http::STATUS_NO_CONTENT);
 		});
+	}
+
+	/**
+	 * Download all responses as a CSV file.
+	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/forms/{id}/entries/export')]
+	public function exportEntries(int $id): DataDownloadResponse|JSONResponse {
+		try {
+			$file = $this->export->csv($this->userId(), $id);
+		} catch (NotFoundException) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+		$response = new DataDownloadResponse($file['csv'], $file['filename'], 'text/csv; charset=utf-8');
+		$response->addHeader('Cache-Control', 'no-store');
+		return $response;
+	}
+
+	/**
+	 * Email and webhook deliveries for a form, newest first.
+	 */
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/forms/{id}/deliveries')]
+	public function deliveries(int $id, string $status = '', int $entryId = 0, int $limit = 50, int $offset = 0): JSONResponse {
+		return $this->guard(fn (): JSONResponse => new JSONResponse(
+			$this->actionLog->list($this->userId(), $id, $status === '' ? null : $status, $entryId > 0 ? $entryId : null, $limit, $offset),
+		));
+	}
+
+	/**
+	 * Try a failed delivery again.
+	 */
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/forms/{id}/deliveries/{logId}/retry')]
+	public function retryDelivery(int $id, int $logId): JSONResponse {
+		return $this->guard(fn (): JSONResponse => new JSONResponse(
+			$this->actionLog->retry($this->userId(), $id, $logId),
+		));
 	}
 
 	/**

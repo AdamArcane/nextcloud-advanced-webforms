@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace OCA\AdvancedForms\Db;
 
+use OCA\AdvancedForms\Exception\NotFoundException;
+use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\QBMapper;
 use OCP\DB\Exception;
 use OCP\IDBConnection;
@@ -94,6 +96,68 @@ class ActionLogMapper extends QBMapper {
 		$count = (int)$result->fetchOne();
 		$result->closeCursor();
 		return $count;
+	}
+
+	/**
+	 * @throws NotFoundException
+	 * @throws Exception
+	 */
+	public function findInForm(int $formId, int $logId): ActionLog {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')->from($this->getTableName())
+			->where($qb->expr()->eq('id', $qb->createNamedParameter($logId)))
+			->andWhere($qb->expr()->eq('form_id', $qb->createNamedParameter($formId)));
+		try {
+			return $this->findEntity($qb);
+		} catch (DoesNotExistException) {
+			throw new NotFoundException();
+		}
+	}
+
+	/**
+	 * Newest first.
+	 *
+	 * @return list<ActionLog>
+	 * @throws Exception
+	 */
+	public function findByForm(int $formId, ?string $status, ?int $entryId, int $limit, int $offset): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')->from($this->getTableName());
+		$this->filter($qb, $formId, $status, $entryId);
+		$qb->orderBy('id', 'DESC')->setMaxResults($limit)->setFirstResult($offset);
+		return array_values($this->findEntities($qb));
+	}
+
+	/**
+	 * @throws Exception
+	 */
+	public function countByForm(int $formId, ?string $status, ?int $entryId): int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select($qb->func()->count('*', 'n'))->from($this->getTableName());
+		$this->filter($qb, $formId, $status, $entryId);
+		$result = $qb->executeQuery();
+		$count = (int)$result->fetchOne();
+		$result->closeCursor();
+		return $count;
+	}
+
+	private function filter(\OCP\DB\QueryBuilder\IQueryBuilder $qb, int $formId, ?string $status, ?int $entryId): void {
+		$qb->where($qb->expr()->eq('form_id', $qb->createNamedParameter($formId)));
+		if ($status !== null) {
+			$qb->andWhere($qb->expr()->eq('status', $qb->createNamedParameter($status)));
+		}
+		if ($entryId !== null) {
+			$qb->andWhere($qb->expr()->eq('entry_id', $qb->createNamedParameter($entryId)));
+		}
+	}
+
+	/**
+	 * @throws Exception
+	 */
+	public function deleteByEntry(int $entryId): void {
+		$qb = $this->db->getQueryBuilder();
+		$qb->delete($this->getTableName())->where($qb->expr()->eq('entry_id', $qb->createNamedParameter($entryId)));
+		$qb->executeStatement();
 	}
 
 	/**

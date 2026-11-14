@@ -257,7 +257,10 @@ class FormService {
 	 */
 	public function deleteEntry(string $userId, int $id, int $entryId): void {
 		$form = $this->get($userId, $id);
-		$this->entries->delete($this->entries->findInForm($form->getId(), $entryId));
+		$entry = $this->entries->findInForm($form->getId(), $entryId);
+		// Its deliveries go with it, so the log never points at a response that no longer exists.
+		$this->actionLog->deleteByEntry($entry->getId());
+		$this->entries->delete($entry);
 	}
 
 	/**
