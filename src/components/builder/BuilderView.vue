@@ -198,6 +198,9 @@ async function publish(): Promise<void> {
 const errorGroups = computed(() => groupErrors(errors.value))
 const formErrors = computed(() => errorGroups.value.get('') ?? [])
 const selectedField = computed(() => (selectedId.value && draft.value ? draft.value.fields[selectedId.value] : undefined))
+// Keyed by the layout cell, which stays put when the field's id changes as its label is typed.
+// Keying by the id would rebuild the panel on every keystroke and drop focus.
+const selectedKey = computed(() => (selectedId.value && draft.value ? (locateField(draft.value, selectedId.value)?.cell.id ?? selectedId.value) : ''))
 const selectedCodes = computed(() => (selectedId.value ? (errorGroups.value.get(selectedId.value) ?? []).map((e) => e.code) : []))
 const sidebarName = computed(() => {
 	if (selectedField.value) {
@@ -552,7 +555,7 @@ async function onDeleteConfirmed(): Promise<void> {
 				<Icon :path="icons.tabField" />
 			</template>
 			<FieldProperties v-if="selectedId && selectedField"
-				:key="selectedId"
+				:key="selectedKey"
 				:definition="draft"
 				:field-id="selectedId"
 				:error-codes="selectedCodes"
@@ -576,7 +579,7 @@ async function onDeleteConfirmed(): Promise<void> {
 				<Icon :path="icons.logic" />
 			</template>
 			<LogicPanel v-if="selectedId && selectedField"
-				:key="selectedId"
+				:key="selectedKey"
 				:definition="draft"
 				:field-id="selectedId"
 				:errors="errors"

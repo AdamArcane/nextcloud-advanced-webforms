@@ -157,4 +157,21 @@ describe('renaming through the builder', () => {
 		expect(wrapper.findComponent({ name: 'FieldProperties' }).props('published')).toBe(true)
 		wrapper.unmount()
 	})
+
+	it('keeps the same panel while the id follows the label, so typing does not lose focus', async () => {
+		const def = emptyDefinition('T')
+		const added = addField(def, 'text', { kind: 'row', index: 0 })
+		getFormMock.mockReset().mockResolvedValue(ownerForm(added.definition))
+		const wrapper = mount(BuilderView, { props: { formId: 1 }, attachTo: document.body })
+		await flushPromises()
+		wrapper.findComponent({ name: 'BuilderCanvas' }).vm.$emit('select', added.fieldId)
+		await flushPromises()
+		const before = wrapper.findComponent({ name: 'FieldProperties' }).vm.$el
+		wrapper.findComponent({ name: 'FieldProperties' }).vm.$emit('update', { label: 'First Name' })
+		await flushPromises()
+		const panel = wrapper.findComponent({ name: 'FieldProperties' })
+		expect(panel.props('fieldId')).toBe('f_first_name')
+		expect(panel.vm.$el).toBe(before)
+		wrapper.unmount()
+	})
 })
