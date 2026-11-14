@@ -463,7 +463,7 @@ function codes(fieldId: string): string[] {
 }
 
 .af-canvas__paper {
-	container-type: inline-size;
+	container: af-paper / inline-size;
 	width: 100%;
 	max-width: 760px;
 	box-sizing: border-box;
@@ -675,7 +675,8 @@ function codes(fieldId: string): string[] {
 	pointer-events: none;
 }
 
-@container (max-width: 600px) {
+/* Named: a plain query from inside a cell would measure the cell itself, which is under 600px in any split row. */
+@container af-paper (max-width: 600px) {
 	.af-cell__resize,
 	.af-row__grip {
 		display: none;
