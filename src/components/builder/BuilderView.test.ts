@@ -38,8 +38,8 @@ function ownerForm(draft: DraftDefinition, extra: Partial<OwnerForm> = {}): Owne
 	}
 }
 
-function mountView() {
-	return mount(BuilderView, { props: { formId: 1 }, attachTo: document.body })
+function mountView(view: 'edit' | 'settings' = 'edit') {
+	return mount(BuilderView, { props: { formId: 1, view }, attachTo: document.body })
 }
 
 describe('BuilderView', () => {
@@ -66,6 +66,21 @@ describe('BuilderView', () => {
 		wrapper.unmount()
 	})
 
+	it('keeps form-wide settings and actions off the field sidebar', async () => {
+		const edit = mountView()
+		await flushPromises()
+		expect(edit.findComponent({ name: 'FormProperties' }).exists()).toBe(false)
+		expect(edit.findComponent({ name: 'ActionsPanel' }).exists()).toBe(false)
+		edit.unmount()
+
+		const settings = mountView('settings')
+		await flushPromises()
+		expect(settings.findComponent({ name: 'FormProperties' }).exists()).toBe(true)
+		expect(settings.findComponent({ name: 'ActionsPanel' }).exists()).toBe(true)
+		expect(settings.findComponent({ name: 'BuilderCanvas' }).exists()).toBe(false)
+		settings.unmount()
+	})
+
 	it('shows a not-found message when the form cannot be loaded', async () => {
 		getFormMock.mockRejectedValue(new Error('nope'))
 		const wrapper = mountView()
@@ -75,7 +90,7 @@ describe('BuilderView', () => {
 	})
 
 	it('autosaves once after a burst of edits, with the latest draft', async () => {
-		const wrapper = mountView()
+		const wrapper = mountView('settings')
 		await flushPromises()
 
 		const form = wrapper.findComponent({ name: 'FormProperties' })
@@ -100,7 +115,7 @@ describe('BuilderView', () => {
 		saveDraftMock.mockImplementationOnce((_id: number, definition: DraftDefinition) => new Promise((resolve) => {
 			release = () => resolve({ form: ownerForm(definition), errors: [] })
 		}))
-		const wrapper = mountView()
+		const wrapper = mountView('settings')
 		await flushPromises()
 		const form = wrapper.findComponent({ name: 'FormProperties' })
 
@@ -125,7 +140,7 @@ describe('BuilderView', () => {
 
 	it('reports a failed save and keeps the edit', async () => {
 		saveDraftMock.mockRejectedValue(new Error('offline'))
-		const wrapper = mountView()
+		const wrapper = mountView('settings')
 		await flushPromises()
 		wrapper.findComponent({ name: 'FormProperties' }).vm.$emit('title', 'X')
 		await vi.advanceTimersByTimeAsync(800)
@@ -153,7 +168,7 @@ describe('BuilderView', () => {
 	it('publishes what is on screen and surfaces validation errors', async () => {
 		const { ApiError } = await import('../../api/http.ts')
 		publishMock.mockRejectedValue(new ApiError(422, 'validation', [{ code: 'field_label_invalid', path: 'fields.f_abc123.label' }] as never))
-		const wrapper = mountView()
+		const wrapper = mountView('settings')
 		await flushPromises()
 		wrapper.findComponent({ name: 'FormProperties' }).vm.$emit('title', 'Changed')
 		const publish = wrapper.findAll('button').find((button) => button.text().includes('Publish'))!

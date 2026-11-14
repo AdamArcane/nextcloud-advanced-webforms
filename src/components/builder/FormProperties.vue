@@ -128,6 +128,8 @@ function str(value: string | number): string | undefined {
 			</p>
 		</section>
 
+		<slot />
+
 		<section class="af-form-props__section">
 			<NcButton variant="error" @click="emit('delete')">
 				<template #icon>

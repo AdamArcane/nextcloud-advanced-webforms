@@ -10,12 +10,12 @@ import SegmentedControl from './builder/SegmentedControl.vue'
 
 const props = defineProps<{
 	formId: number
-	active: 'edit' | 'responses'
+	active: 'edit' | 'settings' | 'responses'
 }>()
 
 // The address is the source of truth for which screen is open, so going back and reloading both work.
 function go(view: string | number): void {
-	window.location.hash = '/f/' + props.formId + (view === 'responses' ? '/responses' : '')
+	window.location.hash = '/f/' + props.formId + (view === 'edit' ? '' : '/' + view)
 }
 </script>
 
@@ -26,6 +26,7 @@ function go(view: string | number): void {
 		:group-label="t('advancedforms', 'Form view')"
 		:options="[
 			{ value: 'edit', label: t('advancedforms', 'Edit'), icon: icons.edit },
+			{ value: 'settings', label: t('advancedforms', 'Settings'), icon: icons.settings },
 			{ value: 'responses', label: t('advancedforms', 'Responses'), icon: icons.responses },
 		]"
 		@update:model-value="go" />

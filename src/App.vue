@@ -34,9 +34,11 @@ const view = computed(() => route.value.view)
 const selectedTitle = computed(() => forms.value.find((form) => form.id === selectedId.value)?.title ?? '')
 
 // The selected form and screen live in the URL hash, so a reload, the back button and a shared link all work.
-function readHash(): { id: number | null, view: 'edit' | 'responses' } {
-	const match = /^#\/f\/(\d+)(\/responses)?$/.exec(window.location.hash)
-	return match ? { id: Number(match[1]), view: match[2] ? 'responses' : 'edit' } : { id: null, view: 'edit' }
+type View = 'edit' | 'settings' | 'responses'
+
+function readHash(): { id: number | null, view: View } {
+	const match = /^#\/f\/(\d+)(?:\/(responses|settings))?$/.exec(window.location.hash)
+	return match ? { id: Number(match[1]), view: (match[2] as View | undefined) ?? 'edit' } : { id: null, view: 'edit' }
 }
 
 function onHashChange(): void {
@@ -139,6 +141,7 @@ function statusText(form: OwnerForm): string {
 		<BuilderView v-else-if="selectedId !== null"
 			:key="selectedId"
 			:form-id="selectedId"
+			:view="view === 'settings' ? 'settings' : 'edit'"
 			@changed="onChanged"
 			@deleted="onDeleted" />
 

@@ -35,9 +35,11 @@ import LogicPanel from './LogicPanel.vue'
 import PreviewDialog from './PreviewDialog.vue'
 import SegmentedControl from './SegmentedControl.vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
 	formId: number
-}>()
+	/** The canvas with its field sidebar, or the page for form-wide settings and actions. */
+	view?: 'edit' | 'settings'
+}>(), { view: 'edit' })
 
 const emit = defineEmits<{
 	/** The server's view of the form changed (title, status), so the list can refresh. */
@@ -57,7 +59,7 @@ const publishFailed = ref(false)
 
 const selectedId = ref<string | null>(null)
 const sidebarOpen = ref(true)
-const tab = ref<'field' | 'logic' | 'actions' | 'form'>('form')
+const tab = ref<'field' | 'logic'>('field')
 const canvasWidth = ref<'desktop' | 'mobile'>('desktop')
 const mobile = computed(() => canvasWidth.value === 'mobile')
 const previewOpen = ref(false)
@@ -192,19 +194,10 @@ const formErrors = computed(() => errorGroups.value.get('') ?? [])
 const selectedField = computed(() => (selectedId.value && draft.value ? draft.value.fields[selectedId.value] : undefined))
 const selectedCodes = computed(() => (selectedId.value ? (errorGroups.value.get(selectedId.value) ?? []).map((e) => e.code) : []))
 const sidebarName = computed(() => {
-	if (tab.value === 'actions') {
-		return t('advancedforms', 'After submitting')
-	}
-	if ((tab.value === 'field' || tab.value === 'logic') && selectedField.value) {
+	if (selectedField.value) {
 		return selectedField.value.label || selectedField.value.text || t('advancedforms', 'Field')
 	}
-	return t('advancedforms', 'Form settings')
-})
-const sidebarSubname = computed(() => {
-	if (tab.value === 'actions') {
-		return t('advancedforms', 'Messages, emails and webhooks')
-	}
-	return tab.value === 'form' ? t('advancedforms', 'Applies to the whole form') : undefined
+	return t('advancedforms', 'Field')
 })
 
 function select(fieldId: string): void {
@@ -269,7 +262,6 @@ function onRemoveConfirmed(): void {
 	if (draft.value && selectedId.value) {
 		edit(removeField(draft.value, selectedId.value))
 		selectedId.value = null
-		tab.value = 'form'
 	}
 }
 
@@ -363,7 +355,8 @@ async function onDeleteConfirmed(): Promise<void> {
 				</div>
 				<div class="af-bar__tools">
 					<FormNav :form-id="formId" active="edit" />
-					<SegmentedControl v-model="canvasWidth"
+					<SegmentedControl v-if="view === 'edit'"
+						v-model="canvasWidth"
 						class="af-bar__device"
 						:group-label="t('advancedforms', 'Canvas width')"
 						:options="[
@@ -371,6 +364,7 @@ async function onDeleteConfirmed(): Promise<void> {
 							{ value: 'mobile', label: t('advancedforms', 'Mobile'), icon: icons.mobile },
 						]"
 						icon-only />
+					<span v-else />
 					<NcButton variant="primary" class="af-bar__publish" :disabled="!canPublish" @click="publish">
 						{{ publishing ? t('advancedforms', 'Publishing…') : t('advancedforms', 'Publish') }}
 					</NcButton>
@@ -392,7 +386,28 @@ async function onDeleteConfirmed(): Promise<void> {
 				</NcNoteCard>
 			</div>
 
-			<BuilderCanvas :definition="draft"
+			<div v-if="view === 'settings'" class="af-settings">
+				<div class="af-settings__inner">
+					<FormProperties :definition="draft"
+						:share-url="shareUrl"
+						@title="onTitle"
+						@description="onDescription"
+						@settings="onSettings"
+						@delete="confirmDeleteForm = true">
+						<section class="af-settings__actions">
+							<h3 class="af-settings__heading">
+								{{ t('advancedforms', 'After submitting') }}
+							</h3>
+							<ActionsPanel :definition="draft"
+								:form-id="formId"
+								:errors="errors"
+								@change="edit" />
+						</section>
+					</FormProperties>
+				</div>
+			</div>
+			<BuilderCanvas v-else
+				:definition="draft"
 				:selected-id="selectedId"
 				:errors="errors"
 				:mobile="mobile"
@@ -421,11 +436,10 @@ async function onDeleteConfirmed(): Promise<void> {
 		</template>
 	</NcAppContent>
 
-	<NcAppSidebar v-if="draft && form"
+	<NcAppSidebar v-if="draft && form && view === 'edit'"
 		v-model:active="tab"
 		v-model:open="sidebarOpen"
-		:name="sidebarName"
-		:subname="sidebarSubname">
+		:name="sidebarName">
 		<NcAppSidebarTab id="field" :name="t('advancedforms', 'Field')" :order="1">
 			<template #icon>
 				<Icon :path="icons.tabField" />
@@ -463,26 +477,6 @@ async function onDeleteConfirmed(): Promise<void> {
 				class="af-builder__hint"
 				:name="t('advancedforms', 'No field selected')"
 				:description="t('advancedforms', 'Select a field on the canvas to set up its rules.')" />
-		</NcAppSidebarTab>
-		<NcAppSidebarTab id="actions" :name="t('advancedforms', 'Actions')" :order="3">
-			<template #icon>
-				<Icon :path="icons.tabActions" />
-			</template>
-			<ActionsPanel :definition="draft"
-				:form-id="formId"
-				:errors="errors"
-				@change="edit" />
-		</NcAppSidebarTab>
-		<NcAppSidebarTab id="form" :name="t('advancedforms', 'Form')" :order="4">
-			<template #icon>
-				<Icon :path="icons.tabForm" />
-			</template>
-			<FormProperties :definition="draft"
-				:share-url="shareUrl"
-				@title="onTitle"
-				@description="onDescription"
-				@settings="onSettings"
-				@delete="confirmDeleteForm = true" />
 		</NcAppSidebarTab>
 	</NcAppSidebar>
 </template>
@@ -589,6 +583,27 @@ async function onDeleteConfirmed(): Promise<void> {
 	.af-bar__tools {
 		grid-template-columns: auto 1fr auto;
 	}
+}
+
+.af-settings {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow-y: auto;
+}
+
+.af-settings__inner {
+	max-width: 760px;
+	margin: 0 auto;
+	padding: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 8);
+}
+
+.af-settings__heading {
+	margin: 0 0 calc(var(--default-grid-baseline) * 2);
+	font-size: 14px;
+	font-weight: bold;
+	color: var(--color-text-maxcontrast);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
 }
 
 .af-builder__notes {
