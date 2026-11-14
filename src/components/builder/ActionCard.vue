@@ -22,7 +22,6 @@ import { actionLabel } from '../../builder/labels.ts'
 import { sourceFields } from '../../builder/rules.ts'
 import ConditionGroup from './ConditionGroup.vue'
 import PlaceholderMenu from './PlaceholderMenu.vue'
-import SegmentedControl from './SegmentedControl.vue'
 
 const ARROW_UP: string = icons.arrowUp
 const ARROW_DOWN: string = icons.arrowDown
@@ -110,27 +109,57 @@ function setWhenEnabled(enabled: boolean): void {
 	emit('update', setWhen(props.action, next))
 }
 
-const recipientKind = computed(() => (typeof email.value.to === 'string' ? 'address' : 'field'))
+interface RecipientOption {
+	id: string
+	label: string
+	/** An address typed by hand rather than one of the form's email fields. */
+	custom: boolean
+}
 
-function setRecipientKind(kind: string): void {
-	if (kind === 'address') {
+const recipientOptions = computed<RecipientOption[]>(() => emails.value.map(({ id, label }) => ({ id, label: label || id, custom: false })))
+
+/** One box for both kinds of recipient: pick one of the form's email fields, or type an address. */
+const recipient = computed<RecipientOption | null>(() => {
+	const to = email.value.to
+	if (typeof to === 'string') {
+		return to === '' ? null : { id: to, label: to, custom: true }
+	}
+	return recipientOptions.value.find((option) => option.id === to.field) ?? { id: to.field, label: to.field, custom: false }
+})
+
+const recipientIsField = computed(() => typeof email.value.to === 'object')
+
+function setRecipient(option: RecipientOption | null): void {
+	if (option === null) {
 		patch({ to: '' })
+	} else if (option.custom) {
+		patch({ to: option.id.trim() })
 	} else {
-		patch({ to: { field: emails.value[0]?.id ?? '' } })
+		patch({ to: { field: option.id } })
 	}
 }
 
-const recipientField = computed(() => (typeof email.value.to === 'object' ? email.value.to.field : null))
+function createRecipient(text: string): RecipientOption {
+	return { id: text, label: text, custom: true }
+}
 
 // A freshly added action is incomplete by nature; warn only once the user has been in it (or tried to publish).
 const touched = ref(false)
+
+/** Moving through the card's header or buttons is not editing; leaving a text box is. */
+function onFocusOut(event: FocusEvent): void {
+	const target = event.target as HTMLElement | null
+	if (target && ['INPUT', 'TEXTAREA'].includes(target.tagName)) {
+		touched.value = true
+	}
+}
 const visibleErrors = computed(() => (props.showErrors || touched.value ? props.errorCodes : []))
 </script>
 
 <template>
 	<article class="af-action"
 		:class="{ 'af-action--error': visibleErrors.length > 0, 'af-action--open': expanded }"
-		@focusout="touched = true">
+		@focusout="onFocusOut">
 		<button type="button"
 			class="af-action__head"
 			:aria-expanded="expanded"
@@ -176,33 +205,22 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 
 			<!-- Email -->
 			<template v-else-if="action.type === 'email'">
-				<div class="af-action__group">
-					<span class="af-action__caption">{{ t('advancedforms', 'Send to') }}</span>
-					<SegmentedControl :model-value="recipientKind"
-						:group-label="t('advancedforms', 'Who receives the email')"
-						:options="[
-							{ value: 'address', label: t('advancedforms', 'An address') },
-							{ value: 'field', label: t('advancedforms', 'The respondent'), disabled: emails.length === 0, title: emails.length === 0 ? t('advancedforms', 'Add an email field first') : undefined },
-						]"
-						@update:model-value="(value) => setRecipientKind(String(value))" />
-				</div>
-				<NcTextField v-if="typeof email.to === 'string'"
-					:model-value="email.to"
-					type="email"
-					:label="t('advancedforms', 'Email address')"
-					@update:model-value="(value: string | number) => patch({ to: String(value) })" />
-				<template v-else>
-					<NcSelect :model-value="recipientField"
-						:input-label="t('advancedforms', 'Email field')"
-						:options="emails"
-						:reduce="(option: { id: string }) => option.id"
-						:clearable="false"
-						label="label"
-						@update:model-value="(id: string) => patch({ to: { field: id } })" />
-					<p class="af-action__hint">
+				<NcSelect :model-value="recipient"
+					:input-label="t('advancedforms', 'Send to')"
+					:placeholder="t('advancedforms', 'Pick an email field or type an address')"
+					:options="recipientOptions"
+					taggable
+					:create-option="createRecipient"
+					label="label"
+					@update:model-value="setRecipient" />
+				<p class="af-action__hint">
+					<template v-if="recipientIsField">
 						{{ t('advancedforms', 'Sent to the address the respondent typed. To limit abuse, at most 30 such emails are sent per hour for this form.') }}
-					</p>
-				</template>
+					</template>
+					<template v-else>
+						{{ t('advancedforms', 'Choose one of the form\'s email fields to reply to the respondent, or type an address and press Enter.') }}
+					</template>
+				</p>
 				<NcTextField :model-value="email.subject"
 					:label="t('advancedforms', 'Subject')"
 					@update:model-value="(value: string | number) => patch({ subject: String(value) })" />

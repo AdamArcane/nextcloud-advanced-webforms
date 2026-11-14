@@ -89,36 +89,43 @@ describe('ActionsPanel', () => {
 		expect((lastChange(wrapper).actions[0] as { text: string }).text).toBe(`Thanks, your response has been sent. {${name}}`)
 	})
 
+	const recipientSelect = (wrapper: ReturnType<typeof mountPanel>) => wrapper.findAllComponents({ name: 'NcSelect' }).find((select) => select.props('inputLabel') === 'Send to')!
+
 	it('addresses an email to the respondent by default when there is an email field', async () => {
 		const { def, email } = base()
 		const wrapper = mountPanel(addAction(def, 'email').definition)
 		await wrapper.find('.af-action__head').trigger('click')
 		expect(wrapper.text()).toContain('at most 30 such emails')
-		expect(wrapper.find('[role="radio"][aria-checked="true"]').text()).toBe('The respondent')
-		expect(email).toBeDefined()
+		expect(recipientSelect(wrapper).props('modelValue')).toMatchObject({ id: email, custom: false })
 	})
 
-	it('switches an email between the respondent and a fixed address', async () => {
+	it('takes either one of the form\'s email fields or a typed address in a single box', async () => {
 		const { def, email } = base()
 		const wrapper = mountPanel(addAction(def, 'email').definition)
 		await wrapper.find('.af-action__head').trigger('click')
-		await wrapper.findAll('[role="radio"]').find((b) => b.text() === 'An address')!.trigger('click')
-		expect(lastChange(wrapper).actions[0]).toMatchObject({ to: '' })
-		await wrapper.setProps({ definition: lastChange(wrapper) })
-		await wrapper.find('input[type="email"]').setValue('owner@example.com')
+		const select = recipientSelect(wrapper)
+		expect(select.props('options')).toEqual([{ id: email, label: expect.any(String), custom: false }])
+
+		select.vm.$emit('update:modelValue', { id: 'owner@example.com', label: 'owner@example.com', custom: true })
 		expect(lastChange(wrapper).actions[0]).toMatchObject({ to: 'owner@example.com' })
 		await wrapper.setProps({ definition: lastChange(wrapper) })
-		await wrapper.findAll('[role="radio"]').find((b) => b.text() === 'The respondent')!.trigger('click')
+		expect(recipientSelect(wrapper).props('modelValue')).toMatchObject({ id: 'owner@example.com', custom: true })
+		expect(wrapper.text()).not.toContain('at most 30 such emails')
+
+		recipientSelect(wrapper).vm.$emit('update:modelValue', { id: email, label: 'Email', custom: false })
 		expect(lastChange(wrapper).actions[0]).toMatchObject({ to: { field: email } })
+
+		recipientSelect(wrapper).vm.$emit('update:modelValue', null)
+		expect(lastChange(wrapper).actions[0]).toMatchObject({ to: '' })
 	})
 
-	it('cannot send to the respondent without an email field', async () => {
+	it('still lets you type an address when the form has no email field', async () => {
 		let def = emptyDefinition('T')
 		def = addField(def, 'text', { kind: 'row', index: 0 }).definition
 		const wrapper = mountPanel(addAction(def, 'email').definition)
 		await wrapper.find('.af-action__head').trigger('click')
-		const respondent = wrapper.findAll('[role="radio"]').find((b) => b.text() === 'The respondent')!
-		expect(respondent.attributes('disabled')).toBeDefined()
+		expect(recipientSelect(wrapper).props('options')).toEqual([])
+		expect(recipientSelect(wrapper).props('taggable')).toBe(true)
 	})
 
 	it('makes a secret for a webhook, shows it once, and keeps only the reference in the form', async () => {
@@ -252,11 +259,12 @@ describe('warnings on a new action', () => {
 		const { wrapper } = webhookPanel()
 		const head = wrapper.get('.af-action__head')
 		await head.trigger('click')
-		await wrapper.setProps({})
+		// Clicking around the card is not editing it.
+		await head.trigger('focusout')
 		expect(wrapper.find('.af-action--error').exists()).toBe(false)
-		expect(wrapper.find('.af-action__body .nc-note-card, .af-action__body [class*="notecard"]').exists()).toBe(false)
 
-		await wrapper.get('.af-action').trigger('focusout')
+		// Leaving a text box is.
+		await wrapper.get('.af-action__body input').trigger('focusout')
 		expect(wrapper.find('.af-action--error').exists()).toBe(true)
 		wrapper.unmount()
 	})
