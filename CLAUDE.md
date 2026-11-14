@@ -47,9 +47,11 @@ rules semantics, actions, versioning and the submit algorithm.
 
 - `npm ci`, `npm run build`, `npm test` (vitest, includes component tests),
   `npm run typecheck`
-- PHP: `composer install && composer test:unit` (PHPUnit 11). Real PHPUnit has
-  NOT been run yet: earlier work used a stand-in runner because Packagist was
-  blocked. Run it first, and commit `composer.lock`.
+- PHP: `composer install && composer test:unit` (PHPUnit 11). Real PHPUnit has run:
+  236 tests pass on PHP 8.5 (`composer.lock` is committed). `composer` is not installed
+  system-wide here; a checked `composer.phar` works fine.
+- CI: `.github/workflows/ci.yml` runs typecheck, vitest and build, PHP lint and PHPUnit on
+  8.3 and 8.4, `reuse lint`, and an em dash scan of the Markdown docs.
 - `reuse lint`, and scan for em dashes before committing.
 - Dev instance: `dev/` has a Proxmox setup script and `dev/deploy.sh`
   (build, rsync runtime files, enable the app). Dev VM is Proxmox VM 102 `nc-dev`
@@ -57,19 +59,20 @@ rules semantics, actions, versioning and the submit algorithm.
 
 ## Status
 
-Done: spec v0.3, schema migration, rules engine (PHP + TS) with 75 shared
-vectors, validators, services, owner and public APIs, public form renderer.
+Done: spec v0.3, schema migration, rules engine (PHP + TS) with 75 shared vectors,
+validators, services, owner and public APIs, public renderer, owner UI (forms list,
+responses, delivery log, CSV export), actions pipeline (email, webhook, message, redirect,
+retries), builder (fields, logic, actions, settings, multi-page, design tab, drag and drop
+with live preview, row moves, resize handles, text alignment, hide required indicator).
 
-NOT verified on a real server: all PHP that touches Nextcloud (`lib/Db`,
-`lib/Service`, controllers, migration), `info.xml` against the app store XSD,
-routes, rate-limit attributes, the public page template. Expect small API
-mistakes there. First job: get the dev instance running and fix what breaks.
+Verified on the dev instance by hand (deploy with `dev/deploy.sh user@dev-host`;
+`user@proxmox-host` is the Proxmox host and is the wrong target). Not yet verified: `info.xml`
+against the app store XSD, a fresh install migration, rate-limit attributes under load.
 
-Next phases: 4 owner UI for forms list and entries (+ CSV export), 5 actions
-pipeline (queued jobs, retries, log; email via Nextcloud mailer, webhook with
-HMAC and SSRF-safe client, message/redirect resolved synchronously), 6 builder
-UI (JSON editing first), 7 hardening and release (l10n, app store packaging).
-Submit currently returns `message: null, redirect: null` until Phase 5.
+Remaining: phase 7 hardening and release (security pass on public endpoints and the webhook
+client, l10n files, app store packaging and screenshots). Touch dragging is not supported
+(the move buttons in the field panel cover it). Submit message and redirect are resolved
+synchronously; see `docs/SCHEMA.md`.
 
 ## Gotchas
 
