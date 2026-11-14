@@ -527,3 +527,12 @@ vectors first, and both test suites must pass.
    differ. The server is authoritative, so the worst case is the browser briefly
    showing a different field set than the server accepts. Revisit only if a real
    mismatch shows up.
+11. Label position. Proposed: `settings.labelPosition` sets the form default and
+   an optional per-field `labelPosition` overrides it, both one of `above`
+   (today's behaviour and the default), `inline` (label beside the input), or
+   `hidden` (visually hidden, still in the DOM for screen readers, as
+   `hideLabel` is today). `hideLabel: true` would stay as an alias for
+   `labelPosition: "hidden"` so existing definitions keep working. Open points:
+   how `inline` collapses on narrow containers (probably back to `above`), and
+   how it applies to groups (`radio`, `checkboxes`) and `checkbox`, whose label
+   is part of the control. Not in v1 unless the builder needs it first.

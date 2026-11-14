@@ -25,6 +25,7 @@ has been run on a real Nextcloud server.
 ## Planned later
 
 - Store submissions in Nextcloud Tables (optional backend).
+- Label position (above, inline, or hidden), set per form and per field.
 - Multi-page forms, theming, anonymous file uploads.
 
 ## Design
