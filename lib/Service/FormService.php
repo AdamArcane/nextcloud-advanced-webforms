@@ -18,6 +18,7 @@ use OCA\AdvancedForms\Db\VersionMapper;
 use OCA\AdvancedForms\Exception\NotFoundException;
 use OCA\AdvancedForms\Exception\ValidationException;
 use OCA\AdvancedForms\Forms\DefinitionValidator;
+use OCA\AdvancedForms\Forms\JsonShape;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Security\ISecureRandom;
 
@@ -99,7 +100,7 @@ class FormService {
 	public function saveDraft(string $userId, int $id, array $definition): array {
 		$form = $this->get($userId, $id);
 
-		$encoded = $this->encode($definition);
+		$encoded = $this->encode(JsonShape::definition($definition));
 		if (strlen($encoded) > self::MAX_DEFINITION_BYTES) {
 			throw new ValidationException([['code' => 'too_large', 'path' => '']]);
 		}
@@ -154,7 +155,7 @@ class FormService {
 			throw new ValidationException($errors);
 		}
 
-		$encoded = $this->encode($draft);
+		$encoded = $this->encode(JsonShape::definition($draft));
 		$latest = $this->versions->findLatest($form->getId());
 		if ($latest === null || $this->canonical($latest->getDefinition()) !== $this->canonical($encoded)) {
 			$version = new Version();
@@ -229,11 +230,11 @@ class FormService {
 				'versionId' => $entry->getVersionId(),
 				'userId' => $entry->getUserId(),
 				'submittedAt' => $entry->getSubmittedAt(),
-				'data' => $entry->getDataArray(),
+				'data' => JsonShape::map($entry->getDataArray()),
 			];
 			if (!isset($versionDefinitions[$entry->getVersionId()])) {
 				$version = $this->versions->find($entry->getVersionId());
-				$versionDefinitions[$entry->getVersionId()] = $version->getDefinitionArray();
+				$versionDefinitions[$entry->getVersionId()] = JsonShape::definition($version->getDefinitionArray());
 			}
 		}
 
@@ -267,7 +268,7 @@ class FormService {
 			'updatedAt' => $form->getUpdatedAt(),
 		];
 		if ($withDraft) {
-			$data['draft'] = $form->getDraftDefinition();
+			$data['draft'] = JsonShape::definition($form->getDraftDefinition());
 		}
 		return $data;
 	}

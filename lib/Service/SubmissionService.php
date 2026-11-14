@@ -18,6 +18,7 @@ use OCA\AdvancedForms\Exception\FormClosedException;
 use OCA\AdvancedForms\Exception\LoginRequiredException;
 use OCA\AdvancedForms\Exception\NotFoundException;
 use OCA\AdvancedForms\Exception\ValidationException;
+use OCA\AdvancedForms\Forms\JsonShape;
 use OCA\AdvancedForms\Forms\SubmissionValidator;
 use OCA\AdvancedForms\Security\FillTimeToken;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -63,7 +64,7 @@ class SubmissionService {
 			'token' => $token,
 			'versionId' => $version->getId(),
 			'fillToken' => $this->tokens->issue($form->getId(), $version->getId(), $this->time->getTime()),
-			'definition' => $definition,
+			'definition' => JsonShape::definition($definition),
 		];
 	}
 
