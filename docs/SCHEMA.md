@@ -124,7 +124,7 @@ releases migrate stored definitions.
 
 `settings.design` is optional and every key in it too: `width` (`narrow`,
 `standard`, `wide`), `card` (boolean), `background` (`default`, `plain`,
-`color`), `backgroundColor`, `accentColor` and `buttonColor` (the form buttons; defaults to
+`color`), `backgroundColor`, `accentColor` and `buttonColor` (the submit button only; defaults to
 `accentColor`) (`#rrggbb` only, so a value can
 never carry CSS).
 

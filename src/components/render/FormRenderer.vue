@@ -12,7 +12,7 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, nextTick, reactive, ref } from 'vue'
 import { ApiError, submitPublicForm } from '../../api/public.ts'
 import { renderedLabelPosition } from '../../layout/labelPosition.ts'
-import { buttonStyle } from '../../design.ts'
+import { submitButtonStyle } from '../../design.ts'
 import { visiblePages } from '../../layout/visibleLayout.ts'
 import { evaluateRules } from '../../rules/engine.ts'
 import { isInputType } from '../../rules/fieldTypes.ts'
@@ -72,7 +72,7 @@ const state = computed(() => {
 const visible = computed(() => new Set(state.value.visible))
 const required = computed(() => new Set(state.value.required))
 const pages = computed(() => visiblePages(definition.value.pages, visible.value))
-const actionsStyle = computed(() => buttonStyle(definition.value.settings?.design))
+const submitStyle = computed(() => submitButtonStyle(definition.value.settings?.design))
 const pageIndex = ref(0)
 // Hiding fields can remove pages, so never point past the end.
 const currentIndex = computed(() => Math.min(pageIndex.value, Math.max(0, pages.value.length - 1)))
@@ -265,14 +265,18 @@ async function showError(error: unknown) {
 			{{ formError }}
 		</NcNoteCard>
 
-		<div class="af-actions" :style="actionsStyle">
+		<div class="af-actions">
 			<NcButton v-if="!isFirst" variant="tertiary" :disabled="submitting" @click="goBack">
 				{{ t('advancedforms', 'Back') }}
 			</NcButton>
 			<NcButton v-if="!isLast" type="submit" variant="primary">
 				{{ t('advancedforms', 'Next') }}
 			</NcButton>
-			<NcButton v-else type="submit" variant="primary" :disabled="submitting || preview">
+			<NcButton v-else
+				type="submit"
+				variant="primary"
+				:style="submitStyle"
+				:disabled="submitting || preview">
 				{{ submitLabel }}
 			</NcButton>
 		</div>

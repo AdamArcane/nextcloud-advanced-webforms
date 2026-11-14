@@ -38,8 +38,8 @@ export function accentStyle(design: FormDesign | undefined): Record<string, stri
 	return colorVars(safeColor(design?.accentColor))
 }
 
-/** The accent variables for the form buttons: their own colour, else the accent colour. */
-export function buttonStyle(design: FormDesign | undefined): Record<string, string> {
+/** The accent variables for the submit button: its own colour, else the accent colour. */
+export function submitButtonStyle(design: FormDesign | undefined): Record<string, string> {
 	return colorVars(safeColor(design?.buttonColor) ?? safeColor(design?.accentColor))
 }
 

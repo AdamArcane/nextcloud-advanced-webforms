@@ -48,7 +48,7 @@ export interface FormDesign {
 	backgroundColor?: string
 	/** `#rrggbb`, used for highlights and, unless `buttonColor` is set, buttons. */
 	accentColor?: string
-	/** `#rrggbb` for the Next, Back and submit buttons. Defaults to the accent colour. */
+	/** `#rrggbb` for the final submit button only. Defaults to the accent colour. */
 	buttonColor?: string
 }
 

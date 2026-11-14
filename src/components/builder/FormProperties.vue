@@ -176,7 +176,7 @@ function str(value: string | number): string | undefined {
 					<input type="color"
 						:value="safeColor(definition.settings.design?.buttonColor) ?? safeColor(definition.settings.design?.accentColor) ?? DEFAULT_ACCENT"
 						@input="setDesign(definition.settings.design, { buttonColor: ($event.target as HTMLInputElement).value })">
-					{{ t('advancedforms', 'Next, Back and submit buttons') }}
+					{{ t('advancedforms', 'Only the submit button') }}
 				</label>
 				<NcButton v-if="definition.settings.design?.buttonColor"
 					variant="tertiary"
