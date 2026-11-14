@@ -28,6 +28,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setPublicToken(?string $publicToken)
  * @method int|null getLatestVersionId()
  * @method void setLatestVersionId(?int $latestVersionId)
+ * @method int|null getArchivedAt()
+ * @method void setArchivedAt(?int $archivedAt)
  * @method int getCreatedAt()
  * @method void setCreatedAt(int $createdAt)
  * @method int getUpdatedAt()
@@ -46,6 +48,7 @@ class Form extends Entity {
 	protected $status = self::STATUS_UNPUBLISHED;
 	protected $publicToken;
 	protected $latestVersionId;
+	protected $archivedAt;
 	protected $createdAt;
 	protected $updatedAt;
 
@@ -58,8 +61,13 @@ class Form extends Entity {
 		$this->addType('status', 'integer');
 		$this->addType('publicToken', 'string');
 		$this->addType('latestVersionId', 'integer');
+		$this->addType('archivedAt', 'integer');
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');
+	}
+
+	public function isArchived(): bool {
+		return $this->getArchivedAt() !== null;
 	}
 
 	/**

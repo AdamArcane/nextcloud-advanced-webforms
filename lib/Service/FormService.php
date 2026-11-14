@@ -59,6 +59,33 @@ class FormService {
 	}
 
 	/**
+	 * The owner's forms as the list shows them, each with whether its draft differs from what is
+	 * published. The published versions are read in one query, not one per form.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	public function listForDisplay(string $userId): array {
+		$forms = $this->list($userId);
+		$versionIds = [];
+		foreach ($forms as $form) {
+			if ($form->getLatestVersionId() !== null) {
+				$versionIds[] = $form->getLatestVersionId();
+			}
+		}
+		$versions = $this->versions->findByIds($versionIds);
+		$result = [];
+		foreach ($forms as $form) {
+			$data = $this->toArray($form);
+			$latestId = $form->getLatestVersionId();
+			$data['hasUnpublishedChanges'] = $latestId === null || !isset($versions[$latestId])
+				? true
+				: $this->differs($form, $versions[$latestId]);
+			$result[] = $data;
+		}
+		return $result;
+	}
+
+	/**
 	 * @throws NotFoundException
 	 */
 	public function get(string $userId, int $id): Form {
@@ -213,6 +240,7 @@ class FormService {
 	 */
 	public function publish(string $userId, int $id): Form {
 		$form = $this->get($userId, $id);
+		$this->refuseIfArchived($form);
 		$draft = $form->getDraftDefinition();
 
 		$errors = array_merge($this->validator->validate($draft), $this->uploadPermissionErrors($form, $draft));
@@ -251,6 +279,7 @@ class FormService {
 	 */
 	public function setStatus(string $userId, int $id, int $status): Form {
 		$form = $this->get($userId, $id);
+		$this->refuseIfArchived($form);
 		if (!in_array($status, [Form::STATUS_UNPUBLISHED, Form::STATUS_PUBLISHED, Form::STATUS_CLOSED], true)) {
 			throw new ValidationException([['code' => 'status_invalid', 'path' => 'status']]);
 		}
@@ -258,6 +287,31 @@ class FormService {
 			throw new ValidationException([['code' => 'not_published_yet', 'path' => 'status']]);
 		}
 		$form->setStatus($status);
+		$form->setUpdatedAt($this->time->getTime());
+		return $this->forms->update($form);
+	}
+
+	/**
+	 * @throws ValidationException
+	 */
+	private function refuseIfArchived(Form $form): void {
+		if ($form->isArchived()) {
+			throw new ValidationException([['code' => 'form_archived']]);
+		}
+	}
+
+	/**
+	 * Archive a form or bring it back. An archived form stops taking responses (its public page says
+	 * it is closed) but keeps its status, responses and link, so restoring it changes nothing else.
+	 *
+	 * @throws NotFoundException
+	 */
+	public function setArchived(string $userId, int $id, bool $archived): Form {
+		$form = $this->get($userId, $id);
+		if ($form->isArchived() === $archived) {
+			return $form;
+		}
+		$form->setArchivedAt($archived ? $this->time->getTime() : null);
 		$form->setUpdatedAt($this->time->getTime());
 		return $this->forms->update($form);
 	}
@@ -406,6 +460,7 @@ class FormService {
 			'status' => $form->getStatus(),
 			'publicToken' => $form->getPublicToken(),
 			'latestVersionId' => $form->getLatestVersionId(),
+			'archivedAt' => $form->getArchivedAt(),
 			'createdAt' => $form->getCreatedAt(),
 			'updatedAt' => $form->getUpdatedAt(),
 		];
@@ -427,8 +482,12 @@ class FormService {
 		if ($latestId === null) {
 			return true;
 		}
+		return $this->differs($form, $this->versions->find($latestId));
+	}
+
+	private function differs(Form $form, Version $latest): bool {
 		$draft = $this->encode(JsonShape::definition($form->getDraftDefinition()));
-		return $this->canonical($this->versions->find($latestId)->getDefinition()) !== $this->canonical($draft);
+		return $this->canonical($latest->getDefinition()) !== $this->canonical($draft);
 	}
 
 	/**

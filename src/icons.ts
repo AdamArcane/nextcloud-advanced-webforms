@@ -30,6 +30,8 @@ import {
 	mdiEye,
 	mdiFileDocumentOutline,
 	mdiFormatHeader1,
+	mdiArchiveArrowUpOutline,
+	mdiArchiveOutline,
 	mdiArrowCollapseUp,
 	mdiFormatParagraph,
 	mdiFolderPlusOutline,
@@ -66,6 +68,8 @@ import {
 export const icons = {
 	account: mdiAccountOutline,
 	add: mdiPlus,
+	archive: mdiArchiveOutline,
+	restore: mdiArchiveArrowUpOutline,
 	addGroup: mdiFolderPlusOutline,
 	unlink: mdiLinkVariantOff,
 	alert: mdiAlertCircle,

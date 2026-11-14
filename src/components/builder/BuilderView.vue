@@ -20,7 +20,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ApiError } from '../../api/http.ts'
-import { deleteForm, getForm, publicFormUrl, publishForm, saveDraft } from '../../api/forms.ts'
+import { deleteForm, getForm, publicFormUrl, publishForm, saveDraft, setFormArchived } from '../../api/forms.ts'
 import { addField, addPage, dropField, duplicateField, dropRow, resizeField, type DropTarget, moveFieldToPage, locateField, movePage, removePage, setPageTitle, moveField, removeField, setSpan, updateField } from '../../builder/definition.ts'
 import { describeError, groupErrors } from '../../builder/errors.ts'
 import { followLabel, renameField } from '../../builder/fieldId.ts'
@@ -57,6 +57,7 @@ const loadError = ref(false)
 const saveState = ref<SaveState>('saved')
 const errors = ref<DefinitionError[]>([])
 const publishing = ref(false)
+const archiveFailed = ref(false)
 const publishFailed = ref(false)
 
 const selectedId = ref<string | null>(null)
@@ -165,9 +166,10 @@ const saveLabel = computed(() => {
 // ---- Publishing ----------------------------------------------------------
 
 const published = computed(() => form.value?.status === FORM_STATUS_PUBLISHED)
+const archived = computed(() => form.value?.archivedAt != null)
 const shareUrl = computed(() => (form.value?.publicToken ? publicFormUrl(form.value.publicToken) : null))
 const hasChanges = computed(() => form.value?.hasUnpublishedChanges !== false)
-const canPublish = computed(() => !publishing.value && saveState.value !== 'error' && (hasChanges.value || !published.value))
+const canPublish = computed(() => !publishing.value && !archived.value && saveState.value !== 'error' && (hasChanges.value || !published.value))
 
 async function publish(): Promise<void> {
 	publishing.value = true
@@ -386,6 +388,20 @@ function onSettings(patch: Partial<FormSettings>): void {
 	edit({ ...draft.value, settings: settings as FormSettings })
 }
 
+async function toggleArchived(): Promise<void> {
+	if (!form.value) {
+		return
+	}
+	try {
+		// Keep the draft the server has up to date before the list changes around it.
+		const next = await setFormArchived(props.formId, !archived.value)
+		form.value = { ...form.value, archivedAt: next.archivedAt, updatedAt: next.updatedAt }
+		emit('changed', form.value)
+	} catch {
+		archiveFailed.value = true
+	}
+}
+
 async function onDeleteConfirmed(): Promise<void> {
 	confirmDeleteForm.value = false
 	try {
@@ -422,7 +438,8 @@ async function onDeleteConfirmed(): Promise<void> {
 						<Icon v-else :path="icons.check" :size="18" />
 						<span class="af-sr-only">{{ saveLabel }}</span>
 					</span>
-					<span v-if="published" class="af-bar__chip">
+					<span v-if="archived" class="af-bar__chip af-bar__chip--quiet">{{ t('advancedforms', 'Archived') }}</span>
+					<span v-else-if="published" class="af-bar__chip">
 						{{ t('advancedforms', 'Published') }}
 					</span>
 					<span v-else class="af-bar__chip af-bar__chip--quiet">{{ t('advancedforms', 'Draft') }}</span>
@@ -468,6 +485,18 @@ async function onDeleteConfirmed(): Promise<void> {
 				<NcNoteCard v-if="saveState === 'error'" type="error">
 					{{ t('advancedforms', 'Your latest changes could not be saved. Check your connection; they will be retried when you edit again.') }}
 				</NcNoteCard>
+				<NcNoteCard v-if="archived" type="info">
+					{{ t('advancedforms', 'This form is archived. It is not taking responses.') }}
+					<NcButton variant="secondary" @click="toggleArchived">
+						<template #icon>
+							<Icon :path="icons.restore" />
+						</template>
+						{{ t('advancedforms', 'Restore form') }}
+					</NcButton>
+				</NcNoteCard>
+				<NcNoteCard v-if="archiveFailed" type="error">
+					{{ t('advancedforms', 'Could not change the archive state. Try again.') }}
+				</NcNoteCard>
 				<NcNoteCard v-if="publishFailed && errors.length > 0" type="warning">
 					{{ t('advancedforms', 'Fix the highlighted problems before publishing.') }}
 					<template v-if="formErrors.length > 0">
@@ -501,6 +530,8 @@ async function onDeleteConfirmed(): Promise<void> {
 						:section="settingsTab"
 						:definition="draft"
 						:share-url="shareUrl"
+						:archived="archived"
+						@archive="toggleArchived"
 						@title="onTitle"
 						@description="onDescription"
 						@settings="onSettings"

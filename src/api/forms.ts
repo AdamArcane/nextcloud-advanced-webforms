@@ -48,6 +48,11 @@ export function setFormStatus(id: number, status: number): Promise<OwnerForm> {
 	return call(axios.put<OwnerForm>(url('/forms/' + id + '/status'), { status }))
 }
 
+/** Archive a form, or bring it back. Archived forms stop taking responses. */
+export function setFormArchived(id: number, archived: boolean): Promise<OwnerForm> {
+	return call(axios.put<OwnerForm>(url('/forms/' + id + '/archived'), { archived }))
+}
+
 export async function deleteForm(id: number): Promise<void> {
 	await call(axios.delete(url('/forms/' + id)))
 }

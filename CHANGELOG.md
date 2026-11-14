@@ -7,6 +7,10 @@
 
 ## 0.3.0 - Unreleased
 
+- Archive forms. The three dot menu in the sidebar and the form settings both have Archive; archived
+  forms move to a collapsible Archived section in the sidebar where they can be opened, exported and
+  restored. An archived form stops taking responses and keeps everything else. Needs a database
+  migration (a new `archived_at` column).
 - Rules on a checkbox group can now match several options at once: includes any of, includes all of, includes none of.
 - A form can hide its title on the public page (Settings, Show the title on the form page).
 - Spam protection for people who are not logged in. An administrator picks one check for the

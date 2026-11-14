@@ -8,6 +8,8 @@ import type { OwnerForm } from './types.ts'
 
 import { t } from '@nextcloud/l10n'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
+import NcActionButton from '@nextcloud/vue/components/NcActionButton'
+import NcActionLink from '@nextcloud/vue/components/NcActionLink'
 import NcAppNavigation from '@nextcloud/vue/components/NcAppNavigation'
 import NcAppNavigationItem from '@nextcloud/vue/components/NcAppNavigationItem'
 import NcAppNavigationList from '@nextcloud/vue/components/NcAppNavigationList'
@@ -18,7 +20,11 @@ import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { createForm, listForms } from './api/forms.ts'
+import { createForm, formExportUrl, importForm, listForms, setFormArchived } from './api/forms.ts'
+import { ApiError } from './api/http.ts'
+import { describeError } from './builder/errors.ts'
+import Icon from './components/common/Icon.vue'
+import { icons } from './icons.ts'
 import BuilderView from './components/builder/BuilderView.vue'
 import EntriesView from './components/entries/EntriesView.vue'
 import { FORM_STATUS_CLOSED, FORM_STATUS_PUBLISHED } from './types.ts'
@@ -28,9 +34,17 @@ const loading = ref(true)
 const loadFailed = ref(false)
 const creating = ref(false)
 const createFailed = ref(false)
+const importing = ref(false)
+const importError = ref<string | null>(null)
+const importInput = ref<HTMLInputElement | null>(null)
 const route = ref(readHash())
 const selectedId = computed(() => route.value.id)
 const view = computed(() => route.value.view)
+// Archived forms stay out of the main list and have their own section below it.
+const activeForms = computed(() => forms.value.filter((form) => form.archivedAt == null))
+const archivedForms = computed(() => forms.value.filter((form) => form.archivedAt != null))
+const archiveOpen = ref(false)
+const archiveError = ref(false)
 const selectedTitle = computed(() => forms.value.find((form) => form.id === selectedId.value)?.title ?? '')
 
 // The selected form and screen live in the URL hash, so a reload, the back button and a shared link all work.
@@ -81,6 +95,47 @@ async function create(): Promise<void> {
 	}
 }
 
+// A form file is a few hundred KB at most (the server caps a definition at 512 KB), so anything bigger is not one.
+const MAX_IMPORT_BYTES = 1024 * 1024
+
+function pickImportFile(): void {
+	importError.value = null
+	importInput.value?.click()
+}
+
+async function onImportFile(event: Event): Promise<void> {
+	const input = event.target as HTMLInputElement
+	const file = input.files?.[0]
+	// Cleared so picking the same file again still fires a change.
+	input.value = ''
+	if (!file) {
+		return
+	}
+	importing.value = true
+	importError.value = null
+	try {
+		if (file.size > MAX_IMPORT_BYTES) {
+			throw new ApiError(0, 'too_large')
+		}
+		let pkg: unknown
+		try {
+			pkg = JSON.parse(await file.text())
+		} catch {
+			throw new ApiError(0, 'import_not_a_form')
+		}
+		const { form } = await importForm(pkg)
+		forms.value = [form, ...forms.value]
+		open(form.id)
+	} catch (error) {
+		const first = error instanceof ApiError ? (error.errors[0]?.code ?? error.code) : 'failed'
+		importError.value = first === 'failed' || first === 'network'
+			? t('advancedforms', 'Could not import the form.')
+			: describeError(first)
+	} finally {
+		importing.value = false
+	}
+}
+
 /** Keep the list in step with edits made in the builder (title, status). */
 function onChanged(form: OwnerForm): void {
 	forms.value = forms.value.map((existing) => (existing.id === form.id ? { ...existing, ...form } : existing))
@@ -89,6 +144,21 @@ function onChanged(form: OwnerForm): void {
 function onDeleted(): void {
 	forms.value = forms.value.filter((form) => form.id !== selectedId.value)
 	open(null)
+}
+
+async function toggleArchived(form: OwnerForm): Promise<void> {
+	archiveError.value = false
+	try {
+		const next = await setFormArchived(form.id, form.archivedAt == null)
+		onChanged(next)
+	} catch {
+		archiveError.value = true
+	}
+}
+
+/** A published form whose draft has moved on. A form that was never published is simply a draft. */
+function hasNewerDraft(form: OwnerForm): boolean {
+	return form.latestVersionId !== null && form.hasUnpublishedChanges === true
 }
 
 function statusText(form: OwnerForm): string {
@@ -113,19 +183,103 @@ function statusText(form: OwnerForm): string {
 					</template>
 				</NcAppNavigationNew>
 				<NcAppNavigationList>
-					<NcAppNavigationItem v-for="form in forms"
+					<NcAppNavigationItem v-for="form in activeForms"
 						:key="form.id"
 						:name="form.title"
 						:active="form.id === selectedId"
 						:href="'#/f/' + form.id"
 						:details="statusText(form)"
-						@click="open(form.id)" />
+						:class="{ 'af-nav--newer': hasNewerDraft(form) }"
+						:title="hasNewerDraft(form) ? t('advancedforms', '{title} (unpublished changes)', { title: form.title }) : undefined"
+						:aria-description="hasNewerDraft(form) ? t('advancedforms', 'The draft has changes that are not published yet') : undefined"
+						@click="open(form.id)">
+						<template #actions>
+							<NcActionLink :href="formExportUrl(form.id, 'draft')"
+								:download="''"
+								close-after-click>
+								<template #icon>
+									<Icon :path="icons.download" :inline="false" />
+								</template>
+								{{ t('advancedforms', 'Export draft') }}
+							</NcActionLink>
+							<NcActionLink v-if="form.latestVersionId !== null"
+								:href="formExportUrl(form.id, 'published')"
+								:download="''"
+								close-after-click>
+								<template #icon>
+									<Icon :path="icons.download" :inline="false" />
+								</template>
+								{{ t('advancedforms', 'Export published version') }}
+							</NcActionLink>
+							<NcActionButton close-after-click @click="toggleArchived(form)">
+								<template #icon>
+									<Icon :path="icons.archive" :inline="false" />
+								</template>
+								{{ t('advancedforms', 'Archive') }}
+							</NcActionButton>
+						</template>
+					</NcAppNavigationItem>
 				</NcAppNavigationList>
+				<NcAppNavigationList v-if="archivedForms.length > 0">
+					<NcAppNavigationItem v-model:open="archiveOpen"
+						:name="t('advancedforms', 'Archived')"
+						:allow-collapse="true"
+						:counter-number="archivedForms.length"
+						:force-display-actions="false">
+						<template #icon>
+							<Icon :path="icons.archive" />
+						</template>
+						<NcAppNavigationItem v-for="form in archivedForms"
+							:key="form.id"
+							:name="form.title"
+							:active="form.id === selectedId"
+							:href="'#/f/' + form.id"
+							@click="open(form.id)">
+							<template #actions>
+								<NcActionButton close-after-click @click="toggleArchived(form)">
+									<template #icon>
+										<Icon :path="icons.restore" :inline="false" />
+									</template>
+									{{ t('advancedforms', 'Restore') }}
+								</NcActionButton>
+								<NcActionLink :href="formExportUrl(form.id, 'draft')"
+									:download="''"
+									close-after-click>
+									<template #icon>
+										<Icon :path="icons.download" :inline="false" />
+									</template>
+									{{ t('advancedforms', 'Export draft') }}
+								</NcActionLink>
+							</template>
+						</NcAppNavigationItem>
+					</NcAppNavigationItem>
+				</NcAppNavigationList>
+				<NcAppNavigationItem :name="t('advancedforms', 'Import form')"
+					:disabled="importing"
+					@click="pickImportFile">
+					<template #icon>
+						<NcLoadingIcon v-if="importing" :size="20" />
+						<Icon v-else :path="icons.import" />
+					</template>
+				</NcAppNavigationItem>
+				<input ref="importInput"
+					type="file"
+					accept=".json,application/json"
+					class="af-hidden-input"
+					tabindex="-1"
+					aria-hidden="true"
+					@change="onImportFile">
+				<NcNoteCard v-if="importError" type="error">
+					{{ importError }}
+				</NcNoteCard>
 				<NcNoteCard v-if="loadFailed" type="error">
 					{{ t('advancedforms', 'Could not load your forms.') }}
 					<NcButton variant="tertiary" @click="load">
 						{{ t('advancedforms', 'Try again') }}
 					</NcButton>
+				</NcNoteCard>
+				<NcNoteCard v-if="archiveError" type="error">
+					{{ t('advancedforms', 'Could not change the archive state. Try again.') }}
 				</NcNoteCard>
 				<NcNoteCard v-if="createFailed" type="error">
 					{{ t('advancedforms', 'Could not create the form.') }}
@@ -166,11 +320,27 @@ function statusText(form: OwnerForm): string {
 </template>
 
 <style scoped>
+/* A dot straight after the title, so it does not move when the row's menu appears on hover. */
+.af-nav--newer :deep(.app-navigation-entry__name)::after {
+	content: '';
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	margin-inline-start: 6px;
+	border-radius: 50%;
+	background: var(--color-warning, #eca700);
+	vertical-align: middle;
+}
+
 .af-home {
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	height: 100%;
+}
+
+.af-hidden-input {
+	display: none;
 }
 
 .af-new-plus {

@@ -624,6 +624,20 @@ Hidden or unanswered fields are omitted from `data`.
 - Entries store the `versionId`. Entry display and export map values through
   that version's definition, so renamed or deleted fields still render correctly.
 
+### 8.1 Archiving
+
+A form can be archived by its owner (`PUT /api/v1/forms/{id}/archived` with `{"archived": true|false}`).
+Archiving stores a timestamp (`archivedAt`, null when not archived) beside the status and changes
+nothing else, so restoring a form brings back exactly what it was.
+
+- An archived form takes no responses: its public page and upload endpoint answer as a closed form
+  does, with the form's closed message.
+- It keeps its link, responses, drafts, versions and deliveries, and the owner can still open,
+  export and edit it.
+- It cannot be published or have its status changed until it is restored (`form_archived`).
+- The forms list returns archived forms with `archivedAt` set; the app shows them in a separate
+  Archived section.
+
 ## 9. Entry storage
 
 Initial proposal, one row per entry:

@@ -28,6 +28,8 @@ export function describeError(code: string): string {
 			return t('advancedforms', 'The placeholder is too long.')
 		case 'field_description_invalid':
 			return t('advancedforms', 'The help text is too long.')
+		case 'form_archived':
+			return t('advancedforms', 'This form is archived. Restore it first.')
 		case 'title_invalid':
 			return t('advancedforms', 'The form needs a title.')
 		case 'too_many_fields':

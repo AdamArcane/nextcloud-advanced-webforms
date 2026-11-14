@@ -46,11 +46,7 @@ class FormController extends Controller {
 	#[NoAdminRequired]
 	#[FrontpageRoute(verb: 'GET', url: '/api/v1/forms')]
 	public function index(): JSONResponse {
-		$forms = array_map(
-			fn ($form): array => $this->service->toArray($form),
-			$this->service->list($this->userId()),
-		);
-		return new JSONResponse(['forms' => $forms]);
+		return new JSONResponse(['forms' => $this->service->listForDisplay($this->userId())]);
 	}
 
 	#[NoAdminRequired]
@@ -140,6 +136,14 @@ class FormController extends Controller {
 	public function setStatus(int $id, int $status = -1): JSONResponse {
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
 			$this->service->toArray($this->service->setStatus($this->userId(), $id, $status)),
+		));
+	}
+
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'PUT', url: '/api/v1/forms/{id}/archived')]
+	public function setArchived(int $id, bool $archived = false): JSONResponse {
+		return $this->guard(fn (): JSONResponse => new JSONResponse(
+			$this->service->toArray($this->service->setArchived($this->userId(), $id, $archived)),
 		));
 	}
 

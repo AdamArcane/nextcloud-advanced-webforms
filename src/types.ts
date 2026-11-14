@@ -190,6 +190,8 @@ export interface OwnerForm {
 	status: number
 	publicToken: string | null
 	latestVersionId: number | null
+	/** When the form was archived (unix time), null if it is not. */
+	archivedAt?: number | null
 	createdAt: number
 	updatedAt: number
 	draft?: DraftDefinition

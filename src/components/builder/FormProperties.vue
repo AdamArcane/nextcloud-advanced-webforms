@@ -23,12 +23,14 @@ defineProps<{
 	definition: DraftDefinition
 	/** The public link, once the form has been published. */
 	shareUrl: string | null
+	archived?: boolean
 }>()
 
 const emit = defineEmits<{
 	title: [title: string]
 	description: [description: string]
 	settings: [patch: Partial<FormSettings>]
+	archive: []
 	delete: []
 }>()
 
@@ -245,6 +247,23 @@ function str(value: string | number): string | undefined {
 			<NcTextField :model-value="definition.settings.closedMessage ?? ''"
 				:label="t('advancedforms', 'Message when closed')"
 				@update:model-value="(value: string | number) => emit('settings', { closedMessage: str(value) })" />
+		</section>
+
+		<section v-if="section === 'general'" class="af-form-props__section">
+			<h3 class="af-form-props__heading">
+				{{ t('advancedforms', 'Archive') }}
+			</h3>
+			<p class="af-form-props__hint">
+				{{ archived
+					? t('advancedforms', 'This form is archived. Its link says the form is closed and it takes no responses. Restoring it brings it back as it was.')
+					: t('advancedforms', 'Put the form away without deleting it. It stops taking responses and moves to the Archived list, and you keep its responses.') }}
+			</p>
+			<NcButton variant="secondary" @click="emit('archive')">
+				<template #icon>
+					<Icon :path="archived ? icons.restore : icons.archive" />
+				</template>
+				{{ archived ? t('advancedforms', 'Restore form') : t('advancedforms', 'Archive form') }}
+			</NcButton>
 		</section>
 
 		<section v-if="section === 'general'" class="af-form-props__section">

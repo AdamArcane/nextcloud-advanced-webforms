@@ -13,6 +13,7 @@ use OCA\AdvancedForms\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\QBMapper;
 use OCP\DB\Exception;
+use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 
 /**
@@ -35,6 +36,27 @@ class VersionMapper extends QBMapper {
 		} catch (DoesNotExistException) {
 			throw new NotFoundException();
 		}
+	}
+
+	/**
+	 * Several versions in one query, keyed by id. Ids that do not exist are left out.
+	 *
+	 * @param list<int> $ids
+	 * @return array<int, Version>
+	 * @throws Exception
+	 */
+	public function findByIds(array $ids): array {
+		$found = [];
+		foreach (array_chunk(array_values(array_unique($ids)), 500) as $chunk) {
+			$qb = $this->db->getQueryBuilder();
+			$qb->select('*')
+				->from($this->getTableName())
+				->where($qb->expr()->in('id', $qb->createNamedParameter($chunk, IQueryBuilder::PARAM_INT_ARRAY)));
+			foreach ($this->findEntities($qb) as $version) {
+				$found[$version->getId()] = $version;
+			}
+		}
+		return $found;
 	}
 
 	/**

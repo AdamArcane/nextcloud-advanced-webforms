@@ -275,7 +275,7 @@ class SubmissionService {
 		$settings = $version->getDefinitionArray()['settings'] ?? [];
 		$settings = is_array($settings) ? $settings : [];
 
-		if ($form->getStatus() === Form::STATUS_CLOSED) {
+		if ($form->getStatus() === Form::STATUS_CLOSED || $form->isArchived()) {
 			$message = $settings['closedMessage'] ?? self::DEFAULT_CLOSED_MESSAGE;
 			throw new FormClosedException(is_string($message) ? $message : self::DEFAULT_CLOSED_MESSAGE);
 		}
