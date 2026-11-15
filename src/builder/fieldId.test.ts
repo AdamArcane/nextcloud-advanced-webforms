@@ -85,7 +85,7 @@ describe('renameField', () => {
 		const { def, a, b } = form()
 		def.actions = [
 			{ id: 'act_msg', type: 'message', text: `Thanks {${a}}, we will write to {${b}}.`, when: { all: [{ field: b, op: 'not_empty' }] } },
-			{ id: 'act_mail', type: 'email', to: { field: b }, subject: `Hi {${b}}`, body: `Name {${a}} Email {${b}} again {${b}}` },
+			{ id: 'act_mail', type: 'email', to: { field: b }, replyTo: { field: b }, subject: `Hi {${b}}`, body: `Name {${a}} Email {${b}} again {${b}}` },
 			{ id: 'act_go', type: 'redirect', url: `https://example.com/ok?e={${b}}&n={${a}}` },
 			{ id: 'act_hook', type: 'webhook', url: 'https://example.com/hook', secretRef: 'whsec_abcdef12' },
 		] as FormAction[]
@@ -96,6 +96,7 @@ describe('renameField', () => {
 		})
 		expect(next.actions[1]).toMatchObject({
 			to: { field: 'customer_email' },
+			replyTo: { field: 'customer_email' },
 			subject: 'Hi {customer_email}',
 			body: `Name {${a}} Email {customer_email} again {customer_email}`,
 		})

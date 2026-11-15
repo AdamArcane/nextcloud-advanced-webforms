@@ -142,7 +142,9 @@ still validated.
 `standard`, `wide`), `card` (boolean), `background` (`default`, `plain`,
 `color`), `backgroundColor`, `accentColor` and `buttonColor` (the submit button only; defaults to
 `accentColor`) (`#rrggbb` only, so a value can
-never carry CSS).
+never carry CSS), and `submitAlign` (`left`, `center`, `right` or `justify`; default `left`), where
+the buttons under the form sit. `justify` makes them share the full width. Back and Next on a form
+with several pages follow it too.
 
 ## 4. Fields
 
@@ -535,7 +537,20 @@ condition group (same format as rules) evaluated against the submitted
       respondent was signed in with (skipped as `not_signed_in` for an
       anonymous response, or `no_account_email`).
     The last two store no address in the form, so they follow account changes.
+  - `replyTo` (optional) is where a reply to the mail goes, written exactly like `to`: a static
+    address, `{ "field": "<id>" }`, `{ "owner": true }` or `{ "respondent": true }`
+    (`action_bad_reply_to` otherwise). The usual use is a notification to the owner that replies to
+    the address the respondent typed. Unlike `to` it is never a reason not to send: when it resolves
+    to nothing, or to something that is not one plain address, the mail goes out without a reply-to.
+    It is not counted against the hourly cap, because it does not decide who receives mail.
   - `subject`, `body`: plain text with `{field_id}` placeholders.
+  - In `body` only, `{all_fields}` stands for every question the respondent answered, in the order the
+    form shows them, as `Label: answer` lines (an answer of several lines is indented under its label).
+    Unanswered and hidden questions are left out, and a question without a label is listed by its id.
+    A mail whose body uses it is also sent as HTML, with the answers as a table of labels and answers
+    and everything a person typed escaped. A mail without it stays plain text only. Anywhere else
+    `{all_fields}` is an unknown placeholder, and a field that really has the id `all_fields` keeps
+    its own meaning.
   - Sent through Nextcloud's configured mailer.
   - Recipient from respondent input is only allowed from an `email` field and is
     always rate limited per form, because it is an abuse vector (spam relay).

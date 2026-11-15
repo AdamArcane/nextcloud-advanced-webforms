@@ -23,6 +23,10 @@ use PHPUnit\Framework\TestCase;
 class ActionRunnerTest extends TestCase {
 	/** @var list<array{string, string, string}> */
 	private array $mails = [];
+	/** @var list<string|null> the HTML version of each mail, null for plain text only */
+	private array $htmls = [];
+	/** @var list<string|null> the reply-to address of each mail */
+	private array $replyTos = [];
 	/** @var list<array{string, string, array<string, string>, int}> */
 	private array $posts = [];
 	private int $httpStatus = 200;
@@ -38,10 +42,10 @@ class ActionRunnerTest extends TestCase {
 			public function __construct(private TestCase $test) {
 			}
 
-			public function send(string $to, string $subject, string $body): void {
+			public function send(string $to, string $subject, string $body, ?string $html = null, ?string $replyTo = null): void {
 				/** @var ActionRunnerTest $t */
 				$t = $this->test;
-				$t->recordMail($to, $subject, $body);
+				$t->recordMail($to, $subject, $body, $html, $replyTo);
 			}
 		};
 		$http = new class($test) implements HttpPort {
@@ -77,11 +81,13 @@ class ActionRunnerTest extends TestCase {
 		return new ActionRunner($mail, $http, $secrets, $accounts);
 	}
 
-	public function recordMail(string $to, string $subject, string $body): void {
+	public function recordMail(string $to, string $subject, string $body, ?string $html = null, ?string $replyTo = null): void {
 		if ($this->mailError !== null) {
 			throw $this->mailError;
 		}
 		$this->mails[] = [$to, $subject, $body];
+		$this->htmls[] = $html;
+		$this->replyTos[] = $replyTo;
 	}
 
 	public function recordPost(string $url, string $body, array $headers, int $timeout): int {
@@ -126,6 +132,48 @@ class ActionRunnerTest extends TestCase {
 	public function testSendsToAStaticAddressWithPlaceholders(): void {
 		$this->runner()->run(['type' => 'email', 'to' => 'owner@example.com', 'subject' => 'New: {f_name}', 'body' => "From {f_name} <{f_email}>"], $this->context());
 		$this->assertSame([['owner@example.com', 'New: Ada', 'From Ada <ada@example.com>']], $this->mails);
+	}
+
+	public function testAMailWithoutTheAnswerListStaysPlainText(): void {
+		$this->runner()->run(['type' => 'email', 'to' => 'owner@example.com', 'subject' => 'New', 'body' => 'From {f_name}'], $this->context());
+		$this->assertSame([null], $this->htmls);
+	}
+
+	public function testAllFieldsListsTheAnswersAsTextAndAsAnHtmlTable(): void {
+		$this->runner()->run(
+			['type' => 'email', 'to' => 'owner@example.com', 'subject' => 'New', 'body' => "A new response:\n\n{all_fields}\n\nBye"],
+			$this->context(['f_name' => 'Ada <b>', 'f_email' => 'ada@example.com']),
+		);
+		$this->assertSame("A new response:\n\nName: Ada <b>\nEmail: ada@example.com\n\nBye", $this->mails[0][2]);
+		$html = (string)$this->htmls[0];
+		$this->assertStringContainsString('<table', $html);
+		$this->assertStringContainsString('>Name</th>', $html);
+		$this->assertStringContainsString('>Ada &lt;b&gt;</td>', $html);
+		$this->assertStringContainsString('A new response:<br>', $html);
+		$this->assertStringNotContainsString('{all_fields}', $html);
+		$this->assertStringNotContainsString('<b>', $html);
+	}
+
+	public function testReplyToFollowsTheSameSourcesAsTheRecipient(): void {
+		$mail = ['type' => 'email', 'to' => 'owner@example.com', 'subject' => 'New', 'body' => 'x'];
+		$this->runner()->run($mail, $this->context());
+		$this->runner()->run($mail + ['replyTo' => 'desk@example.com'], $this->context());
+		$this->runner()->run($mail + ['replyTo' => ['field' => 'f_email']], $this->context());
+		$this->runner()->run($mail + ['replyTo' => ['owner' => true]], $this->context());
+		$this->runner()->run($mail + ['replyTo' => ['respondent' => true]], $this->context(userId: 'alice'));
+		$this->assertSame([null, 'desk@example.com', 'ada@example.com', 'alice@example.com', 'alice@example.com'], $this->replyTos);
+	}
+
+	public function testAReplyToThatCannotBeUsedIsLeftOutAndTheMailStillGoes(): void {
+		$mail = ['type' => 'email', 'to' => 'owner@example.com', 'subject' => 'New', 'body' => 'x'];
+		// No answer, not an address, a header injection, an anonymous respondent, an account without an address.
+		$this->runner()->run($mail + ['replyTo' => ['field' => 'f_email']], $this->context(['f_name' => 'Ada']));
+		$this->runner()->run($mail + ['replyTo' => ['field' => 'f_email']], $this->context(['f_email' => 'not an address']));
+		$this->runner()->run($mail + ['replyTo' => ['field' => 'f_email']], $this->context(['f_email' => "ada@example.com\r\nBcc: evil@example.com"]));
+		$this->runner()->run($mail + ['replyTo' => ['respondent' => true]], $this->context());
+		$this->runner()->run($mail + ['replyTo' => ['owner' => true]], $this->context(ownerId: 'bob'));
+		$this->assertSame([null, null, null, null, null], $this->replyTos);
+		$this->assertCount(5, $this->mails);
 	}
 
 	public function testSendsToTheRespondentFromAnEmailField(): void {

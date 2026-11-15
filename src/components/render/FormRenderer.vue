@@ -12,7 +12,7 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, nextTick, reactive, ref } from 'vue'
 import { ApiError, submitPublicForm } from '../../api/public.ts'
 import { renderedLabelPosition } from '../../layout/labelPosition.ts'
-import { submitButtonStyle } from '../../design.ts'
+import { submitAlign, submitButtonStyle } from '../../design.ts'
 import { leaveTo } from '../../embedded.ts'
 import { visiblePages } from '../../layout/visibleLayout.ts'
 import { evaluateRules } from '../../rules/engine.ts'
@@ -92,6 +92,7 @@ const visible = computed(() => new Set(state.value.visible))
 const required = computed(() => new Set(state.value.required))
 const pages = computed(() => visiblePages(definition.value.pages, visible.value))
 const submitStyle = computed(() => submitButtonStyle(definition.value.settings?.design))
+const actionsAlign = computed(() => submitAlign(definition.value.settings?.design))
 const pageIndex = ref(0)
 // Hiding fields can remove pages, so never point past the end.
 const currentIndex = computed(() => Math.min(pageIndex.value, Math.max(0, pages.value.length - 1)))
@@ -320,7 +321,7 @@ async function showError(error: unknown) {
 			{{ formError }}
 		</NcNoteCard>
 
-		<div class="af-actions">
+		<div class="af-actions" :class="'af-actions--' + actionsAlign">
 			<NcButton v-if="!isFirst" variant="tertiary" :disabled="submitting" @click="goBack">
 				{{ t('webforms', 'Back') }}
 			</NcButton>
@@ -367,6 +368,19 @@ async function showError(error: unknown) {
 .af-actions {
 	display: flex;
 	gap: 8px;
+}
+
+.af-actions--center {
+	justify-content: center;
+}
+
+.af-actions--right {
+	justify-content: flex-end;
+}
+
+/* Justified: the buttons share the whole row, so a single submit button is as wide as the fields. */
+.af-actions--justify > * {
+	flex: 1 1 0;
 }
 
 .af-progress {

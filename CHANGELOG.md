@@ -5,6 +5,21 @@
 
 # Changelog
 
+## Unreleased
+
+- Rename a form from the header of the builder: double-click its name (or press Enter or F2 on it),
+  type, and press Enter. Escape cancels.
+
+- Email actions can include every answer at once. "Add all answers" puts `{all_fields}` in the body,
+  which becomes a list of the questions the person answered with their labels. Such a mail is also sent
+  as HTML, with the answers in a table. See `docs/SCHEMA.md` section 7.2.
+
+- Email actions can set a reply-to address, picked the same way as the recipient: an email field,
+  your account, the signed-in respondent, or a typed address. A notification to you can then be answered
+  straight to the person who filled in the form.
+
+- Design: choose where the submit button sits, left, center, right or full width.
+
 ## 0.3.4 - 2026-11-15
 
 - Picking a published form that has no unpublished changes now opens its responses instead of the

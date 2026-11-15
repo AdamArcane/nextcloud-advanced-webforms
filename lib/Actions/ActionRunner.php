@@ -94,13 +94,48 @@ final class ActionRunner {
 		}
 
 		$subject = Template::render((string)($action['subject'] ?? ''), $context->fields, $context->data, Template::SUBJECT);
-		$body = Template::render((string)($action['body'] ?? ''), $context->fields, $context->data, Template::TEXT);
+		$template = (string)($action['body'] ?? '');
+		$html = null;
+		$allFields = null;
+		if (Template::usesAllFields($template, $context->fields)) {
+			// A list of answers reads best as a table, so this mail also gets an HTML version. Mail without
+			// the list stays plain text, exactly as before.
+			$answers = Template::answers($context->fields, $context->data, $context->pages);
+			$allFields = Template::answersAsText($answers);
+			$html = Template::renderHtml($template, $context->fields, $context->data, $answers);
+		}
+		$body = Template::render($template, $context->fields, $context->data, Template::TEXT, $allFields);
 
 		try {
-			$this->mail->send($address, $subject, $body);
+			$this->mail->send($address, $subject, $body, $html, $this->replyTo($action['replyTo'] ?? null, $context));
 		} catch (\Throwable $e) {
 			throw new ActionFailed('mail_failed: ' . $e->getMessage(), true);
 		}
+	}
+
+	/**
+	 * The address replies should go to, written like the recipient (docs/SCHEMA.md section 7.2), or null
+	 * to leave the mail without one. Unlike the recipient it is never a reason not to send: an empty or
+	 * invalid answer, an anonymous respondent or an account without an address just means no reply-to.
+	 */
+	private function replyTo(mixed $source, ActionContext $context): ?string {
+		$address = '';
+		if (is_string($source)) {
+			$address = $source;
+		} elseif (is_array($source) && ($source['owner'] ?? null) === true) {
+			$address = $context->ownerId === '' ? '' : ($this->accounts->emailOf($context->ownerId) ?? '');
+		} elseif (is_array($source) && ($source['respondent'] ?? null) === true) {
+			$address = $context->userId === null ? '' : ($this->accounts->emailOf($context->userId) ?? '');
+		} elseif (is_array($source) && is_string($source['field'] ?? null)) {
+			$answer = $context->data[$source['field']] ?? null;
+			$address = is_string($answer) ? $answer : '';
+		}
+		$address = trim($address);
+		// It becomes a mail header, so nothing but one plain address may pass.
+		if ($address === '' || filter_var($address, FILTER_VALIDATE_EMAIL) === false || preg_match('/[\r\n]/', $address) === 1) {
+			return null;
+		}
+		return $address;
 	}
 
 	/**

@@ -179,8 +179,23 @@ function str(value: string | number): string | undefined {
 					@click="setDesign(definition.settings.design, { buttonColor: undefined })">
 					{{ t('webforms', 'Same as the accent colour') }}
 				</NcButton>
+			</section>
+
+			<section class="af-form-props__section">
+				<h3 class="af-form-props__heading">
+					{{ t('webforms', 'Submit button position') }}
+				</h3>
+				<SegmentedControl :model-value="definition.settings.design?.submitAlign ?? 'left'"
+					:group-label="t('webforms', 'Submit button position')"
+					:options="[
+						{ value: 'left', label: t('webforms', 'Left') },
+						{ value: 'center', label: t('webforms', 'Center') },
+						{ value: 'right', label: t('webforms', 'Right') },
+						{ value: 'justify', label: t('webforms', 'Full width') },
+					]"
+					@update:model-value="(value) => setDesign(definition.settings.design, { submitAlign: value === 'left' ? undefined : value as FormDesign['submitAlign'] })" />
 				<p class="af-form-props__hint">
-					{{ t('webforms', 'Use Preview to see the result.') }}
+					{{ t('webforms', 'On a form with several pages, Back and Next sit the same way. Use Preview to see the result.') }}
 				</p>
 			</section>
 		</template>

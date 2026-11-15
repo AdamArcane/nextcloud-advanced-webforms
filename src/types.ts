@@ -81,6 +81,8 @@ export interface FormDesign {
 	accentColor?: string
 	/** `#rrggbb` for the final submit button only. Defaults to the accent colour. */
 	buttonColor?: string
+	/** Where the buttons under the form sit. `justify` makes them fill the row. Default `left`. */
+	submitAlign?: 'left' | 'center' | 'right' | 'justify'
 }
 
 export interface FormSettings {
@@ -157,13 +159,18 @@ export interface RedirectAction extends ActionBase {
 	url: string
 }
 
+/** Where an email address comes from: fixed, an email field, the owner's account or the signed-in respondent's. */
+export type EmailAddressSource = string | { field: string } | { owner: true } | { respondent: true }
+
 export interface EmailAction extends ActionBase {
 	type: 'email'
 	/**
 	 * A fixed address, the answer to an email field, the form owner's account email, or the
 	 * signed-in respondent's account email. The last two are looked up when the email is sent.
 	 */
-	to: string | { field: string } | { owner: true } | { respondent: true }
+	to: EmailAddressSource
+	/** Where replies go, written like `to`. Left out, replies go to the server's sender address. */
+	replyTo?: EmailAddressSource
 	subject: string
 	body: string
 }
