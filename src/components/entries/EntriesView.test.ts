@@ -454,6 +454,8 @@ describe('EntriesView table and filters', () => {
 		await flushPromises()
 		await wrapper.findAll('tbody tr.af-table__row')[1].trigger('click')
 		expect(wrapper.find('#af-response-2').exists()).toBe(true)
+		// Pinned to the visible width, so it stays readable when the table scrolls sideways.
+		expect(wrapper.find('#af-response-2 .af-table__panel').exists()).toBe(true)
 		expect(wrapper.findAllComponents({ name: 'ResponseCard' })).toHaveLength(1)
 		await wrapper.findAll('tbody tr.af-table__row')[1].trigger('click')
 		expect(wrapper.find('#af-response-2').exists()).toBe(false)
