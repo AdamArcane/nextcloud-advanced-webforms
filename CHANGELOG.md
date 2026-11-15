@@ -7,6 +7,10 @@
 
 ## Unreleased
 
+- A summary above the responses: responses per day (per month for long periods), how often each choice
+  was picked, and the average, lowest, highest and total of number questions. It follows the filters
+  and can be closed. See `docs/SCHEMA.md` section 17.2.
+
 - Select responses in the table to delete or download just those. Tick the page, or "select all N
   matching", and delete them after a confirmation. Deleting by filter is refused if the number of matches
   changed since you confirmed it. One Download menu offers CSV and Excel (.xlsx), and follows what is

@@ -38,12 +38,13 @@ after-submit action (see the decision below). The work here makes that model com
 
 ## Responses view
 
-Done: table with search and filters, selecting, bulk delete, and CSV or Excel download that follows the
-filter, the selection and the chosen columns (SCHEMA.md sections 17 and 17.1). Still open, roughly in
+Done: table with search and filters, selecting, bulk delete, CSV or Excel download that follows the
+filter, the selection and the chosen columns, and a summary above the table (SCHEMA.md sections 17 to
+17.2). Still open, roughly in
 order:
 
 1. ODS export, and a zip of uploaded files.
-2. A small summary above the table: responses over time, counts per choice, averages for numbers.
+2. Clicking a bar in the summary to filter by that answer.
 3. Statuses (new, reviewed, done, spam), private notes and assignment. Needs a migration.
 4. A per-response page that can be printed or shared with a colleague.
 5. Sharing results with someone who cannot edit the form.

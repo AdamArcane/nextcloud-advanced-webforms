@@ -181,6 +181,21 @@ class FormController extends Controller {
 		));
 	}
 
+	/**
+	 * What the responses add up to: how many over time, counts per choice, and number ranges. Takes the
+	 * same filter as the list.
+	 */
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/forms/{id}/entries/summary')]
+	public function entriesSummary(int $id, string $q = '', string $from = '', string $to = '', string $respondent = '', string $where = ''): JSONResponse {
+		try {
+			$filter = EntryFilter::fromInput($q, $from, $to, $respondent, $where, 'oldest');
+		} catch (\InvalidArgumentException $e) {
+			return new JSONResponse(['error' => 'filter_invalid', 'reason' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+		return $this->guard(fn (): JSONResponse => new JSONResponse($this->service->summarizeEntries($this->userId(), $id, $filter)));
+	}
+
 	#[NoAdminRequired]
 	#[FrontpageRoute(verb: 'DELETE', url: '/api/v1/forms/{id}/entries/{entryId}')]
 	public function destroyEntry(int $id, int $entryId): JSONResponse {
