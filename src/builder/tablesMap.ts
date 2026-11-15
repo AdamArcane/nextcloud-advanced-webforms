@@ -146,3 +146,23 @@ export function brokenMappings(definition: DraftDefinition, columns: TablesColum
 	}
 	return broken
 }
+
+/**
+ * The labels of a choice field's options that the column has no option for. A choice with no match
+ * is left out of the row (matching is by label, ignoring case and spacing), so these responses leave
+ * the column empty. Empty for anything but a choice field mapped to a choice column.
+ */
+export function unmatchedOptions(definition: DraftDefinition, column: TablesColumn, source: string | undefined): string[] {
+	if (source === undefined || (column.kind !== 'single' && column.kind !== 'multi')) {
+		return []
+	}
+	const field = definition.fields[source]
+	if (!field || !('options' in field) || !Array.isArray(field.options)) {
+		return []
+	}
+	const normal = (text: string): string => text.trim().toLowerCase().replace(/\s+/g, ' ')
+	const known = new Set(column.options.map((option) => normal(option.label)))
+	return field.options
+		.map((option: { label?: string, value: string }) => (option.label || option.value).trim())
+		.filter((label: string) => !known.has(normal(label)))
+}

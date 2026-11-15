@@ -13,7 +13,7 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import { computed, onMounted, ref, watch } from 'vue'
 import { fetchTableColumns, fetchTables } from '../../api/tables.ts'
-import { brokenMappings, setMapping, sourcesForColumn, suggestMap } from '../../builder/tablesMap.ts'
+import { brokenMappings, setMapping, sourcesForColumn, suggestMap, unmatchedOptions } from '../../builder/tablesMap.ts'
 
 const props = defineProps<{
 	action: TablesAction
@@ -97,6 +97,10 @@ function selectedSource(column: TablesColumn): SourceOption | null {
 
 function pickSource(column: TablesColumn, option: SourceOption | null): void {
 	emit('patch', { map: setMapping(props.action.map, column.id, option?.id ?? null) })
+}
+
+function unmatched(column: TablesColumn): string[] {
+	return unmatchedOptions(props.definition, column, props.action.map[String(column.id)])
 }
 
 function matchByLabel(): void {
@@ -185,6 +189,9 @@ function kindLabel(column: TablesColumn): string {
 								<span class="af-tables__kind"> · {{ option.hint }}</span>
 							</template>
 						</NcSelect>
+						<p v-if="unmatched(column).length > 0" class="af-tables__warn">
+							{{ t('webforms', 'No matching option in Tables for: {names}. A response that picks one of these leaves this column empty. Add the option in Tables, or give it the same name.', { names: unmatched(column).join(', ') }) }}
+						</p>
 					</div>
 
 					<p v-if="unsupported.length > 0" class="af-tables__hint">
@@ -246,5 +253,12 @@ function kindLabel(column: TablesColumn): string {
 
 .af-tables__source {
 	min-width: 0;
+}
+
+.af-tables__warn {
+	grid-column: 1 / -1;
+	margin: 0;
+	color: var(--color-warning-text);
+	font-size: 13px;
 }
 </style>

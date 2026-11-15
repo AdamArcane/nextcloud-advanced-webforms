@@ -96,6 +96,20 @@ describe('TablesActionBody', () => {
 		expect(wrapper.text()).toContain('no longer exist or no longer fit')
 	})
 
+	it('warns about choices the Tables column has no option for', async () => {
+		let { def } = form()
+		const added = addField(def, 'select', { kind: 'row', index: 2 })
+		def = { ...added.definition, fields: { ...added.definition.fields, [added.fieldId]: { ...added.definition.fields[added.fieldId], label: 'Kind', options: [{ value: 'opt_a', label: 'Support' }, { value: 'opt_b', label: 'Refunds' }] } as DraftDefinition['fields'][string] } }
+		columns = [column(21, 'Kind', 'single', { options: [{ id: 1, label: 'Support' }, { id: 2, label: 'Sales' }] })]
+		const wrapper = mountBody({ tableId: 3, map: { 21: added.fieldId } }, def)
+		await flushPromises()
+		expect(wrapper.text()).toContain('No matching option in Tables for: Refunds')
+		// A fully matching mapping says nothing.
+		const quiet = mountBody({ tableId: 3, map: {} }, def)
+		await flushPromises()
+		expect(quiet.text()).not.toContain('No matching option')
+	})
+
 	it('says so when the owner cannot add rows to the saved table', async () => {
 		const { def } = form()
 		const wrapper = mountBody({ tableId: 99 }, def)

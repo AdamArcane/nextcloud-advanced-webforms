@@ -9,7 +9,7 @@ import type { DraftDefinition } from '../types.ts'
 import { describe, expect, it } from 'vitest'
 import { addField, emptyDefinition } from './definition.ts'
 import { addAction } from './actions.ts'
-import { brokenMappings, compatible, META_ENTRY, META_RESPONDENT, META_SUBMITTED, setMapping, sourcesForColumn, suggestMap } from './tablesMap.ts'
+import { brokenMappings, compatible, META_ENTRY, META_RESPONDENT, META_SUBMITTED, setMapping, sourcesForColumn, suggestMap, unmatchedOptions } from './tablesMap.ts'
 
 function column(id: number, title: string, kind: ColumnKind | null, extra: Partial<TablesColumn> = {}): TablesColumn {
 	return { id, title, type: 'text', subtype: '', mandatory: false, options: [], kind, supported: kind !== null, ...extra }
@@ -104,6 +104,28 @@ describe('setMapping and brokenMappings', () => {
 		expect(brokenMappings(def, columns, { 1: ids.name, 2: ids.name })).toEqual(['2'])
 		expect(brokenMappings(def, columns, { 9: ids.name })).toEqual(['9'])
 		expect(brokenMappings(def, columns, { 1: 'f_deleted' })).toEqual(['1'])
+	})
+})
+
+describe('unmatchedOptions', () => {
+	it('lists the choices the column has no option for, ignoring case and spacing', () => {
+		const { def, ids } = form()
+		def.fields[ids.kind] = { ...def.fields[ids.kind], options: [{ value: 'opt_a', label: 'Support' }, { value: 'opt_b', label: ' sales  team ' }, { value: 'opt_c', label: 'Other' }] } as DraftDefinition['fields'][string]
+		const single = column(1, 'Kind', 'single', { options: [{ id: 1, label: 'support' }, { id: 2, label: 'Sales Team' }] })
+		expect(unmatchedOptions(def, single, ids.kind)).toEqual(['Other'])
+		const multi = column(2, 'Kinds', 'multi', { options: [{ id: 1, label: 'Support' }] })
+		expect(unmatchedOptions(def, multi, ids.kind)).toEqual(['sales  team', 'Other'])
+	})
+
+	it('is empty when everything matches, nothing is mapped, or it is not a choice mapping', () => {
+		const { def, ids } = form()
+		def.fields[ids.kind] = { ...def.fields[ids.kind], options: [{ value: 'opt_a', label: 'Support' }] } as DraftDefinition['fields'][string]
+		const single = column(1, 'Kind', 'single', { options: [{ id: 1, label: 'Support' }] })
+		expect(unmatchedOptions(def, single, ids.kind)).toEqual([])
+		expect(unmatchedOptions(def, single, undefined)).toEqual([])
+		expect(unmatchedOptions(def, column(2, 'Notes', 'text'), ids.kind)).toEqual([])
+		expect(unmatchedOptions(def, single, ids.name)).toEqual([])
+		expect(unmatchedOptions(def, single, META_ENTRY)).toEqual([])
 	})
 })
 
