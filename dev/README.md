@@ -23,7 +23,16 @@ Docker.
 2. From the repo on your laptop, build, sync and enable the app:
 
    ```
-   dev/deploy.sh root@<container ip or tailscale name>
+   dev/deploy.sh <user>@<host ip or tailscale name>
+   ```
+
+   The current dev box is a full VM (Proxmox VM 102, `nc-dev`), not an LXC. Root
+   login is disabled there; use the `youruser` user, which owns `/opt/nc-dev` and is
+   in the `docker` group. Find its IP with
+   `ssh user@proxmox-host 'sudo qm guest cmd 102 network-get-interfaces'`.
+
+   ```
+   dev/deploy.sh youruser@<vm ip>
    ```
 
 3. Open `http://<container ip>/`, log in as `admin` with the printed password,
