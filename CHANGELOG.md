@@ -5,7 +5,7 @@
 
 # Changelog
 
-## Unreleased
+## 0.3.4 - 2026-11-15
 
 - Picking a published form that has no unpublished changes now opens its responses instead of the
   editor. Drafts, closed forms and forms with unpublished changes still open in the editor. Each user
