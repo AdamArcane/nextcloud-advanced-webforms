@@ -208,6 +208,14 @@ describe('removeField', () => {
 		expect(fieldOrder(next)).not.toContain(c)
 	})
 
+	it('stops a Tables action filling a column from a removed field', () => {
+		const { def, a, b, c } = build()
+		def.actions = [{ id: 'act_tbl', type: 'tables', tableId: 3, map: { 11: a, 12: c, 13: '@entry' } }]
+		const next = removeField(def, c)
+		expect(next.actions[0]).toEqual({ id: 'act_tbl', type: 'tables', tableId: 3, map: { 11: a, 13: '@entry' } })
+		expect(b).toBeDefined()
+	})
+
 	it('cleans rules: drops removed targets and conditions, and rules left empty', () => {
 		let { def, a, b, c } = build()
 		def.rules = [

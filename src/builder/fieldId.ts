@@ -78,6 +78,10 @@ function renameInAction(action: FormAction, from: string, to: string): FormActio
 				renamed.to = { field: to }
 			}
 			break
+		case 'tables':
+			// The map is column id to source: the sources are what point at a field.
+			renamed.map = Object.fromEntries(Object.entries(renamed.map).map(([column, source]) => [column, source === from ? to : source]))
+			break
 	}
 	return renamed
 }

@@ -303,6 +303,10 @@ export function removeField(definition: DraftDefinition, fieldId: string): Draft
 		page.rows = page.rows.filter((row) => row.cells.length > 0)
 	}
 	next.rules = pruneRules(next.rules, fieldId)
+	// A Tables action no longer fills a column from a field that is gone.
+	next.actions = next.actions.map((action) => action.type === 'tables'
+		? { ...action, map: Object.fromEntries(Object.entries(action.map).filter(([, source]) => source !== fieldId)) }
+		: action)
 	return next
 }
 

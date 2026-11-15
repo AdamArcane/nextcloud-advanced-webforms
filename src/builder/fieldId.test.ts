@@ -104,6 +104,14 @@ describe('renameField', () => {
 		expect(JSON.stringify(next.actions)).not.toContain(b)
 	})
 
+	it('keeps a Tables mapping pointing at a renamed field', () => {
+		const { def, a, b } = form()
+		def.actions = [{ id: 'act_tbl', type: 'tables', tableId: 3, map: { 11: a, 12: b, 13: '@submitted' } }] as FormAction[]
+		expect(renameField(def, b, 'customer_email').actions[0]).toEqual({
+			id: 'act_tbl', type: 'tables', tableId: 3, map: { 11: a, 12: 'customer_email', 13: '@submitted' },
+		})
+	})
+
 	it('leaves a fixed email address alone', () => {
 		const { def, b } = form()
 		def.actions = [{ id: 'act_mail', type: 'email', to: 'owner@example.com', subject: 's', body: 'b' }] as FormAction[]
