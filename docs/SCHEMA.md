@@ -928,3 +928,42 @@ options, for numbers the step, prefix and suffix).
 - Refused with `422 tables_no_fields` when the form has no input field, `403 tables_forbidden` when
   Tables will not let the user create tables, and `409 tables_unavailable` when Tables is off.
   Limited to 10 per minute per user.
+
+## 16. Server policy (DECISION)
+
+An administrator sets server-wide rules under Administration settings, "Forms and responses". Every
+value defaults to today's behaviour, so nothing changes until someone changes it. The values are app
+config, read through `PolicySettings`, and a damaged number falls back to its default. A damaged list
+of allowed actions allows none, the safe side.
+
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| Allowed actions | all of `message`, `redirect`, `email`, `webhook`, `tables` | which action types forms may use |
+| Retention | 0 (off) | delete responses older than this many days, 1 to 3650 |
+| Responses per form | 0 (no limit) | a form accepts at most this many, up to 1 000 000 |
+| Actions per form | 10 | lower than the structural maximum of 10 only, 1 to 10 |
+| Who can create forms | everyone | limit to members of chosen groups, and administrators |
+
+- **Allowed actions.** A type that is switched off is hidden in the builder, reported on a draft as
+  `action_type_disabled`, refused at publish, and not run: the planner leaves it out of new submissions,
+  and a delivery that was already queued fails with `action_disabled` and is not retried. That is what
+  makes switching webhooks off effective at once for forms that are already live. Existing actions are
+  never deleted from a definition, so switching a type back on restores them.
+- **Actions per form.** More actions than the policy allows is `policy_too_many_actions` at publish.
+- **Responses per form.** When a form has this many responses its public page and submit answer
+  `410 closed` with the message "This form has received the maximum number of responses." Responses sent
+  at the same instant can pass the limit by one.
+- **Who can create forms.** Creating and importing a form need membership of a creator group or the
+  administrator role (`create_not_allowed`). Forms that exist stay editable by their owners, and a
+  group that is later deleted simply matches nobody.
+- **Retention.** `RetentionJob` runs hourly and deletes the oldest due responses, at most 1000 per run so
+  a first run on a big server does not hold a background job, with the same clean-up as an owner
+  deleting a response: uploaded files and delivery log rows go too. Copies already sent by email,
+  webhook or to Tables are not touched. No `entry.deleted` event is sent for these deletions.
+  Because this deletes data, saving a retention that is newly on or shorter than before is refused with
+  `409 confirmation_required` and `due` (how many responses are affected) until the request repeats with
+  `confirmDelete: true`. The page shows the same count before saving.
+- Endpoints (administrators only): `GET` and `PUT /api/v1/admin/policy`,
+  `GET /api/v1/admin/policy/retention-preview?days=N`, `GET /api/v1/admin/groups?search=`. Every signed-in
+  user can read `GET /api/v1/settings` (`canCreate`, `allowedActionTypes`, `maxActions`), which the
+  builder uses to hide what the server would refuse.

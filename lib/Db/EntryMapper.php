@@ -89,6 +89,34 @@ class EntryMapper extends QBMapper {
 	}
 
 	/**
+	 * The oldest responses submitted before a moment, for retention (docs/SCHEMA.md section 16).
+	 *
+	 * @return list<Entry>
+	 * @throws Exception
+	 */
+	public function findOlderThan(int $cutoff, int $limit): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')->from($this->getTableName())
+			->where($qb->expr()->lt('submitted_at', $qb->createNamedParameter($cutoff, IQueryBuilder::PARAM_INT)))
+			->orderBy('id', 'ASC')
+			->setMaxResults($limit);
+		return array_values($this->findEntities($qb));
+	}
+
+	/**
+	 * @throws Exception
+	 */
+	public function countOlderThan(int $cutoff): int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select($qb->func()->count('*', 'total'))->from($this->getTableName())
+			->where($qb->expr()->lt('submitted_at', $qb->createNamedParameter($cutoff, IQueryBuilder::PARAM_INT)));
+		$result = $qb->executeQuery();
+		$total = (int)$result->fetchOne();
+		$result->closeCursor();
+		return $total;
+	}
+
+	/**
 	 * Remove a deleted account's name from the responses it gave, keeping the answers.
 	 *
 	 * @throws Exception

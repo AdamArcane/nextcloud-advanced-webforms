@@ -10,12 +10,17 @@ declare(strict_types=1);
 namespace OCA\Webforms\Controller;
 
 use OCA\Webforms\AppInfo\Application;
+use OCA\Webforms\Forms\DefinitionValidator;
 use OCA\Webforms\Security\Captcha\CaptchaProvider;
 use OCA\Webforms\Security\Captcha\CaptchaSettings;
+use OCA\Webforms\Service\RetentionService;
+use OCA\Webforms\Settings\PolicySettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCP\AppFramework\Http\JSONResponse;
+use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\IGroupManager;
 use OCP\IRequest;
 
 /**
@@ -27,6 +32,10 @@ class AdminController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private readonly CaptchaSettings $settings,
+		private readonly PolicySettings $policy,
+		private readonly RetentionService $retention,
+		private readonly IGroupManager $groups,
+		private readonly ITimeFactory $time,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 	}
@@ -61,6 +70,102 @@ class AdminController extends Controller {
 		}
 		$this->settings->save($provider, $siteKey, $secret);
 		return new JSONResponse($this->current());
+	}
+
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/admin/policy')]
+	public function getPolicy(): JSONResponse {
+		return new JSONResponse($this->currentPolicy());
+	}
+
+	/**
+	 * Save the server policy (docs/SCHEMA.md section 16). Turning retention on, or shortening it, would
+	 * delete responses that exist today, so it is refused with `confirmation_required` and the number
+	 * of responses affected until the request repeats with `confirmDelete`.
+	 *
+	 * @param list<string> $actionTypes
+	 * @param list<string> $creatorGroups
+	 */
+	#[FrontpageRoute(verb: 'PUT', url: '/api/v1/admin/policy')]
+	public function setPolicy(
+		array $actionTypes = [],
+		int $retentionDays = 0,
+		int $maxResponses = 0,
+		int $maxActions = DefinitionValidator::MAX_ACTIONS,
+		array $creatorGroups = [],
+		bool $confirmDelete = false,
+	): JSONResponse {
+		foreach ($actionTypes as $type) {
+			if (!is_string($type) || !in_array($type, DefinitionValidator::ACTION_TYPES, true)) {
+				return new JSONResponse(['error' => 'invalid_action_type'], Http::STATUS_BAD_REQUEST);
+			}
+		}
+		if ($retentionDays < 0 || $retentionDays > PolicySettings::MAX_RETENTION_DAYS
+			|| $maxResponses < 0 || $maxResponses > PolicySettings::MAX_RESPONSES_LIMIT
+			|| $maxActions < 1 || $maxActions > DefinitionValidator::MAX_ACTIONS) {
+			return new JSONResponse(['error' => 'invalid_limit'], Http::STATUS_BAD_REQUEST);
+		}
+		if (count($creatorGroups) > PolicySettings::MAX_GROUPS) {
+			return new JSONResponse(['error' => 'invalid_group'], Http::STATUS_BAD_REQUEST);
+		}
+		foreach ($creatorGroups as $group) {
+			if (!is_string($group) || !$this->groups->groupExists($group)) {
+				return new JSONResponse(['error' => 'unknown_group'], Http::STATUS_BAD_REQUEST);
+			}
+		}
+
+		$current = $this->policy->retentionDays();
+		if ($retentionDays > 0 && ($current === 0 || $retentionDays < $current) && !$confirmDelete) {
+			$due = $this->retention->countDue($this->time->getTime(), $retentionDays);
+			if ($due > 0) {
+				return new JSONResponse(['error' => 'confirmation_required', 'due' => $due], Http::STATUS_CONFLICT);
+			}
+		}
+
+		$this->policy->save(array_values($actionTypes), $retentionDays, $maxResponses, $maxActions, array_values($creatorGroups));
+		return new JSONResponse($this->currentPolicy());
+	}
+
+	/**
+	 * How many existing responses are older than a number of days, so the page can say what turning
+	 * retention on would delete.
+	 */
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/admin/policy/retention-preview')]
+	public function retentionPreview(int $days = 0): JSONResponse {
+		if ($days < 1 || $days > PolicySettings::MAX_RETENTION_DAYS) {
+			return new JSONResponse(['error' => 'invalid_limit'], Http::STATUS_BAD_REQUEST);
+		}
+		return new JSONResponse(['due' => $this->retention->countDue($this->time->getTime(), $days)]);
+	}
+
+	/**
+	 * Groups to pick creator groups from.
+	 */
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/admin/groups')]
+	public function searchGroups(string $search = ''): JSONResponse {
+		$found = [];
+		foreach ($this->groups->search(trim($search), 25) as $group) {
+			$found[] = ['id' => $group->getGID(), 'displayName' => $group->getDisplayName()];
+		}
+		return new JSONResponse(['groups' => $found]);
+	}
+
+	/**
+	 * @return array<string, mixed>
+	 */
+	private function currentPolicy(): array {
+		$groups = [];
+		foreach ($this->policy->creatorGroups() as $id) {
+			$groups[] = ['id' => $id, 'displayName' => $this->groups->get($id)?->getDisplayName() ?? $id, 'exists' => $this->groups->groupExists($id)];
+		}
+		return [
+			'actionTypes' => $this->policy->allowedActionTypes(),
+			'allActionTypes' => DefinitionValidator::ACTION_TYPES,
+			'retentionDays' => $this->policy->retentionDays(),
+			'maxResponses' => $this->policy->maxResponsesPerForm(),
+			'maxActions' => $this->policy->maxActionsPerForm(),
+			'maxActionsCeiling' => DefinitionValidator::MAX_ACTIONS,
+			'creatorGroups' => $groups,
+		];
 	}
 
 	/**

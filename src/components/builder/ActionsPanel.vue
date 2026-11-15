@@ -22,6 +22,10 @@ const props = defineProps<{
 	errors: DefinitionError[]
 	/** Show problems on every card, e.g. after a failed publish. */
 	showErrors?: boolean
+	/** The action types the server allows (docs/SCHEMA.md section 16). Everything when not given. */
+	allowedTypes?: readonly ActionType[]
+	/** The most actions the server allows on a form, never above MAX_ACTIONS. */
+	maxActions?: number
 }>()
 
 const emit = defineEmits<{
@@ -35,7 +39,11 @@ const secretBusyId = ref<string | null>(null)
 const secretFailedId = ref<string | null>(null)
 
 const unreachable = computed(() => new Set(unreachableResponseActions(props.definition)))
-const full = computed(() => props.definition.actions.length >= MAX_ACTIONS)
+const limit = computed(() => Math.min(MAX_ACTIONS, props.maxActions ?? MAX_ACTIONS))
+const full = computed(() => props.definition.actions.length >= limit.value)
+const choices = computed(() => ACTION_TYPES.filter((type) => props.allowedTypes === undefined || props.allowedTypes.includes(type)))
+/** Actions of a type the server has since switched off: they stay visible so they can be removed. */
+const switchedOff = computed(() => new Set(props.definition.actions.filter((action) => props.allowedTypes !== undefined && !props.allowedTypes.includes(action.type)).map((action) => action.id)))
 
 function codesFor(index: number): string[] {
 	return props.errors.filter((error) => errorActionIndex(error.path) === index).map((error) => error.code)
@@ -104,6 +112,7 @@ async function generateSecret(index: number): Promise<void> {
 			:error-codes="codesFor(index)"
 			:show-errors="showErrors"
 			:unreachable="unreachable.has(action.id)"
+			:switched-off="switchedOff.has(action.id)"
 			:revealed-secret="revealed?.actionId === action.id ? revealed.secret : null"
 			:secret-busy="secretBusyId === action.id"
 			:secret-failed="secretFailedId === action.id"
@@ -123,7 +132,7 @@ async function generateSecret(index: number): Promise<void> {
 				{{ t('webforms', 'Add an action') }}
 			</h3>
 			<div class="af-actions__choices">
-				<NcButton v-for="type in ACTION_TYPES"
+				<NcButton v-for="type in choices"
 					:key="type"
 					variant="secondary"
 					:disabled="full"
@@ -135,8 +144,11 @@ async function generateSecret(index: number): Promise<void> {
 					{{ actionLabel(type) }}
 				</NcButton>
 			</div>
+			<p v-if="choices.length === 0" class="af-actions__hint">
+				{{ t('webforms', 'An administrator has switched off every kind of action on this server.') }}
+			</p>
 			<p v-if="full" class="af-actions__hint">
-				{{ t('webforms', 'A form can have up to {max} actions.', { max: MAX_ACTIONS }) }}
+				{{ t('webforms', 'A form can have up to {max} actions.', { max: limit }) }}
 			</p>
 			<p v-else class="af-actions__hint">
 				{{ t('webforms', 'If several messages or redirects match, the first one is shown. Emails and webhooks all run.') }}

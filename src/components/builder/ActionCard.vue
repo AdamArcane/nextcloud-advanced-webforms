@@ -39,6 +39,8 @@ const props = defineProps<{
 	showErrors?: boolean
 	/** A message or redirect that an earlier one always pre-empts. */
 	unreachable: boolean
+	/** An administrator has switched this kind of action off. */
+	switchedOff?: boolean
 	/** A freshly generated secret to show once, for this action. */
 	revealedSecret: string | null
 	secretBusy: boolean
@@ -240,6 +242,9 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 				<p v-for="code in visibleErrors" :key="code">
 					{{ describeError(code) }}
 				</p>
+			</NcNoteCard>
+			<NcNoteCard v-if="switchedOff" type="warning">
+				{{ t('webforms', 'This kind of action is switched off on this server, so it will not run and the form cannot be published with it. Remove it.') }}
 			</NcNoteCard>
 			<NcNoteCard v-if="unreachable" type="info">
 				{{ t('webforms', 'An earlier message or redirect always applies, so this one is never shown. Give the earlier one a condition, or move this one up.') }}

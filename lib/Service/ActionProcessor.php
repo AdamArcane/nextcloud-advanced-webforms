@@ -41,6 +41,7 @@ class ActionProcessor {
 		private readonly ActionRunner $runner,
 		private readonly ITimeFactory $time,
 		private readonly LoggerInterface $logger,
+		private readonly PolicyService $policy,
 	) {
 	}
 
@@ -71,6 +72,10 @@ class ActionProcessor {
 			$action = $this->findAction($definition, $row->getActionId());
 			if ($action === null) {
 				throw new ActionFailed('action_missing', false);
+			}
+			// An administrator may switch a type off after a response was queued. It is not retried.
+			if (!$this->policy->isActionTypeAllowed((string)($action['type'] ?? ''))) {
+				throw new ActionFailed('action_disabled', false);
 			}
 
 			$context = new ActionContext(

@@ -41,6 +41,7 @@ This app is in early development.
 	<background-jobs>
 		<job>OCA\Webforms\BackgroundJob\ProcessActionsJob</job>
 		<job>OCA\Webforms\BackgroundJob\CleanupUploadsJob</job>
+		<job>OCA\Webforms\BackgroundJob\RetentionJob</job>
 	</background-jobs>
 
 	<settings>

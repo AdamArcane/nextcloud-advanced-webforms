@@ -60,6 +60,12 @@ export function describeError(code: string): string {
 			return t('webforms', 'Fill in all the text for this action.')
 		case 'action_bad_url':
 			return t('webforms', 'Enter a full address starting with https://.')
+		case 'action_type_disabled':
+			return t('webforms', 'This kind of action is switched off on this server. Remove it or ask an administrator.')
+		case 'policy_too_many_actions':
+			return t('webforms', 'This server allows fewer actions on a form. Remove some.')
+		case 'create_not_allowed':
+			return t('webforms', 'You are not allowed to create forms on this server. Ask an administrator.')
 		case 'action_bad_table':
 			return t('webforms', 'Pick the Tables table that should get the rows.')
 		case 'action_bad_table_map':

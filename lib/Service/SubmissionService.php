@@ -44,6 +44,7 @@ use Psr\Log\LoggerInterface;
  */
 class SubmissionService {
 	public const DEFAULT_CLOSED_MESSAGE = 'This form is no longer accepting responses.';
+	public const FULL_MESSAGE = 'This form has received the maximum number of responses.';
 
 	private readonly FillTimeToken $tokens;
 
@@ -61,6 +62,7 @@ class SubmissionService {
 		private readonly UploadService $uploads,
 		private readonly CaptchaService $captcha,
 		private readonly EventPublisher $events,
+		private readonly PolicyService $policy,
 	) {
 		$this->tokens = new FillTimeToken($config->getSystemValueString('secret'));
 	}
@@ -257,6 +259,8 @@ class SubmissionService {
 	 */
 	private function afterSubmit(Form $form, array $definition, Entry $entry, array $data): array {
 		try {
+			// Actions of a type the server no longer allows do not run, even on a form that is already live.
+			$definition = $this->policy->withoutDisabledActions($definition);
 			$plan = $this->planner->plan($definition, $data);
 
 			$types = [];
@@ -295,6 +299,11 @@ class SubmissionService {
 		if ($form->getStatus() === Form::STATUS_CLOSED || $form->isArchived()) {
 			$message = $settings['closedMessage'] ?? self::DEFAULT_CLOSED_MESSAGE;
 			throw new FormClosedException(is_string($message) ? $message : self::DEFAULT_CLOSED_MESSAGE);
+		}
+		// The server's cap on responses per form (docs/SCHEMA.md section 16).
+		$cap = $this->policy->settings()->maxResponsesPerForm();
+		if ($cap > 0 && $this->entries->countByForm($form->getId()) >= $cap) {
+			throw new FormClosedException(self::FULL_MESSAGE);
 		}
 		if (($settings['requireLogin'] ?? false) === true && $userId === null) {
 			throw new LoginRequiredException();
