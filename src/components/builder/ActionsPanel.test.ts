@@ -11,6 +11,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { addAction, updateAction } from '../../builder/actions.ts'
 import { addField, emptyDefinition } from '../../builder/definition.ts'
 import ActionsPanel from './ActionsPanel.vue'
+import AddActionMenu from './AddActionMenu.vue'
 
 const secretMock = vi.fn()
 // A rejecting vi.fn is reported by Vitest as an unhandled rejection even when the code under test
@@ -42,6 +43,15 @@ function lastChange(wrapper: ReturnType<typeof mountPanel>): DraftDefinition {
 	return events[events.length - 1][0] as DraftDefinition
 }
 
+function menu(wrapper: ReturnType<typeof mount>) {
+	return wrapper.findComponent(AddActionMenu)
+}
+
+async function pick(wrapper: ReturnType<typeof mount>, type: string): Promise<void> {
+	menu(wrapper).vm.$emit('pick', type)
+	await wrapper.vm.$nextTick()
+}
+
 function button(wrapper: ReturnType<typeof mountPanel>, text: string) {
 	return wrapper.findAll('button').find((b) => b.text() === text)!
 }
@@ -49,12 +59,7 @@ function button(wrapper: ReturnType<typeof mountPanel>, text: string) {
 describe('ActionsPanel and the server policy', () => {
 	it('offers only the action types the server allows', () => {
 		const wrapper = mount(ActionsPanel, { props: { definition: emptyDefinition('T'), formId: 7, errors: [], allowedTypes: ['message', 'email'] } })
-		const labels = wrapper.findAll('button').map((b) => b.text())
-		expect(labels).toContain('Show a message')
-		expect(labels).toContain('Send an email')
-		expect(labels).not.toContain('Call a webhook')
-		expect(labels).not.toContain('Redirect')
-		expect(labels).not.toContain('Add a row to Tables')
+		expect(menu(wrapper).props('types')).toEqual(['message', 'email'])
 	})
 
 	it('says so when every type is switched off', () => {
@@ -68,8 +73,7 @@ describe('ActionsPanel and the server policy', () => {
 		def = addAction(def, 'redirect').definition
 		const wrapper = mount(ActionsPanel, { props: { definition: def, formId: 7, errors: [], maxActions: 2 } })
 		expect(wrapper.text()).toContain('A form can have up to 2 actions.')
-		const add = wrapper.findAll('button').find((b) => b.text() === 'Show a message')!
-		expect(add.attributes('disabled')).toBeDefined()
+		expect(menu(wrapper).props('disabled')).toBe(true)
 	})
 
 	it('keeps an action of a switched-off type visible, with a warning once opened', async () => {
@@ -90,15 +94,14 @@ describe('ActionsPanel', () => {
 	it('invites you to add the first action', () => {
 		const wrapper = mountPanel(emptyDefinition('T'))
 		expect(wrapper.text()).toContain('No actions yet')
-		for (const label of ['Show a message', 'Redirect', 'Send an email', 'Call a webhook']) {
-			expect(button(wrapper, label)).toBeDefined()
-		}
+		expect(menu(wrapper).props('types')).toEqual(['message', 'redirect', 'email', 'webhook', 'tables', 'files'])
+		expect(menu(wrapper).props('disabled')).toBe(false)
 	})
 
 	it('adds each kind of action and opens it for editing', async () => {
-		for (const [label, type] of [['Show a message', 'message'], ['Redirect', 'redirect'], ['Send an email', 'email'], ['Call a webhook', 'webhook']]) {
+		for (const type of ['message', 'redirect', 'email', 'webhook', 'tables', 'files']) {
 			const wrapper = mountPanel(base().def)
-			await button(wrapper, label).trigger('click')
+			await pick(wrapper, type)
 			const next = lastChange(wrapper)
 			expect(next.actions).toHaveLength(1)
 			expect(next.actions[0].type).toBe(type)
@@ -339,7 +342,7 @@ describe('ActionsPanel', () => {
 			def = addAction(def, 'webhook').definition
 		}
 		const wrapper = mountPanel(def)
-		expect(button(wrapper, 'Show a message').attributes('disabled')).toBeDefined()
+		expect(menu(wrapper).props('disabled')).toBe(true)
 		expect(wrapper.text()).toContain('up to 10 actions')
 	})
 
