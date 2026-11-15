@@ -8,12 +8,27 @@ import type { DeliveriesPage, Delivery, EntriesPage, EntryRecord, VersionDefinit
 
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ApiError } from '../../api/http.ts'
 import EntriesView from './EntriesView.vue'
 
 const listEntriesMock = vi.fn()
 const deleteEntryMock = vi.fn()
 const listDeliveriesMock = vi.fn()
 const retryMock = vi.fn()
+const bulkDeleteMock = vi.fn()
+const SUMMARY = {
+	total: 3,
+	truncated: false,
+	timeline: { unit: 'day', buckets: [{ start: '2026-11-14', count: 1 }, { start: '2026-11-15', count: 2 }] },
+	fields: [
+		{ id: 'f_kind', label: 'Kind', type: 'select', kind: 'choice', answered: 3, options: [{ value: 'new', label: 'New website', count: 2 }, { value: 'old', label: 'Redesign', count: 1 }] },
+		{ id: 'f_size', label: 'Size', type: 'number', kind: 'number', answered: 2, min: 1, max: 5, average: 3, sum: 6 },
+	],
+}
+const summaryMock = vi.fn(async (..._args: unknown[]) => SUMMARY)
+let failSummary = false
+// Set to make the bulk delete fail, with this error.
+let bulkFailure: unknown = null
 
 // Rejecting vi.fn()s are reported as unhandled by Vitest, so failures go through these switches instead.
 let failEntries = false
@@ -40,7 +55,19 @@ vi.mock('../../api/forms.ts', () => ({
 		}
 		return retryMock(...args)
 	},
-	exportUrl: (id: number) => '/export/' + id,
+	fetchEntrySummary: (...args: unknown[]) => {
+		if (failSummary) {
+			return new Promise((_resolve, reject) => setTimeout(() => reject(new Error('x')), 0))
+		}
+		return summaryMock(...args)
+	},
+	exportUrl: (id: number, options?: unknown) => '/export/' + id + '?' + JSON.stringify(options ?? {}),
+	bulkDeleteEntries: (...args: unknown[]) => {
+		if (bulkFailure) {
+			return new Promise((_resolve, reject) => setTimeout(() => reject(bulkFailure), 0))
+		}
+		return bulkDeleteMock(...args)
+	},
 }))
 
 const version: VersionDefinition = {
@@ -60,7 +87,7 @@ function delivery(id: number, overrides: Partial<Delivery> = {}): Delivery {
 }
 
 function page(entries: EntryRecord[], total = entries.length): EntriesPage {
-	return { total, entries, versions: { 1: version } }
+	return { total, grandTotal: total, truncated: false, entries, versions: { 1: version } }
 }
 
 function deliveries(rows: Delivery[], total = rows.length): DeliveriesPage {
@@ -71,10 +98,21 @@ function mountView() {
 	return mount(EntriesView, { props: { formId: 7, title: 'Inquiry' }, attachTo: document.body })
 }
 
+/** Opens the Download menu and waits until its links exist: the menu is a popover that opens a moment later. */
+async function openDownload(wrapper: ReturnType<typeof mountView>): Promise<void> {
+	await wrapper.find('button[aria-label="Download responses"]').trigger('click')
+	for (let tries = 0; tries < 100 && document.body.querySelectorAll('a[download]').length < 2; tries++) {
+		await new Promise((resolve) => setTimeout(resolve, 10))
+		await flushPromises()
+	}
+}
+
 const buttonByText = (wrapper: ReturnType<typeof mountView>, text: string) => wrapper.findAll('button').find((b) => b.text().includes(text))!
 
 describe('EntriesView', () => {
 	beforeEach(() => {
+		// These tests describe the cards, which stay available as a choice. The table has its own tests.
+		window.localStorage.setItem('webforms.responsesView', 'cards')
 		failEntries = false
 		failRetry = false
 		failDelete = false
@@ -108,15 +146,18 @@ describe('EntriesView', () => {
 		const wrapper = mountView()
 		await flushPromises()
 		expect(wrapper.text()).toContain('No responses yet')
-		const download = wrapper.find('a[href="/export/7"], button[disabled]')
-		expect(download.exists()).toBe(true)
+		expect(wrapper.find('button[aria-label="Download responses"]').attributes('disabled')).toBeDefined()
 		wrapper.unmount()
 	})
 
-	it('links the download to the export endpoint', async () => {
+	it('offers CSV and Excel from one menu that says what it will download', async () => {
 		const wrapper = mountView()
 		await flushPromises()
-		expect(wrapper.find('a[href="/export/7"]').exists()).toBe(true)
+		await openDownload(wrapper)
+		const links = Array.from(document.body.querySelectorAll('a[download]')) as HTMLAnchorElement[]
+		const queries = links.map((link) => JSON.parse(decodeURIComponent(link.getAttribute('href')!.split('?')[1])))
+		expect(queries.map((query) => query.format)).toEqual(['csv', 'xlsx'])
+		expect(document.body.textContent).toContain('All 2 responses')
 		wrapper.unmount()
 	})
 
@@ -126,10 +167,10 @@ describe('EntriesView', () => {
 		await flushPromises()
 		await wrapper.find('.af-response__head').trigger('click')
 		await flushPromises()
-		expect(wrapper.find('dl').text()).toContain('Name')
-		expect(wrapper.find('dl').text()).toContain('Ada')
-		expect(wrapper.find('dl').text()).toContain('Kind')
-		expect(wrapper.find('dl').text()).toContain('—')
+		expect(wrapper.find('dl.af-response__answers').text()).toContain('Name')
+		expect(wrapper.find('dl.af-response__answers').text()).toContain('Ada')
+		expect(wrapper.find('dl.af-response__answers').text()).toContain('Kind')
+		expect(wrapper.find('dl.af-response__answers').text()).toContain('—')
 		wrapper.unmount()
 	})
 
@@ -218,7 +259,7 @@ describe('EntriesView', () => {
 		expect(wrapper.text()).toContain('Showing 2 of 3')
 		await buttonByText(wrapper, 'Show more').trigger('click')
 		await flushPromises()
-		expect(listEntriesMock).toHaveBeenLastCalledWith(7, 50, 2)
+		expect(listEntriesMock).toHaveBeenLastCalledWith(7, 50, 2, expect.objectContaining({ text: '', sort: 'newest' }))
 		expect(wrapper.findAllComponents({ name: 'ResponseCard' })).toHaveLength(3)
 		expect(buttonByText(wrapper, 'Show more')).toBeUndefined()
 		wrapper.unmount()
@@ -416,5 +457,395 @@ describe('EntriesView deliveries', () => {
 			expect(callsForList()).toBe(before + 1)
 			wrapper.unmount()
 		})
+	})
+})
+
+describe('EntriesView table and filters', () => {
+	beforeEach(() => {
+		window.localStorage.clear()
+		failEntries = false
+		listEntriesMock.mockReset().mockResolvedValue(page([entry(3, { f_name: 'Cy', f_kind: 'new' }), entry(2, { f_name: 'Bo' }), entry(1)]))
+		deleteEntryMock.mockReset().mockResolvedValue(undefined)
+		listDeliveriesMock.mockReset().mockResolvedValue(deliveries([]))
+		document.body.innerHTML = ''
+	})
+
+	const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+	const lastFilter = () => listEntriesMock.mock.calls[listEntriesMock.mock.calls.length - 1][3]
+
+	it('shows responses as a table by default, with a column for each question and answers as text', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		const headers = wrapper.findAll('th').map((th) => th.text())
+		expect(headers).toEqual(expect.arrayContaining(['#', 'Sent by', 'Name', 'Kind']))
+		const rows = wrapper.findAll('tbody tr.af-table__row')
+		expect(rows).toHaveLength(3)
+		expect(rows[0].text()).toContain('Cy')
+		expect(rows[0].text()).toContain('New website')
+		expect(rows[0].text()).toContain('Anonymous')
+		// A response that left a question empty shows an empty cell, not a dash or "undefined".
+		expect(rows[1].text()).not.toContain('undefined')
+		wrapper.unmount()
+	})
+
+	it('opens a response under its row, and closes it again', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		await wrapper.findAll('tbody tr.af-table__row')[1].trigger('click')
+		expect(wrapper.find('#af-response-2').exists()).toBe(true)
+		// Pinned to the visible width, so it stays readable when the table scrolls sideways.
+		expect(wrapper.find('#af-response-2 .af-table__panel').exists()).toBe(true)
+		expect(wrapper.findAllComponents({ name: 'ResponseCard' })).toHaveLength(1)
+		await wrapper.findAll('tbody tr.af-table__row')[1].trigger('click')
+		expect(wrapper.find('#af-response-2').exists()).toBe(false)
+		wrapper.unmount()
+	})
+
+	it('remembers the choice of cards over the table', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		const cards = wrapper.findAll('button').find((b) => b.attributes('aria-label') === 'Cards' || b.text() === 'Cards')
+		expect(cards).toBeDefined()
+		await cards!.trigger('click')
+		expect(window.localStorage.getItem('webforms.responsesView')).toBe('cards')
+		expect(wrapper.findAllComponents({ name: 'ResponseCard' })).toHaveLength(3)
+		wrapper.unmount()
+	})
+
+	it('searches after a pause in typing, not on every key', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		const calls = listEntriesMock.mock.calls.length
+		const search = wrapper.find('input[type="search"]')
+		await search.setValue('a')
+		await search.setValue('ad')
+		await wait(100)
+		expect(listEntriesMock.mock.calls.length).toBe(calls)
+		await wait(300)
+		await flushPromises()
+		expect(listEntriesMock.mock.calls.length).toBe(calls + 1)
+		expect(lastFilter()).toMatchObject({ text: 'ad' })
+		wrapper.unmount()
+	})
+
+	it('shows how many match out of all, and says when nothing does', async () => {
+		listEntriesMock.mockReset()
+			.mockResolvedValueOnce({ ...page([entry(1)], 3), grandTotal: 3 })
+			.mockResolvedValueOnce({ ...page([], 0), grandTotal: 3 })
+		const wrapper = mountView()
+		await flushPromises()
+		await wrapper.find('input[type="search"]').setValue('zzz')
+		await wait(350)
+		await flushPromises()
+		expect(wrapper.text()).toContain('0 of 3 responses')
+		expect(wrapper.text()).toContain('No responses match')
+		listEntriesMock.mockResolvedValue({ ...page([entry(1)], 3), grandTotal: 3 })
+		await wrapper.findAll('button').find((b) => b.text() === 'Clear filters')!.trigger('click')
+		await flushPromises()
+		expect(lastFilter()).toMatchObject({ text: '' })
+		wrapper.unmount()
+	})
+
+	it('sorts by when it was submitted from the column header', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		await wrapper.find('.af-table__sort').trigger('click')
+		await flushPromises()
+		expect(lastFilter()).toMatchObject({ sort: 'oldest' })
+		await wrapper.find('.af-table__sort').trigger('click')
+		await flushPromises()
+		expect(lastFilter()).toMatchObject({ sort: 'newest' })
+		wrapper.unmount()
+	})
+
+	it('filters by date and by who sent it, straight away', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		const dates = wrapper.findAll('input[type="date"]')
+		await dates[0].setValue('2026-11-01')
+		await flushPromises()
+		expect(lastFilter()).toMatchObject({ from: '2026-11-01' })
+		await wrapper.find('select').setValue('anonymous')
+		await flushPromises()
+		expect(lastFilter()).toMatchObject({ from: '2026-11-01', respondent: 'anonymous' })
+		wrapper.unmount()
+	})
+
+	it('says when a search stopped early', async () => {
+		listEntriesMock.mockReset().mockResolvedValue({ ...page([entry(1)], 1), truncated: true })
+		const wrapper = mountView()
+		await flushPromises()
+		expect(wrapper.text()).toContain('Searched the first 20,000 responses')
+		wrapper.unmount()
+	})
+
+	it('lets a person choose which question columns to show', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		expect(wrapper.findAll('th').map((th) => th.text())).toContain('Kind')
+		// The column picker keeps the choice per form.
+		window.localStorage.setItem('webforms.columns.7', JSON.stringify(['f_name']))
+		const again = mountView()
+		await flushPromises()
+		const headers = again.findAll('th').map((th) => th.text())
+		expect(headers).toContain('Name')
+		expect(headers).not.toContain('Kind')
+		wrapper.unmount()
+		again.unmount()
+	})
+})
+
+describe('EntriesView selecting and bulk actions', () => {
+	beforeEach(() => {
+		window.localStorage.clear()
+		failEntries = false
+		bulkFailure = null
+		listEntriesMock.mockReset().mockResolvedValue(page([entry(3), entry(2), entry(1)]))
+		bulkDeleteMock.mockReset().mockResolvedValue(2)
+		deleteEntryMock.mockReset().mockResolvedValue(undefined)
+		listDeliveriesMock.mockReset().mockResolvedValue(deliveries([]))
+		document.body.innerHTML = ''
+	})
+
+	const rowBoxes = (wrapper: ReturnType<typeof mountView>) => wrapper.findAll('tbody input[type="checkbox"]')
+	const pageBox = (wrapper: ReturnType<typeof mountView>) => wrapper.find('thead input[type="checkbox"]')
+	const dialogButton = (text: string) => Array.from(document.body.querySelectorAll('button')).find((b) => b.textContent?.trim() === text) as HTMLButtonElement | undefined
+	const downloadQueries = () => (Array.from(document.body.querySelectorAll('a[download]')) as HTMLAnchorElement[]).map((link) => JSON.parse(decodeURIComponent(link.getAttribute('href')!.split('?')[1])))
+
+	it('selects responses, and everything on the page at once', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		expect(wrapper.find('.af-entries__bulk').exists()).toBe(false)
+		await rowBoxes(wrapper)[0].setValue(true)
+		expect(wrapper.find('.af-entries__bulk').text()).toContain('1 selected')
+		await pageBox(wrapper).setValue(true)
+		expect(wrapper.find('.af-entries__bulk').text()).toContain('3 selected')
+		await pageBox(wrapper).setValue(false)
+		expect(wrapper.find('.af-entries__bulk').exists()).toBe(false)
+		wrapper.unmount()
+	})
+
+	it('downloads only the ticked responses when some are ticked', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		await rowBoxes(wrapper)[0].setValue(true)
+		await rowBoxes(wrapper)[2].setValue(true)
+		await openDownload(wrapper)
+		expect(downloadQueries().map((query) => query.ids)).toEqual([[3, 1], [3, 1]])
+		expect(downloadQueries().every((query) => query.filter === undefined)).toBe(true)
+		expect(document.body.textContent).toContain('2 selected responses')
+		wrapper.unmount()
+	})
+
+	it('deletes the ticked responses after a confirmation, then shows the list again', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		await rowBoxes(wrapper)[0].setValue(true)
+		await rowBoxes(wrapper)[1].setValue(true)
+		const calls = listEntriesMock.mock.calls.length
+		await wrapper.findAll('.af-entries__bulk button').find((b) => b.text() === 'Delete')!.trigger('click')
+		await flushPromises()
+		expect(document.body.textContent).toContain('Delete 2 responses?')
+		expect(bulkDeleteMock).not.toHaveBeenCalled()
+		dialogButton('Delete 2')!.click()
+		await flushPromises()
+		expect(bulkDeleteMock).toHaveBeenCalledWith(7, { ids: [3, 2] })
+		expect(listEntriesMock.mock.calls.length).toBe(calls + 1)
+		expect(wrapper.text()).toContain('Deleted 2 responses.')
+		expect(wrapper.find('.af-entries__bulk').exists()).toBe(false)
+		wrapper.unmount()
+	})
+
+	it('can be cancelled without deleting anything', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		await rowBoxes(wrapper)[0].setValue(true)
+		await wrapper.findAll('.af-entries__bulk button').find((b) => b.text() === 'Delete')!.trigger('click')
+		await flushPromises()
+		dialogButton('Cancel')!.click()
+		await flushPromises()
+		expect(bulkDeleteMock).not.toHaveBeenCalled()
+		expect(wrapper.find('.af-entries__bulk').exists()).toBe(true)
+		wrapper.unmount()
+	})
+
+	it('selects everything a filter matches, and deletes with the number it confirmed', async () => {
+		listEntriesMock.mockReset().mockResolvedValue({ ...page([entry(3), entry(2)], 5), grandTotal: 5 })
+		bulkDeleteMock.mockResolvedValue(5)
+		const wrapper = mountView()
+		await flushPromises()
+		await pageBox(wrapper).setValue(true)
+		const all = wrapper.findAll('.af-entries__bulk button').find((b) => b.text() === 'Select all 5 matching')
+		expect(all).toBeDefined()
+		await all!.trigger('click')
+		expect(wrapper.find('.af-entries__bulk').text()).toContain('All 5 matching responses are selected')
+		await openDownload(wrapper)
+		expect(downloadQueries().every((query) => query.ids === undefined && query.filter !== undefined)).toBe(true)
+		wrapper.unmount()
+		document.body.innerHTML = ''
+		const again = mountView()
+		await flushPromises()
+		await pageBox(again).setValue(true)
+		await again.findAll('.af-entries__bulk button').find((b) => b.text() === 'Select all 5 matching')!.trigger('click')
+		await again.findAll('.af-entries__bulk button').find((b) => b.text() === 'Delete')!.trigger('click')
+		await flushPromises()
+		dialogButton('Delete 5')!.click()
+		await flushPromises()
+		expect(bulkDeleteMock).toHaveBeenCalledWith(7, expect.objectContaining({ expected: 5, filter: expect.objectContaining({ text: '' }) }))
+		again.unmount()
+	})
+
+	it('deletes nothing and says so when the number of matches changed', async () => {
+		listEntriesMock.mockReset().mockResolvedValue({ ...page([entry(3), entry(2)], 5), grandTotal: 5 })
+		bulkFailure = new ApiError(409, 'count_changed', [], null, { current: 4 })
+		const wrapper = mountView()
+		await flushPromises()
+		await pageBox(wrapper).setValue(true)
+		await wrapper.findAll('.af-entries__bulk button').find((b) => b.text() === 'Select all 5 matching')!.trigger('click')
+		await wrapper.findAll('.af-entries__bulk button').find((b) => b.text() === 'Delete')!.trigger('click')
+		await flushPromises()
+		dialogButton('Delete 5')!.click()
+		await new Promise((resolve) => setTimeout(resolve, 5))
+		await flushPromises()
+		expect(wrapper.text()).toContain('changed from 5 to 4, so nothing was deleted')
+		expect(wrapper.find('.af-entries__bulk').exists()).toBe(false)
+		bulkFailure = null
+		wrapper.unmount()
+	})
+
+	it('keeps the selection and says so when the delete fails', async () => {
+		bulkFailure = new ApiError(500, 'failed')
+		const wrapper = mountView()
+		await flushPromises()
+		await rowBoxes(wrapper)[0].setValue(true)
+		await wrapper.findAll('.af-entries__bulk button').find((b) => b.text() === 'Delete')!.trigger('click')
+		await flushPromises()
+		dialogButton('Delete 1')!.click()
+		await new Promise((resolve) => setTimeout(resolve, 5))
+		await flushPromises()
+		expect(wrapper.text()).toContain('Could not delete the responses.')
+		expect(wrapper.find('.af-entries__bulk').text()).toContain('1 selected')
+		bulkFailure = null
+		wrapper.unmount()
+	})
+
+	it('clears the selection when the filter changes', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		await rowBoxes(wrapper)[0].setValue(true)
+		expect(wrapper.find('.af-entries__bulk').exists()).toBe(true)
+		await wrapper.find('select').setValue('anonymous')
+		await flushPromises()
+		expect(wrapper.find('.af-entries__bulk').exists()).toBe(false)
+		wrapper.unmount()
+	})
+
+	it('will not delete more ticked responses than one request can carry', async () => {
+		const many = Array.from({ length: 501 }, (_, i) => entry(501 - i))
+		listEntriesMock.mockReset().mockResolvedValue(page(many))
+		const wrapper = mountView()
+		await flushPromises()
+		await pageBox(wrapper).setValue(true)
+		expect(wrapper.find('.af-entries__bulk').text()).toContain('Select up to 500 at a time')
+		expect(wrapper.findAll('.af-entries__bulk button').find((b) => b.text() === 'Delete')!.attributes('disabled')).toBeDefined()
+		wrapper.unmount()
+	})
+})
+
+describe('EntriesView summary', () => {
+	beforeEach(() => {
+		window.localStorage.clear()
+		failEntries = false
+		failSummary = false
+		summaryMock.mockClear()
+		listEntriesMock.mockReset().mockResolvedValue(page([entry(3), entry(2), entry(1)]))
+		deleteEntryMock.mockReset().mockResolvedValue(undefined)
+		bulkDeleteMock.mockReset().mockResolvedValue(1)
+		listDeliveriesMock.mockReset().mockResolvedValue(deliveries([]))
+		document.body.innerHTML = ''
+	})
+
+	const summaryButton = (wrapper: ReturnType<typeof mountView>) => wrapper.findAll('button').find((b) => b.text() === 'Summary')!
+
+	it('shows responses over time, counts per choice and number figures above the table', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		const text = wrapper.find('.af-summary').text()
+		expect(text).toContain('Responses per day')
+		expect(text).toContain('busiest day: 2')
+		expect(text).toContain('New website')
+		expect(text).toContain('67%')
+		expect(text).toContain('Average')
+		expect(wrapper.findAll('.af-timeline__slot')).toHaveLength(2)
+		// The same numbers as a table, for screen readers.
+		expect(wrapper.find('.af-summary table').text()).toContain('Nov 15, 2026')
+		wrapper.unmount()
+	})
+
+	it('reads out a column on hover and with the arrow keys', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		await wrapper.findAll('.af-timeline__slot')[1].trigger('pointerenter')
+		expect(wrapper.find('.af-timeline__readout').text()).toContain('2 · Nov 15, 2026')
+		await wrapper.find('.af-timeline').trigger('pointerleave')
+		await wrapper.find('.af-timeline').trigger('keydown', { key: 'ArrowRight' })
+		expect(wrapper.find('.af-timeline__readout').text()).toContain('1 · Nov 14, 2026')
+		wrapper.unmount()
+	})
+
+	it('follows the filter, but not a change of order alone', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		expect(summaryMock).toHaveBeenCalledTimes(1)
+		await wrapper.find('select').setValue('anonymous')
+		await flushPromises()
+		expect(summaryMock).toHaveBeenCalledTimes(2)
+		expect(summaryMock.mock.calls[1][1]).toMatchObject({ respondent: 'anonymous' })
+		await wrapper.find('.af-table__sort').trigger('click')
+		await flushPromises()
+		expect(summaryMock).toHaveBeenCalledTimes(2)
+		wrapper.unmount()
+	})
+
+	it('can be closed, stays closed, and then asks for nothing', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		await summaryButton(wrapper).trigger('click')
+		expect(wrapper.find('.af-summary').exists()).toBe(false)
+		expect(window.localStorage.getItem('webforms.responsesSummary')).toBe('closed')
+		wrapper.unmount()
+		summaryMock.mockClear()
+		const again = mountView()
+		await flushPromises()
+		expect(again.find('.af-summary').exists()).toBe(false)
+		expect(summaryMock).not.toHaveBeenCalled()
+		await summaryButton(again).trigger('click')
+		await flushPromises()
+		expect(summaryMock).toHaveBeenCalledTimes(1)
+		expect(again.find('.af-summary').exists()).toBe(true)
+		again.unmount()
+	})
+
+	it('is refreshed after a response is deleted', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		await wrapper.findAll('tbody input[type="checkbox"]')[0].setValue(true)
+		await wrapper.findAll('.af-entries__bulk button').find((b) => b.text() === 'Delete')!.trigger('click')
+		await flushPromises()
+		;(Array.from(document.body.querySelectorAll('button')).find((b) => b.textContent?.trim() === 'Delete 1') as HTMLButtonElement).click()
+		await flushPromises()
+		expect(summaryMock).toHaveBeenCalledTimes(2)
+		wrapper.unmount()
+	})
+
+	it('says so when the summary cannot be loaded, without hiding the responses', async () => {
+		failSummary = true
+		const wrapper = mountView()
+		await new Promise((resolve) => setTimeout(resolve, 5))
+		await flushPromises()
+		expect(wrapper.text()).toContain('Could not load the summary.')
+		expect(wrapper.findAll('tbody tr.af-table__row')).toHaveLength(3)
+		failSummary = false
+		wrapper.unmount()
 	})
 })

@@ -21,12 +21,9 @@ after-submit action (see the decision below). The work here makes that model com
 1. **Send existing responses to a destination (backfill).** Adding a Tables action after responses
    were collected leaves the old ones behind. A "send existing responses" button on the action replays
    them through the same queue, with the same retries and delivery log.
-2. **Administration settings for destinations.** Server wide policy, next to the spam check that
-   already lives under Administration settings:
-   - which action types are allowed (for example, switch webhooks off);
-   - how long responses are kept, with automatic deletion;
-   - limits (responses per form, actions per form);
-   - defaults for destinations.
+2. **Administration settings.** Done: allowed action types, response retention, limits per form and who
+   can create forms (SCHEMA.md section 16). Still open: defaults for destinations, such as a default
+   Tables folder or sender address.
 3. **Files destination.** Append each response to a CSV file in the form owner's Files. Real
    spreadsheet formats are harder, since Nextcloud has no native spreadsheet storage, and wait until
    there is demand.
@@ -38,6 +35,19 @@ after-submit action (see the decision below). The work here makes that model com
    forms would show them.
 6. **More events for Flow.** A failed delivery, and a whole form being deleted. More actions in the
    same pattern (Deck, Talk, Calendar) once there is a clear use.
+
+## Responses view
+
+Done: table with search and filters, selecting, bulk delete, CSV or Excel download that follows the
+filter, the selection and the chosen columns, and a summary above the table (SCHEMA.md sections 17 to
+17.2). Still open, roughly in
+order:
+
+1. ODS export, and a zip of uploaded files.
+2. Clicking a bar in the summary to filter by that answer.
+3. Statuses (new, reviewed, done, spam), private notes and assignment. Needs a migration.
+4. A per-response page that can be printed or shared with a colleague.
+5. Sharing results with someone who cannot edit the form.
 
 ## Decision: actions, not pluggable storage
 

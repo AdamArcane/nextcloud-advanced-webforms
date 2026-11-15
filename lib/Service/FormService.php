@@ -19,8 +19,12 @@ use OCA\Webforms\Event\EventPayload;
 use OCA\Webforms\Event\EventPublisher;
 use OCA\Webforms\Event\FormPublishedEvent;
 use OCA\Webforms\Event\FormStatusChangedEvent;
+use OCA\Webforms\Db\Entry;
 use OCA\Webforms\Db\EntryMapper;
 use OCA\Webforms\Db\Form;
+use OCA\Webforms\Forms\CsvExporter;
+use OCA\Webforms\Forms\EntryFilter;
+use OCA\Webforms\Forms\EntrySummary;
 use OCA\Webforms\Db\FormMapper;
 use OCA\Webforms\Db\Version;
 use OCA\Webforms\Db\VersionMapper;
@@ -45,6 +49,10 @@ use OCP\Security\ISecureRandom;
 class FormService {
 	public const MAX_DEFINITION_BYTES = 512 * 1024;
 	public const MAX_PAGE_SIZE = 100;
+	/** Selected responses in one bulk delete (they travel in the request). */
+	public const MAX_BULK_IDS = 500;
+	/** Responses one filtered bulk delete may remove. */
+	public const MAX_BULK_MATCHES = 5000;
 
 	public function __construct(
 		private readonly FormMapper $forms,
@@ -58,6 +66,8 @@ class FormService {
 		private readonly UploadService $uploads,
 		private readonly EventPublisher $events,
 		private readonly TablesPort $tables,
+		private readonly PolicyService $policy,
+		private readonly EntryQueryService $query,
 	) {
 	}
 
@@ -107,6 +117,10 @@ class FormService {
 	}
 
 	public function create(string $userId, string $title): Form {
+		if (!$this->policy->canCreate($userId)) {
+			// Existing forms keep working: only making new ones (or importing) is limited to the creator groups.
+			throw new ValidationException([['code' => 'create_not_allowed', 'path' => '']]);
+		}
 		$title = trim($title);
 		if ($title === '' || mb_strlen($title) > 255) {
 			throw new ValidationException([['code' => 'title_invalid', 'path' => 'title']]);
@@ -238,7 +252,7 @@ class FormService {
 		$form->setUpdatedAt($this->time->getTime());
 		$form = $this->forms->update($form);
 
-		return ['form' => $form, 'errors' => array_merge($this->validator->validate($definition), $this->uploadPermissionErrors($form, $definition))];
+		return ['form' => $form, 'errors' => array_merge($this->validator->validate($definition), $this->uploadPermissionErrors($form, $definition), $this->policy->actionErrors($definition))];
 	}
 
 	/**
@@ -253,7 +267,7 @@ class FormService {
 		$this->refuseIfArchived($form);
 		$draft = $form->getDraftDefinition();
 
-		$errors = array_merge($this->validator->validate($draft), $this->uploadPermissionErrors($form, $draft), $this->tablesErrors($form, $draft));
+		$errors = array_merge($this->validator->validate($draft), $this->uploadPermissionErrors($form, $draft), $this->tablesErrors($form, $draft), $this->policy->actionErrors($draft));
 		if ($errors !== []) {
 			throw new ValidationException($errors);
 		}
@@ -370,15 +384,16 @@ class FormService {
 	 *   `versions` holds the definitions the listed entries were submitted against.
 	 * @throws NotFoundException
 	 */
-	public function listEntries(string $userId, int $id, int $limit, int $offset): array {
+	public function listEntries(string $userId, int $id, int $limit, int $offset, ?EntryFilter $filter = null): array {
 		$form = $this->get($userId, $id);
 		$limit = max(1, min($limit, self::MAX_PAGE_SIZE));
 		$offset = max(0, $offset);
 
-		$rows = $this->entries->findByForm($form->getId(), $limit, $offset);
+		$filter ??= new EntryFilter();
+		$found = $this->query->page($form->getId(), $filter, $limit, $offset);
 		$result = [];
 		$versionDefinitions = [];
-		foreach ($rows as $entry) {
+		foreach ($found['entries'] as $entry) {
 			$result[] = [
 				'id' => $entry->getId(),
 				'versionId' => $entry->getVersionId(),
@@ -393,10 +408,37 @@ class FormService {
 		}
 
 		return [
-			'total' => $this->entries->countByForm($form->getId()),
+			// How many match the filter. Without one it is every response.
+			'total' => $found['total'],
+			// How many the form has in all, for "12 of 340".
+			'grandTotal' => $filter->isActive() ? $this->entries->countByForm($form->getId()) : $found['total'],
+			// True when a text or answer search stopped early, so `total` is a lower bound.
+			'truncated' => $found['truncated'],
 			'entries' => $result,
 			'versions' => $versionDefinitions,
 		];
+	}
+
+	/**
+	 * What the matching responses add up to (docs/SCHEMA.md section 17.2).
+	 *
+	 * @return array<string, mixed>
+	 * @throws NotFoundException
+	 */
+	public function summarizeEntries(string $userId, int $id, EntryFilter $filter): array {
+		$form = $this->get($userId, $id);
+		$summary = new EntrySummary();
+		/** @var array<int, array{order: list<string>, fields: array<string, array<string, mixed>>}> $versions */
+		$versions = [];
+		$truncated = $this->query->each($form->getId(), $filter, function (Entry $entry) use ($summary, &$versions): void {
+			$versionId = $entry->getVersionId();
+			if (!isset($versions[$versionId])) {
+				$definition = $this->versions->find($versionId)->getDefinitionArray();
+				$versions[$versionId] = ['order' => CsvExporter::layoutOrder($definition), 'fields' => self::fieldsOf($definition)];
+			}
+			$summary->add($versionId, $versions[$versionId]['order'], $versions[$versionId]['fields'], $entry->getDataArray(), $entry->getSubmittedAt());
+		});
+		return $summary->result() + ['truncated' => $truncated];
 	}
 
 	/**
@@ -404,7 +446,50 @@ class FormService {
 	 */
 	public function deleteEntry(string $userId, int $id, int $entryId): void {
 		$form = $this->get($userId, $id);
-		$entry = $this->entries->findInForm($form->getId(), $entryId);
+		$this->removeEntry($form, $this->entries->findInForm($form->getId(), $entryId), $userId);
+	}
+
+	/**
+	 * Delete several responses (docs/SCHEMA.md section 17.1): the ones with these ids, or every response a
+	 * filter matches. A filter needs `$expected`, the number the person confirmed, and nothing is deleted
+	 * if it no longer matches that many.
+	 *
+	 * @param list<int>|null $ids
+	 * @return int how many were deleted
+	 * @throws NotFoundException
+	 * @throws ValidationException
+	 * @throws \OCA\Webforms\Exception\CountChangedException
+	 */
+	public function deleteEntries(string $userId, int $id, ?array $ids, EntryFilter $filter, int $expected): int {
+		$form = $this->get($userId, $id);
+		if ($ids !== null) {
+			if (count($ids) > self::MAX_BULK_IDS) {
+				throw new ValidationException([['code' => 'too_many_selected', 'path' => 'ids']]);
+			}
+			$entries = $this->query->byIds($form->getId(), $ids);
+		} else {
+			$found = $this->query->all($form->getId(), $filter, self::MAX_BULK_MATCHES);
+			if ($found['truncated']) {
+				// Too many to delete in one go: narrow the filter, or let retention do it.
+				throw new ValidationException([['code' => 'too_many_matches', 'path' => 'filter']]);
+			}
+			if (count($found['entries']) !== $expected) {
+				throw new \OCA\Webforms\Exception\CountChangedException(count($found['entries']));
+			}
+			$entries = $found['entries'];
+		}
+
+		foreach ($entries as $entry) {
+			$this->removeEntry($form, $entry, $userId);
+		}
+		return count($entries);
+	}
+
+	/**
+	 * Everything that goes with one response: its uploaded files, its delivery log, and the response itself,
+	 * then the event for Flow.
+	 */
+	private function removeEntry(Form $form, Entry $entry, string $deletedBy): void {
 		$definition = $this->versions->find($entry->getVersionId())->getDefinitionArray();
 		$this->uploads->deleteFilesOf($form->getOwnerId(), self::fieldsOf($definition), $entry->getDataArray());
 		// Its deliveries go with it, so the log never points at a response that no longer exists.
@@ -416,7 +501,7 @@ class FormService {
 			$form->getOwnerId(),
 			$entry->getVersionId(),
 			$entry->getId(),
-			$userId,
+			$deletedBy,
 		)));
 	}
 

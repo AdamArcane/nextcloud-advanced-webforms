@@ -5,6 +5,30 @@
 
 # Changelog
 
+## 0.3.3 - 2026-11-15
+
+- A summary above the responses: responses per day (per month for long periods), how often each choice
+  was picked, and the average, lowest, highest and total of number questions. It follows the filters
+  and can be closed. See `docs/SCHEMA.md` section 17.2.
+
+- Select responses in the table to delete or download just those. Tick the page, or "select all N
+  matching", and delete them after a confirmation. Deleting by filter is refused if the number of matches
+  changed since you confirmed it. One Download menu offers CSV and Excel (.xlsx), and follows what is
+  ticked, else what the filters match, else everything, with the columns you chose. Excel keeps numbers
+  as numbers and never runs a response as a formula. See `docs/SCHEMA.md` section 17.1.
+
+- Responses as a table, with search and filters. Search the text of answers (choices by their label),
+  filter by date range, by signed-in or anonymous, and by the answers themselves with the same
+  conditions as rules. Sort by when it was submitted, pick which question columns to show, and switch
+  back to cards if you prefer them. See `docs/SCHEMA.md` section 17.
+
+- Administration settings under "Forms and responses": switch action types off for the whole server
+  (hidden in the builder, refused at publish, and stopped on live forms), delete responses
+  automatically after a number of days (off by default, with a count of what would be deleted and a
+  confirmation before existing responses go), cap responses per form, lower the number of actions per
+  form, and limit who can create forms to chosen groups. Everything defaults to the old behaviour. See
+  `docs/SCHEMA.md` section 16.
+
 ## 0.3.2 - 2026-11-15
 
 - Nextcloud events for Flow and other automation: a response was submitted, a response was deleted,

@@ -3,10 +3,15 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+import type { BulkDeleteRequest, ExportOptions } from '../entries/exporting.ts'
+import type { EntryFilterState } from '../entries/filter.ts'
+import type { EntrySummaryData } from '../entries/summary.ts'
 import type { DefinitionError, DeliveriesPage, Delivery, DeliveryStatus, DraftDefinition, EntriesPage, OwnerForm } from '../types.ts'
 
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
+import { bulkDeleteBody, exportQuery } from '../entries/exporting.ts'
+import { EMPTY_FILTER, filterParams } from '../entries/filter.ts'
 import { toApiError, url } from './http.ts'
 
 async function call<T>(request: Promise<{ data: T }>): Promise<T> {
@@ -73,8 +78,14 @@ export function createWebhookSecret(id: number, ref?: string): Promise<WebhookSe
 	return call(axios.post<WebhookSecret>(url('/forms/' + id + '/webhook-secret'), ref ? { ref } : {}))
 }
 
-export function listEntries(id: number, limit: number, offset: number): Promise<EntriesPage> {
-	return call(axios.get<EntriesPage>(url('/forms/' + id + '/entries'), { params: { limit, offset } }))
+export function listEntries(id: number, limit: number, offset: number, filter: EntryFilterState = EMPTY_FILTER): Promise<EntriesPage> {
+	return call(axios.get<EntriesPage>(url('/forms/' + id + '/entries'), { params: { limit, offset, ...filterParams(filter) } }))
+}
+
+/** What the matching responses add up to. The order of a filter does not matter here. */
+export function fetchEntrySummary(id: number, filter: EntryFilterState = EMPTY_FILTER): Promise<EntrySummaryData> {
+	const { sort: _sort, ...params } = filterParams(filter)
+	return call(axios.get<EntrySummaryData>(url('/forms/' + id + '/entries/summary'), { params }))
 }
 
 export async function deleteEntry(id: number, entryId: number): Promise<void> {
@@ -97,9 +108,15 @@ export function retryDelivery(id: number, logId: number): Promise<Delivery> {
 	return call(axios.post<Delivery>(url('/forms/' + id + '/deliveries/' + logId + '/retry')))
 }
 
-/** Where the CSV download lives. Opened as a link, so the session cookie authenticates it. */
-export function exportUrl(id: number): string {
-	return generateUrl('/apps/webforms/api/v1/forms/{id}/entries/export', { id })
+/** Where a download of responses lives. Opened as a link, so the session cookie authenticates it. */
+export function exportUrl(id: number, options: ExportOptions = {}): string {
+	const query = exportQuery(options)
+	return generateUrl('/apps/webforms/api/v1/forms/{id}/entries/export', { id }) + (query === '' ? '' : '?' + query)
+}
+
+/** Delete the ticked responses, or everything a filter matches. Resolves to how many were deleted. */
+export async function bulkDeleteEntries(id: number, request: BulkDeleteRequest): Promise<number> {
+	return (await call(axios.post<{ deleted: number }>(url('/forms/' + id + '/entries/bulk-delete'), bulkDeleteBody(request)))).deleted
 }
 
 export type ExportSource = 'draft' | 'published'

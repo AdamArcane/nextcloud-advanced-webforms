@@ -928,3 +928,128 @@ options, for numbers the step, prefix and suffix).
 - Refused with `422 tables_no_fields` when the form has no input field, `403 tables_forbidden` when
   Tables will not let the user create tables, and `409 tables_unavailable` when Tables is off.
   Limited to 10 per minute per user.
+
+## 16. Server policy (DECISION)
+
+An administrator sets server-wide rules under Administration settings, "Forms and responses". Every
+value defaults to today's behaviour, so nothing changes until someone changes it. The values are app
+config, read through `PolicySettings`, and a damaged number falls back to its default. A damaged list
+of allowed actions allows none, the safe side.
+
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| Allowed actions | all of `message`, `redirect`, `email`, `webhook`, `tables` | which action types forms may use |
+| Retention | 0 (off) | delete responses older than this many days, 1 to 3650 |
+| Responses per form | 0 (no limit) | a form accepts at most this many, up to 1 000 000 |
+| Actions per form | 10 | lower than the structural maximum of 10 only, 1 to 10 |
+| Who can create forms | everyone | limit to members of chosen groups, and administrators |
+
+- **Allowed actions.** A type that is switched off is hidden in the builder, reported on a draft as
+  `action_type_disabled`, refused at publish, and not run: the planner leaves it out of new submissions,
+  and a delivery that was already queued fails with `action_disabled` and is not retried. That is what
+  makes switching webhooks off effective at once for forms that are already live. Existing actions are
+  never deleted from a definition, so switching a type back on restores them.
+- **Actions per form.** More actions than the policy allows is `policy_too_many_actions` at publish.
+- **Responses per form.** When a form has this many responses its public page and submit answer
+  `410 closed` with the message "This form has received the maximum number of responses." Responses sent
+  at the same instant can pass the limit by one.
+- **Who can create forms.** Creating and importing a form need membership of a creator group or the
+  administrator role (`create_not_allowed`). Forms that exist stay editable by their owners, and a
+  group that is later deleted simply matches nobody.
+- **Retention.** `RetentionJob` runs hourly and deletes the oldest due responses, at most 1000 per run so
+  a first run on a big server does not hold a background job, with the same clean-up as an owner
+  deleting a response: uploaded files and delivery log rows go too. Copies already sent by email,
+  webhook or to Tables are not touched. No `entry.deleted` event is sent for these deletions.
+  Because this deletes data, saving a retention that is newly on or shorter than before is refused with
+  `409 confirmation_required` and `due` (how many responses are affected) until the request repeats with
+  `confirmDelete: true`. The page shows the same count before saving.
+- Endpoints (administrators only): `GET` and `PUT /api/v1/admin/policy`,
+  `GET /api/v1/admin/policy/retention-preview?days=N`, `GET /api/v1/admin/groups?search=`. Every signed-in
+  user can read `GET /api/v1/settings` (`canCreate`, `allowedActionTypes`, `maxActions`), which the
+  builder uses to hide what the server would refuse.
+
+## 17. Finding responses
+
+`GET /api/v1/forms/{id}/entries` takes a filter besides `limit` and `offset`. The answer has `total` (how
+many match), `grandTotal` (how many the form has), and `truncated`.
+
+| Parameter | Meaning |
+| --- | --- |
+| `q` | free text, at most 200 characters |
+| `from`, `to` | submitted dates, `YYYY-MM-DD` in UTC. `to` counts the whole day |
+| `respondent` | `any` (default), `signed_in` or `anonymous` |
+| `where` | a condition on the answers, JSON, written like a rule (section 6) |
+| `sort` | `newest` (default) or `oldest`, by when it was submitted |
+
+- **Free text** looks at what a person sees: answers, a choice by its label (never its internal value),
+  an upload by its file names, and the signed-in account. Case is ignored.
+- **`where`** reuses the rules engine, so an owner writes it with the same editor as a rule, with nested
+  all and any groups. Each response is read against its own version of the form. A question that
+  response's version never had counts as unanswered, so "is empty" is true for it and "equals" is not.
+  A question that no version has any more matches nothing.
+- Dates, respondent and order are answered by the database. Text and `where` need each response read
+  against its own version, so they scan the form's responses in order and stop after 20 000. When that
+  happens `truncated` is true and `total` is a lower bound, and narrowing the dates finds the rest.
+- A malformed filter is `422 filter_invalid` with a `reason`.
+- The Responses view shows a table by default, with a column for each question (union across versions,
+  newest labels), a sortable submitted column, and cards as an alternative. The columns a person picks
+  are remembered in their browser for that form.
+
+### 17.1 Downloading and deleting several responses
+
+**Download.** `GET /api/v1/forms/{id}/entries/export` takes the same filter parameters as the list, plus:
+
+| Parameter | Meaning |
+| --- | --- |
+| `format` | `csv` (default) or `xlsx` |
+| `ids` | comma separated response ids, at most 500. When given, the filter is not used |
+| `columns` | comma separated field ids. Only these questions, in form order. Unknown ids are ignored. Without it, every question |
+
+The three fixed columns (response id, submitted in UTC, respondent) are always there. Responses are
+written oldest first, up to 20 000. CSV keeps its leading apostrophe on text that starts with `=`, `+`,
+`-` or `@`, the only defence a CSV has. The Excel file stores text as text, so a response can never run as
+a formula and needs no apostrophe, and keeps numbers as numbers so they can be summed. Ids of another
+form are ignored, and a bad format, list or filter is `422`.
+
+**Delete.** `POST /api/v1/forms/{id}/entries/bulk-delete` takes either `{ "ids": [...] }` (at most 500) or
+`{ "filter": {q, from, to, respondent, where}, "expected": N }`. It does the same clean-up as deleting
+one response: uploaded files, delivery log rows, and an `entry.deleted` event for each. A filter is
+deleted only if it still matches exactly `expected` responses, the number the person confirmed, and
+otherwise nothing is deleted and the answer is `409 count_changed` with `current`. More than 5 000
+matches, or a search that stopped early, is refused (`422 too_many_matches`): narrow it, or let retention
+(section 16) do it.
+
+The Responses view ticks rows in the table. Ticking the whole page offers "select all N matching",
+which uses the filter route. One Download menu follows what is ticked, else what the filter matches,
+else everything, and passes the columns the person chose.
+
+### 17.2 Summary
+
+`GET /api/v1/forms/{id}/entries/summary` takes the list's filter (not `sort`, `limit` or `offset`) and
+answers what the matching responses add up to:
+
+```json
+{ "total": 62, "truncated": false,
+  "timeline": { "unit": "day", "buckets": [{ "start": "2026-11-14", "count": 3 }] },
+  "fields": [
+    { "id": "f_kind", "label": "Kind", "type": "select", "kind": "choice", "answered": 60,
+      "options": [{ "value": "opt_sup", "label": "Support", "count": 14 }] },
+    { "id": "f_score", "label": "Score", "type": "number", "kind": "number", "answered": 38,
+      "min": 1, "max": 5, "average": 3.53, "sum": 134 },
+    { "id": "f_ok", "label": "Agree", "type": "checkbox", "kind": "yesno", "answered": 62, "yes": 38, "no": 24 }
+  ] }
+```
+
+- **Timeline.** Responses per UTC day from the first day that has one to the last, empty days included.
+  More than 92 days is given per month, `start` being the first of the month.
+- **Fields.** Select, radio and checkboxes are `choice`, a number is `number`, a single checkbox is
+  `yesno`. Other questions are not summarised. Each response is read against its own version. Labels,
+  option names and the order come from the newest version that has them, and an option only an older
+  version had comes last. Every option is listed, also with no picks. A stored value with no option any
+  more counts under its own name. `answered` is how many responses answered the question, so the shares
+  of a checkboxes question can add up to more than 100 percent.
+- `truncated` is true when the walk stopped at 20 000 responses, and the numbers then cover those only.
+- The Responses view shows it above the table: thin columns for the timeline with a readout on hover
+  and with the arrow keys, horizontal bars in the form's own option order with the count and share at
+  the tip, and figures (not a chart) for numbers. Screen readers get the timeline as a table. It follows
+  the filters, and whether it is open is remembered in the browser.

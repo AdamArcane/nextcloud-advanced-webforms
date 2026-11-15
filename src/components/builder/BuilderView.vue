@@ -20,6 +20,8 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ApiError } from '../../api/http.ts'
+import { fetchUserPolicy, OPEN_POLICY } from '../../api/settings.ts'
+import type { UserPolicy } from '../../api/settings.ts'
 import { deleteForm, getForm, publicFormUrl, publishForm, saveDraft, setFormArchived } from '../../api/forms.ts'
 import { addField, addPage, dropField, duplicateField, dropRow, resizeField, type DropTarget, moveFieldToPage, locateField, movePage, removePage, setPageTitle, moveField, removeField, setSpan, updateField } from '../../builder/definition.ts'
 import { describeError, groupErrors } from '../../builder/errors.ts'
@@ -50,6 +52,7 @@ const emit = defineEmits<{
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error'
 
 const form = ref<OwnerForm | null>(null)
+const policy = ref<UserPolicy>(OPEN_POLICY)
 // Fields that were already in a published form when it was opened keep their ids (see followLabel).
 let frozenIds = new Set<string>()
 const draft = ref<DraftDefinition | null>(null)
@@ -86,6 +89,9 @@ function normalize(definition: DraftDefinition): DraftDefinition {
 }
 
 onMounted(async () => {
+	void fetchUserPolicy().then((loadedPolicy) => {
+		policy.value = loadedPolicy
+	})
 	try {
 		const loaded = await getForm(props.formId)
 		form.value = loaded
@@ -525,6 +531,8 @@ async function onDeleteConfirmed(): Promise<void> {
 						:form-id="formId"
 						:errors="errors"
 						:show-errors="publishFailed"
+						:allowed-types="policy.allowedActionTypes"
+						:max-actions="policy.maxActions"
 						@change="edit" />
 					<FormProperties v-else
 						:section="settingsTab"

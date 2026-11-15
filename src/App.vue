@@ -22,6 +22,8 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { createForm, formExportUrl, importForm, listForms, setFormArchived } from './api/forms.ts'
 import { ApiError } from './api/http.ts'
+import { fetchUserPolicy, OPEN_POLICY } from './api/settings.ts'
+import type { UserPolicy } from './api/settings.ts'
 import { describeError } from './builder/errors.ts'
 import Icon from './components/common/Icon.vue'
 import { icons } from './icons.ts'
@@ -34,6 +36,7 @@ const loading = ref(true)
 const loadFailed = ref(false)
 const creating = ref(false)
 const createFailed = ref(false)
+const policy = ref<UserPolicy>(OPEN_POLICY)
 const importing = ref(false)
 const importError = ref<string | null>(null)
 const importInput = ref<HTMLInputElement | null>(null)
@@ -76,6 +79,9 @@ async function load(): Promise<void> {
 
 onMounted(() => {
 	window.addEventListener('hashchange', onHashChange)
+	void fetchUserPolicy().then((loadedPolicy) => {
+		policy.value = loadedPolicy
+	})
 	void load()
 })
 
@@ -175,7 +181,7 @@ function statusText(form: OwnerForm): string {
 		<NcAppNavigation :aria-label="t('webforms', 'Forms')">
 			<template #list>
 				<NcAppNavigationNew :text="t('webforms', 'New form')"
-					:disabled="creating"
+					:disabled="creating || !policy.canCreate"
 					@click="create">
 					<template #icon>
 						<NcLoadingIcon v-if="creating" :size="20" />
@@ -255,7 +261,7 @@ function statusText(form: OwnerForm): string {
 					</NcAppNavigationItem>
 				</NcAppNavigationList>
 				<NcAppNavigationItem :name="t('webforms', 'Import form')"
-					:disabled="importing"
+					:disabled="importing || !policy.canCreate"
 					@click="pickImportFile">
 					<template #icon>
 						<NcLoadingIcon v-if="importing" :size="20" />
@@ -280,6 +286,9 @@ function statusText(form: OwnerForm): string {
 				</NcNoteCard>
 				<NcNoteCard v-if="archiveError" type="error">
 					{{ t('webforms', 'Could not change the archive state. Try again.') }}
+				</NcNoteCard>
+				<NcNoteCard v-if="!policy.canCreate" type="info">
+					{{ t('webforms', 'You cannot create forms on this server. Ask an administrator to add you to a group that can.') }}
 				</NcNoteCard>
 				<NcNoteCard v-if="createFailed" type="error">
 					{{ t('webforms', 'Could not create the form.') }}

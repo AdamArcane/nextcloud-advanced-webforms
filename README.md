@@ -31,6 +31,8 @@ store yet, so you install it from a GitHub release. Please back up before you up
 - **File uploads.** Per field limits for file count, size and type, and a choice of where files go: a
   folder in the form owner's Files, or the app's own storage. Executable and web page types are
   never accepted.
+- **Administration.** Server-wide settings for which actions forms may use, how long responses are kept,
+  limits per form, and who can create forms.
 - **Spam protection** for anonymous visitors: a built-in proof-of-work check (default, nothing
   leaves your server), Cloudflare Turnstile, hCaptcha, or none. A hidden trap field, a minimum fill
   time and rate limits are always on.

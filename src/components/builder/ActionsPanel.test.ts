@@ -46,6 +46,41 @@ function button(wrapper: ReturnType<typeof mountPanel>, text: string) {
 	return wrapper.findAll('button').find((b) => b.text() === text)!
 }
 
+describe('ActionsPanel and the server policy', () => {
+	it('offers only the action types the server allows', () => {
+		const wrapper = mount(ActionsPanel, { props: { definition: emptyDefinition('T'), formId: 7, errors: [], allowedTypes: ['message', 'email'] } })
+		const labels = wrapper.findAll('button').map((b) => b.text())
+		expect(labels).toContain('Show a message')
+		expect(labels).toContain('Send an email')
+		expect(labels).not.toContain('Call a webhook')
+		expect(labels).not.toContain('Redirect')
+		expect(labels).not.toContain('Add a row to Tables')
+	})
+
+	it('says so when every type is switched off', () => {
+		const wrapper = mount(ActionsPanel, { props: { definition: emptyDefinition('T'), formId: 7, errors: [], allowedTypes: [] } })
+		expect(wrapper.text()).toContain('switched off every kind of action')
+	})
+
+	it('stops at the lower action cap and says what it is', () => {
+		let def = emptyDefinition('T')
+		def = addAction(def, 'message').definition
+		def = addAction(def, 'redirect').definition
+		const wrapper = mount(ActionsPanel, { props: { definition: def, formId: 7, errors: [], maxActions: 2 } })
+		expect(wrapper.text()).toContain('A form can have up to 2 actions.')
+		const add = wrapper.findAll('button').find((b) => b.text() === 'Show a message')!
+		expect(add.attributes('disabled')).toBeDefined()
+	})
+
+	it('keeps an action of a switched-off type visible, with a warning once opened', async () => {
+		const def = addAction(emptyDefinition('T'), 'webhook').definition
+		const wrapper = mount(ActionsPanel, { props: { definition: def, formId: 7, errors: [], allowedTypes: ['message'] } })
+		expect(wrapper.text()).toContain('Call a webhook')
+		await wrapper.find('.af-action__head').trigger('click')
+		expect(wrapper.text()).toContain('switched off on this server')
+	})
+})
+
 describe('ActionsPanel', () => {
 	beforeEach(() => {
 		secretMock.mockReset()

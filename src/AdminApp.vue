@@ -16,6 +16,7 @@ import NcSettingsSection from '@nextcloud/vue/components/NcSettingsSection'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { computed, onMounted, ref } from 'vue'
 import { fetchCaptchaSettings, saveCaptchaSettings } from './api/admin.ts'
+import PolicyAdmin from './components/admin/PolicyAdmin.vue'
 
 const loaded = ref(false)
 const saving = ref(false)
@@ -119,6 +120,8 @@ async function save() {
 			</NcButton>
 		</div>
 	</NcSettingsSection>
+
+	<PolicyAdmin />
 </template>
 
 <style scoped>

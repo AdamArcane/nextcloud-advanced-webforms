@@ -4,10 +4,15 @@
 -->
 
 <script setup lang="ts">
-import type { Delivery, DeliveryStatus, EntryRecord, VersionDefinition } from '../../types.ts'
+import type { EntryFilterState } from '../../entries/filter.ts'
+import type { Delivery, DeliveryStatus, DraftDefinition, EntryRecord, VersionDefinition } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
+import NcActionCaption from '@nextcloud/vue/components/NcActionCaption'
+import NcActionCheckbox from '@nextcloud/vue/components/NcActionCheckbox'
+import NcActionLink from '@nextcloud/vue/components/NcActionLink'
+import NcActions from '@nextcloud/vue/components/NcActions'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -16,11 +21,20 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
-import { deleteEntry, exportUrl, listDeliveries, listEntries, retryDelivery } from '../../api/forms.ts'
+import { bulkDeleteEntries, deleteEntry, exportUrl, fetchEntrySummary, listDeliveries, listEntries, retryDelivery } from '../../api/forms.ts'
+import { ApiError } from '../../api/http.ts'
+import { defaultColumnIds, loadColumnChoice, responseColumns, saveColumnChoice, visibleColumns } from '../../entries/columns.ts'
+import { exportScope, MAX_SELECTED } from '../../entries/exporting.ts'
+import type { ExportFormat } from '../../entries/exporting.ts'
+import { EMPTY_FILTER, isFilterActive } from '../../entries/filter.ts'
+import type { EntrySummaryData } from '../../entries/summary.ts'
 import FormBar from '../FormBar.vue'
 import SegmentedControl from '../builder/SegmentedControl.vue'
 import DeliveryRow from './DeliveryRow.vue'
 import ResponseCard from './ResponseCard.vue'
+import ResponseFilters from './ResponseFilters.vue'
+import ResponseSummary from './ResponseSummary.vue'
+import ResponsesTable from './ResponsesTable.vue'
 
 const props = defineProps<{
 	formId: number
@@ -41,6 +55,176 @@ const tab = ref<Tab>('responses')
 const entries = ref<EntryRecord[]>([])
 const versions = ref<Record<string, VersionDefinition>>({})
 const total = ref(0)
+/** How many responses the form has in all, for "12 of 340" when a filter is on. */
+const grandTotal = ref(0)
+/** A text or answer search that stopped early, so `total` is a lower bound. */
+const truncated = ref(false)
+const entryFilter = ref<EntryFilterState>({ ...EMPTY_FILTER })
+const filtered = computed(() => isFilterActive(entryFilter.value))
+
+type ResponsesView = 'table' | 'cards'
+const VIEW_KEY = 'webforms.responsesView'
+function loadView(): ResponsesView {
+	try {
+		return window.localStorage.getItem(VIEW_KEY) === 'cards' ? 'cards' : 'table'
+	} catch {
+		return 'table'
+	}
+}
+const view = ref<ResponsesView>(loadView())
+function setView(value: ResponsesView): void {
+	view.value = value
+	if (value === 'cards') {
+		clearSelection()
+	}
+	try {
+		window.localStorage.setItem(VIEW_KEY, value)
+	} catch {
+		// Storage can be blocked, the choice then lasts until the page is closed.
+	}
+}
+
+const chosenColumns = ref<string[] | null>(loadColumnChoice(props.formId))
+
+// ---- Summary ---------------------------------------------------------------
+
+const SUMMARY_KEY = 'webforms.responsesSummary'
+function loadSummaryOpen(): boolean {
+	try {
+		return window.localStorage.getItem(SUMMARY_KEY) !== 'closed'
+	} catch {
+		return true
+	}
+}
+const summaryOpen = ref(loadSummaryOpen())
+const summary = ref<EntrySummaryData | null>(null)
+const summaryLoading = ref(false)
+const summaryFailed = ref(false)
+/** Only the answer to the newest request is shown, so a slow old one cannot overwrite it. */
+let summaryRequest = 0
+
+async function loadSummary(): Promise<void> {
+	if (!summaryOpen.value) {
+		return
+	}
+	const request = ++summaryRequest
+	summaryLoading.value = true
+	summaryFailed.value = false
+	try {
+		const loaded = await fetchEntrySummary(props.formId, entryFilter.value)
+		if (request === summaryRequest) {
+			summary.value = loaded
+		}
+	} catch {
+		if (request === summaryRequest) {
+			summaryFailed.value = true
+		}
+	} finally {
+		if (request === summaryRequest) {
+			summaryLoading.value = false
+		}
+	}
+}
+
+function toggleSummary(): void {
+	summaryOpen.value = !summaryOpen.value
+	try {
+		window.localStorage.setItem(SUMMARY_KEY, summaryOpen.value ? 'open' : 'closed')
+	} catch {
+		// Storage can be blocked, the choice then lasts until the page is closed.
+	}
+	void loadSummary()
+}
+
+// ---- Selecting and bulk actions ------------------------------------------
+
+const selected = ref<Set<number>>(new Set())
+/** Every response the filter matches is selected, not just the ones loaded. */
+const allMatching = ref(false)
+const confirmBulk = ref(false)
+const bulkBusy = ref(false)
+const bulkError = ref<string | null>(null)
+const bulkDone = ref<number | null>(null)
+
+const selectedCount = computed(() => (allMatching.value ? total.value : selected.value.size))
+const pageAllSelected = computed(() => entries.value.length > 0 && entries.value.every((entry) => selected.value.has(entry.id)))
+/** Offer "all N matching" once the whole page is ticked and there is more than the page. */
+const canSelectAllMatching = computed(() => pageAllSelected.value && !allMatching.value && total.value > entries.value.length && !truncated.value)
+/** Ticked responses travel in the request, so only so many at a time. */
+const tooManySelected = computed(() => !allMatching.value && selected.value.size > MAX_SELECTED)
+
+function clearSelection(): void {
+	selected.value = new Set()
+	allMatching.value = false
+}
+
+function selectOne(id: number, on: boolean): void {
+	const next = new Set(selected.value)
+	if (on) {
+		next.add(id)
+	} else {
+		next.delete(id)
+		allMatching.value = false
+	}
+	selected.value = next
+}
+
+function selectPage(on: boolean): void {
+	if (!on) {
+		clearSelection()
+		return
+	}
+	selected.value = new Set([...selected.value, ...entries.value.map((entry) => entry.id)])
+}
+
+async function bulkDelete(): Promise<void> {
+	confirmBulk.value = false
+	bulkBusy.value = true
+	bulkError.value = null
+	bulkDone.value = null
+	try {
+		const deleted = await bulkDeleteEntries(props.formId, allMatching.value
+			? { filter: entryFilter.value, expected: total.value }
+			: { ids: [...selected.value] })
+		clearSelection()
+		bulkDone.value = deleted
+		expandedId.value = null
+		await loadEntries(false)
+		void refreshFailedCount()
+		void loadSummary()
+	} catch (error) {
+		if (error instanceof ApiError && error.code === 'count_changed') {
+			bulkError.value = t('webforms', 'The number of matching responses changed from {before} to {now}, so nothing was deleted. Check the list and try again.', { before: total.value, now: Number(error.data.current ?? 0) })
+			clearSelection()
+			await loadEntries(false)
+		} else if (error instanceof ApiError && error.code === 'validation') {
+			bulkError.value = t('webforms', 'That is too many responses to delete at once. Narrow the filter, or select fewer.')
+		} else {
+			bulkError.value = t('webforms', 'Could not delete the responses.')
+		}
+	} finally {
+		bulkBusy.value = false
+	}
+}
+
+const scope = computed(() => exportScope(selected.value.size, allMatching.value, filtered.value))
+const scopeLabel = computed(() => {
+	switch (scope.value) {
+		case 'selected': return t('webforms', '{n} selected responses', { n: selected.value.size })
+		case 'matching': return t('webforms', '{n} matching responses', { n: total.value })
+		default: return t('webforms', 'All {n} responses', { n: grandTotal.value })
+	}
+})
+
+/** The download for the current scope: ticked responses, the filter, or everything, and the chosen columns. */
+function downloadUrl(format: ExportFormat): string {
+	return exportUrl(props.formId, {
+		format,
+		ids: scope.value === 'selected' ? [...selected.value] : undefined,
+		filter: scope.value === 'selected' ? undefined : entryFilter.value,
+		columns: chosenColumns.value ?? undefined,
+	})
+}
 const loading = ref(true)
 const loadingMore = ref(false)
 const loadFailed = ref(false)
@@ -56,8 +240,10 @@ async function loadEntries(append: boolean): Promise<void> {
 	}
 	loadFailed.value = false
 	try {
-		const page = await listEntries(props.formId, PAGE, append ? entries.value.length : 0)
+		const page = await listEntries(props.formId, PAGE, append ? entries.value.length : 0, entryFilter.value)
 		total.value = page.total
+		grandTotal.value = page.grandTotal
+		truncated.value = page.truncated
 		versions.value = { ...versions.value, ...page.versions }
 		entries.value = append ? [...entries.value, ...page.entries] : page.entries
 	} catch {
@@ -69,6 +255,36 @@ async function loadEntries(append: boolean): Promise<void> {
 }
 
 const hasMore = computed(() => entries.value.length < total.value)
+
+const allColumns = computed(() => responseColumns(versions.value))
+const shownColumns = computed(() => visibleColumns(allColumns.value, chosenColumns.value ?? defaultColumnIds(allColumns.value)))
+
+/** The newest version the listed responses belong to, so the answers filter can offer its questions. */
+const filterDefinition = computed<DraftDefinition | null>(() => {
+	const newest = Object.keys(versions.value).sort((a, b) => Number(b) - Number(a))[0]
+	const definition = newest === undefined ? undefined : versions.value[newest]
+	return definition ? ({ schemaVersion: 1, title: '', settings: {}, rules: [], actions: [], ...definition } as DraftDefinition) : null
+})
+
+function applyFilter(next: EntryFilterState): void {
+	const previous = entryFilter.value
+	entryFilter.value = next
+	expandedId.value = null
+	clearSelection()
+	bulkDone.value = null
+	bulkError.value = null
+	void loadEntries(false)
+	// Changing only the order does not change what the responses add up to.
+	if (JSON.stringify({ ...next, sort: '' }) !== JSON.stringify({ ...previous, sort: '' })) {
+		void loadSummary()
+	}
+}
+
+function toggleColumn(id: string, on: boolean): void {
+	const current = chosenColumns.value ?? defaultColumnIds(allColumns.value)
+	chosenColumns.value = on ? [...new Set([...current, id])] : current.filter((existing) => existing !== id)
+	saveColumnChoice(props.formId, chosenColumns.value)
+}
 
 function definitionFor(entry: EntryRecord): VersionDefinition {
 	return versions.value[String(entry.versionId)] ?? { fields: {}, pages: [] }
@@ -85,6 +301,8 @@ async function confirmDelete(): Promise<void> {
 		await deleteEntry(props.formId, id)
 		entries.value = entries.value.filter((entry) => entry.id !== id)
 		total.value = Math.max(0, total.value - 1)
+		grandTotal.value = Math.max(0, grandTotal.value - 1)
+		void loadSummary()
 		if (expandedId.value === id) {
 			expandedId.value = null
 		}
@@ -227,6 +445,7 @@ onMounted(() => {
 	refreshTimer = setInterval(tick, REFRESH_MS)
 	void loadEntries(false)
 	void refreshFailedCount()
+	void loadSummary()
 })
 </script>
 
@@ -234,15 +453,33 @@ onMounted(() => {
 	<NcAppContent class="af-entries">
 		<FormBar :form-id="formId" active="responses" :title="title">
 			<template #meta>
-				<span class="af-entries__count">{{ t('webforms', '{n} responses', { n: total }) }}</span>
+				<span class="af-entries__count">
+					{{ filtered ? t('webforms', '{n} of {all} responses', { n: total, all: grandTotal }) : t('webforms', '{n} responses', { n: total }) }}
+				</span>
 			</template>
 			<template #end>
-				<NcButton variant="secondary" :href="exportUrl(formId)" :disabled="total === 0">
+				<NcActions :name="t('webforms', 'Download')"
+					:aria-label="t('webforms', 'Download responses')"
+					:disabled="grandTotal === 0 || tooManySelected"
+					variant="secondary"
+					force-name>
 					<template #icon>
 						<Icon :path="icons.download" />
 					</template>
-					{{ t('webforms', 'Download CSV') }}
-				</NcButton>
+					<NcActionCaption :name="scopeLabel" />
+					<NcActionLink :href="downloadUrl('csv')" download>
+						<template #icon>
+							<Icon :path="icons.download" />
+						</template>
+						{{ t('webforms', 'CSV (.csv)') }}
+					</NcActionLink>
+					<NcActionLink :href="downloadUrl('xlsx')" download>
+						<template #icon>
+							<Icon :path="icons.download" />
+						</template>
+						{{ t('webforms', 'Excel (.xlsx)') }}
+					</NcActionLink>
+				</NcActions>
 			</template>
 		</FormBar>
 
@@ -265,6 +502,11 @@ onMounted(() => {
 
 			<!-- Responses -->
 			<template v-if="tab === 'responses'">
+				<ResponseFilters v-if="grandTotal > 0 || filtered"
+					:model-value="entryFilter"
+					:definition="filterDefinition"
+					@update:model-value="applyFilter" />
+
 				<div v-if="loading" class="af-entries__center">
 					<NcLoadingIcon :size="44" />
 				</div>
@@ -274,6 +516,15 @@ onMounted(() => {
 						{{ t('webforms', 'Try again') }}
 					</NcButton>
 				</NcNoteCard>
+				<NcEmptyContent v-else-if="entries.length === 0 && filtered"
+					:name="t('webforms', 'No responses match')"
+					:description="t('webforms', 'Try a different search, or clear the filters.')">
+					<template #action>
+						<NcButton variant="secondary" @click="applyFilter({ ...EMPTY_FILTER, sort: entryFilter.sort })">
+							{{ t('webforms', 'Clear filters') }}
+						</NcButton>
+					</template>
+				</NcEmptyContent>
 				<NcEmptyContent v-else-if="entries.length === 0"
 					:name="t('webforms', 'No responses yet')"
 					:description="t('webforms', 'Responses appear here as soon as someone sends the form.')" />
@@ -282,7 +533,87 @@ onMounted(() => {
 					<NcNoteCard v-if="deleteFailed" type="error">
 						{{ t('webforms', 'Could not delete the response.') }}
 					</NcNoteCard>
-					<ul class="af-entries__list">
+					<NcNoteCard v-if="truncated" type="info">
+						{{ t('webforms', 'Searched the first 20,000 responses. There may be more matches, narrow the dates to find them.') }}
+					</NcNoteCard>
+
+					<ResponseSummary v-if="summaryOpen"
+						:summary="summary"
+						:loading="summaryLoading"
+						:failed="summaryFailed" />
+
+					<NcNoteCard v-if="bulkDone !== null" type="success">
+						{{ t('webforms', 'Deleted {n} responses.', { n: bulkDone }) }}
+					</NcNoteCard>
+					<NcNoteCard v-if="bulkError" type="error">
+						{{ bulkError }}
+					</NcNoteCard>
+
+					<div v-if="selectedCount > 0 && view === 'table'" class="af-entries__bulk" role="region" :aria-label="t('webforms', 'Selected responses')">
+						<strong>{{ allMatching ? t('webforms', 'All {n} matching responses are selected', { n: total }) : t('webforms', '{n} selected', { n: selected.size }) }}</strong>
+						<NcButton v-if="canSelectAllMatching" variant="tertiary" @click="allMatching = true">
+							{{ t('webforms', 'Select all {n} matching', { n: total }) }}
+						</NcButton>
+						<span v-if="tooManySelected" class="af-entries__hint">
+							{{ t('webforms', 'Select up to {max} at a time, or use "Select all matching".', { max: MAX_SELECTED }) }}
+						</span>
+						<span class="af-entries__spacer" />
+						<NcButton variant="error" :disabled="tooManySelected || bulkBusy" @click="confirmBulk = true">
+							<template #icon>
+								<NcLoadingIcon v-if="bulkBusy" :size="20" />
+								<Icon v-else :path="icons.delete" />
+							</template>
+							{{ t('webforms', 'Delete') }}
+						</NcButton>
+						<NcButton variant="tertiary" :disabled="bulkBusy" @click="clearSelection">
+							{{ t('webforms', 'Clear selection') }}
+						</NcButton>
+					</div>
+
+					<div class="af-entries__tools">
+						<SegmentedControl :model-value="view"
+							:group-label="t('webforms', 'How to show responses')"
+							icon-only
+							:options="[
+								{ value: 'table', label: t('webforms', 'Table'), icon: icons.tableView },
+								{ value: 'cards', label: t('webforms', 'Cards'), icon: icons.cardView },
+							]"
+							@update:model-value="(value) => setView(value === 'cards' ? 'cards' : 'table')" />
+						<NcButton :variant="summaryOpen ? 'primary' : 'secondary'" :aria-pressed="summaryOpen" @click="toggleSummary">
+							<template #icon>
+								<Icon :path="icons.summary" />
+							</template>
+							{{ t('webforms', 'Summary') }}
+						</NcButton>
+						<span class="af-entries__spacer" />
+						<NcActions v-if="view === 'table'" :aria-label="t('webforms', 'Choose columns')" :name="t('webforms', 'Columns')">
+							<template #icon>
+								<Icon :path="icons.columns" />
+							</template>
+							<NcActionCheckbox v-for="column in allColumns"
+								:key="column.id"
+								:model-value="shownColumns.some((shown) => shown.id === column.id)"
+								@update:model-value="(on: boolean) => toggleColumn(column.id, on)">
+								{{ column.label }}
+							</NcActionCheckbox>
+						</NcActions>
+					</div>
+
+					<ResponsesTable v-if="view === 'table'"
+						:form-id="formId"
+						:entries="entries"
+						:versions="versions"
+						:columns="shownColumns"
+						:expanded-id="expandedId"
+						:sort="entryFilter.sort"
+						:selected="selected"
+						@select="selectOne"
+						@select-page="selectPage"
+						@toggle="(id) => (expandedId = expandedId === id ? null : id)"
+						@delete="(id) => (confirmDeleteId = id)"
+						@changed="refreshFailedCount"
+						@sort="(sort) => applyFilter({ ...entryFilter, sort })" />
+					<ul v-else class="af-entries__list">
 						<li v-for="entry in entries" :id="'af-response-' + entry.id" :key="entry.id">
 							<ResponseCard :form-id="formId"
 								:entry="entry"
@@ -383,6 +714,17 @@ onMounted(() => {
 				{ label: t('webforms', 'Delete'), variant: 'error', callback: confirmDelete },
 			]"
 			@closing="confirmDeleteId = null" />
+
+		<NcDialog v-if="confirmBulk"
+			:name="t('webforms', 'Delete {n} responses?', { n: selectedCount })"
+			:message="allMatching
+				? t('webforms', 'Every response that matches the filter is deleted, with its answers, uploaded files and the record of what was sent. This cannot be undone.')
+				: t('webforms', 'The selected responses are deleted, with their answers, uploaded files and the record of what was sent. This cannot be undone.')"
+			:buttons="[
+				{ label: t('webforms', 'Cancel'), variant: 'tertiary', callback: () => { confirmBulk = false } },
+				{ label: t('webforms', 'Delete {n}', { n: selectedCount }), variant: 'error', callback: bulkDelete },
+			]"
+			@closing="confirmBulk = false" />
 	</NcAppContent>
 </template>
 
@@ -443,5 +785,26 @@ onMounted(() => {
 	display: flex;
 	justify-content: center;
 	padding: calc(var(--default-grid-baseline) * 10) 0;
+}
+.af-entries__bulk {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--default-grid-baseline) calc(var(--default-grid-baseline) * 2);
+	padding: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 3);
+	border: 1px solid var(--color-primary-element);
+	border-radius: var(--border-radius-large);
+	background: var(--color-primary-element-light, var(--color-background-hover));
+}
+
+.af-entries__spacer {
+	flex: 1 1 auto;
+}
+
+.af-entries__tools {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--default-grid-baseline);
 }
 </style>
