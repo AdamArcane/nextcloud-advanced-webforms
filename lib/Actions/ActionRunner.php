@@ -107,18 +107,38 @@ final class ActionRunner {
 		$body = Template::render($template, $context->fields, $context->data, Template::TEXT, $allFields);
 
 		try {
-			$this->mail->send($address, $subject, $body, $html, $this->replyTo($action['replyTo'] ?? null, $context));
+			$this->mail->send($address, $subject, $body, $html, $this->replyTo($action, $address, $context), $context->mail->fromNameFor($action));
 		} catch (\Throwable $e) {
 			throw new ActionFailed('mail_failed: ' . $e->getMessage(), true);
 		}
 	}
 
 	/**
-	 * The address replies should go to, written like the recipient (docs/SCHEMA.md section 7.2), or null
-	 * to leave the mail without one. Unlike the recipient it is never a reason not to send: an empty or
-	 * invalid answer, an anonymous respondent or an account without an address just means no reply-to.
+	 * The address replies should go to (docs/SCHEMA.md sections 7.2 and 16.2), or null to leave the mail
+	 * without one: the action's own when the administrator lets it through, else the server's default.
+	 * Unlike the recipient it is never a reason not to send: an empty or invalid answer, an anonymous
+	 * respondent or an account without an address just means the next choice, or none.
+	 *
+	 * @param array<string, mixed> $action
 	 */
-	private function replyTo(mixed $source, ActionContext $context): ?string {
+	private function replyTo(array $action, string $recipient, ActionContext $context): ?string {
+		$own = $this->resolveAddress($context->mail->replyToSource($action), $context);
+		if ($own !== null) {
+			return $own;
+		}
+		$default = match ($context->mail->replyToMode) {
+			MailPolicy::REPLY_OWNER => $this->resolveAddress(['owner' => true], $context),
+			MailPolicy::REPLY_ADDRESS => $this->resolveAddress($context->mail->replyToAddress, $context),
+			default => null,
+		};
+		// A default that is the recipient itself would only send replies back to where the mail went.
+		return $default !== null && strcasecmp($default, $recipient) === 0 ? null : $default;
+	}
+
+	/**
+	 * One plain address from a source written like the recipient, or null when there is none.
+	 */
+	private function resolveAddress(mixed $source, ActionContext $context): ?string {
 		$address = '';
 		if (is_string($source)) {
 			$address = $source;

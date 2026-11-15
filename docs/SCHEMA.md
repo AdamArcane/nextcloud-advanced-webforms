@@ -543,6 +543,10 @@ condition group (same format as rules) evaluated against the submitted
     the address the respondent typed. Unlike `to` it is never a reason not to send: when it resolves
     to nothing, or to something that is not one plain address, the mail goes out without a reply-to.
     It is not counted against the hourly cap, because it does not decide who receives mail.
+  - `fromName` (optional) is the name the mail is sent under: one line of at most 100 characters
+    (`action_from_name_invalid`). Only the name changes. The sender address is always the server's
+    own, which is what its SPF and DKIM records vouch for.
+  - An administrator can set defaults for both, and switch off a form's own choice (section 16.2).
   - `subject`, `body`: plain text with `{field_id}` placeholders.
   - In `body` only, `{all_fields}` stands for every question the respondent answered, in the order the
     form shows them, as `Label: answer` lines (an answer of several lines is indented under its label).
@@ -996,6 +1000,38 @@ so they are removed with the account, and they change nothing about forms or oth
   does the address `#/f/<id>` when it is typed or shared: only the links in the form list change.
 - Endpoints (any signed-in user, own preferences only): `GET` and `PUT /api/v1/preferences` with
   `openPublishedOnResponses` (boolean).
+
+### 16.2 Emails from forms
+
+An administrator sets defaults for the mail that forms send, under Administration settings, "Emails
+from forms". They are app config, read through `MailSettings`, and never configured means the behaviour
+without them. They are applied when a mail is sent, not copied into forms, so a change takes effect at
+once on forms that are already live.
+
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| Where replies go | the server's sender address | the reply-to for an email action that sets none: nothing, the form owner's account email, or one fixed address |
+| Sender name | Nextcloud's own | the name mail is sent under |
+| Form owners may set their own | yes | whether an action's `replyTo` and `fromName` count |
+
+- **Order.** Reply-to is the action's own `replyTo` if it is allowed and resolves to an address, else
+  the default, else none. Sender name is the action's own `fromName` if allowed, else the default, else
+  Nextcloud's. A default reply-to equal to the recipient is left out.
+- **Locked.** With "form owners may set their own" off, an action's `fromName` and `replyTo` are
+  ignored when sending, with one exception: a `replyTo` of `{ "field": "<id>" }` still counts, because
+  replying to the person who filled in the form is what a notification is for and it names nobody the
+  form owner chose. On a draft and at publish such an action is reported as `action_mail_locked` (path
+  `actions[n].replyTo` or `.fromName`), a warning on a draft and a refusal at publish. Forms that are
+  already live keep sending. Nothing is deleted from a definition, so switching it back on restores
+  the form's own choice.
+- **Damaged values** fall back to the default: an unknown mode or a fixed address that is not one plain
+  address means no reply-to, and only an explicit off locks.
+- Endpoints (administrators only): `GET` and `PUT /api/v1/admin/mail` (`replyToMode` of `none`, `owner`
+  or `address`, `replyToAddress`, `allowOverride`, `fromName`). `GET /api/v1/settings` gives every
+  signed-in user the same four values under `mail`, with `defaultReplyTo` and `defaultFromName`: the
+  real address and name that apply to that user's forms when an action sets none (their own account
+  email, the fixed address, or the server's sender address; the default name or Nextcloud's own). The
+  builder shows them in the empty boxes and hides what is locked.
 
 ## 17. Finding responses
 

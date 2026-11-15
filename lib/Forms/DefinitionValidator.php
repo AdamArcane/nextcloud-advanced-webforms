@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\Webforms\Forms;
 
+use OCA\Webforms\Actions\MailPolicy;
 use OCA\Webforms\Actions\Template;
 use OCA\Webforms\Actions\TablesValue;
 use OCA\Webforms\Rules\FieldType;
@@ -559,7 +560,7 @@ final class DefinitionValidator {
 			$allowed = ['id', 'type', 'when'];
 			switch ($action['type']) {
 				case 'email':
-					$allowed = array_merge($allowed, ['to', 'replyTo', 'subject', 'body']);
+					$allowed = array_merge($allowed, ['to', 'replyTo', 'fromName', 'subject', 'body']);
 					$this->emailAction($action, $fields, $path);
 					break;
 				case 'webhook':
@@ -596,6 +597,13 @@ final class DefinitionValidator {
 		if (array_key_exists('replyTo', $action)) {
 			// Optional, and written the same way as the recipient (section 7.2).
 			$this->emailAddressSource($action['replyTo'], $fields, $path . '.replyTo', 'action_bad_reply_to');
+		}
+		if (array_key_exists('fromName', $action)) {
+			// The name mail is sent under. One line of plain text: it becomes part of a mail header.
+			$name = $action['fromName'];
+			if (!is_string($name) || trim($name) === '' || mb_strlen($name) > MailPolicy::MAX_NAME || preg_match('/[\x00-\x1F\x7F]/', $name) === 1) {
+				$this->err('action_from_name_invalid', $path . '.fromName');
+			}
 		}
 		$this->textProp($action, 'subject', 255, $fields, $path);
 		$this->textProp($action, 'body', 5000, $fields, $path, true);

@@ -11,6 +11,7 @@ namespace OCA\Webforms\Actions\Adapter;
 
 use OCA\Webforms\Actions\Ports\MailPort;
 use OCP\Mail\IMailer;
+use OCP\Util;
 
 /**
  * Sends through Nextcloud's configured mail server.
@@ -21,7 +22,7 @@ final class NextcloudMail implements MailPort {
 	) {
 	}
 
-	public function send(string $to, string $subject, string $body, ?string $html = null, ?string $replyTo = null): void {
+	public function send(string $to, string $subject, string $body, ?string $html = null, ?string $replyTo = null, ?string $fromName = null): void {
 		$message = $this->mailer->createMessage();
 		$message->setTo([$to]);
 		$message->setSubject($subject);
@@ -31,6 +32,11 @@ final class NextcloudMail implements MailPort {
 		}
 		if ($replyTo !== null) {
 			$message->setReplyTo([$replyTo]);
+		}
+		if ($fromName !== null) {
+			// Only the name changes. The address stays the server's own, which is what its SPF and DKIM
+			// records vouch for.
+			$message->setFrom([Util::getDefaultEmailAddress('no-reply') => $fromName]);
 		}
 		$failed = $this->mailer->send($message);
 		if ($failed !== []) {

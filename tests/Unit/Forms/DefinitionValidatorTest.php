@@ -410,6 +410,19 @@ class DefinitionValidatorTest extends TestCase {
 		}
 	}
 
+	public function testSenderNameIsOneLineOfPlainText(): void {
+		$this->assertSame([], $this->codes(static function (array $d): array {
+			$d['actions'][0]['fromName'] = 'Acme Support';
+			return $d;
+		}));
+		foreach (['', '   ', "Acme\nBcc: x@example.com", str_repeat('a', 101), 5] as $name) {
+			$this->assertSame(['action_from_name_invalid'], $this->codes(static function (array $d) use ($name): array {
+				$d['actions'][0]['fromName'] = $name;
+				return $d;
+			}));
+		}
+	}
+
 	public function testAllFieldsIsAllowedInAnEmailBodyOnly(): void {
 		$this->assertSame([], $this->codes(static function (array $d): array {
 			$d['actions'][0]['body'] = "New response:\n{all_fields}";

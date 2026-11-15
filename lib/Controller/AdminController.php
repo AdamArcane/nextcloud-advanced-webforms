@@ -14,6 +14,8 @@ use OCA\Webforms\Forms\DefinitionValidator;
 use OCA\Webforms\Security\Captcha\CaptchaProvider;
 use OCA\Webforms\Security\Captcha\CaptchaSettings;
 use OCA\Webforms\Service\RetentionService;
+use OCA\Webforms\Actions\MailPolicy;
+use OCA\Webforms\Settings\MailSettings;
 use OCA\Webforms\Settings\PolicySettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -33,6 +35,7 @@ class AdminController extends Controller {
 		IRequest $request,
 		private readonly CaptchaSettings $settings,
 		private readonly PolicySettings $policy,
+		private readonly MailSettings $mail,
 		private readonly RetentionService $retention,
 		private readonly IGroupManager $groups,
 		private readonly ITimeFactory $time,
@@ -123,6 +126,42 @@ class AdminController extends Controller {
 
 		$this->policy->save(array_values($actionTypes), $retentionDays, $maxResponses, $maxActions, array_values($creatorGroups));
 		return new JSONResponse($this->currentPolicy());
+	}
+
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/admin/mail')]
+	public function getMail(): JSONResponse {
+		return new JSONResponse($this->currentMail());
+	}
+
+	/**
+	 * Save the settings for mail that forms send (docs/SCHEMA.md section 16.2).
+	 */
+	#[FrontpageRoute(verb: 'PUT', url: '/api/v1/admin/mail')]
+	public function setMail(string $replyToMode = MailPolicy::REPLY_NONE, string $replyToAddress = '', bool $allowOverride = true, string $fromName = ''): JSONResponse {
+		if (!in_array($replyToMode, MailPolicy::REPLY_MODES, true)) {
+			return new JSONResponse(['error' => 'invalid_reply_to_mode'], Http::STATUS_BAD_REQUEST);
+		}
+		if ($replyToMode === MailPolicy::REPLY_ADDRESS && !MailSettings::isAddress(trim($replyToAddress))) {
+			return new JSONResponse(['error' => 'invalid_reply_to_address'], Http::STATUS_BAD_REQUEST);
+		}
+		if (mb_strlen(trim($fromName)) > MailPolicy::MAX_NAME || preg_match('/[\x00-\x1F\x7F]/', $fromName) === 1) {
+			return new JSONResponse(['error' => 'invalid_from_name'], Http::STATUS_BAD_REQUEST);
+		}
+		$this->mail->save($replyToMode, $replyToAddress, $allowOverride, $fromName);
+		return new JSONResponse($this->currentMail());
+	}
+
+	/**
+	 * @return array{replyToMode: string, replyToAddress: string, allowOverride: bool, fromName: string}
+	 */
+	private function currentMail(): array {
+		$policy = $this->mail->policy();
+		return [
+			'replyToMode' => $policy->replyToMode,
+			'replyToAddress' => $policy->replyToAddress,
+			'allowOverride' => $policy->allowOverride,
+			'fromName' => $policy->fromName,
+		];
 	}
 
 	/**

@@ -548,6 +548,7 @@ async function onDeleteConfirmed(): Promise<void> {
 						:show-errors="publishFailed"
 						:allowed-types="policy.allowedActionTypes"
 						:max-actions="policy.maxActions"
+						:mail="policy.mail"
 						@change="edit" />
 					<FormProperties v-else
 						:section="settingsTab"

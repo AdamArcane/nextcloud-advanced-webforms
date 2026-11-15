@@ -4,6 +4,7 @@
 -->
 
 <script setup lang="ts">
+import type { MailPolicy } from '../../api/settings.ts'
 import type { ActionType, DefinitionError, DraftDefinition, FormAction } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
@@ -26,6 +27,8 @@ const props = defineProps<{
 	allowedTypes?: readonly ActionType[]
 	/** The most actions the server allows on a form, never above MAX_ACTIONS. */
 	maxActions?: number
+	/** The administrator's settings for mail, so an email action can say what applies. */
+	mail?: MailPolicy
 }>()
 
 const emit = defineEmits<{
@@ -113,6 +116,7 @@ async function generateSecret(index: number): Promise<void> {
 			:show-errors="showErrors"
 			:unreachable="unreachable.has(action.id)"
 			:switched-off="switchedOff.has(action.id)"
+			:mail="mail"
 			:revealed-secret="revealed?.actionId === action.id ? revealed.secret : null"
 			:secret-busy="secretBusyId === action.id"
 			:secret-failed="secretFailedId === action.id"

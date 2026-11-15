@@ -171,6 +171,8 @@ export interface EmailAction extends ActionBase {
 	to: EmailAddressSource
 	/** Where replies go, written like `to`. Left out, replies go to the server's sender address. */
 	replyTo?: EmailAddressSource
+	/** The name the mail is sent under. Left out, the server's default. The sender address never changes. */
+	fromName?: string
 	subject: string
 	body: string
 }
