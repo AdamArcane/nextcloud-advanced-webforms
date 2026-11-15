@@ -58,6 +58,7 @@ class FormService {
 		private readonly UploadService $uploads,
 		private readonly EventPublisher $events,
 		private readonly TablesPort $tables,
+		private readonly PolicyService $policy,
 	) {
 	}
 
@@ -107,6 +108,10 @@ class FormService {
 	}
 
 	public function create(string $userId, string $title): Form {
+		if (!$this->policy->canCreate($userId)) {
+			// Existing forms keep working: only making new ones (or importing) is limited to the creator groups.
+			throw new ValidationException([['code' => 'create_not_allowed', 'path' => '']]);
+		}
 		$title = trim($title);
 		if ($title === '' || mb_strlen($title) > 255) {
 			throw new ValidationException([['code' => 'title_invalid', 'path' => 'title']]);
@@ -238,7 +243,7 @@ class FormService {
 		$form->setUpdatedAt($this->time->getTime());
 		$form = $this->forms->update($form);
 
-		return ['form' => $form, 'errors' => array_merge($this->validator->validate($definition), $this->uploadPermissionErrors($form, $definition))];
+		return ['form' => $form, 'errors' => array_merge($this->validator->validate($definition), $this->uploadPermissionErrors($form, $definition), $this->policy->actionErrors($definition))];
 	}
 
 	/**
@@ -253,7 +258,7 @@ class FormService {
 		$this->refuseIfArchived($form);
 		$draft = $form->getDraftDefinition();
 
-		$errors = array_merge($this->validator->validate($draft), $this->uploadPermissionErrors($form, $draft), $this->tablesErrors($form, $draft));
+		$errors = array_merge($this->validator->validate($draft), $this->uploadPermissionErrors($form, $draft), $this->tablesErrors($form, $draft), $this->policy->actionErrors($draft));
 		if ($errors !== []) {
 			throw new ValidationException($errors);
 		}
