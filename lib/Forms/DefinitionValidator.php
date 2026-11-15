@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\Webforms\Forms;
 
+use OCA\Webforms\Actions\TablesValue;
 use OCA\Webforms\Rules\FieldType;
 use OCA\Webforms\Rules\RuleValidator;
 
@@ -29,7 +30,8 @@ final class DefinitionValidator {
 	public const OPTION_VALUE_PATTERN = '/^[a-z][a-z0-9_]{1,31}$/D';
 	public const SPANS = [3, 4, 6, 8, 9, 12];
 	public const LABEL_POSITIONS = ['above', 'inline', 'hidden'];
-	public const ACTION_TYPES = ['email', 'webhook', 'message', 'redirect'];
+	public const MAX_TABLES_COLUMNS = 100;
+	public const ACTION_TYPES = ['email', 'webhook', 'message', 'redirect', 'tables'];
 
 	private const SETTINGS_KEYS = ['submitLabel', 'labelPosition', 'requireLogin', 'allowMultipleSubmissions', 'hideRequiredIndicator', 'hideTitle', 'captcha', 'closedMessage', 'design'];
 	private const MAX_PAGES = 20;
@@ -562,6 +564,10 @@ final class DefinitionValidator {
 					$allowed = array_merge($allowed, ['url', 'secretRef']);
 					$this->webhookAction($action, $path);
 					break;
+				case 'tables':
+					$allowed = array_merge($allowed, ['tableId', 'map']);
+					$this->tablesAction($action, $fields, $path);
+					break;
 				case 'message':
 					$allowed[] = 'text';
 					$this->textProp($action, 'text', 1000, $fields, $path);
@@ -604,6 +610,32 @@ final class DefinitionValidator {
 		}
 		$this->textProp($action, 'subject', 255, $fields, $path);
 		$this->textProp($action, 'body', 5000, $fields, $path);
+	}
+
+	/**
+	 * Shape only. Whether the table exists, the owner may add rows to it and each column can take its
+	 * source is checked when the form is published, because it needs Tables.
+	 *
+	 * @param array<string, mixed> $action
+	 * @param array<string, array<string, mixed>> $fields
+	 */
+	private function tablesAction(array $action, array $fields, string $path): void {
+		$tableId = $action['tableId'] ?? null;
+		if (!is_int($tableId) || $tableId < 1) {
+			$this->err('action_bad_table', $path . '.tableId');
+		}
+		$map = $action['map'] ?? null;
+		if (!is_array($map) || $map === [] || count($map) > self::MAX_TABLES_COLUMNS) {
+			$this->err('action_bad_table_map', $path . '.map');
+			return;
+		}
+		foreach ($map as $columnId => $source) {
+			$sourceOk = is_string($source) && (in_array($source, TablesValue::META, true)
+				|| (isset($fields[$source]) && FieldType::isInput((string)($fields[$source]['type'] ?? ''))));
+			if (preg_match('/^[1-9][0-9]{0,9}$/D', (string)$columnId) !== 1 || !$sourceOk) {
+				$this->err('action_bad_table_map', $path . '.map.' . $columnId);
+			}
+		}
 	}
 
 	/**

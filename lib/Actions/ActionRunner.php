@@ -13,6 +13,8 @@ use OCA\Webforms\Actions\Ports\AccountPort;
 use OCA\Webforms\Actions\Ports\HttpPort;
 use OCA\Webforms\Actions\Ports\MailPort;
 use OCA\Webforms\Actions\Ports\SecretPort;
+use OCA\Webforms\Actions\Ports\TablesFailure;
+use OCA\Webforms\Actions\Ports\TablesPort;
 use OCA\Webforms\Rules\FieldType;
 
 /**
@@ -34,6 +36,7 @@ final class ActionRunner {
 		private readonly HttpPort $http,
 		private readonly SecretPort $secrets,
 		private readonly AccountPort $accounts,
+		private readonly ?TablesPort $tables = null,
 	) {
 	}
 
@@ -46,6 +49,7 @@ final class ActionRunner {
 		match ($action['type'] ?? null) {
 			'email' => $this->email($action, $context),
 			'webhook' => $this->webhook($action, $context),
+			'tables' => $this->tables($action, $context),
 			default => throw new ActionFailed('unsupported_action', false),
 		};
 	}
@@ -96,6 +100,58 @@ final class ActionRunner {
 			$this->mail->send($address, $subject, $body);
 		} catch (\Throwable $e) {
 			throw new ActionFailed('mail_failed: ' . $e->getMessage(), true);
+		}
+	}
+
+	/**
+	 * Adds a row to a Nextcloud Tables table as the form owner (docs/SCHEMA.md section 15). An answer
+	 * that has no value, or no matching option in its column, is left out and Tables decides whether
+	 * that column was required.
+	 *
+	 * @param array<string, mixed> $action
+	 * @throws ActionSkipped
+	 */
+	private function tables(array $action, ActionContext $context): void {
+		if ($this->tables === null || !$this->tables->isAvailable()) {
+			// Tables may be enabled later, so keep trying.
+			throw new ActionFailed('tables_unavailable', true);
+		}
+		$tableId = $action['tableId'] ?? null;
+		$map = $action['map'] ?? null;
+		if (!is_int($tableId) || !is_array($map) || $map === [] || $context->ownerId === '') {
+			throw new ActionFailed('tables_bad_action', false);
+		}
+
+		try {
+			$columns = [];
+			foreach ($this->tables->columns($tableId, $context->ownerId) as $column) {
+				$columns[(int)$column['id']] = $column;
+			}
+
+			$meta = ['submittedAt' => $context->submittedAt, 'userId' => $context->userId, 'entryId' => $context->entryId];
+			$values = [];
+			foreach ($map as $columnId => $source) {
+				$column = $columns[(int)$columnId] ?? null;
+				if ($column === null || !is_string($source)) {
+					continue;
+				}
+				$isMeta = in_array($source, TablesValue::META, true);
+				if (!$isMeta && !is_array($context->fields[$source] ?? null)) {
+					continue;
+				}
+				$field = $isMeta ? [] : $context->fields[$source];
+				// The converter works from what kind of answer it is: the field's type, or the meta name.
+				$value = TablesValue::convert($isMeta ? $source : (string)($field['type'] ?? ''), $field, $context->data[$source] ?? null, $column, $meta);
+				if ($value !== null) {
+					$values[(int)$columnId] = $value;
+				}
+			}
+			if ($values === []) {
+				throw new ActionSkipped('nothing_to_write');
+			}
+			$this->tables->addRow($tableId, $values, $context->ownerId);
+		} catch (TablesFailure $e) {
+			throw new ActionFailed($e->getMessage(), $e->retryable);
 		}
 	}
 

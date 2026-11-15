@@ -872,3 +872,38 @@ and "Form status changed" can be chosen as the "When" of a flow. The event name 
 for is the event class name. An administrator's flow sees every form. A user's own flow only runs for
 forms that user owns. Webforms offers triggers only. The actions (what a flow does) come from other
 apps, and Webforms has none yet.
+
+## 15. Tables action (DECISION)
+
+An action of type `tables` adds a row to a Nextcloud Tables table for each matching response:
+
+```json
+{ "id": "act_leads", "type": "tables", "tableId": 12,
+  "map": { "31": "f_name", "32": "f_kind", "33": "@submitted" } }
+```
+
+- `map` is column id to source. A source is the id of an input field (so renaming a field's label
+  changes nothing), or one of `@submitted` (when the response arrived), `@respondent` (the signed-in
+  account, empty for anyone else) and `@entry` (the response id). Up to 100 columns.
+- It runs like email and webhook (section 7.4): queued after the response is stored, retried with
+  backoff, shown in the delivery log, and never able to fail a submission.
+- **Permissions.** The row is added as the form owner, through Tables' own services, so Tables decides
+  what is allowed. At publish the owner must be allowed to add rows to the table, every mapped column
+  must still exist and be able to take its source (`tables_not_allowed`, `tables_column_missing`,
+  `tables_type_mismatch`, `tables_unavailable`). The same is checked again on every run.
+- **What can go where.** Text columns take any answer (choices as their labels, several as a comma
+  separated list, uploads as file names). Number, stars and progress take number fields. A single
+  choice column takes a select or radio, a multiple choice column takes checkboxes, and a checkbox
+  column takes a checkbox. Date, time and date and time columns take date or time fields. Choices are
+  matched to the column's options by label, ignoring case. People and relation columns cannot be filled.
+- An answer that is empty, or a choice with no matching option, is left out of the row, and Tables
+  decides whether that column was required. If nothing at all would be written the delivery is
+  `skipped`, not failed.
+- A column deleted from the table after publishing is skipped. Tables being disabled is a retried
+  failure (`tables_unavailable`). Tables refusing the values (`tables_rejected`) and permission loss
+  (`tables_forbidden`, `tables_not_found`) are not retried.
+- **Risk.** Tables has no public PHP interface for writing, only its REST API (which needs a login
+  session) and its internal services. The app uses the services behind `TablesPort`, so a change in
+  Tables fails visibly in the delivery log and nothing else.
+- Endpoints for the builder: `GET /api/v1/tables` (the tables the user may add rows to) and
+  `GET /api/v1/tables/{id}/columns` (with each column's `kind` and whether it is `supported`).

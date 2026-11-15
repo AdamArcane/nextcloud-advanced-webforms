@@ -402,6 +402,40 @@ class DefinitionValidatorTest extends TestCase {
 		}));
 	}
 
+	public function testTablesActionShape(): void {
+		$ok = static function (array $d): array {
+			$d['actions'][] = ['id' => 'act_tbl', 'type' => 'tables', 'tableId' => 9, 'map' => ['11' => 'f_name', '12' => '@submitted']];
+			return $d;
+		};
+		$this->assertSame([], $this->codes($ok));
+		$this->assertSame(['action_bad_table'], $this->codes(static function (array $d) use ($ok): array {
+			$d = $ok($d);
+			$d['actions'][array_key_last($d['actions'])]['tableId'] = 0;
+			return $d;
+		}));
+		$this->assertSame(['action_bad_table_map'], $this->codes(static function (array $d) use ($ok): array {
+			$d = $ok($d);
+			$d['actions'][array_key_last($d['actions'])]['map'] = [];
+			return $d;
+		}));
+		// A source must be an input field or a meta name; a column id must be a number.
+		$this->assertSame(['action_bad_table_map'], $this->codes(static function (array $d) use ($ok): array {
+			$d = $ok($d);
+			$d['actions'][array_key_last($d['actions'])]['map'] = ['11' => 'f_missing'];
+			return $d;
+		}));
+		$this->assertSame(['action_bad_table_map'], $this->codes(static function (array $d) use ($ok): array {
+			$d = $ok($d);
+			$d['actions'][array_key_last($d['actions'])]['map'] = ['name' => 'f_name'];
+			return $d;
+		}));
+		$this->assertSame(['unknown_property'], $this->codes(static function (array $d) use ($ok): array {
+			$d = $ok($d);
+			$d['actions'][array_key_last($d['actions'])]['table'] = 'x';
+			return $d;
+		}));
+	}
+
 	public function testWebhookMustBeHttpsWithoutPlaceholders(): void {
 		$this->assertSame(['action_bad_url'], $this->codes(static function (array $d): array {
 			$d['actions'][1]['url'] = 'http://n8n.example.com/hook';

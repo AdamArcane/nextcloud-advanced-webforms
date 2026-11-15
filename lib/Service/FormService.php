@@ -10,6 +10,9 @@ declare(strict_types=1);
 namespace OCA\Webforms\Service;
 
 use OCA\Webforms\Actions\Adapter\NextcloudSecrets;
+use OCA\Webforms\Actions\Ports\TablesFailure;
+use OCA\Webforms\Actions\Ports\TablesPort;
+use OCA\Webforms\Actions\TablesValue;
 use OCA\Webforms\Db\ActionLogMapper;
 use OCA\Webforms\Event\EntryDeletedEvent;
 use OCA\Webforms\Event\EventPayload;
@@ -54,6 +57,7 @@ class FormService {
 		private readonly NextcloudSecrets $secrets,
 		private readonly UploadService $uploads,
 		private readonly EventPublisher $events,
+		private readonly TablesPort $tables,
 	) {
 	}
 
@@ -249,7 +253,7 @@ class FormService {
 		$this->refuseIfArchived($form);
 		$draft = $form->getDraftDefinition();
 
-		$errors = array_merge($this->validator->validate($draft), $this->uploadPermissionErrors($form, $draft));
+		$errors = array_merge($this->validator->validate($draft), $this->uploadPermissionErrors($form, $draft), $this->tablesErrors($form, $draft));
 		if ($errors !== []) {
 			throw new ValidationException($errors);
 		}
@@ -456,6 +460,55 @@ class FormService {
 				$this->uploads->requireDestination($form->getOwnerId(), $title, $field, (string)$fieldId);
 			} catch (UploadRejected $e) {
 				$errors[] = ['code' => $e->reason, 'path' => 'fields.' . $fieldId];
+			}
+		}
+		return $errors;
+	}
+
+	/**
+	 * What only Tables can tell: the table exists, the owner may add rows to it, and each mapped column
+	 * can take its source. Checked at publish and again on every run (docs/SCHEMA.md section 15).
+	 *
+	 * @param array<string, mixed> $definition
+	 * @return list<array<string, mixed>>
+	 */
+	private function tablesErrors(Form $form, array $definition): array {
+		$fields = self::fieldsOf($definition);
+		$errors = [];
+		$writable = null;
+		foreach (is_array($definition['actions'] ?? null) ? $definition['actions'] : [] as $index => $action) {
+			if (!is_array($action) || ($action['type'] ?? null) !== 'tables' || !is_int($action['tableId'] ?? null) || !is_array($action['map'] ?? null)) {
+				continue;
+			}
+			$path = 'actions[' . $index . ']';
+			if (!$this->tables->isAvailable()) {
+				$errors[] = ['code' => 'tables_unavailable', 'path' => $path];
+				continue;
+			}
+			try {
+				$writable ??= array_column($this->tables->writableTables($form->getOwnerId()), 'id');
+				if (!in_array($action['tableId'], $writable, true)) {
+					$errors[] = ['code' => 'tables_not_allowed', 'path' => $path . '.tableId'];
+					continue;
+				}
+				$columns = [];
+				foreach ($this->tables->columns($action['tableId'], $form->getOwnerId()) as $column) {
+					$columns[(int)$column['id']] = $column;
+				}
+			} catch (TablesFailure $e) {
+				$errors[] = ['code' => $e->reason, 'path' => $path . '.tableId'];
+				continue;
+			}
+			foreach ($action['map'] as $columnId => $source) {
+				$column = $columns[(int)$columnId] ?? null;
+				if ($column === null) {
+					$errors[] = ['code' => 'tables_column_missing', 'path' => $path . '.map.' . $columnId];
+					continue;
+				}
+				$sourceType = is_string($source) && in_array($source, TablesValue::META, true) ? $source : (string)($fields[$source]['type'] ?? '');
+				if (!TablesValue::compatible($sourceType, $column)) {
+					$errors[] = ['code' => 'tables_type_mismatch', 'path' => $path . '.map.' . $columnId];
+				}
 			}
 		}
 		return $errors;

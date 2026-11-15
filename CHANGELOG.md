@@ -12,6 +12,10 @@
   administrator can send them anywhere with the Webhook Listeners app. They also show up in Flow as a
   "Webforms" trigger. See `docs/SCHEMA.md` section 14.
 
+- Tables action (in progress): add a row to a Nextcloud Tables table for each response, as the form
+  owner, mapped by field id. Backend and API only for now, the builder screen comes next. See
+  `docs/SCHEMA.md` section 15.
+
 ## 0.3.1 - 2026-11-15
 
 - First release build. The app ID is now `webforms`, so public links are `/apps/webforms/f/<token>`.
