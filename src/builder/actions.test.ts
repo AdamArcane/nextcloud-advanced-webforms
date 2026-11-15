@@ -9,6 +9,8 @@ import { describe, expect, it } from 'vitest'
 import {
 	ACTION_TYPES,
 	addAction,
+	cleanResponsePath,
+	defaultResponsePath,
 	defaultWhen,
 	emailFields,
 	errorActionIndex,
@@ -186,5 +188,30 @@ describe('all answers in an email body', () => {
 		const definition = emptyDefinition('T')
 		expect(unknownPlaceholders('{all_fields} {f_gone}', definition, true)).toEqual(['f_gone'])
 		expect(unknownPlaceholders('{all_fields}', definition)).toEqual(['all_fields'])
+	})
+})
+
+describe('response file paths', () => {
+	it('suggests a file named after the form', () => {
+		expect(defaultResponsePath('Contact us')).toBe('Webforms/Contact us responses.csv')
+		expect(defaultResponsePath('a/b\\c')).toBe('Webforms/a b c responses.csv')
+		expect(defaultResponsePath('  ')).toBe('Webforms/Form responses.csv')
+		expect(cleanResponsePath(defaultResponsePath('..'))).not.toBeNull()
+	})
+
+	it('a new files action starts with that path', () => {
+		const { def } = form()
+		const result = addAction(def, 'files')
+		expect(result.definition.actions[0]).toMatchObject({ type: 'files', path: 'Webforms/T responses.csv' })
+	})
+
+	it('accepts what the server accepts', () => {
+		expect(cleanResponsePath('/Webforms/Leads.csv/')).toBe('Webforms/Leads.csv')
+		expect(cleanResponsePath('leads.CSV')).toBe('leads.CSV')
+		expect(cleanResponsePath('Leads.txt')).toBeNull()
+		expect(cleanResponsePath('.csv')).toBeNull()
+		expect(cleanResponsePath('a/../b.csv')).toBeNull()
+		expect(cleanResponsePath('a//b.csv')).toBeNull()
+		expect(cleanResponsePath('')).toBeNull()
 	})
 })

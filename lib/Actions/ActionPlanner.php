@@ -16,7 +16,7 @@ use OCA\Webforms\Rules\RuleEngine;
  * background actions to queue (docs/SCHEMA.md sections 7.1 and 7.4).
  *
  * `message` and `redirect` share one slot and the first match wins, because the
- * respondent needs the answer in the submit response. `email`, `webhook` and `tables` are
+ * respondent needs the answer in the submit response. `email`, `webhook`, `tables` and `files` are
  * returned as ids to queue, never run here.
  */
 final class ActionPlanner {
@@ -68,6 +68,7 @@ final class ActionPlanner {
 				case 'email':
 				case 'webhook':
 				case 'tables':
+				case 'files':
 					$queue[] = $action['id'];
 					break;
 			}

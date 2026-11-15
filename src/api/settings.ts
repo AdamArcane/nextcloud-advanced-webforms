@@ -36,7 +36,7 @@ export const OPEN_MAIL_POLICY: MailPolicy = { allowOverride: true, replyToMode: 
 /** Used when the settings cannot be read: everything allowed, so a hiccup never hides the builder. */
 export const OPEN_POLICY: UserPolicy = {
 	canCreate: true,
-	allowedActionTypes: ['message', 'redirect', 'email', 'webhook', 'tables'],
+	allowedActionTypes: ['message', 'redirect', 'email', 'webhook', 'tables', 'files'],
 	maxActions: 10,
 	mail: OPEN_MAIL_POLICY,
 }

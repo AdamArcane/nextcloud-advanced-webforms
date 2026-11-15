@@ -592,6 +592,8 @@ condition group (same format as rules) evaluated against the submitted
 - `redirect`: URL the respondent is sent to. Set by the form owner, https only,
   placeholders are not allowed in scheme or host, and substituted values are
   URL-encoded. First matching `message` or `redirect` wins (they share one slot).
+- `tables`: adds a row to a Nextcloud Tables table (section 15).
+- `files`: adds a line to a CSV file in the owner's Files (section 19).
 
 ### 7.3 Webhook payload
 
@@ -957,7 +959,7 @@ of allowed actions allows none, the safe side.
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
-| Allowed actions | all of `message`, `redirect`, `email`, `webhook`, `tables` | which action types forms may use |
+| Allowed actions | all of `message`, `redirect`, `email`, `webhook`, `tables`, `files` | which action types forms may use |
 | Retention | 0 (off) | delete responses older than this many days, 1 to 3650 |
 | Responses per form | 0 (no limit) | a form accepts at most this many, up to 1 000 000 |
 | Actions per form | 10 | lower than the structural maximum of 10 only, 1 to 10 |
@@ -978,7 +980,7 @@ of allowed actions allows none, the safe side.
 - **Retention.** `RetentionJob` runs hourly and deletes the oldest due responses, at most 1000 per run so
   a first run on a big server does not hold a background job, with the same clean-up as an owner
   deleting a response: uploaded files and delivery log rows go too. Copies already sent by email,
-  webhook or to Tables are not touched. No `entry.deleted` event is sent for these deletions.
+  webhook, to Tables or to a CSV file are not touched. No `entry.deleted` event is sent for these deletions.
   Because this deletes data, saving a retention that is newly on or shorter than before is refused with
   `409 confirmation_required` and `due` (how many responses are affected) until the request repeats with
   `confirmDelete: true`. The page shows the same count before saving.
@@ -1186,3 +1188,41 @@ leading `*.` for subdomains (`embed_origins_invalid` otherwise). An empty list a
   browser does not allow that, the frame itself goes there.
 - **Not done yet.** A server-wide switch for administrators to forbid embedding, and a form rendered
   as plain HTML with no script (ROADMAP.md).
+
+## 19. Files action (DECISION)
+
+An action of type `files` adds a line to a CSV file in the form owner's Nextcloud Files for each
+matching response:
+
+```json
+{ "id": "act_sheet", "type": "files", "path": "Webforms/Contact responses.csv" }
+```
+
+- `path` is the file, relative to the owner's home: names joined by `/`, no `.` or `..` parts, no
+  control characters or backslashes, at most 8 parts and 255 bytes, ending in `.csv`
+  (`action_bad_file_path` otherwise). The builder suggests `Webforms/<form title> responses.csv`.
+- It runs like email, webhook and Tables (section 7.4): queued after the response is stored, retried
+  with backoff, shown in the delivery log with the path as its target, and never able to fail a
+  submission.
+- **Columns and values** are those of the CSV export (section 9.1) for the version the response was
+  submitted against: `Response ID`, `Submitted (UTC)`, `Respondent`, then one column per input field in
+  layout order, headed by its label (`Label (field_id)` when two fields share one). Values read the
+  same way, and text that a spreadsheet would run as a formula gets a leading apostrophe.
+- **A new file** is created with a byte order mark, the header row and the response, with CRLF line
+  endings and RFC 4180 quoting. Folders on the way are created.
+- **An existing file** keeps its own header row. Columns are matched to it by their heading, so the
+  owner may reorder columns or add their own. A heading the file does not have yet (a new field, or a
+  renamed label) is added to the end of the header row; rows already in the file simply have no value
+  there. Columns the form no longer fills stay and get an empty cell. A file that is empty (or only a
+  byte order mark) gets a new header row. A file without a final line break gets one first.
+- **Permissions.** The file is written as the owner, so Nextcloud's own rules (quota, locking,
+  versions, antivirus) apply. At publish the owner must be able to change the file, or create it in
+  the nearest folder that exists (`files_not_writable`); the same is checked again on every run.
+- **Failures.** No permission (`files_not_writable`), a folder where the file should be or a file where
+  a folder should be (`files_not_a_file`), and a file over 20 MB (`files_too_large`, start a new file)
+  are not retried. The file being in use (`files_busy`), a full quota (`files_storage_full`) and other
+  storage errors (`files_error`) are.
+- Two deliveries never write the same file at once: each holds a lock on it while it reads and
+  writes, and one that finds it locked is retried.
+- Like Tables, the file is a copy: deleting a response or the form does not remove its line, and
+  retention (section 16) does not touch the file.

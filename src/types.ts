@@ -140,7 +140,7 @@ export interface FieldError {
 	code: string
 }
 
-export type ActionType = 'message' | 'redirect' | 'email' | 'webhook' | 'tables'
+export type ActionType = 'message' | 'redirect' | 'email' | 'webhook' | 'tables' | 'files'
 
 interface ActionBase {
 	/** Stable id, unique in the form. */
@@ -192,7 +192,13 @@ export interface TablesAction extends ActionBase {
 	map: Record<string, string>
 }
 
-export type FormAction = MessageAction | RedirectAction | EmailAction | WebhookAction | TablesAction
+export interface FilesAction extends ActionBase {
+	type: 'files'
+	/** A `.csv` file in the owner's Files, relative to their home, that gets a line per response (docs/SCHEMA.md section 19). */
+	path: string
+}
+
+export type FormAction = MessageAction | RedirectAction | EmailAction | WebhookAction | TablesAction | FilesAction
 
 /** The owner's editable definition (docs/SCHEMA.md section 3), including `actions`. */
 export interface DraftDefinition {
