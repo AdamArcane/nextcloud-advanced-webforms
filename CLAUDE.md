@@ -60,8 +60,8 @@ rules semantics, actions, versioning and the submit algorithm.
   on host `pve` (reachable over Tailscale as `user@proxmox-host`).
   Real forms live on dev. Export them (form menu, Export) before dropping tables or removing
   the app, and ask Adam first. MariaDB there keeps a row-format binlog, which saved the forms once.
-- Live release: push a `v<version>` tag (must match `appinfo/info.xml`). `.github/workflows/release.yml`
-  builds `webforms-<version>.tar.gz` and attaches it to a GitHub release. Live fetches it from there.
+- Live release and deploy: see `docs/RELEASING.md` ("Deploy to the live site"). Push a `v<version>` tag,
+  then run `dev/live-install.sh` on the server. Ploi cannot deploy that site (no repository).
 
 ## Status
 
