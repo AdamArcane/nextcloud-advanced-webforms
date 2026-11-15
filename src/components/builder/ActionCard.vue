@@ -4,6 +4,7 @@
 -->
 
 <script setup lang="ts">
+import type { MailPolicy } from '../../api/settings.ts'
 import type { DraftDefinition, EmailAction, EmailAddressSource, FormAction, MessageAction, RedirectAction, TablesAction, WebhookAction } from '../../types.ts'
 
 import { n, t } from '@nextcloud/l10n'
@@ -41,6 +42,8 @@ const props = defineProps<{
 	unreachable: boolean
 	/** An administrator has switched this kind of action off. */
 	switchedOff?: boolean
+	/** The administrator's settings for mail. Left out, everything is allowed and there is no default. */
+	mail?: MailPolicy
 	/** A freshly generated secret to show once, for this action. */
 	revealedSecret: string | null
 	secretBusy: boolean
@@ -196,6 +199,30 @@ function setRecipient(option: RecipientOption | null): void {
 	patch({ to: option === null ? '' : sourceFor(option) })
 }
 
+/** Whether this action's own reply-to and sender name count, or the administrator's are used. */
+const mailLocked = computed(() => props.mail?.allowOverride === false)
+
+/** When locked, only "the address the respondent typed" is still the form owner's to pick. */
+const replyToOptions = computed(() => (mailLocked.value ? recipientOptions.value.filter((option) => option.kind === 'field') : recipientOptions.value))
+
+/**
+ * Where replies go when this action sets no reply-to: the real address, shown in the empty box. The
+ * words are only for when the server did not say.
+ */
+const defaultReplyTo = computed(() => props.mail?.defaultReplyTo || t('webforms', 'Server sender address'))
+
+/** The name mail is sent under when this action sets none. */
+const defaultFromName = computed(() => props.mail?.defaultFromName || t('webforms', 'Server default'))
+
+function setFromName(value: string): void {
+	if (value.trim() === '') {
+		const { fromName: _removed, ...rest } = email.value
+		emit('update', rest as FormAction)
+	} else {
+		patch({ fromName: value })
+	}
+}
+
 /** The same box for where replies go. It is optional, so clearing it removes the setting. */
 const replyTo = computed<RecipientOption | null>(() => optionFor(email.value.replyTo))
 
@@ -333,10 +360,11 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 					</template>
 				</p>
 				<NcSelect :model-value="replyTo"
+					class="af-action__defaulted"
 					:input-label="t('webforms', 'Reply to (optional)')"
-					:placeholder="t('webforms', 'Pick an email field or type an address')"
-					:options="recipientOptions"
-					taggable
+					:placeholder="defaultReplyTo"
+					:options="replyToOptions"
+					:taggable="!mailLocked"
 					:create-option="createRecipient"
 					label="label"
 					@update:model-value="setReplyTo">
@@ -354,9 +382,21 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 						</span>
 					</template>
 				</NcSelect>
-				<p class="af-action__hint">
-					{{ t('webforms', 'Where a reply to this email goes, for example the address the respondent typed, so you can answer them directly. Left empty, replies go to the server\'s sender address. If no valid address is found when the email is sent, it goes out without one.') }}
+				<p v-if="mailLocked" class="af-action__hint">
+					{{ t('webforms', 'The administrator only lets forms reply to an email field.') }}
 				</p>
+				<NcTextField v-if="!mailLocked || email.fromName !== undefined"
+					class="af-action__defaulted"
+					:model-value="email.fromName ?? ''"
+					:label="t('webforms', 'Sender name (optional)')"
+					:placeholder="defaultFromName"
+					:disabled="mailLocked"
+					maxlength="100"
+					:helper-text="mailLocked ? t('webforms', 'The administrator sets the sender name. Clear this to publish.') : ''"
+					@update:model-value="(value: string | number) => setFromName(String(value))" />
+				<NcButton v-if="mailLocked && email.fromName !== undefined" variant="tertiary" @click="setFromName('')">
+					{{ t('webforms', 'Remove sender name') }}
+				</NcButton>
 				<NcTextField :model-value="email.subject"
 					:label="t('webforms', 'Subject')"
 					@update:model-value="(value: string | number) => patch({ subject: String(value) })" />
@@ -559,6 +599,26 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 	margin: 0;
 	color: var(--color-text-maxcontrast);
 	font-size: 13px;
+}
+
+/*
+ * A box whose placeholder is the default that applies when it is left empty. Nextcloud's fields hide
+ * the placeholder until they have focus and park the label inside the box instead, so here the label
+ * always sits on the border, as it does for a filled field, and the placeholder always shows.
+ */
+.af-action__defaulted :deep(.input-field__input:not(:focus)::placeholder) {
+	opacity: 1 !important;
+}
+
+.af-action__defaulted :deep(.input-field__input + .input-field__label) {
+	--input-label-font-size: 13px;
+	line-height: 1.5;
+	inset-block-start: calc(-1.5 * var(--input-label-font-size) / 2);
+	font-weight: var(--font-weight-element, 500);
+	border-radius: var(--default-grid-baseline) var(--default-grid-baseline) 0 0;
+	background-color: var(--color-main-background);
+	padding-inline: var(--default-grid-baseline);
+	margin-inline: calc(var(--input-padding-start) - var(--default-grid-baseline)) calc(var(--input-padding-end) - var(--default-grid-baseline));
 }
 
 .af-action__inserts,

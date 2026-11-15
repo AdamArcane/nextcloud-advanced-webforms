@@ -18,6 +18,13 @@
   your account, the signed-in respondent, or a typed address. A notification to you can then be answered
   straight to the person who filled in the form.
 
+- Email actions can set a sender name. Only the name changes; the sender address stays the server's.
+
+- Administration settings, "Emails from forms": a default reply-to for emails that set none (the form
+  owner's account email or one fixed address), a default sender name, and a switch for whether form
+  owners may set their own. With the switch off, a form may still reply to the address a respondent
+  typed. See `docs/SCHEMA.md` section 16.2.
+
 - Design: choose where the submit button sits, left, center, right or full width.
 
 ## 0.3.4 - 2026-11-15

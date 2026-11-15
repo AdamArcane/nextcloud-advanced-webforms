@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace OCA\Webforms\Tests\Unit\Actions;
 
 use OCA\Webforms\Actions\ActionContext;
+use OCA\Webforms\Actions\MailPolicy;
 use OCA\Webforms\Actions\ActionFailed;
 use OCA\Webforms\Actions\ActionRunner;
 use OCA\Webforms\Actions\ActionSkipped;
@@ -27,6 +28,8 @@ class ActionRunnerTest extends TestCase {
 	private array $htmls = [];
 	/** @var list<string|null> the reply-to address of each mail */
 	private array $replyTos = [];
+	/** @var list<string|null> the sender name of each mail */
+	private array $fromNames = [];
 	/** @var list<array{string, string, array<string, string>, int}> */
 	private array $posts = [];
 	private int $httpStatus = 200;
@@ -42,10 +45,10 @@ class ActionRunnerTest extends TestCase {
 			public function __construct(private TestCase $test) {
 			}
 
-			public function send(string $to, string $subject, string $body, ?string $html = null, ?string $replyTo = null): void {
+			public function send(string $to, string $subject, string $body, ?string $html = null, ?string $replyTo = null, ?string $fromName = null): void {
 				/** @var ActionRunnerTest $t */
 				$t = $this->test;
-				$t->recordMail($to, $subject, $body, $html, $replyTo);
+				$t->recordMail($to, $subject, $body, $html, $replyTo, $fromName);
 			}
 		};
 		$http = new class($test) implements HttpPort {
@@ -81,13 +84,14 @@ class ActionRunnerTest extends TestCase {
 		return new ActionRunner($mail, $http, $secrets, $accounts);
 	}
 
-	public function recordMail(string $to, string $subject, string $body, ?string $html = null, ?string $replyTo = null): void {
+	public function recordMail(string $to, string $subject, string $body, ?string $html = null, ?string $replyTo = null, ?string $fromName = null): void {
 		if ($this->mailError !== null) {
 			throw $this->mailError;
 		}
 		$this->mails[] = [$to, $subject, $body];
 		$this->htmls[] = $html;
 		$this->replyTos[] = $replyTo;
+		$this->fromNames[] = $fromName;
 	}
 
 	public function recordPost(string $url, string $body, array $headers, int $timeout): int {
@@ -107,7 +111,7 @@ class ActionRunnerTest extends TestCase {
 		return $formId === 7 && $ref === 'whsec_one' ? $this->secret : null;
 	}
 
-	private function context(array $data = ['f_name' => 'Ada', 'f_email' => 'ada@example.com'], int $recent = 0, ?string $userId = null, string $ownerId = 'alice'): ActionContext {
+	private function context(array $data = ['f_name' => 'Ada', 'f_email' => 'ada@example.com'], int $recent = 0, ?string $userId = null, string $ownerId = 'alice', ?MailPolicy $mail = null): ActionContext {
 		return new ActionContext(
 			formId: 7,
 			versionId: 3,
@@ -124,6 +128,7 @@ class ActionRunnerTest extends TestCase {
 			now: 1794700100,
 			recentEmails: $recent,
 			ownerId: $ownerId,
+			mail: $mail ?? new MailPolicy(),
 		);
 	}
 
@@ -174,6 +179,39 @@ class ActionRunnerTest extends TestCase {
 		$this->runner()->run($mail + ['replyTo' => ['owner' => true]], $this->context(ownerId: 'bob'));
 		$this->assertSame([null, null, null, null, null], $this->replyTos);
 		$this->assertCount(5, $this->mails);
+	}
+
+	public function testTheServersDefaultReplyToFillsInWhenTheActionSetsNone(): void {
+		$toRespondent = ['type' => 'email', 'to' => ['field' => 'f_email'], 'subject' => 'Thanks', 'body' => 'x'];
+		$fixed = new MailPolicy(replyToMode: MailPolicy::REPLY_ADDRESS, replyToAddress: 'support@example.com');
+		$owner = new MailPolicy(replyToMode: MailPolicy::REPLY_OWNER);
+
+		$this->runner()->run($toRespondent, $this->context(mail: $fixed));
+		$this->runner()->run($toRespondent, $this->context(mail: $owner));
+		// The action's own choice wins.
+		$this->runner()->run($toRespondent + ['replyTo' => 'desk@example.com'], $this->context(mail: $fixed));
+		// An own choice that resolves to nothing falls back to the default.
+		$this->runner()->run($toRespondent + ['replyTo' => ['respondent' => true]], $this->context(mail: $fixed));
+		// A default that is the recipient itself is pointless and left out.
+		$this->runner()->run(['to' => ['owner' => true]] + $toRespondent, $this->context(mail: $owner));
+		$this->assertSame(['support@example.com', 'alice@example.com', 'desk@example.com', 'support@example.com', null], $this->replyTos);
+	}
+
+	public function testALockedPolicyIgnoresAnActionsOwnReplyToAndSenderNameExceptAnEmailField(): void {
+		$locked = new MailPolicy(replyToMode: MailPolicy::REPLY_ADDRESS, replyToAddress: 'support@example.com', allowOverride: false, fromName: 'Acme');
+		$mail = ['type' => 'email', 'to' => 'owner@example.com', 'subject' => 'New', 'body' => 'x', 'fromName' => 'Desk'];
+		$this->runner()->run($mail + ['replyTo' => 'desk@example.com'], $this->context(mail: $locked));
+		$this->runner()->run($mail + ['replyTo' => ['field' => 'f_email']], $this->context(mail: $locked));
+		$this->assertSame(['support@example.com', 'ada@example.com'], $this->replyTos);
+		$this->assertSame(['Acme', 'Acme'], $this->fromNames);
+	}
+
+	public function testSenderNameIsTheActionsOwnThenTheServersThenNone(): void {
+		$mail = ['type' => 'email', 'to' => 'owner@example.com', 'subject' => 'New', 'body' => 'x'];
+		$this->runner()->run($mail, $this->context());
+		$this->runner()->run($mail, $this->context(mail: new MailPolicy(fromName: 'Acme')));
+		$this->runner()->run($mail + ['fromName' => "Desk\r\nBcc: evil@example.com"], $this->context(mail: new MailPolicy(fromName: 'Acme')));
+		$this->assertSame([null, 'Acme', 'Desk Bcc: evil@example.com'], $this->fromNames);
 	}
 
 	public function testSendsToTheRespondentFromAnEmailField(): void {

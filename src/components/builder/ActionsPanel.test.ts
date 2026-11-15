@@ -183,6 +183,57 @@ describe('ActionsPanel', () => {
 		expect(lastChange(wrapper).actions[0]).toMatchObject({ to: { field: email } })
 	})
 
+	it('takes a sender name and says where replies go by default', async () => {
+		const definition = addAction(base().def, 'email').definition
+		const wrapper = mount(ActionsPanel, { props: { definition, formId: 7, errors: [], mail: { allowOverride: true, replyToMode: 'address' as const, replyToAddress: 'support@example.com', fromName: 'Acme', defaultReplyTo: 'support@example.com', defaultFromName: 'Acme' } } })
+		await wrapper.find('.af-action__head').trigger('click')
+		// The defaults are the placeholders of the empty boxes, with no text to explain them.
+		const reply = wrapper.findAllComponents({ name: 'NcSelect' }).find((select) => select.props('inputLabel') === 'Reply to (optional)')!
+		expect(reply.props('placeholder')).toBe('support@example.com')
+		expect(wrapper.text()).not.toContain('Where a reply to this email goes')
+		const name = wrapper.findAllComponents({ name: 'NcTextField' }).find((field) => field.props('label') === 'Sender name (optional)')!
+		expect(name.props('placeholder')).toBe('Acme')
+		name.vm.$emit('update:modelValue', 'Help desk')
+		expect(lastChange(wrapper).actions[0]).toMatchObject({ fromName: 'Help desk' })
+		await wrapper.setProps({ definition: lastChange(wrapper) })
+		name.vm.$emit('update:modelValue', '  ')
+		expect('fromName' in lastChange(wrapper).actions[0]).toBe(false)
+	})
+
+	it('falls back to words in the empty boxes when the server did not say what the defaults are', async () => {
+		const wrapper = mountPanel(addAction(base().def, 'email').definition)
+		await wrapper.find('.af-action__head').trigger('click')
+		const reply = wrapper.findAllComponents({ name: 'NcSelect' }).find((select) => select.props('inputLabel') === 'Reply to (optional)')!
+		expect(reply.props('placeholder')).toBe('Server sender address')
+		const name = wrapper.findAllComponents({ name: 'NcTextField' }).find((field) => field.props('label') === 'Sender name (optional)')!
+		expect(name.props('placeholder')).toBe('Server default')
+	})
+
+	it('shows the real sender address and name when the administrator set no defaults', async () => {
+		const definition = addAction(base().def, 'email').definition
+		const wrapper = mount(ActionsPanel, { props: { definition, formId: 7, errors: [], mail: { allowOverride: true, replyToMode: 'none' as const, replyToAddress: '', fromName: '', defaultReplyTo: 'no-reply@cloud.example.com', defaultFromName: 'Our Cloud' } } })
+		await wrapper.find('.af-action__head').trigger('click')
+		const reply = wrapper.findAllComponents({ name: 'NcSelect' }).find((select) => select.props('inputLabel') === 'Reply to (optional)')!
+		expect(reply.props('placeholder')).toBe('no-reply@cloud.example.com')
+		const name = wrapper.findAllComponents({ name: 'NcTextField' }).find((field) => field.props('label') === 'Sender name (optional)')!
+		expect(name.props('placeholder')).toBe('Our Cloud')
+	})
+
+	it('only offers email fields for reply-to, and no sender name, when the administrator locked them', async () => {
+		const { def, email } = base()
+		const definition = addAction(def, 'email').definition
+		const wrapper = mount(ActionsPanel, { props: { definition, formId: 7, errors: [], mail: { allowOverride: false, replyToMode: 'owner' as const, replyToAddress: '', fromName: '', defaultReplyTo: 'me@example.com', defaultFromName: 'Our Cloud' } } })
+		await wrapper.find('.af-action__head').trigger('click')
+		const reply = wrapper.findAllComponents({ name: 'NcSelect' }).find((select) => select.props('inputLabel') === 'Reply to (optional)')!
+		expect(reply.props('options')).toEqual([{ id: email, label: expect.any(String), kind: 'field' }])
+		expect(reply.props('taggable')).toBe(false)
+		expect(reply.props('placeholder')).toBe('me@example.com')
+		expect(wrapper.text()).toContain('only lets forms reply to an email field')
+		expect(wrapper.findAllComponents({ name: 'NcTextField' }).some((field) => field.props('label') === 'Sender name (optional)')).toBe(false)
+		// The recipient is not restricted.
+		expect((recipientSelect(wrapper).props('options') as unknown[]).length).toBe(3)
+	})
+
 	it('can address the form owner or the signed-in respondent, and says what each means', async () => {
 		const wrapper = mountPanel(addAction(base().def, 'email').definition)
 		await wrapper.find('.af-action__head').trigger('click')

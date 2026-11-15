@@ -38,7 +38,7 @@ final class ActionRunnerTablesTest extends TestCase {
 
 	private function runner(?TablesPort $tables): ActionRunner {
 		$mail = new class implements MailPort {
-			public function send(string $to, string $subject, string $body, ?string $html = null, ?string $replyTo = null): void {
+			public function send(string $to, string $subject, string $body, ?string $html = null, ?string $replyTo = null, ?string $fromName = null): void {
 			}
 		};
 		$http = new class implements HttpPort {
