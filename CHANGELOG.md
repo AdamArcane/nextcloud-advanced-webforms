@@ -5,6 +5,12 @@
 
 # Changelog
 
+## Unreleased
+
+- Nextcloud events for Flow and other automation: a response was submitted, a response was deleted,
+  a form was published, a form was unpublished, reopened or closed. They are webhook compatible, so an
+  administrator can send them anywhere with the Webhook Listeners app. See `docs/SCHEMA.md` section 14.
+
 ## 0.3.1 - 2026-11-15
 
 - First release build. The app ID is now `webforms`, so public links are `/apps/webforms/f/<token>`.

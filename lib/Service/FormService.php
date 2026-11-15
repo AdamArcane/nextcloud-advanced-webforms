@@ -11,6 +11,11 @@ namespace OCA\Webforms\Service;
 
 use OCA\Webforms\Actions\Adapter\NextcloudSecrets;
 use OCA\Webforms\Db\ActionLogMapper;
+use OCA\Webforms\Event\EntryDeletedEvent;
+use OCA\Webforms\Event\EventPayload;
+use OCA\Webforms\Event\EventPublisher;
+use OCA\Webforms\Event\FormPublishedEvent;
+use OCA\Webforms\Event\FormStatusChangedEvent;
 use OCA\Webforms\Db\EntryMapper;
 use OCA\Webforms\Db\Form;
 use OCA\Webforms\Db\FormMapper;
@@ -48,6 +53,7 @@ class FormService {
 		private readonly ISecureRandom $random,
 		private readonly NextcloudSecrets $secrets,
 		private readonly UploadService $uploads,
+		private readonly EventPublisher $events,
 	) {
 	}
 
@@ -250,7 +256,9 @@ class FormService {
 
 		$encoded = $this->encode(JsonShape::definition($draft));
 		$latest = $this->versions->findLatest($form->getId());
+		$newVersion = false;
 		if ($latest === null || $this->canonical($latest->getDefinition()) !== $this->canonical($encoded)) {
+			$newVersion = true;
 			$version = new Version();
 			$version->setFormId($form->getId());
 			$version->setVersionNumber(($latest?->getVersionNumber() ?? 0) + 1);
@@ -267,7 +275,17 @@ class FormService {
 			$form->setPublicToken($this->random->generate(32, ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
 		}
 		$form->setUpdatedAt($this->time->getTime());
-		return $this->forms->update($form);
+		$form = $this->forms->update($form);
+		$this->events->publish(static fn (): FormPublishedEvent => new FormPublishedEvent(EventPayload::formPublished(
+			$form->getId(),
+			$form->getTitle(),
+			$form->getOwnerId(),
+			$latest->getId(),
+			$latest->getVersionNumber(),
+			$newVersion,
+			$form->getPublicToken(),
+		)));
+		return $form;
 	}
 
 	/**
@@ -286,9 +304,20 @@ class FormService {
 		if ($status !== Form::STATUS_UNPUBLISHED && $form->getLatestVersionId() === null) {
 			throw new ValidationException([['code' => 'not_published_yet', 'path' => 'status']]);
 		}
+		$previous = $form->getStatus();
 		$form->setStatus($status);
 		$form->setUpdatedAt($this->time->getTime());
-		return $this->forms->update($form);
+		$form = $this->forms->update($form);
+		if ($previous !== $status) {
+			$this->events->publish(static fn (): FormStatusChangedEvent => new FormStatusChangedEvent(EventPayload::formStatusChanged(
+				$form->getId(),
+				$form->getTitle(),
+				$form->getOwnerId(),
+				$status,
+				$previous,
+			)));
+		}
+		return $form;
 	}
 
 	/**
@@ -377,6 +406,14 @@ class FormService {
 		// Its deliveries go with it, so the log never points at a response that no longer exists.
 		$this->actionLog->deleteByEntry($entry->getId());
 		$this->entries->delete($entry);
+		$this->events->publish(static fn (): EntryDeletedEvent => new EntryDeletedEvent(EventPayload::entryDeleted(
+			$form->getId(),
+			$form->getTitle(),
+			$form->getOwnerId(),
+			$entry->getVersionId(),
+			$entry->getId(),
+			$userId,
+		)));
 	}
 
 	/**

@@ -823,3 +823,43 @@ version**. The forms list has **Import form**.
 - Endpoints: `GET /api/v1/forms/{id}/export?source=draft|published` (a JSON download) and
   `POST /api/v1/forms/import` with `{ "package": <the file's contents> }`, which answers 201 with
   `{ form, errors }` like a draft save.
+
+## 14. Nextcloud events (DECISION)
+
+Besides the per-form webhook action (section 7), the app dispatches Nextcloud events, so an
+administrator can connect Flow, Windmill, n8n or any receiver to every form on the server with the
+Webhook Listeners app, without each form owner setting anything up. The two routes serve different
+people: the webhook action is the form owner's, aimed at one URL for one form; events are the
+administrator's, server wide.
+
+All events extend `OCP\EventDispatcher\Event` and implement `IWebhookCompatibleEvent`, so the class
+name is what an administrator registers. They live in `OCA\Webforms\Event\`.
+
+| Class | `event` | Fired when |
+| --- | --- | --- |
+| `EntryCreatedEvent` | `entry.created` | a response is stored |
+| `EntryDeletedEvent` | `entry.deleted` | the owner deletes a response |
+| `FormPublishedEvent` | `form.published` | a form is published, including a republish with no changes |
+| `FormStatusChangedEvent` | `form.status_changed` | a form is unpublished, reopened or closed |
+
+Every payload has `event`, `formId`, `formTitle` and `ownerId`. The rest:
+
+- `entry.created`: the webhook body of section 7.3 (`versionId`, `entryId`, `submittedAt`, `userId`,
+  `data` with label and value for each visible answered field). Uploaded files are described by
+  name, size and type, never by where they are stored.
+- `entry.deleted`: `versionId`, `entryId`, `deletedBy`. No answers.
+- `form.published`: `versionId`, `versionNumber`, `newVersion` (false when the draft matched the
+  latest version, so no version was added) and `publicToken`.
+- `form.status_changed`: `status` and `previousStatus`, each `unpublished`, `published` or `closed`.
+
+Rules:
+
+- Events are dispatched after the database commit. A failing listener is logged and ignored, and
+  never fails or rolls back a submission, publish or delete.
+- They are not queued: delivery to a remote receiver is the Webhook Listeners app's job, which has
+  its own retry and logging. The per-form webhook action keeps its own signed, retried delivery.
+- `entry.created` carries personal data, and so does `publicToken`. Only an administrator can
+  register a listener, so this stays an administrator's decision. Do not add more personal data
+  without thinking about that.
+- Deleting a whole form does not fire `entry.deleted` for each response. There is no form-deleted
+  event yet.

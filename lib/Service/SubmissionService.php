@@ -14,6 +14,9 @@ use OCA\Webforms\Db\EntryMapper;
 use OCA\Webforms\Db\Form;
 use OCA\Webforms\Db\FormMapper;
 use OCA\Webforms\Db\VersionMapper;
+use OCA\Webforms\Event\EntryCreatedEvent;
+use OCA\Webforms\Event\EventPayload;
+use OCA\Webforms\Event\EventPublisher;
 use OCA\Webforms\Exception\FormClosedException;
 use OCA\Webforms\Exception\LoginRequiredException;
 use OCA\Webforms\Exception\NotFoundException;
@@ -57,6 +60,7 @@ class SubmissionService {
 		private readonly LoggerInterface $logger,
 		private readonly UploadService $uploads,
 		private readonly CaptchaService $captcha,
+		private readonly EventPublisher $events,
 	) {
 		$this->tokens = new FillTimeToken($config->getSystemValueString('secret'));
 	}
@@ -165,6 +169,19 @@ class SubmissionService {
 			$this->uploads->deleteFilesOf($form->getOwnerId(), $fields, $data);
 			throw $e;
 		}
+
+		// After the commit, and never able to fail it: a Nextcloud event for Flow and other listeners.
+		$this->events->publish(static fn (): EntryCreatedEvent => new EntryCreatedEvent(EventPayload::entryCreated(
+			$form->getId(),
+			$form->getTitle(),
+			$form->getOwnerId(),
+			$version->getId(),
+			$entry->getId(),
+			$userId,
+			$entry->getSubmittedAt(),
+			$fields,
+			$data,
+		)));
 
 		return $this->afterSubmit($form, $definition, $entry, self::forConditions($fields, $data));
 	}
