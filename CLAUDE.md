@@ -26,7 +26,10 @@ rules semantics, actions, versioning and the submit algorithm.
   `docs/ROADMAP.md`); all entry access still goes through `EntryMapper`. Planned work is in
   `docs/ROADMAP.md`.
 - Never use em dashes in any text written for the owner.
-- Commits carry the Claude co-author trailer. Push to `main` is fine.
+- Commits carry the Claude co-author trailer.
+- **Branches** (CONTRIBUTING.md): `main` is released code and is protected, so never push to it. Work on
+  `feature/<topic>` or `fix/<topic>` from `dev`, open a pull request with `gh pr create --base dev`, and
+  merge it once CI is green. Releases are a `dev` to `main` pull request, then a `vX.Y.Z` tag on `main`.
 
 ## Architecture
 

@@ -5,6 +5,8 @@
 
 # Releasing Advanced Webforms
 
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for the branch workflow. Releases are tagged on `main`.
+
 ## Before you tag
 
 1. Bump `<version>` in `appinfo/info.xml` and add a `## <version>` section to `CHANGELOG.md`.
