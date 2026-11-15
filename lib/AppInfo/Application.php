@@ -18,6 +18,7 @@ use OCA\Webforms\Actions\Ports\HttpPort;
 use OCA\Webforms\Actions\Ports\MailPort;
 use OCA\Webforms\Actions\Ports\SecretPort;
 use OCA\Webforms\Db\UploadMapper;
+use OCA\Webforms\Listener\RegisterEntitiesListener;
 use OCA\Webforms\Listener\UserDeletedListener;
 use OCA\Webforms\Security\Captcha\AppConfigStore;
 use OCA\Webforms\Security\Captcha\CacheReplayStore;
@@ -41,6 +42,7 @@ use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\IConfig;
 use OCP\User\Events\UserDeletedEvent;
+use OCP\WorkflowEngine\Events\RegisterEntitiesEvent;
 use Psr\Container\ContainerInterface;
 
 class Application extends App implements IBootstrap {
@@ -75,6 +77,7 @@ class Application extends App implements IBootstrap {
 		));
 
 		$context->registerEventListener(UserDeletedEvent::class, UserDeletedListener::class);
+		$context->registerEventListener(RegisterEntitiesEvent::class, RegisterEntitiesListener::class);
 	}
 
 	public function boot(IBootContext $context): void {

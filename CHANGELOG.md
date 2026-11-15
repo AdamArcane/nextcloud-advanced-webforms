@@ -9,7 +9,8 @@
 
 - Nextcloud events for Flow and other automation: a response was submitted, a response was deleted,
   a form was published, a form was unpublished, reopened or closed. They are webhook compatible, so an
-  administrator can send them anywhere with the Webhook Listeners app. See `docs/SCHEMA.md` section 14.
+  administrator can send them anywhere with the Webhook Listeners app. They also show up in Flow as a
+  "Webforms" trigger. See `docs/SCHEMA.md` section 14.
 
 ## 0.3.1 - 2026-11-15
 

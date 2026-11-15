@@ -863,3 +863,12 @@ Rules:
   without thinking about that.
 - Deleting a whole form does not fire `entry.deleted` for each response. There is no form-deleted
   event yet.
+
+### 14.1 Flow trigger
+
+`OCA\Webforms\WorkflowEngine\FormsEntity` registers the four events with the Nextcloud workflow engine
+(Flow) as an entity called "Webforms", so "Response submitted", "Response deleted", "Form published"
+and "Form status changed" can be chosen as the "When" of a flow. The event name the engine listens
+for is the event class name. An administrator's flow sees every form. A user's own flow only runs for
+forms that user owns. Webforms offers triggers only. The actions (what a flow does) come from other
+apps, and Webforms has none yet.
