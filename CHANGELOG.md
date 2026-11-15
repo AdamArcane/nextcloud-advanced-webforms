@@ -5,7 +5,7 @@
 
 # Changelog
 
-## Unreleased
+## 0.3.3 - 2026-11-15
 
 - A summary above the responses: responses per day (per month for long periods), how often each choice
   was picked, and the average, lowest, highest and total of number questions. It follows the filters
