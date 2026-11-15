@@ -21,17 +21,19 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
-import { bulkDeleteEntries, deleteEntry, exportUrl, listDeliveries, listEntries, retryDelivery } from '../../api/forms.ts'
+import { bulkDeleteEntries, deleteEntry, exportUrl, fetchEntrySummary, listDeliveries, listEntries, retryDelivery } from '../../api/forms.ts'
 import { ApiError } from '../../api/http.ts'
 import { defaultColumnIds, loadColumnChoice, responseColumns, saveColumnChoice, visibleColumns } from '../../entries/columns.ts'
 import { exportScope, MAX_SELECTED } from '../../entries/exporting.ts'
 import type { ExportFormat } from '../../entries/exporting.ts'
 import { EMPTY_FILTER, isFilterActive } from '../../entries/filter.ts'
+import type { EntrySummaryData } from '../../entries/summary.ts'
 import FormBar from '../FormBar.vue'
 import SegmentedControl from '../builder/SegmentedControl.vue'
 import DeliveryRow from './DeliveryRow.vue'
 import ResponseCard from './ResponseCard.vue'
 import ResponseFilters from './ResponseFilters.vue'
+import ResponseSummary from './ResponseSummary.vue'
 import ResponsesTable from './ResponsesTable.vue'
 
 const props = defineProps<{
@@ -83,6 +85,56 @@ function setView(value: ResponsesView): void {
 }
 
 const chosenColumns = ref<string[] | null>(loadColumnChoice(props.formId))
+
+// ---- Summary ---------------------------------------------------------------
+
+const SUMMARY_KEY = 'webforms.responsesSummary'
+function loadSummaryOpen(): boolean {
+	try {
+		return window.localStorage.getItem(SUMMARY_KEY) !== 'closed'
+	} catch {
+		return true
+	}
+}
+const summaryOpen = ref(loadSummaryOpen())
+const summary = ref<EntrySummaryData | null>(null)
+const summaryLoading = ref(false)
+const summaryFailed = ref(false)
+/** Only the answer to the newest request is shown, so a slow old one cannot overwrite it. */
+let summaryRequest = 0
+
+async function loadSummary(): Promise<void> {
+	if (!summaryOpen.value) {
+		return
+	}
+	const request = ++summaryRequest
+	summaryLoading.value = true
+	summaryFailed.value = false
+	try {
+		const loaded = await fetchEntrySummary(props.formId, entryFilter.value)
+		if (request === summaryRequest) {
+			summary.value = loaded
+		}
+	} catch {
+		if (request === summaryRequest) {
+			summaryFailed.value = true
+		}
+	} finally {
+		if (request === summaryRequest) {
+			summaryLoading.value = false
+		}
+	}
+}
+
+function toggleSummary(): void {
+	summaryOpen.value = !summaryOpen.value
+	try {
+		window.localStorage.setItem(SUMMARY_KEY, summaryOpen.value ? 'open' : 'closed')
+	} catch {
+		// Storage can be blocked, the choice then lasts until the page is closed.
+	}
+	void loadSummary()
+}
 
 // ---- Selecting and bulk actions ------------------------------------------
 
@@ -139,6 +191,7 @@ async function bulkDelete(): Promise<void> {
 		expandedId.value = null
 		await loadEntries(false)
 		void refreshFailedCount()
+		void loadSummary()
 	} catch (error) {
 		if (error instanceof ApiError && error.code === 'count_changed') {
 			bulkError.value = t('webforms', 'The number of matching responses changed from {before} to {now}, so nothing was deleted. Check the list and try again.', { before: total.value, now: Number(error.data.current ?? 0) })
@@ -214,12 +267,17 @@ const filterDefinition = computed<DraftDefinition | null>(() => {
 })
 
 function applyFilter(next: EntryFilterState): void {
+	const previous = entryFilter.value
 	entryFilter.value = next
 	expandedId.value = null
 	clearSelection()
 	bulkDone.value = null
 	bulkError.value = null
 	void loadEntries(false)
+	// Changing only the order does not change what the responses add up to.
+	if (JSON.stringify({ ...next, sort: '' }) !== JSON.stringify({ ...previous, sort: '' })) {
+		void loadSummary()
+	}
 }
 
 function toggleColumn(id: string, on: boolean): void {
@@ -243,6 +301,8 @@ async function confirmDelete(): Promise<void> {
 		await deleteEntry(props.formId, id)
 		entries.value = entries.value.filter((entry) => entry.id !== id)
 		total.value = Math.max(0, total.value - 1)
+		grandTotal.value = Math.max(0, grandTotal.value - 1)
+		void loadSummary()
 		if (expandedId.value === id) {
 			expandedId.value = null
 		}
@@ -385,6 +445,7 @@ onMounted(() => {
 	refreshTimer = setInterval(tick, REFRESH_MS)
 	void loadEntries(false)
 	void refreshFailedCount()
+	void loadSummary()
 })
 </script>
 
@@ -476,6 +537,11 @@ onMounted(() => {
 						{{ t('webforms', 'Searched the first 20,000 responses. There may be more matches, narrow the dates to find them.') }}
 					</NcNoteCard>
 
+					<ResponseSummary v-if="summaryOpen"
+						:summary="summary"
+						:loading="summaryLoading"
+						:failed="summaryFailed" />
+
 					<NcNoteCard v-if="bulkDone !== null" type="success">
 						{{ t('webforms', 'Deleted {n} responses.', { n: bulkDone }) }}
 					</NcNoteCard>
@@ -513,6 +579,13 @@ onMounted(() => {
 								{ value: 'cards', label: t('webforms', 'Cards'), icon: icons.cardView },
 							]"
 							@update:model-value="(value) => setView(value === 'cards' ? 'cards' : 'table')" />
+						<NcButton :variant="summaryOpen ? 'primary' : 'secondary'" :aria-pressed="summaryOpen" @click="toggleSummary">
+							<template #icon>
+								<Icon :path="icons.summary" />
+							</template>
+							{{ t('webforms', 'Summary') }}
+						</NcButton>
+						<span class="af-entries__spacer" />
 						<NcActions v-if="view === 'table'" :aria-label="t('webforms', 'Choose columns')" :name="t('webforms', 'Columns')">
 							<template #icon>
 								<Icon :path="icons.columns" />
@@ -732,7 +805,6 @@ onMounted(() => {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	justify-content: space-between;
 	gap: var(--default-grid-baseline);
 }
 </style>

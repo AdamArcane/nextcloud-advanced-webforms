@@ -5,6 +5,7 @@
 
 import type { BulkDeleteRequest, ExportOptions } from '../entries/exporting.ts'
 import type { EntryFilterState } from '../entries/filter.ts'
+import type { EntrySummaryData } from '../entries/summary.ts'
 import type { DefinitionError, DeliveriesPage, Delivery, DeliveryStatus, DraftDefinition, EntriesPage, OwnerForm } from '../types.ts'
 
 import axios from '@nextcloud/axios'
@@ -79,6 +80,12 @@ export function createWebhookSecret(id: number, ref?: string): Promise<WebhookSe
 
 export function listEntries(id: number, limit: number, offset: number, filter: EntryFilterState = EMPTY_FILTER): Promise<EntriesPage> {
 	return call(axios.get<EntriesPage>(url('/forms/' + id + '/entries'), { params: { limit, offset, ...filterParams(filter) } }))
+}
+
+/** What the matching responses add up to. The order of a filter does not matter here. */
+export function fetchEntrySummary(id: number, filter: EntryFilterState = EMPTY_FILTER): Promise<EntrySummaryData> {
+	const { sort: _sort, ...params } = filterParams(filter)
+	return call(axios.get<EntrySummaryData>(url('/forms/' + id + '/entries/summary'), { params }))
 }
 
 export async function deleteEntry(id: number, entryId: number): Promise<void> {

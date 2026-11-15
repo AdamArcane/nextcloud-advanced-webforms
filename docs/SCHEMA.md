@@ -1022,3 +1022,34 @@ matches, or a search that stopped early, is refused (`422 too_many_matches`): na
 The Responses view ticks rows in the table. Ticking the whole page offers "select all N matching",
 which uses the filter route. One Download menu follows what is ticked, else what the filter matches,
 else everything, and passes the columns the person chose.
+
+### 17.2 Summary
+
+`GET /api/v1/forms/{id}/entries/summary` takes the list's filter (not `sort`, `limit` or `offset`) and
+answers what the matching responses add up to:
+
+```json
+{ "total": 62, "truncated": false,
+  "timeline": { "unit": "day", "buckets": [{ "start": "2026-11-14", "count": 3 }] },
+  "fields": [
+    { "id": "f_kind", "label": "Kind", "type": "select", "kind": "choice", "answered": 60,
+      "options": [{ "value": "opt_sup", "label": "Support", "count": 14 }] },
+    { "id": "f_score", "label": "Score", "type": "number", "kind": "number", "answered": 38,
+      "min": 1, "max": 5, "average": 3.53, "sum": 134 },
+    { "id": "f_ok", "label": "Agree", "type": "checkbox", "kind": "yesno", "answered": 62, "yes": 38, "no": 24 }
+  ] }
+```
+
+- **Timeline.** Responses per UTC day from the first day that has one to the last, empty days included.
+  More than 92 days is given per month, `start` being the first of the month.
+- **Fields.** Select, radio and checkboxes are `choice`, a number is `number`, a single checkbox is
+  `yesno`. Other questions are not summarised. Each response is read against its own version. Labels,
+  option names and the order come from the newest version that has them, and an option only an older
+  version had comes last. Every option is listed, also with no picks. A stored value with no option any
+  more counts under its own name. `answered` is how many responses answered the question, so the shares
+  of a checkboxes question can add up to more than 100 percent.
+- `truncated` is true when the walk stopped at 20 000 responses, and the numbers then cover those only.
+- The Responses view shows it above the table: thin columns for the timeline with a readout on hover
+  and with the arrow keys, horizontal bars in the form's own option order with the count and share at
+  the tip, and figures (not a chart) for numbers. Screen readers get the timeline as a table. It follows
+  the filters, and whether it is open is remembered in the browser.
