@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 msgid ""
 msgstr ""
-"Project-Id-Version: Advanced Forms\n"
+"Project-Id-Version: Advanced Webforms\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -181,7 +181,7 @@ msgid "Advanced"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:385
-msgid "Advanced Forms/<form title>"
+msgid "Webforms/<form title>"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:292

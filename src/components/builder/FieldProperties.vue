@@ -403,7 +403,7 @@ const moves: { move: Move, label: string, icon: string }[] = [
 			<template v-if="uploadStorage === 'files'">
 				<NcTextField :model-value="field.folder ?? ''"
 					:label="t('advancedforms', 'Folder')"
-					:placeholder="t('advancedforms', 'Advanced Forms/<form title>')"
+					:placeholder="t('advancedforms', 'Webforms/<form title>')"
 					@update:model-value="(value: string | number) => text('folder', value)" />
 				<NcButton variant="secondary" @click="pickFolder">
 					{{ t('advancedforms', 'Choose folder') }}

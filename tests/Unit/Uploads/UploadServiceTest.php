@@ -220,7 +220,7 @@ class UploadServiceTest extends TestCase {
 		$this->assertSame('x', $data['f_name']);
 		$this->assertSame([['name' => 'a.png', 'size' => 4, 'mime' => 'image/png', 'storage' => 'files', 'ref' => '100']], $data['f_cv']);
 		$this->assertSame('owner', $this->stored[100]['owner']);
-		$this->assertSame('Advanced Forms/My form', $this->stored[100]['folder']);
+		$this->assertSame('Webforms/My form', $this->stored[100]['folder']);
 		$this->assertStringStartsWith('Response 1970-01-01 00.33.20', $this->stored[100]['subfolder']);
 		$this->assertSame('AAAA', $this->stored[100]['body']);
 		$this->assertSame([], $this->pending, 'the pending upload is consumed');

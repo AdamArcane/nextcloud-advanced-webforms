@@ -45,7 +45,7 @@ class UserDeletedListener implements IEventListener {
 			$this->entries->anonymizeUser($userId);
 		} catch (\Throwable $e) {
 			// Deleting an account must not fail because of this app.
-			$this->logger->error('Advanced Forms could not clean up after a deleted user', ['exception' => $e, 'app' => 'advancedforms']);
+			$this->logger->error('Advanced Webforms could not clean up after a deleted user', ['exception' => $e, 'app' => 'advancedforms']);
 		}
 	}
 }

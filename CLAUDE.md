@@ -3,7 +3,7 @@
   - SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 
-# Advanced Forms (Nextcloud app) - working notes
+# Advanced Webforms (Nextcloud app) - working notes
 
 Gravity Forms-style forms app for Nextcloud. Brand new app, not a fork of core
 Forms. Owner: Adam (ArcaneX). Private repo `AdamArcane/nextcloud-advanced-forms`.

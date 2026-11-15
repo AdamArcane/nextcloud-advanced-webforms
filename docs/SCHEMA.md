@@ -3,7 +3,7 @@
   - SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 
-# Advanced Forms: form definition spec
+# Advanced Webforms: form definition spec
 
 Status: DRAFT v0.3 (design review, no code yet)
 
@@ -323,7 +323,7 @@ A `file` field takes one or more uploaded files. Properties (all optional):
 | `accept` | list of groups (`images`, `documents`, `archives`, `audio`, `video`) and extra extensions like `.dwg`. Default `images` and `documents` |
 | `audience` | `anyone` (default) or `login` (signed-in users only) |
 | `storage` | `files` (default) saves into the form owner's Nextcloud Files, `app` keeps files in the app's own storage |
-| `folder` | for `storage: files`, a folder path in the owner's Files. Default `Advanced Forms/<form title>` |
+| `folder` | for `storage: files`, a folder path in the owner's Files. Default `Webforms/<form title>` |
 
 A file field has no `placeholder` and no `defaultValue`. In rules it can only be tested with
 `empty` and `not_empty`.
@@ -729,7 +729,7 @@ in must pass the administrator's spam check, unless `settings.captcha` is false.
 returns the form level code `captcha_failed`. The check is skipped for logged-in users.
 
 The administrator picks one provider for the whole server (Settings, Administration,
-Advanced Forms): `builtin` (default), `turnstile`, `hcaptcha`, or `none`. The choice,
+Advanced Webforms): `builtin` (default), `turnstile`, `hcaptcha`, or `none`. The choice,
 the site key, and the secret key live in app config; the secret is stored encrypted and is
 never sent to a browser. A Turnstile or hCaptcha choice without both keys counts as `none`,
 so an unfinished setup never locks respondents out.

@@ -73,7 +73,7 @@ export function toPot(messages) {
 		...POT_HEADER,
 		'msgid ""',
 		'msgstr ""',
-		'"Project-Id-Version: Advanced Forms\\n"',
+		'"Project-Id-Version: Advanced Webforms\\n"',
 		'"Content-Type: text/plain; charset=UTF-8\\n"',
 		'"Content-Transfer-Encoding: 8bit\\n"',
 		'"Plural-Forms: ' + DEFAULT_PLURAL + '\\n"',

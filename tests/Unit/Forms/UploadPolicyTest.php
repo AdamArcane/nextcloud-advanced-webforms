@@ -95,9 +95,9 @@ class UploadPolicyTest extends TestCase {
 	}
 
 	public function testDefaultFolderFollowsTheFormTitle(): void {
-		$this->assertSame('Advanced Forms/Job application', UploadPolicy::folder([], 'Job application'));
-		$this->assertSame('Advanced Forms/Form', UploadPolicy::folder([], '///'));
+		$this->assertSame('Webforms/Job application', UploadPolicy::folder([], 'Job application'));
+		$this->assertSame('Webforms/Form', UploadPolicy::folder([], '///'));
 		$this->assertSame('Mine/Here', UploadPolicy::folder(['folder' => 'Mine/Here'], 'T'));
-		$this->assertSame('Advanced Forms/T', UploadPolicy::folder(['folder' => '../x'], 'T'));
+		$this->assertSame('Webforms/T', UploadPolicy::folder(['folder' => '../x'], 'T'));
 	}
 }

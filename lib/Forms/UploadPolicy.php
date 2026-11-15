@@ -23,7 +23,7 @@ final class UploadPolicy {
 	public const STORAGE_APP = 'app';
 	public const AUDIENCE_ANYONE = 'anyone';
 	public const AUDIENCE_LOGIN = 'login';
-	public const DEFAULT_FOLDER_ROOT = 'Advanced Forms';
+	public const DEFAULT_FOLDER_ROOT = 'Webforms';
 
 	/**
 	 * File types an owner can allow, by group.

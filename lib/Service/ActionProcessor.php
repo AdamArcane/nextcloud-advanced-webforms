@@ -101,7 +101,7 @@ class ActionProcessor {
 			// The entry or its version was deleted while the delivery waited.
 			$this->recordFailure($row, 'entry_deleted', false, $now);
 		} catch (\Throwable $e) {
-			$this->logger->error('Advanced Forms action failed unexpectedly', ['exception' => $e, 'app' => 'advancedforms']);
+			$this->logger->error('Advanced Webforms action failed unexpectedly', ['exception' => $e, 'app' => 'advancedforms']);
 			$this->recordFailure($row, 'unexpected_error', true, $now);
 		}
 

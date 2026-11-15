@@ -3,7 +3,7 @@
   - SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 
-# Releasing Advanced Forms
+# Releasing Advanced Webforms
 
 ## Before you tag
 

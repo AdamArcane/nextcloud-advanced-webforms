@@ -257,7 +257,7 @@ class SubmissionService {
 
 			return ['message' => $plan['message'], 'redirect' => $plan['redirect']];
 		} catch (\Throwable $e) {
-			$this->logger->error('Advanced Forms could not run after-submit actions', ['exception' => $e, 'app' => 'advancedforms']);
+			$this->logger->error('Advanced Webforms could not run after-submit actions', ['exception' => $e, 'app' => 'advancedforms']);
 			return ['message' => null, 'redirect' => null];
 		}
 	}
