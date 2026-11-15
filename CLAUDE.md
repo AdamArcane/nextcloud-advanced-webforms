@@ -78,8 +78,10 @@ retries), builder (fields, logic, actions, settings, multi-page, design tab, dra
 with live preview, row moves, resize handles, text alignment, hide required indicator).
 
 Files action (docs/SCHEMA.md section 19): appends each response to a CSV file in the owner's Files,
-with the export's columns, matched to an existing file's header by heading. Unit tested only; the
-Nextcloud adapter (`NextcloudResponseFiles`) has not been tried on a real server yet.
+with the export's columns, matched to an existing file's header by heading. Creating the file and
+appending were tried on the dev instance; adding a column to an existing header is unit tested only.
+Lock keys for `ILockingProvider` must stay under 64 characters (hash them): the database provider
+cuts longer keys and then never releases them.
 
 Sharing (docs/SCHEMA.md section 18): custom address, QR code, and embedding in a frame through the
 `embed` routes, which skip the request token and are always anonymous. Loading and submitting were

@@ -95,8 +95,8 @@ function pick(type: ActionType): void {
 	display: flex;
 	flex-direction: column;
 	gap: calc(var(--default-grid-baseline) * 3);
-	width: min(400px, 90vw);
-	max-height: min(520px, 70vh);
+	width: min(480px, 90vw);
+	max-height: min(560px, 80vh);
 	overflow-y: auto;
 	box-sizing: border-box;
 	padding: calc(var(--default-grid-baseline) * 3);
@@ -125,7 +125,7 @@ function pick(type: ActionType): void {
 	align-items: flex-start;
 	gap: calc(var(--default-grid-baseline) * 3);
 	width: 100%;
-	padding: calc(var(--default-grid-baseline) * 2);
+	padding: calc(var(--default-grid-baseline) * 1.5) calc(var(--default-grid-baseline) * 2);
 	border: none;
 	border-radius: var(--border-radius-element);
 	background: transparent;

@@ -48,7 +48,9 @@ final class NextcloudResponseFiles implements ResponseFilesPort {
 
 	public function locked(string $ownerId, string $path, callable $work): void {
 		// This app's own key, not the file's: Nextcloud takes its own locks on the file while writing.
-		$key = 'webforms/response-file/' . $ownerId . '/' . $path;
+		// Hashed like Nextcloud's own keys: the database locking provider keeps only 64 characters, and a
+		// cut-off key is never released (the release looks for the whole key).
+		$key = 'webforms/csv/' . md5($ownerId . '/' . $path);
 		try {
 			$this->locks->acquireLock($key, ILockingProvider::LOCK_EXCLUSIVE);
 		} catch (LockedException) {

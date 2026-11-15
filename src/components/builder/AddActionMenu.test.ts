@@ -28,7 +28,7 @@ describe('add action menu', () => {
 			{ name: 'On the page', items: ['Show a message', 'Redirect'] },
 			{ name: 'In the background', items: ['Send an email', 'Add a line to a CSV file'] },
 		])
-		expect(document.body.textContent).toContain('one line each')
+		expect(document.body.textContent).toContain('spreadsheet of every response')
 		wrapper.unmount()
 	})
 
