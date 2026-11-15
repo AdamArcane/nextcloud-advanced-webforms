@@ -21,6 +21,7 @@ use OCA\Webforms\Event\FormPublishedEvent;
 use OCA\Webforms\Event\FormStatusChangedEvent;
 use OCA\Webforms\Db\EntryMapper;
 use OCA\Webforms\Db\Form;
+use OCA\Webforms\Forms\EntryFilter;
 use OCA\Webforms\Db\FormMapper;
 use OCA\Webforms\Db\Version;
 use OCA\Webforms\Db\VersionMapper;
@@ -59,6 +60,7 @@ class FormService {
 		private readonly EventPublisher $events,
 		private readonly TablesPort $tables,
 		private readonly PolicyService $policy,
+		private readonly EntryQueryService $query,
 	) {
 	}
 
@@ -375,15 +377,16 @@ class FormService {
 	 *   `versions` holds the definitions the listed entries were submitted against.
 	 * @throws NotFoundException
 	 */
-	public function listEntries(string $userId, int $id, int $limit, int $offset): array {
+	public function listEntries(string $userId, int $id, int $limit, int $offset, ?EntryFilter $filter = null): array {
 		$form = $this->get($userId, $id);
 		$limit = max(1, min($limit, self::MAX_PAGE_SIZE));
 		$offset = max(0, $offset);
 
-		$rows = $this->entries->findByForm($form->getId(), $limit, $offset);
+		$filter ??= new EntryFilter();
+		$found = $this->query->page($form->getId(), $filter, $limit, $offset);
 		$result = [];
 		$versionDefinitions = [];
-		foreach ($rows as $entry) {
+		foreach ($found['entries'] as $entry) {
 			$result[] = [
 				'id' => $entry->getId(),
 				'versionId' => $entry->getVersionId(),
@@ -398,7 +401,12 @@ class FormService {
 		}
 
 		return [
-			'total' => $this->entries->countByForm($form->getId()),
+			// How many match the filter. Without one it is every response.
+			'total' => $found['total'],
+			// How many the form has in all, for "12 of 340".
+			'grandTotal' => $filter->isActive() ? $this->entries->countByForm($form->getId()) : $found['total'],
+			// True when a text or answer search stopped early, so `total` is a lower bound.
+			'truncated' => $found['truncated'],
 			'entries' => $result,
 			'versions' => $versionDefinitions,
 		];

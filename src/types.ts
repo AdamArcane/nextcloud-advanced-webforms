@@ -241,7 +241,12 @@ export interface EntryRecord {
 }
 
 export interface EntriesPage {
+	/** How many responses match the filter. Every response when there is none. */
 	total: number
+	/** How many the form has in all. */
+	grandTotal: number
+	/** True when a text or answer search stopped early, so `total` is a lower bound. */
+	truncated: boolean
 	entries: EntryRecord[]
 	/** Definitions keyed by version id, for the versions the listed entries belong to. */
 	versions: Record<string, VersionDefinition>

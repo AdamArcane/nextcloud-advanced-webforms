@@ -11,6 +11,7 @@ namespace OCA\Webforms\Db;
 
 use OCA\Webforms\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
+use OCA\Webforms\Forms\EntryFilter;
 use OCP\AppFramework\Db\QBMapper;
 use OCP\DB\Exception;
 use OCP\DB\QueryBuilder\IQueryBuilder;
@@ -59,6 +60,52 @@ class EntryMapper extends QBMapper {
 			->setMaxResults($limit)
 			->setFirstResult($offset);
 		return array_values($this->findEntities($qb));
+	}
+
+	/**
+	 * Responses of a form inside a submitted range and from a kind of respondent, in the filter's order.
+	 * Free text and answer conditions are not decided here (see EntryFilter::needsScan).
+	 *
+	 * @return list<Entry>
+	 * @throws Exception
+	 */
+	public function findFiltered(int $formId, EntryFilter $filter, int $limit, int $offset): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')->from($this->getTableName());
+		$this->applyFilter($qb, $formId, $filter);
+		$direction = $filter->newestFirst ? 'DESC' : 'ASC';
+		$qb->orderBy('submitted_at', $direction)->addOrderBy('id', $direction)
+			->setMaxResults($limit)
+			->setFirstResult($offset);
+		return array_values($this->findEntities($qb));
+	}
+
+	/**
+	 * @throws Exception
+	 */
+	public function countFiltered(int $formId, EntryFilter $filter): int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select($qb->func()->count('*', 'total'))->from($this->getTableName());
+		$this->applyFilter($qb, $formId, $filter);
+		$result = $qb->executeQuery();
+		$total = (int)$result->fetchOne();
+		$result->closeCursor();
+		return $total;
+	}
+
+	private function applyFilter(IQueryBuilder $qb, int $formId, EntryFilter $filter): void {
+		$qb->where($qb->expr()->eq('form_id', $qb->createNamedParameter($formId, IQueryBuilder::PARAM_INT)));
+		if ($filter->from !== null) {
+			$qb->andWhere($qb->expr()->gte('submitted_at', $qb->createNamedParameter($filter->from, IQueryBuilder::PARAM_INT)));
+		}
+		if ($filter->to !== null) {
+			$qb->andWhere($qb->expr()->lte('submitted_at', $qb->createNamedParameter($filter->to, IQueryBuilder::PARAM_INT)));
+		}
+		if ($filter->respondent === EntryFilter::RESPONDENT_SIGNED_IN) {
+			$qb->andWhere($qb->expr()->isNotNull('user_id'));
+		} elseif ($filter->respondent === EntryFilter::RESPONDENT_ANONYMOUS) {
+			$qb->andWhere($qb->expr()->isNull('user_id'));
+		}
 	}
 
 	/**

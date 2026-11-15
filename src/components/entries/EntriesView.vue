@@ -4,10 +4,13 @@
 -->
 
 <script setup lang="ts">
-import type { Delivery, DeliveryStatus, EntryRecord, VersionDefinition } from '../../types.ts'
+import type { EntryFilterState } from '../../entries/filter.ts'
+import type { Delivery, DeliveryStatus, DraftDefinition, EntryRecord, VersionDefinition } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
+import NcActionCheckbox from '@nextcloud/vue/components/NcActionCheckbox'
+import NcActions from '@nextcloud/vue/components/NcActions'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
@@ -17,10 +20,14 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
 import { deleteEntry, exportUrl, listDeliveries, listEntries, retryDelivery } from '../../api/forms.ts'
+import { defaultColumnIds, loadColumnChoice, responseColumns, saveColumnChoice, visibleColumns } from '../../entries/columns.ts'
+import { EMPTY_FILTER, isFilterActive } from '../../entries/filter.ts'
 import FormBar from '../FormBar.vue'
 import SegmentedControl from '../builder/SegmentedControl.vue'
 import DeliveryRow from './DeliveryRow.vue'
 import ResponseCard from './ResponseCard.vue'
+import ResponseFilters from './ResponseFilters.vue'
+import ResponsesTable from './ResponsesTable.vue'
 
 const props = defineProps<{
 	formId: number
@@ -41,6 +48,33 @@ const tab = ref<Tab>('responses')
 const entries = ref<EntryRecord[]>([])
 const versions = ref<Record<string, VersionDefinition>>({})
 const total = ref(0)
+/** How many responses the form has in all, for "12 of 340" when a filter is on. */
+const grandTotal = ref(0)
+/** A text or answer search that stopped early, so `total` is a lower bound. */
+const truncated = ref(false)
+const entryFilter = ref<EntryFilterState>({ ...EMPTY_FILTER })
+const filtered = computed(() => isFilterActive(entryFilter.value))
+
+type ResponsesView = 'table' | 'cards'
+const VIEW_KEY = 'webforms.responsesView'
+function loadView(): ResponsesView {
+	try {
+		return window.localStorage.getItem(VIEW_KEY) === 'cards' ? 'cards' : 'table'
+	} catch {
+		return 'table'
+	}
+}
+const view = ref<ResponsesView>(loadView())
+function setView(value: ResponsesView): void {
+	view.value = value
+	try {
+		window.localStorage.setItem(VIEW_KEY, value)
+	} catch {
+		// Storage can be blocked, the choice then lasts until the page is closed.
+	}
+}
+
+const chosenColumns = ref<string[] | null>(loadColumnChoice(props.formId))
 const loading = ref(true)
 const loadingMore = ref(false)
 const loadFailed = ref(false)
@@ -56,8 +90,10 @@ async function loadEntries(append: boolean): Promise<void> {
 	}
 	loadFailed.value = false
 	try {
-		const page = await listEntries(props.formId, PAGE, append ? entries.value.length : 0)
+		const page = await listEntries(props.formId, PAGE, append ? entries.value.length : 0, entryFilter.value)
 		total.value = page.total
+		grandTotal.value = page.grandTotal
+		truncated.value = page.truncated
 		versions.value = { ...versions.value, ...page.versions }
 		entries.value = append ? [...entries.value, ...page.entries] : page.entries
 	} catch {
@@ -69,6 +105,28 @@ async function loadEntries(append: boolean): Promise<void> {
 }
 
 const hasMore = computed(() => entries.value.length < total.value)
+
+const allColumns = computed(() => responseColumns(versions.value))
+const shownColumns = computed(() => visibleColumns(allColumns.value, chosenColumns.value ?? defaultColumnIds(allColumns.value)))
+
+/** The newest version the listed responses belong to, so the answers filter can offer its questions. */
+const filterDefinition = computed<DraftDefinition | null>(() => {
+	const newest = Object.keys(versions.value).sort((a, b) => Number(b) - Number(a))[0]
+	const definition = newest === undefined ? undefined : versions.value[newest]
+	return definition ? ({ schemaVersion: 1, title: '', settings: {}, rules: [], actions: [], ...definition } as DraftDefinition) : null
+})
+
+function applyFilter(next: EntryFilterState): void {
+	entryFilter.value = next
+	expandedId.value = null
+	void loadEntries(false)
+}
+
+function toggleColumn(id: string, on: boolean): void {
+	const current = chosenColumns.value ?? defaultColumnIds(allColumns.value)
+	chosenColumns.value = on ? [...new Set([...current, id])] : current.filter((existing) => existing !== id)
+	saveColumnChoice(props.formId, chosenColumns.value)
+}
 
 function definitionFor(entry: EntryRecord): VersionDefinition {
 	return versions.value[String(entry.versionId)] ?? { fields: {}, pages: [] }
@@ -234,10 +292,12 @@ onMounted(() => {
 	<NcAppContent class="af-entries">
 		<FormBar :form-id="formId" active="responses" :title="title">
 			<template #meta>
-				<span class="af-entries__count">{{ t('webforms', '{n} responses', { n: total }) }}</span>
+				<span class="af-entries__count">
+					{{ filtered ? t('webforms', '{n} of {all} responses', { n: total, all: grandTotal }) : t('webforms', '{n} responses', { n: total }) }}
+				</span>
 			</template>
 			<template #end>
-				<NcButton variant="secondary" :href="exportUrl(formId)" :disabled="total === 0">
+				<NcButton variant="secondary" :href="exportUrl(formId)" :disabled="grandTotal === 0">
 					<template #icon>
 						<Icon :path="icons.download" />
 					</template>
@@ -265,6 +325,11 @@ onMounted(() => {
 
 			<!-- Responses -->
 			<template v-if="tab === 'responses'">
+				<ResponseFilters v-if="grandTotal > 0 || filtered"
+					:model-value="entryFilter"
+					:definition="filterDefinition"
+					@update:model-value="applyFilter" />
+
 				<div v-if="loading" class="af-entries__center">
 					<NcLoadingIcon :size="44" />
 				</div>
@@ -274,6 +339,15 @@ onMounted(() => {
 						{{ t('webforms', 'Try again') }}
 					</NcButton>
 				</NcNoteCard>
+				<NcEmptyContent v-else-if="entries.length === 0 && filtered"
+					:name="t('webforms', 'No responses match')"
+					:description="t('webforms', 'Try a different search, or clear the filters.')">
+					<template #action>
+						<NcButton variant="secondary" @click="applyFilter({ ...EMPTY_FILTER, sort: entryFilter.sort })">
+							{{ t('webforms', 'Clear filters') }}
+						</NcButton>
+					</template>
+				</NcEmptyContent>
 				<NcEmptyContent v-else-if="entries.length === 0"
 					:name="t('webforms', 'No responses yet')"
 					:description="t('webforms', 'Responses appear here as soon as someone sends the form.')" />
@@ -282,7 +356,44 @@ onMounted(() => {
 					<NcNoteCard v-if="deleteFailed" type="error">
 						{{ t('webforms', 'Could not delete the response.') }}
 					</NcNoteCard>
-					<ul class="af-entries__list">
+					<NcNoteCard v-if="truncated" type="info">
+						{{ t('webforms', 'Searched the first 20,000 responses. There may be more matches, narrow the dates to find them.') }}
+					</NcNoteCard>
+
+					<div class="af-entries__tools">
+						<SegmentedControl :model-value="view"
+							:group-label="t('webforms', 'How to show responses')"
+							icon-only
+							:options="[
+								{ value: 'table', label: t('webforms', 'Table'), icon: icons.tableView },
+								{ value: 'cards', label: t('webforms', 'Cards'), icon: icons.cardView },
+							]"
+							@update:model-value="(value) => setView(value === 'cards' ? 'cards' : 'table')" />
+						<NcActions v-if="view === 'table'" :aria-label="t('webforms', 'Choose columns')" :name="t('webforms', 'Columns')">
+							<template #icon>
+								<Icon :path="icons.columns" />
+							</template>
+							<NcActionCheckbox v-for="column in allColumns"
+								:key="column.id"
+								:model-value="shownColumns.some((shown) => shown.id === column.id)"
+								@update:model-value="(on: boolean) => toggleColumn(column.id, on)">
+								{{ column.label }}
+							</NcActionCheckbox>
+						</NcActions>
+					</div>
+
+					<ResponsesTable v-if="view === 'table'"
+						:form-id="formId"
+						:entries="entries"
+						:versions="versions"
+						:columns="shownColumns"
+						:expanded-id="expandedId"
+						:sort="entryFilter.sort"
+						@toggle="(id) => (expandedId = expandedId === id ? null : id)"
+						@delete="(id) => (confirmDeleteId = id)"
+						@changed="refreshFailedCount"
+						@sort="(sort) => applyFilter({ ...entryFilter, sort })" />
+					<ul v-else class="af-entries__list">
 						<li v-for="entry in entries" :id="'af-response-' + entry.id" :key="entry.id">
 							<ResponseCard :form-id="formId"
 								:entry="entry"
@@ -443,5 +554,12 @@ onMounted(() => {
 	display: flex;
 	justify-content: center;
 	padding: calc(var(--default-grid-baseline) * 10) 0;
+}
+.af-entries__tools {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--default-grid-baseline);
 }
 </style>

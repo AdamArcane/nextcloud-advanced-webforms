@@ -967,3 +967,30 @@ of allowed actions allows none, the safe side.
   `GET /api/v1/admin/policy/retention-preview?days=N`, `GET /api/v1/admin/groups?search=`. Every signed-in
   user can read `GET /api/v1/settings` (`canCreate`, `allowedActionTypes`, `maxActions`), which the
   builder uses to hide what the server would refuse.
+
+## 17. Finding responses
+
+`GET /api/v1/forms/{id}/entries` takes a filter besides `limit` and `offset`. The answer has `total` (how
+many match), `grandTotal` (how many the form has), and `truncated`.
+
+| Parameter | Meaning |
+| --- | --- |
+| `q` | free text, at most 200 characters |
+| `from`, `to` | submitted dates, `YYYY-MM-DD` in UTC. `to` counts the whole day |
+| `respondent` | `any` (default), `signed_in` or `anonymous` |
+| `where` | a condition on the answers, JSON, written like a rule (section 6) |
+| `sort` | `newest` (default) or `oldest`, by when it was submitted |
+
+- **Free text** looks at what a person sees: answers, a choice by its label (never its internal value),
+  an upload by its file names, and the signed-in account. Case is ignored.
+- **`where`** reuses the rules engine, so an owner writes it with the same editor as a rule, with nested
+  all and any groups. Each response is read against its own version of the form. A question that
+  response's version never had counts as unanswered, so "is empty" is true for it and "equals" is not.
+  A question that no version has any more matches nothing.
+- Dates, respondent and order are answered by the database. Text and `where` need each response read
+  against its own version, so they scan the form's responses in order and stop after 20 000. When that
+  happens `truncated` is true and `total` is a lower bound, and narrowing the dates finds the rest.
+- A malformed filter is `422 filter_invalid` with a `reason`.
+- The Responses view shows a table by default, with a column for each question (union across versions,
+  newest labels), a sortable submitted column, and cards as an alternative. The columns a person picks
+  are remembered in their browser for that form.
