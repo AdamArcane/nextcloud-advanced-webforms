@@ -7,6 +7,10 @@
 
 ## Unreleased
 
+- Picking a published form that has no unpublished changes now opens its responses instead of the
+  editor. Drafts, closed forms and forms with unpublished changes still open in the editor. Each user
+  can switch this off under Personal settings, "Advanced Webforms". See `docs/SCHEMA.md` section 16.1.
+
 - More ways to share a form, under Settings, Sharing. Give a form a custom address such as
   `/apps/webforms/f/contact` beside its random link. Download a QR code of the link as PNG or SVG. Allow
   other websites to embed the form in a frame, for any website or only the ones you list, and copy the

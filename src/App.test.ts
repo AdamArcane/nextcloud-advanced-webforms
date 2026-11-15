@@ -1,0 +1,61 @@
+// @vitest-environment happy-dom
+/**
+ * SPDX-FileCopyrightText: 2026 ArcaneX
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+import type { OwnerForm } from './types.ts'
+
+import { flushPromises, mount } from '@vue/test-utils'
+import { describe, expect, it, vi } from 'vitest'
+import { listForms } from './api/forms.ts'
+import { fetchUserPreferences } from './api/settings.ts'
+import App from './App.vue'
+import { FORM_STATUS_CLOSED, FORM_STATUS_PUBLISHED, FORM_STATUS_UNPUBLISHED } from './types.ts'
+
+vi.mock('./api/forms.ts', () => ({
+	listForms: vi.fn(),
+	createForm: vi.fn(),
+	importForm: vi.fn(),
+	setFormArchived: vi.fn(),
+	formExportUrl: () => '#',
+}))
+vi.mock('./api/settings.ts', () => ({
+	OPEN_POLICY: { canCreate: true },
+	fetchUserPolicy: () => Promise.resolve({ canCreate: true }),
+	DEFAULT_PREFERENCES: { openPublishedOnResponses: true },
+	fetchUserPreferences: vi.fn(),
+}))
+
+function form(id: number, status: number, hasUnpublishedChanges: boolean, latestVersionId: number | null = 1): OwnerForm {
+	return { id, title: 'Form ' + id, description: null, status, publicToken: null, latestVersionId, createdAt: 0, updatedAt: 0, hasUnpublishedChanges }
+}
+
+async function mountList(openPublishedOnResponses: boolean) {
+	vi.mocked(fetchUserPreferences).mockResolvedValue({ openPublishedOnResponses })
+	vi.mocked(listForms).mockResolvedValue([
+		form(1, FORM_STATUS_PUBLISHED, false),
+		form(2, FORM_STATUS_PUBLISHED, true),
+		form(3, FORM_STATUS_UNPUBLISHED, true, null),
+		form(4, FORM_STATUS_CLOSED, false),
+	])
+	const wrapper = mount(App, { global: { stubs: { BuilderView: true, EntriesView: true, teleport: true } } })
+	await flushPromises()
+	const hrefs = wrapper.findAll('a').map((link) => link.attributes('href')).filter((href) => href?.startsWith('#/f/'))
+	return { wrapper, hrefs }
+}
+
+describe('where a form in the list opens', () => {
+	it('opens every form in the editor when the preference is off', async () => {
+		const { hrefs } = await mountList(false)
+		expect(hrefs).toEqual(['#/f/1', '#/f/2', '#/f/3', '#/f/4'])
+	})
+
+	it('opens a published form with no unpublished changes on its responses, and any other form in the editor', async () => {
+		const { wrapper, hrefs } = await mountList(true)
+		expect(hrefs).toEqual(['#/f/1/responses', '#/f/2', '#/f/3', '#/f/4'])
+
+		await wrapper.find('a[href="#/f/1/responses"]').trigger('click')
+		expect(window.location.hash).toBe('#/f/1/responses')
+	})
+})
