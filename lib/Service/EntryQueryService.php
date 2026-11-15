@@ -76,6 +76,20 @@ class EntryQueryService {
 	}
 
 	/**
+	 * Calls $visit for every matching response, without holding them all in memory.
+	 *
+	 * @param callable(Entry): void $visit
+	 * @return bool whether the walk stopped early (see MAX_SCAN), so not every match was visited
+	 */
+	public function each(int $formId, EntryFilter $filter, callable $visit): bool {
+		$matches = $this->matching($formId, $filter);
+		foreach ($matches as $entry) {
+			$visit($entry);
+		}
+		return $matches->getReturn();
+	}
+
+	/**
 	 * The responses a person selected, oldest first. Ids that are not this form's are ignored.
 	 *
 	 * @param list<int> $ids

@@ -111,7 +111,7 @@ final class CsvExporter {
 	 * @param array<string, mixed> $definition
 	 * @return list<string>
 	 */
-	private static function layoutOrder(array $definition): array {
+	public static function layoutOrder(array $definition): array {
 		$order = [];
 		$pages = $definition['pages'] ?? [];
 		foreach (is_array($pages) ? $pages : [] as $page) {

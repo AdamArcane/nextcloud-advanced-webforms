@@ -22,7 +22,9 @@ use OCA\Webforms\Event\FormStatusChangedEvent;
 use OCA\Webforms\Db\Entry;
 use OCA\Webforms\Db\EntryMapper;
 use OCA\Webforms\Db\Form;
+use OCA\Webforms\Forms\CsvExporter;
 use OCA\Webforms\Forms\EntryFilter;
+use OCA\Webforms\Forms\EntrySummary;
 use OCA\Webforms\Db\FormMapper;
 use OCA\Webforms\Db\Version;
 use OCA\Webforms\Db\VersionMapper;
@@ -415,6 +417,28 @@ class FormService {
 			'entries' => $result,
 			'versions' => $versionDefinitions,
 		];
+	}
+
+	/**
+	 * What the matching responses add up to (docs/SCHEMA.md section 17.2).
+	 *
+	 * @return array<string, mixed>
+	 * @throws NotFoundException
+	 */
+	public function summarizeEntries(string $userId, int $id, EntryFilter $filter): array {
+		$form = $this->get($userId, $id);
+		$summary = new EntrySummary();
+		/** @var array<int, array{order: list<string>, fields: array<string, array<string, mixed>>}> $versions */
+		$versions = [];
+		$truncated = $this->query->each($form->getId(), $filter, function (Entry $entry) use ($summary, &$versions): void {
+			$versionId = $entry->getVersionId();
+			if (!isset($versions[$versionId])) {
+				$definition = $this->versions->find($versionId)->getDefinitionArray();
+				$versions[$versionId] = ['order' => CsvExporter::layoutOrder($definition), 'fields' => self::fieldsOf($definition)];
+			}
+			$summary->add($versionId, $versions[$versionId]['order'], $versions[$versionId]['fields'], $entry->getDataArray(), $entry->getSubmittedAt());
+		});
+		return $summary->result() + ['truncated' => $truncated];
 	}
 
 	/**
