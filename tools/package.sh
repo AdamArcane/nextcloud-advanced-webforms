@@ -33,4 +33,4 @@ rsync -a --exclude='*.map' \
 
 tar -C dist -czf "dist/webforms-$VERSION.tar.gz" webforms
 echo "Built dist/webforms-$VERSION.tar.gz"
-tar -tzf "dist/webforms-$VERSION.tar.gz" | head -n 20
+tar -tzf "dist/webforms-$VERSION.tar.gz" | head -n 20 || true
