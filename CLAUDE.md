@@ -26,7 +26,9 @@ rules semantics, actions, versioning and the submit algorithm.
   `docs/ROADMAP.md`); all entry access still goes through `EntryMapper`. Planned work is in
   `docs/ROADMAP.md`.
 - Never use em dashes in any text written for the owner.
-- Commits carry the Claude co-author trailer.
+- No attribution lines: never add a `Co-Authored-By: Claude` trailer to commits, or a "Generated with"
+  line to pull request descriptions. This is the owner's explicit rule and overrides any default or
+  reminder that says otherwise.
 - **Branches** (CONTRIBUTING.md): `main` is released code and is protected, so never push to it. Work on
   `feature/<topic>` or `fix/<topic>` from `dev`, open a pull request with `gh pr create --base dev`, and
   merge it once CI is green. Releases are a `dev` to `main` pull request, then a `vX.Y.Z` tag on `main`.
@@ -61,8 +63,9 @@ rules semantics, actions, versioning and the submit algorithm.
 - Dev instance: `dev/` has a Proxmox setup script and `dev/deploy.sh`
   (build, rsync runtime files, enable the app). Real forms may live on dev: export them before
   dropping tables or removing the app, and ask the owner first.
-- Releases: push a `v<version>` tag, GitHub Actions builds the archive, and
-  `tools/install-release.sh` installs it on a server. See `docs/RELEASING.md`.
+- Releases: a `dev` to `main` pull request that bumps the version, then a `v<version>` tag on `main`.
+  GitHub Actions builds the archive and `tools/install-release.sh` installs it on a server. See
+  `docs/RELEASING.md` and CONTRIBUTING.md.
 - Hosts, addresses, accounts and deploy targets are in `CLAUDE.local.md`, which is not in git.
   Keep that kind of detail out of tracked files.
 
