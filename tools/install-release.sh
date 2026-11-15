@@ -10,11 +10,11 @@
 # NC_ROOT     Nextcloud root, the folder that holds `occ` (required).
 # VERSION     Release tag to install, for example v0.3.1. Default: the latest release.
 # TOKEN_FILE  File holding a GitHub token, only needed if the repository is private.
-# REPO        GitHub repository. Default: AdamArcane/nextcloud-advanced-forms.
+# REPO        GitHub repository. Default: AdamArcane/nextcloud-advanced-webforms.
 set -euo pipefail
 
 NC_ROOT="${NC_ROOT:?set NC_ROOT to the Nextcloud folder that holds occ}"
-REPO="${REPO:-AdamArcane/nextcloud-advanced-forms}"
+REPO="${REPO:-AdamArcane/nextcloud-advanced-webforms}"
 VERSION="${VERSION:-latest}"
 APP=webforms
 

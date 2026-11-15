@@ -1,6 +1,6 @@
 version = 1
-SPDX-PackageName = "nextcloud-advanced-forms"
-SPDX-PackageDownloadLocation = "https://github.com/AdamArcane/nextcloud-advanced-forms"
+SPDX-PackageName = "nextcloud-advanced-webforms"
+SPDX-PackageDownloadLocation = "https://github.com/AdamArcane/nextcloud-advanced-webforms"
 
 [[annotations]]
 path = ["package.json", "package-lock.json", "composer.json", "composer.lock", "tests/vectors/**", "tsconfig.json", ".gitignore", ".editorconfig", "img/**"]

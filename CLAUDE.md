@@ -6,7 +6,7 @@
 # Advanced Webforms (Nextcloud app) - working notes
 
 Gravity Forms-style forms app for Nextcloud. Brand new app, not a fork of core
-Forms. Owner: ArcaneX. Repo `AdamArcane/nextcloud-advanced-forms`.
+Forms. Owner: ArcaneX. Repo `AdamArcane/nextcloud-advanced-webforms`.
 Read `docs/SCHEMA.md` first: it is the source of truth for the data format,
 rules semantics, actions, versioning and the submit algorithm.
 

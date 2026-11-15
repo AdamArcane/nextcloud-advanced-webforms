@@ -51,7 +51,7 @@ Nextcloud Tables is planned as an optional backend.
 ## Install
 
 Download `webforms-<version>.tar.gz` from the
-[releases page](https://github.com/AdamArcane/nextcloud-advanced-forms/releases), then:
+[releases page](https://github.com/AdamArcane/nextcloud-advanced-webforms/releases), then:
 
 ```bash
 tar -xzf webforms-<version>.tar.gz -C /path/to/nextcloud/custom_apps/
@@ -96,7 +96,7 @@ Administrators pick the spam check for the whole server under Administration set
 You need Nextcloud 35, PHP 8.3 or newer and Node 24 or newer.
 
 ```bash
-git clone https://github.com/AdamArcane/nextcloud-advanced-forms webforms
+git clone https://github.com/AdamArcane/nextcloud-advanced-webforms webforms
 cd webforms
 npm ci
 npm run build
@@ -117,7 +117,7 @@ The rules engine exists twice, in PHP (authoritative) and TypeScript (live UI), 
 
 ## Reporting problems
 
-Open an [issue](https://github.com/AdamArcane/nextcloud-advanced-forms/issues). For security
+Open an [issue](https://github.com/AdamArcane/nextcloud-advanced-webforms/issues). For security
 problems, please do not post details publicly. Open an issue that asks for a private way to
 report it, without describing the problem.
 

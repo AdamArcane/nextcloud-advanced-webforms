@@ -28,9 +28,9 @@ This app is in early development.
 	<category>tools</category>
 	<category>organization</category>
 
-	<website>https://github.com/AdamArcane/nextcloud-advanced-forms</website>
-	<bugs>https://github.com/AdamArcane/nextcloud-advanced-forms/issues</bugs>
-	<repository type="git">https://github.com/AdamArcane/nextcloud-advanced-forms</repository>
+	<website>https://github.com/AdamArcane/nextcloud-advanced-webforms</website>
+	<bugs>https://github.com/AdamArcane/nextcloud-advanced-webforms/issues</bugs>
+	<repository type="git">https://github.com/AdamArcane/nextcloud-advanced-webforms</repository>
 
 	<dependencies>
 		<php min-version="8.3" />
