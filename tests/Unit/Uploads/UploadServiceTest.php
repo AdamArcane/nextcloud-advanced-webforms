@@ -7,16 +7,16 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Tests\Unit\Uploads;
+namespace OCA\Webforms\Tests\Unit\Uploads;
 
-use OCA\AdvancedForms\Uploads\PendingUpload;
-use OCA\AdvancedForms\Uploads\Ports\MimePort;
-use OCA\AdvancedForms\Uploads\Ports\OwnerFilesPort;
-use OCA\AdvancedForms\Uploads\Ports\PendingStorePort;
-use OCA\AdvancedForms\Uploads\Ports\TokenPort;
-use OCA\AdvancedForms\Uploads\Ports\UploadRegistryPort;
-use OCA\AdvancedForms\Uploads\UploadRejected;
-use OCA\AdvancedForms\Uploads\UploadService;
+use OCA\Webforms\Uploads\PendingUpload;
+use OCA\Webforms\Uploads\Ports\MimePort;
+use OCA\Webforms\Uploads\Ports\OwnerFilesPort;
+use OCA\Webforms\Uploads\Ports\PendingStorePort;
+use OCA\Webforms\Uploads\Ports\TokenPort;
+use OCA\Webforms\Uploads\Ports\UploadRegistryPort;
+use OCA\Webforms\Uploads\UploadRejected;
+use OCA\Webforms\Uploads\UploadService;
 use PHPUnit\Framework\TestCase;
 
 /**

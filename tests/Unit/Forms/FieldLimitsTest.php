@@ -7,9 +7,9 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Tests\Unit\Forms;
+namespace OCA\Webforms\Tests\Unit\Forms;
 
-use OCA\AdvancedForms\Forms\FieldValueValidator;
+use OCA\Webforms\Forms\FieldValueValidator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

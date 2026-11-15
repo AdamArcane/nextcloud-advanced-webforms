@@ -23,11 +23,11 @@ function go(view: string | number): void {
 	<SegmentedControl :model-value="active"
 		class="af-formnav"
 		collapse
-		:group-label="t('advancedforms', 'Form view')"
+		:group-label="t('webforms', 'Form view')"
 		:options="[
-			{ value: 'edit', label: t('advancedforms', 'Edit'), icon: icons.edit },
-			{ value: 'settings', label: t('advancedforms', 'Settings'), icon: icons.settings },
-			{ value: 'responses', label: t('advancedforms', 'Responses'), icon: icons.responses },
+			{ value: 'edit', label: t('webforms', 'Edit'), icon: icons.edit },
+			{ value: 'settings', label: t('webforms', 'Settings'), icon: icons.settings },
+			{ value: 'responses', label: t('webforms', 'Responses'), icon: icons.responses },
 		]"
 		@update:model-value="go" />
 </template>

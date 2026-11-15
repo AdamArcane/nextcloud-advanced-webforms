@@ -15,14 +15,14 @@
 
 ## Translations
 
-English is the source language and needs no file. Every `t('advancedforms', '...')` call in
-`src/` is collected into `translationfiles/templates/advancedforms.pot`:
+English is the source language and needs no file. Every `t('webforms', '...')` call in
+`src/` is collected into `translationfiles/templates/webforms.pot`:
 
 ```bash
 npm run l10n:extract
 ```
 
-A translator adds `translationfiles/<lang>/advancedforms.po` (Poedit, Transifex, or by hand).
+A translator adds `translationfiles/<lang>/webforms.po` (Poedit, Transifex, or by hand).
 Untranslated entries are skipped, so a partial translation falls back to English. Compile them
 into the files Nextcloud loads, `l10n/<lang>.js` and `l10n/<lang>.json`, and commit the result:
 
@@ -39,7 +39,7 @@ tools/package.sh
 ```
 
 This does a clean `npm ci`, compiles translations, wipes `js/` and `css/`, builds, and writes
-`dist/advancedforms-<version>.tar.gz` with a single top-level `advancedforms/` folder. Only
+`dist/webforms-<version>.tar.gz` with a single top-level `webforms/` folder. Only
 runtime files are included: no sources, tests, tooling, `node_modules` or source maps.
 
 ## Sign and publish
@@ -51,21 +51,21 @@ documentation ("Publishing apps on the app store") before the first release.
 One-time setup:
 
 ```bash
-openssl req -nodes -newkey rsa:4096 -keyout advancedforms.key -out advancedforms.csr -subj "/CN=advancedforms"
+openssl req -nodes -newkey rsa:4096 -keyout webforms.key -out webforms.csr -subj "/CN=webforms"
 ```
 
-Keep `advancedforms.key` private and out of the repository. Submit the `.csr` to the Nextcloud
+Keep `webforms.key` private and out of the repository. Submit the `.csr` to the Nextcloud
 app certificate repository, then register the app on https://apps.nextcloud.com with the
 certificate you get back.
 
 For each release:
 
-1. Attach `dist/advancedforms-<version>.tar.gz` to a GitHub release for the tag, so it has a
+1. Attach `dist/webforms-<version>.tar.gz` to a GitHub release for the tag, so it has a
    stable download URL.
 2. Sign the archive:
 
    ```bash
-   openssl dgst -sha512 -sign advancedforms.key dist/advancedforms-<version>.tar.gz | openssl base64
+   openssl dgst -sha512 -sign webforms.key dist/webforms-<version>.tar.gz | openssl base64
    ```
 
 3. On the app store, upload the release with that download URL and the signature.

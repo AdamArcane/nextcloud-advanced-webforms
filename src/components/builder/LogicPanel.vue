@@ -31,7 +31,7 @@ const draftRule = computed(() => newRule(props.definition, props.fieldId))
 
 function labelOf(id: string): string {
 	const field = props.definition.fields[id]
-	return field?.label || field?.text || t('advancedforms', 'Untitled field')
+	return field?.label || field?.text || t('webforms', 'Untitled field')
 }
 
 function codesFor(index: number): string[] {
@@ -62,7 +62,7 @@ function removeFromField(index: number): void {
 <template>
 	<div class="af-logic">
 		<p class="af-logic__intro">
-			{{ t('advancedforms', 'Show, hide or require this field depending on the answers to other fields.') }}
+			{{ t('webforms', 'Show, hide or require this field depending on the answers to other fields.') }}
 		</p>
 
 		<RuleCard v-for="{ rule, index } in entries"
@@ -76,24 +76,24 @@ function removeFromField(index: number): void {
 			@remove-from-field="removeFromField(index)" />
 
 		<p v-if="entries.length === 0" class="af-logic__empty">
-			{{ t('advancedforms', 'No rules yet. This field is always shown.') }}
+			{{ t('webforms', 'No rules yet. This field is always shown.') }}
 		</p>
 		<p v-else class="af-logic__hint">
-			{{ t('advancedforms', 'With several "show" rules the field appears when any of them matches. A "hide" rule always wins.') }}
+			{{ t('webforms', 'With several "show" rules the field appears when any of them matches. A "hide" rule always wins.') }}
 		</p>
 
 		<div class="af-logic__add">
 			<NcButton variant="secondary" :disabled="!draftRule" @click="add">
-				{{ t('advancedforms', 'Add rule') }}
+				{{ t('webforms', 'Add rule') }}
 			</NcButton>
 			<p v-if="!draftRule" class="af-logic__hint">
-				{{ t('advancedforms', 'Add another input field first. Rules react to the answers in other fields.') }}
+				{{ t('webforms', 'Add another input field first. Rules react to the answers in other fields.') }}
 			</p>
 		</div>
 
 		<section v-if="dependents.length > 0" class="af-logic__deps">
 			<h3 class="af-logic__heading">
-				{{ t('advancedforms', 'This field\'s answer controls') }}
+				{{ t('webforms', 'This field\'s answer controls') }}
 			</h3>
 			<div class="af-logic__chips">
 				<NcButton v-for="id in dependents"

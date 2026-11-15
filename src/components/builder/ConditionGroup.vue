@@ -80,19 +80,19 @@ function addGroup(): void {
 <template>
 	<div class="af-group" :class="{ 'af-group--nested': depth > 1 }">
 		<div class="af-group__head">
-			<span class="af-group__lead">{{ t('advancedforms', 'Match') }}</span>
+			<span class="af-group__lead">{{ t('webforms', 'Match') }}</span>
 			<SegmentedControl :model-value="kind"
 				class="af-group__kind"
-				:group-label="t('advancedforms', 'Match all or any of the conditions')"
+				:group-label="t('webforms', 'Match all or any of the conditions')"
 				:options="[
-					{ value: 'all', label: t('advancedforms', 'All') },
-					{ value: 'any', label: t('advancedforms', 'Any') },
+					{ value: 'all', label: t('webforms', 'All') },
+					{ value: 'any', label: t('webforms', 'Any') },
 				]"
 				@update:model-value="setKind" />
 			<NcButton v-if="removable"
 				variant="tertiary"
-				:aria-label="t('advancedforms', 'Remove group')"
-				:title="t('advancedforms', 'Remove group')"
+				:aria-label="t('webforms', 'Remove group')"
+				:title="t('webforms', 'Remove group')"
 				@click="emit('remove')">
 				<template #icon>
 					<Icon :path="icons.close" />
@@ -103,7 +103,7 @@ function addGroup(): void {
 		<ul class="af-group__list">
 			<li v-for="(child, index) in children" :key="index" class="af-group__item">
 				<span v-if="index > 0" class="af-group__joiner">
-					{{ kind === 'all' ? t('advancedforms', 'and') : t('advancedforms', 'or') }}
+					{{ kind === 'all' ? t('webforms', 'and') : t('webforms', 'or') }}
 				</span>
 				<ConditionGroup v-if="isGroup(child)"
 					:node="child"
@@ -130,17 +130,17 @@ function addGroup(): void {
 				<template #icon>
 					<Icon :path="icons.add" />
 				</template>
-				{{ t('advancedforms', 'Add condition') }}
+				{{ t('webforms', 'Add condition') }}
 			</NcButton>
 			<NcButton v-if="depth < MAX_GROUP_DEPTH"
 				variant="secondary"
 				:disabled="!canAddGroup"
-				:title="t('advancedforms', 'A group lets you mix \'all\' and \'any\' conditions')"
+				:title="t('webforms', 'A group lets you mix \'all\' and \'any\' conditions')"
 				@click="addGroup">
 				<template #icon>
 					<Icon :path="icons.addGroup" />
 				</template>
-				{{ t('advancedforms', 'Add group') }}
+				{{ t('webforms', 'Add group') }}
 			</NcButton>
 			<span v-if="$slots.actions" class="af-group__end">
 				<slot name="actions" />

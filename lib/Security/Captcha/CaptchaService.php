@@ -7,7 +7,7 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Security\Captcha;
+namespace OCA\Webforms\Security\Captcha;
 
 /**
  * One place that answers "does this form need a check, and did the respondent pass it".

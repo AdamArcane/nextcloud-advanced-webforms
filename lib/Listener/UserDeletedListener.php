@@ -7,11 +7,11 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Listener;
+namespace OCA\Webforms\Listener;
 
-use OCA\AdvancedForms\Db\EntryMapper;
-use OCA\AdvancedForms\Db\FormMapper;
-use OCA\AdvancedForms\Service\FormService;
+use OCA\Webforms\Db\EntryMapper;
+use OCA\Webforms\Db\FormMapper;
+use OCA\Webforms\Service\FormService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\User\Events\UserDeletedEvent;
@@ -45,7 +45,7 @@ class UserDeletedListener implements IEventListener {
 			$this->entries->anonymizeUser($userId);
 		} catch (\Throwable $e) {
 			// Deleting an account must not fail because of this app.
-			$this->logger->error('Advanced Webforms could not clean up after a deleted user', ['exception' => $e, 'app' => 'advancedforms']);
+			$this->logger->error('Advanced Webforms could not clean up after a deleted user', ['exception' => $e, 'app' => 'webforms']);
 		}
 	}
 }

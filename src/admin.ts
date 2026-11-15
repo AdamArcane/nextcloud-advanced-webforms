@@ -6,7 +6,7 @@
 import { createApp } from 'vue'
 import AdminApp from './AdminApp.vue'
 
-const root = document.getElementById('advancedforms-admin')
+const root = document.getElementById('webforms-admin')
 if (root) {
 	createApp(AdminApp).mount(root)
 }

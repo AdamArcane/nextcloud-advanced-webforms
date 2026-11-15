@@ -7,9 +7,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\AdvancedForms\Forms;
+namespace OCA\Webforms\Forms;
 
-use OCA\AdvancedForms\Exception\ValidationException;
+use OCA\Webforms\Exception\ValidationException;
 
 /**
  * The file a form is exported to and imported from (docs/SCHEMA.md section 13).
@@ -20,7 +20,7 @@ use OCA\AdvancedForms\Exception\ValidationException;
  * stored on the exporting server and cannot be moved.
  */
 final class FormPackage {
-	public const FORMAT = 'advancedforms.form';
+	public const FORMAT = 'webforms.form';
 	public const FORMAT_VERSION = 1;
 
 	public const SOURCE_DRAFT = 'draft';

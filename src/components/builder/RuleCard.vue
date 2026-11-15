@@ -40,16 +40,16 @@ const effects = computed(() => effectsFor(props.definition.fields[props.fieldId]
 
 const otherTargets = computed(() => props.rule.targets
 	.filter((id) => id !== props.fieldId)
-	.map((id) => props.definition.fields[id]?.label || props.definition.fields[id]?.text || t('advancedforms', 'Untitled field')))
+	.map((id) => props.definition.fields[id]?.label || props.definition.fields[id]?.text || t('webforms', 'Untitled field')))
 
 // A rule's condition should always be a group; wrap anything else so the editor can show it.
 const root = computed<AllCondition | AnyCondition>(() => (isGroup(props.rule.when) ? props.rule.when : makeGroup('all', [props.rule.when])))
 
 const sentence = computed(() => {
 	switch (props.rule.effect) {
-		case 'show': return t('advancedforms', 'This field is shown only when:')
-		case 'hide': return t('advancedforms', 'This field is hidden when:')
-		default: return t('advancedforms', 'This field is required when:')
+		case 'show': return t('webforms', 'This field is shown only when:')
+		case 'hide': return t('webforms', 'This field is hidden when:')
+		default: return t('webforms', 'This field is required when:')
 	}
 })
 </script>
@@ -57,7 +57,7 @@ const sentence = computed(() => {
 <template>
 	<article class="af-rule" :class="{ 'af-rule--error': errorCodes.length > 0 }">
 		<SegmentedControl :model-value="rule.effect"
-			:group-label="t('advancedforms', 'What the rule does')"
+			:group-label="t('webforms', 'What the rule does')"
 			:options="effects.map((effect) => ({ value: effect, label: effectLabel(effect) }))"
 			@update:model-value="(effect) => emit('update', { ...rule, effect: effect as Rule['effect'] })" />
 
@@ -76,8 +76,8 @@ const sentence = computed(() => {
 			<template #actions>
 				<NcButton variant="tertiary"
 					class="af-rule__delete"
-					:aria-label="otherTargets.length > 0 ? t('advancedforms', 'Delete rule for all fields') : t('advancedforms', 'Delete rule')"
-					:title="otherTargets.length > 0 ? t('advancedforms', 'Delete rule for all fields') : t('advancedforms', 'Delete rule')"
+					:aria-label="otherTargets.length > 0 ? t('webforms', 'Delete rule for all fields') : t('webforms', 'Delete rule')"
+					:title="otherTargets.length > 0 ? t('webforms', 'Delete rule for all fields') : t('webforms', 'Delete rule')"
 					@click="emit('remove')">
 					<template #icon>
 						<Icon :path="icons.delete" />
@@ -93,7 +93,7 @@ const sentence = computed(() => {
 		</ul>
 
 		<p v-if="otherTargets.length > 0" class="af-rule__shared">
-			{{ t('advancedforms', 'Also applies to: {fields}', { fields: otherTargets.join(', ') }) }}
+			{{ t('webforms', 'Also applies to: {fields}', { fields: otherTargets.join(', ') }) }}
 		</p>
 
 		<div v-if="otherTargets.length > 0" class="af-rule__footer">
@@ -101,7 +101,7 @@ const sentence = computed(() => {
 				<template #icon>
 					<Icon :path="icons.unlink" />
 				</template>
-				{{ t('advancedforms', 'Stop applying to this field') }}
+				{{ t('webforms', 'Stop applying to this field') }}
 			</NcButton>
 		</div>
 	</article>

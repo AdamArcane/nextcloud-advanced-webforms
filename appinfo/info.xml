@@ -5,7 +5,7 @@
 -->
 <info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
-	<id>advancedforms</id>
+	<id>webforms</id>
 	<name>Advanced Webforms</name>
 	<summary>Forms with conditional logic, grid layouts, and after-submit actions</summary>
 	<description><![CDATA[**Forms with the features larger form builders have, self-hosted.**
@@ -23,7 +23,7 @@ This app is in early development.
 
 	<author>Adam Arcane</author>
 
-	<namespace>AdvancedForms</namespace>
+	<namespace>Webforms</namespace>
 
 	<category>tools</category>
 	<category>organization</category>
@@ -38,19 +38,19 @@ This app is in early development.
 	</dependencies>
 
 	<background-jobs>
-		<job>OCA\AdvancedForms\BackgroundJob\ProcessActionsJob</job>
-		<job>OCA\AdvancedForms\BackgroundJob\CleanupUploadsJob</job>
+		<job>OCA\Webforms\BackgroundJob\ProcessActionsJob</job>
+		<job>OCA\Webforms\BackgroundJob\CleanupUploadsJob</job>
 	</background-jobs>
 
 	<settings>
-		<admin>OCA\AdvancedForms\Settings\AdminSettings</admin>
-		<admin-section>OCA\AdvancedForms\Settings\AdminSection</admin-section>
+		<admin>OCA\Webforms\Settings\AdminSettings</admin>
+		<admin-section>OCA\Webforms\Settings\AdminSection</admin-section>
 	</settings>
 
 	<navigations>
 		<navigation>
 			<name>Webforms</name>
-			<route>advancedforms.page.index</route>
+			<route>webforms.page.index</route>
 		</navigation>
 	</navigations>
 </info>

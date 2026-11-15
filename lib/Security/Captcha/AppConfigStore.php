@@ -7,9 +7,9 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Security\Captcha;
+namespace OCA\Webforms\Security\Captcha;
 
-use OCA\AdvancedForms\AppInfo\Application;
+use OCA\Webforms\AppInfo\Application;
 use OCP\IAppConfig;
 
 final class AppConfigStore implements ConfigStore {

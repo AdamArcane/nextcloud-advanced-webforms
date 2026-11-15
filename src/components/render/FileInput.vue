@@ -40,8 +40,8 @@ const hint = computed(() => {
 	const shown = extensions.slice(0, 8).map((extension) => extension.toUpperCase()).join(', ') + (extensions.length > 8 ? ', …' : '')
 	const size = formatSize(maxBytes(props.field, props.limit))
 	return single.value
-		? t('advancedforms', 'One file, up to {size}. Accepted: {types}', { size, types: shown })
-		: t('advancedforms', 'Up to {count} files, {size} each. Accepted: {types}', { count: limit.value, size, types: shown })
+		? t('webforms', 'One file, up to {size}. Accepted: {types}', { size, types: shown })
+		: t('webforms', 'Up to {count} files, {size} each. Accepted: {types}', { count: limit.value, size, types: shown })
 })
 
 function onPick(event: Event) {
@@ -66,8 +66,8 @@ function onDrop(event: DragEvent) {
 		@dragleave="dragging = false"
 		@drop.prevent="onDrop">
 		<p v-if="blocked" class="af-file__login">
-			{{ t('advancedforms', 'You need to sign in to upload files here.') }}
-			<a :href="loginUrl">{{ t('advancedforms', 'Sign in') }}</a>
+			{{ t('webforms', 'You need to sign in to upload files here.') }}
+			<a :href="loginUrl">{{ t('webforms', 'Sign in') }}</a>
 		</p>
 		<template v-else>
 			<input :id="domId"
@@ -80,8 +80,8 @@ function onDrop(event: DragEvent) {
 				:aria-describedby="describedBy"
 				@change="onPick">
 			<label :for="domId" class="af-file__drop">
-				<span class="af-file__action">{{ single ? t('advancedforms', 'Choose a file') : t('advancedforms', 'Choose files') }}</span>
-				<span class="af-file__or">{{ t('advancedforms', 'or drop here') }}</span>
+				<span class="af-file__action">{{ single ? t('webforms', 'Choose a file') : t('webforms', 'Choose files') }}</span>
+				<span class="af-file__or">{{ t('webforms', 'or drop here') }}</span>
 			</label>
 			<p class="af-file__hint">
 				{{ hint }}
@@ -96,12 +96,12 @@ function onDrop(event: DragEvent) {
 					class="af-file__progress"
 					max="1"
 					:value="item.progress"
-					:aria-label="t('advancedforms', 'Uploading {name}', { name: item.name })" />
-				<span v-else-if="item.status === 'done'" class="af-file__done" role="img" :aria-label="t('advancedforms', 'Uploaded')">✓</span>
+					:aria-label="t('webforms', 'Uploading {name}', { name: item.name })" />
+				<span v-else-if="item.status === 'done'" class="af-file__done" role="img" :aria-label="t('webforms', 'Uploaded')">✓</span>
 				<button type="button"
 					class="af-file__remove"
-					:aria-label="t('advancedforms', 'Remove {name}', { name: item.name })"
-					:title="t('advancedforms', 'Remove')"
+					:aria-label="t('webforms', 'Remove {name}', { name: item.name })"
+					:title="t('webforms', 'Remove')"
 					@click="uploads.remove(fieldId, item)">
 					×
 				</button>

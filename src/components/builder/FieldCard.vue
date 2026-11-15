@@ -61,21 +61,21 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 		role="button"
 		tabindex="0"
 		:aria-pressed="selected"
-		:aria-label="t('advancedforms', 'Edit field: {name}', { name: title })"
+		:aria-label="t('webforms', 'Edit field: {name}', { name: title })"
 		@click="emit('select')"
 		@keydown.enter.self.prevent="emit('select')"
 		@keydown.space.self.prevent="emit('select')">
 		<div class="af-card__meta">
 			<Icon class="af-card__typeicon" :path="fieldTypeIcon(field.type)" :size="16" />
 			<span class="af-card__type">{{ typeLabel }}</span>
-			<span v-if="ruleCount > 0" class="af-card__badge" :title="t('advancedforms', 'This field has conditional logic')">
-				{{ t('advancedforms', 'Conditional') }}
+			<span v-if="ruleCount > 0" class="af-card__badge" :title="t('webforms', 'This field has conditional logic')">
+				{{ t('webforms', 'Conditional') }}
 			</span>
 			<span v-if="hiddenLabel" class="af-card__badge af-card__badge--quiet">
-				{{ t('advancedforms', 'Label hidden') }}
+				{{ t('webforms', 'Label hidden') }}
 			</span>
 			<span v-else-if="inlineLabel" class="af-card__badge af-card__badge--quiet">
-				{{ t('advancedforms', 'Label beside') }}
+				{{ t('webforms', 'Label beside') }}
 			</span>
 		</div>
 
@@ -91,13 +91,13 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 
 		<div v-else class="af-card__body" :class="{ 'af-card__body--inline': inlineLabel }">
 			<span class="af-card__label" :class="{ 'af-card__label--hidden': hiddenLabel }">
-				{{ field.label || t('advancedforms', 'Untitled field') }}<span v-if="required && !hideRequiredIndicator" class="af-card__star" aria-hidden="true"> *</span>
+				{{ field.label || t('webforms', 'Untitled field') }}<span v-if="required && !hideRequiredIndicator" class="af-card__star" aria-hidden="true"> *</span>
 			</span>
 			<span class="af-card__control">
 				<span v-if="field.type === 'checkbox'" class="af-card__fake af-card__fake--box" aria-hidden="true" />
 				<span v-else-if="field.type === 'file'" class="af-card__upload" aria-hidden="true">
 					<Icon :path="fieldTypeIcon('file')" :size="18" />
-					{{ (field.maxFiles ?? 1) > 1 ? t('advancedforms', 'Choose files') : t('advancedforms', 'Choose a file') }}
+					{{ (field.maxFiles ?? 1) > 1 ? t('webforms', 'Choose files') : t('webforms', 'Choose a file') }}
 				</span>
 				<span v-else-if="hasOptions && field.type !== 'select'" class="af-card__choices" :style="columnStyle" aria-hidden="true">
 					<span v-for="option in (field.options ?? []).slice(0, shownOptions)" :key="option.value" class="af-card__choice">

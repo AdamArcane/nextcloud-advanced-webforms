@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-namespace OCA\AdvancedForms\Forms;
+namespace OCA\Webforms\Forms;
 
 /**
  * PHP decodes a JSON `{}` to an empty array, which encodes back to `[]`. The

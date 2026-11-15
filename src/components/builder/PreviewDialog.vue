@@ -41,24 +41,24 @@ const form = computed<PublicForm>(() => {
 </script>
 
 <template>
-	<NcDialog :name="t('advancedforms', 'Preview')"
+	<NcDialog :name="t('webforms', 'Preview')"
 		size="large"
 		@closing="emit('close')">
 		<div class="af-preview__top">
 			<p class="af-preview__note">
-				{{ t('advancedforms', 'Preview only, nothing saved') }}
+				{{ t('webforms', 'Preview only, nothing saved') }}
 			</p>
 			<NcCheckboxRadioSwitch v-model="validate" type="switch" class="af-preview__validate">
-				{{ t('advancedforms', 'Enable validation') }}
+				{{ t('webforms', 'Enable validation') }}
 			</NcCheckboxRadioSwitch>
 			<SegmentedControl v-model="device"
 				class="af-preview__device"
-				:group-label="t('advancedforms', 'Preview device')"
+				:group-label="t('webforms', 'Preview device')"
 				icon-only
 				:options="[
-					{ value: 'desktop', label: t('advancedforms', 'Desktop'), icon: icons.desktop },
-					{ value: 'tablet', label: t('advancedforms', 'Tablet'), icon: icons.tablet },
-					{ value: 'mobile', label: t('advancedforms', 'Mobile'), icon: icons.mobile },
+					{ value: 'desktop', label: t('webforms', 'Desktop'), icon: icons.desktop },
+					{ value: 'tablet', label: t('webforms', 'Tablet'), icon: icons.tablet },
+					{ value: 'mobile', label: t('webforms', 'Mobile'), icon: icons.mobile },
 				]" />
 		</div>
 		<div class="af-preview__stage"

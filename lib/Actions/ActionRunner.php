@@ -7,13 +7,13 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Actions;
+namespace OCA\Webforms\Actions;
 
-use OCA\AdvancedForms\Actions\Ports\AccountPort;
-use OCA\AdvancedForms\Actions\Ports\HttpPort;
-use OCA\AdvancedForms\Actions\Ports\MailPort;
-use OCA\AdvancedForms\Actions\Ports\SecretPort;
-use OCA\AdvancedForms\Rules\FieldType;
+use OCA\Webforms\Actions\Ports\AccountPort;
+use OCA\Webforms\Actions\Ports\HttpPort;
+use OCA\Webforms\Actions\Ports\MailPort;
+use OCA\Webforms\Actions\Ports\SecretPort;
+use OCA\Webforms\Rules\FieldType;
 
 /**
  * Runs one queued `email` or `webhook` action (docs/SCHEMA.md section 7.2).
@@ -111,9 +111,9 @@ final class ActionRunner {
 		$body = json_encode(self::payload($context), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 		$headers = [
 			'Content-Type' => 'application/json',
-			'User-Agent' => 'NextcloudAdvancedForms',
-			'X-AdvancedForms-Event' => 'entry.created',
-			'X-AdvancedForms-Delivery' => (string)$context->logId,
+			'User-Agent' => 'NextcloudWebforms',
+			'X-Webforms-Event' => 'entry.created',
+			'X-Webforms-Delivery' => (string)$context->logId,
 		];
 
 		$ref = $action['secretRef'] ?? null;
@@ -122,8 +122,8 @@ final class ActionRunner {
 			if ($secret === null || $secret === '') {
 				throw new ActionFailed('secret_missing', false);
 			}
-			$headers['X-AdvancedForms-Timestamp'] = (string)$context->now;
-			$headers['X-AdvancedForms-Signature'] = self::signature($secret, $context->now, $body);
+			$headers['X-Webforms-Timestamp'] = (string)$context->now;
+			$headers['X-Webforms-Signature'] = self::signature($secret, $context->now, $body);
 		}
 
 		try {

@@ -7,7 +7,7 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Security\Captcha;
+namespace OCA\Webforms\Security\Captcha;
 
 /**
  * The administrator's captcha choice. The provider and site key are plain app config;

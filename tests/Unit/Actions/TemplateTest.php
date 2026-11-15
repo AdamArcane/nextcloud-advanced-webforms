@@ -7,9 +7,9 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Tests\Unit\Actions;
+namespace OCA\Webforms\Tests\Unit\Actions;
 
-use OCA\AdvancedForms\Actions\Template;
+use OCA\Webforms\Actions\Template;
 use PHPUnit\Framework\TestCase;
 
 class TemplateTest extends TestCase {

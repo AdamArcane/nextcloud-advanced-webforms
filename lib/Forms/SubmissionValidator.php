@@ -7,10 +7,10 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Forms;
+namespace OCA\Webforms\Forms;
 
-use OCA\AdvancedForms\Rules\FieldType;
-use OCA\AdvancedForms\Rules\RuleEngine;
+use OCA\Webforms\Rules\FieldType;
+use OCA\Webforms\Rules\RuleEngine;
 
 /**
  * Server-side check of a submission against a published definition

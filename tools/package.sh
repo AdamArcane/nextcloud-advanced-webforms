@@ -2,8 +2,8 @@
 # SPDX-FileCopyrightText: 2026 ArcaneX
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Build a release tarball for the Nextcloud app store: dist/advancedforms-<version>.tar.gz
-# with a single top-level `advancedforms/` folder holding only what runs on the server.
+# Build a release tarball for the Nextcloud app store: dist/webforms-<version>.tar.gz
+# with a single top-level `webforms/` folder holding only what runs on the server.
 # Signing and uploading are separate steps, see docs/RELEASING.md.
 set -euo pipefail
 
@@ -19,7 +19,7 @@ npm run l10n:compile
 rm -rf js css
 npm run build
 
-OUT="dist/advancedforms"
+OUT="dist/webforms"
 rm -rf dist
 mkdir -p "$OUT"
 
@@ -31,6 +31,6 @@ rsync -a --exclude='*.map' \
 	--exclude='*' \
 	./ "$OUT/"
 
-tar -C dist -czf "dist/advancedforms-$VERSION.tar.gz" advancedforms
-echo "Built dist/advancedforms-$VERSION.tar.gz"
-tar -tzf "dist/advancedforms-$VERSION.tar.gz" | head -n 20
+tar -C dist -czf "dist/webforms-$VERSION.tar.gz" webforms
+echo "Built dist/webforms-$VERSION.tar.gz"
+tar -tzf "dist/webforms-$VERSION.tar.gz" | head -n 20

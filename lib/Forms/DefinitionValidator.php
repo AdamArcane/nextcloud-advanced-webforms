@@ -7,10 +7,10 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Forms;
+namespace OCA\Webforms\Forms;
 
-use OCA\AdvancedForms\Rules\FieldType;
-use OCA\AdvancedForms\Rules\RuleValidator;
+use OCA\Webforms\Rules\FieldType;
+use OCA\Webforms\Rules\RuleValidator;
 
 /**
  * Save-time validation of a whole form definition (docs/SCHEMA.md sections 3

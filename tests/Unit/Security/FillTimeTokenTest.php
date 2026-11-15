@@ -7,9 +7,9 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Tests\Unit\Security;
+namespace OCA\Webforms\Tests\Unit\Security;
 
-use OCA\AdvancedForms\Security\FillTimeToken;
+use OCA\Webforms\Security\FillTimeToken;
 use PHPUnit\Framework\TestCase;
 
 class FillTimeTokenTest extends TestCase {

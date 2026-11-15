@@ -82,7 +82,7 @@ async function retry(delivery: Delivery): Promise<void> {
 				<template v-if="preview.length > 0">
 					<span v-for="line in preview" :key="line.id" class="af-response__bit"><strong>{{ line.label }}:</strong> {{ line.value }}</span>
 				</template>
-				<span v-else class="af-response__empty">{{ t('advancedforms', 'No answers') }}</span>
+				<span v-else class="af-response__empty">{{ t('webforms', 'No answers') }}</span>
 			</span>
 			<span class="af-response__chevron" :class="{ 'af-response__chevron--open': expanded }" aria-hidden="true" />
 		</button>
@@ -107,14 +107,14 @@ async function retry(delivery: Delivery): Promise<void> {
 
 			<section class="af-response__deliveries">
 				<h4 class="af-response__heading">
-					{{ t('advancedforms', 'Emails and webhooks') }}
+					{{ t('webforms', 'Emails and webhooks') }}
 				</h4>
 				<NcLoadingIcon v-if="loading" :size="24" />
 				<p v-if="failed" class="af-response__note" role="alert">
-					{{ t('advancedforms', 'Could not load or update the deliveries.') }}
+					{{ t('webforms', 'Could not load or update the deliveries.') }}
 				</p>
 				<p v-else-if="deliveries && deliveries.length === 0" class="af-response__note">
-					{{ t('advancedforms', 'Nothing was sent for this response.') }}
+					{{ t('webforms', 'Nothing was sent for this response.') }}
 				</p>
 				<ul v-if="deliveries && deliveries.length > 0" class="af-response__list">
 					<DeliveryRow v-for="delivery in deliveries"
@@ -126,12 +126,12 @@ async function retry(delivery: Delivery): Promise<void> {
 			</section>
 
 			<div class="af-response__footer">
-				<span class="af-response__id">{{ t('advancedforms', 'Response #{id}', { id: entry.id }) }}</span>
+				<span class="af-response__id">{{ t('webforms', 'Response #{id}', { id: entry.id }) }}</span>
 				<NcButton variant="error" @click="emit('delete')">
 					<template #icon>
 						<Icon :path="icons.delete" />
 					</template>
-					{{ t('advancedforms', 'Delete response') }}
+					{{ t('webforms', 'Delete response') }}
 				</NcButton>
 			</div>
 		</div>

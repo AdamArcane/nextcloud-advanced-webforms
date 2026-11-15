@@ -33,23 +33,23 @@ const canSave = computed(() => !needsKeys.value || (siteKey.value.trim() !== '' 
 const options: { id: CaptchaProviderId, name: string, description: string }[] = [
 	{
 		id: 'builtin',
-		name: t('advancedforms', 'Built-in (recommended)'),
-		description: t('advancedforms', 'A small calculation the browser does in the background. Nothing is shown, no account is needed, and no data leaves your server.'),
+		name: t('webforms', 'Built-in (recommended)'),
+		description: t('webforms', 'A small calculation the browser does in the background. Nothing is shown, no account is needed, and no data leaves your server.'),
 	},
 	{
 		id: 'turnstile',
-		name: t('advancedforms', 'Cloudflare Turnstile'),
-		description: t('advancedforms', 'Free and mostly invisible. Respondents\' browsers contact Cloudflare. Needs a site key and a secret key.'),
+		name: t('webforms', 'Cloudflare Turnstile'),
+		description: t('webforms', 'Free and mostly invisible. Respondents\' browsers contact Cloudflare. Needs a site key and a secret key.'),
 	},
 	{
 		id: 'hcaptcha',
-		name: t('advancedforms', 'hCaptcha'),
-		description: t('advancedforms', 'Shows a checkbox and sometimes a puzzle. Respondents\' browsers contact hCaptcha. Needs a site key and a secret key.'),
+		name: t('webforms', 'hCaptcha'),
+		description: t('webforms', 'Shows a checkbox and sometimes a puzzle. Respondents\' browsers contact hCaptcha. Needs a site key and a secret key.'),
 	},
 	{
 		id: 'none',
-		name: t('advancedforms', 'No spam check'),
-		description: t('advancedforms', 'Only the hidden trap field, the minimum fill time and the rate limit protect your forms.'),
+		name: t('webforms', 'No spam check'),
+		description: t('webforms', 'Only the hidden trap field, the minimum fill time and the rate limit protect your forms.'),
 	},
 ]
 
@@ -64,7 +64,7 @@ onMounted(async () => {
 	try {
 		apply(await fetchCaptchaSettings())
 	} catch {
-		showError(t('advancedforms', 'Could not load the settings.'))
+		showError(t('webforms', 'Could not load the settings.'))
 	}
 	loaded.value = true
 })
@@ -77,9 +77,9 @@ async function save() {
 			siteKey: siteKey.value.trim(),
 			secret: secret.value.trim() === '' ? null : secret.value.trim(),
 		}))
-		showSuccess(t('advancedforms', 'Settings saved'))
+		showSuccess(t('webforms', 'Settings saved'))
 	} catch {
-		showError(t('advancedforms', 'Could not save the settings. Check the keys and try again.'))
+		showError(t('webforms', 'Could not save the settings. Check the keys and try again.'))
 	} finally {
 		saving.value = false
 	}
@@ -87,14 +87,14 @@ async function save() {
 </script>
 
 <template>
-	<NcSettingsSection :name="t('advancedforms', 'Spam protection')"
-		:description="t('advancedforms', 'Applies to people who are not logged in. Form owners can turn the check off for a single form. Every form also has a hidden trap field, a minimum fill time and a rate limit.')">
+	<NcSettingsSection :name="t('webforms', 'Spam protection')"
+		:description="t('webforms', 'Applies to people who are not logged in. Form owners can turn the check off for a single form. Every form also has a hidden trap field, a minimum fill time and a rate limit.')">
 		<div v-if="loaded" class="af-admin">
 			<NcCheckboxRadioSwitch v-for="option in options"
 				:key="option.id"
 				v-model="provider"
 				type="radio"
-				name="advancedforms-captcha"
+				name="webforms-captcha"
 				:value="option.id">
 				<strong>{{ option.name }}</strong>
 				<span class="af-admin__description">{{ option.description }}</span>
@@ -102,20 +102,20 @@ async function save() {
 
 			<template v-if="needsKeys">
 				<p class="af-admin__hint">
-					{{ t('advancedforms', 'Create a site in the provider\'s dashboard to get the keys:') }}
+					{{ t('webforms', 'Create a site in the provider\'s dashboard to get the keys:') }}
 					<a :href="dashboard" target="_blank" rel="noopener noreferrer">{{ dashboard }}</a>
 				</p>
-				<NcTextField v-model="siteKey" :label="t('advancedforms', 'Site key')" />
+				<NcTextField v-model="siteKey" :label="t('webforms', 'Site key')" />
 				<NcPasswordField v-model="secret"
-					:label="secretSet ? t('advancedforms', 'Secret key (leave empty to keep the saved one)') : t('advancedforms', 'Secret key')"
+					:label="secretSet ? t('webforms', 'Secret key (leave empty to keep the saved one)') : t('webforms', 'Secret key')"
 					autocomplete="off" />
 				<NcNoteCard v-if="!canSave" type="warning">
-					{{ t('advancedforms', 'Until both keys are saved, forms are not protected by this provider.') }}
+					{{ t('webforms', 'Until both keys are saved, forms are not protected by this provider.') }}
 				</NcNoteCard>
 			</template>
 
 			<NcButton variant="primary" :disabled="saving || !canSave" @click="save">
-				{{ t('advancedforms', 'Save') }}
+				{{ t('webforms', 'Save') }}
 			</NcButton>
 		</div>
 	</NcSettingsSection>

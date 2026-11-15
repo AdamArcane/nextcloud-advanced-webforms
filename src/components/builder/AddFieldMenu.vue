@@ -71,8 +71,8 @@ function pickFirst() {
 		<template #trigger="{ attrs }">
 			<NcButton v-bind="attrs"
 				:variant="variant ?? 'tertiary'"
-				:aria-label="label ? undefined : t('advancedforms', 'Add a field here')"
-				:title="label ? undefined : t('advancedforms', 'Add a field here')">
+				:aria-label="label ? undefined : t('webforms', 'Add a field here')"
+				:title="label ? undefined : t('webforms', 'Add a field here')">
 				<template #icon>
 					<Icon :path="icons.add" />
 				</template>
@@ -84,8 +84,8 @@ function pickFirst() {
 				v-model="query"
 				class="af-add__search"
 				type="search"
-				:placeholder="t('advancedforms', 'Search field types')"
-				:aria-label="t('advancedforms', 'Search field types')"
+				:placeholder="t('webforms', 'Search field types')"
+				:aria-label="t('webforms', 'Search field types')"
 				@keydown.enter.prevent="pickFirst">
 			<div class="af-add__groups">
 				<section v-for="entry in groups" :key="entry.group" class="af-add__group">
@@ -104,7 +104,7 @@ function pickFirst() {
 					</ul>
 				</section>
 				<p v-if="groups.length === 0" class="af-add__empty">
-					{{ t('advancedforms', 'No field type matches that.') }}
+					{{ t('webforms', 'No field type matches that.') }}
 				</p>
 			</div>
 		</div>

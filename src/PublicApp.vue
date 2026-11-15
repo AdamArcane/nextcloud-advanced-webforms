@@ -83,23 +83,23 @@ async function refreshToken() {
 		<NcLoadingIcon v-if="!form && !problem" :size="44" />
 
 		<NcEmptyContent v-else-if="problem === 'not_found'"
-			:name="t('advancedforms', 'Form not found')"
-			:description="t('advancedforms', 'This link does not lead to an open form.')" />
+			:name="t('webforms', 'Form not found')"
+			:description="t('webforms', 'This link does not lead to an open form.')" />
 
 		<NcEmptyContent v-else-if="problem === 'closed'"
-			:name="t('advancedforms', 'Form closed')"
-			:description="closedMessage ?? t('advancedforms', 'This form is no longer accepting responses.')" />
+			:name="t('webforms', 'Form closed')"
+			:description="closedMessage ?? t('webforms', 'This form is no longer accepting responses.')" />
 
 		<NcEmptyContent v-else-if="problem === 'login_required'"
-			:name="t('advancedforms', 'Login required')"
-			:description="t('advancedforms', 'You need to log in to fill in this form.')">
+			:name="t('webforms', 'Login required')"
+			:description="t('webforms', 'You need to log in to fill in this form.')">
 			<template #action>
-				<a class="button primary" :href="loginUrl">{{ t('advancedforms', 'Log in') }}</a>
+				<a class="button primary" :href="loginUrl">{{ t('webforms', 'Log in') }}</a>
 			</template>
 		</NcEmptyContent>
 
 		<NcNoteCard v-else-if="problem" type="error">
-			{{ t('advancedforms', 'The form could not be loaded. Please try again later.') }}
+			{{ t('webforms', 'The form could not be loaded. Please try again later.') }}
 		</NcNoteCard>
 
 		<template v-else-if="form">
@@ -130,11 +130,11 @@ async function refreshToken() {
  * Nextcloud's public layout fixes #content to the window and clips what overflows it, so a form
  * taller than the window could not be scrolled. Let this one scroll.
  */
-#content.app-advancedforms {
+#content.app-webforms {
 	overflow-y: auto;
 }
 
-#advancedforms-public {
+#webforms-public {
 	box-sizing: border-box;
 	flex: 1 1 100%;
 	width: 100%;

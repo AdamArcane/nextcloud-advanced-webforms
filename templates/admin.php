@@ -5,4 +5,4 @@
  */
 ?>
 
-<div id="advancedforms-admin"></div>
+<div id="webforms-admin"></div>

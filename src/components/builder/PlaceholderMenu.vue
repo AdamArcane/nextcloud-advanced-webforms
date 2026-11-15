@@ -25,13 +25,13 @@ const fields = computed(() => sourceFields(props.definition))
 
 <template>
 	<NcActions v-if="fields.length > 0"
-		:menu-name="t('advancedforms', 'Insert an answer')"
+		:menu-name="t('webforms', 'Insert an answer')"
 		variant="tertiary">
 		<NcActionButton v-for="source in fields"
 			:key="source.id"
 			close-after-click
 			@click="emit('pick', source.id)">
-			{{ source.field.label || t('advancedforms', 'Untitled field') }}
+			{{ source.field.label || t('webforms', 'Untitled field') }}
 		</NcActionButton>
 	</NcActions>
 </template>

@@ -7,15 +7,15 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Uploads;
+namespace OCA\Webforms\Uploads;
 
-use OCA\AdvancedForms\Forms\UploadPolicy;
-use OCA\AdvancedForms\Rules\FieldType;
-use OCA\AdvancedForms\Uploads\Ports\MimePort;
-use OCA\AdvancedForms\Uploads\Ports\OwnerFilesPort;
-use OCA\AdvancedForms\Uploads\Ports\PendingStorePort;
-use OCA\AdvancedForms\Uploads\Ports\TokenPort;
-use OCA\AdvancedForms\Uploads\Ports\UploadRegistryPort;
+use OCA\Webforms\Forms\UploadPolicy;
+use OCA\Webforms\Rules\FieldType;
+use OCA\Webforms\Uploads\Ports\MimePort;
+use OCA\Webforms\Uploads\Ports\OwnerFilesPort;
+use OCA\Webforms\Uploads\Ports\PendingStorePort;
+use OCA\Webforms\Uploads\Ports\TokenPort;
+use OCA\Webforms\Uploads\Ports\UploadRegistryPort;
 
 /**
  * Receiving, claiming and removing uploaded files (docs/SCHEMA.md section 4.6).

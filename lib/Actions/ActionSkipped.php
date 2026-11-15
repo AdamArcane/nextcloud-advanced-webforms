@@ -7,7 +7,7 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Actions;
+namespace OCA\Webforms\Actions;
 
 /**
  * The action had nothing to do for this entry (no recipient, rate limited).

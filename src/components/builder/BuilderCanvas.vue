@@ -106,7 +106,7 @@ const pagesWithErrors = computed(() => {
 })
 
 function tabName(index: number): string {
-	return pages.value[index].title || t('advancedforms', 'Page {n}', { n: index + 1 })
+	return pages.value[index].title || t('webforms', 'Page {n}', { n: index + 1 })
 }
 
 const renamingId = ref<string | null>(null)
@@ -306,7 +306,7 @@ function codes(fieldId: string): string[] {
 
 <template>
 	<div class="af-canvas" :class="{ 'af-canvas--mobile': mobile }">
-		<div class="af-tabs" role="tablist" :aria-label="t('advancedforms', 'Pages')">
+		<div class="af-tabs" role="tablist" :aria-label="t('webforms', 'Pages')">
 			<div v-for="(page, index) in pages"
 				:key="page.id"
 				class="af-tab"
@@ -316,8 +316,8 @@ function codes(fieldId: string): string[] {
 					type="text"
 					maxlength="255"
 					:value="page.title ?? ''"
-					:aria-label="t('advancedforms', 'Page title')"
-					:placeholder="t('advancedforms', 'Page {n}', { n: index + 1 })"
+					:aria-label="t('webforms', 'Page title')"
+					:placeholder="t('webforms', 'Page {n}', { n: index + 1 })"
 					@input="emit('pageTitle', page.id, ($event.target as HTMLInputElement).value)"
 					@keydown.enter="renamingId = null"
 					@keydown.esc="renamingId = null"
@@ -333,42 +333,42 @@ function codes(fieldId: string): string[] {
 					<span v-if="pagesWithErrors.has(page.id)"
 						class="af-tab__error"
 						role="img"
-						:aria-label="t('advancedforms', 'This page has a problem')" />
+						:aria-label="t('webforms', 'This page has a problem')" />
 				</button>
-				<NcActions v-if="page.id === activeId" :aria-label="t('advancedforms', 'Page options')" force-menu>
+				<NcActions v-if="page.id === activeId" :aria-label="t('webforms', 'Page options')" force-menu>
 					<NcActionButton @click="startRename(page.id)">
 						<template #icon>
 							<Icon :path="icons.edit" :inline="false" />
 						</template>
-						{{ t('advancedforms', 'Rename page') }}
+						{{ t('webforms', 'Rename page') }}
 					</NcActionButton>
 					<NcActionButton :disabled="index === 0" @click="emit('movePage', page.id, -1)">
 						<template #icon>
 							<Icon :path="icons.arrowLeft" :inline="false" />
 						</template>
-						{{ t('advancedforms', 'Move page left') }}
+						{{ t('webforms', 'Move page left') }}
 					</NcActionButton>
 					<NcActionButton :disabled="index === pages.length - 1" @click="emit('movePage', page.id, 1)">
 						<template #icon>
 							<Icon :path="icons.arrowRight" :inline="false" />
 						</template>
-						{{ t('advancedforms', 'Move page right') }}
+						{{ t('webforms', 'Move page right') }}
 					</NcActionButton>
 					<NcActionButton :disabled="pages.length === 1 || page.rows.length > 0"
-						:title="page.rows.length > 0 ? t('advancedforms', 'Move or delete this page\'s fields first') : undefined"
+						:title="page.rows.length > 0 ? t('webforms', 'Move or delete this page\'s fields first') : undefined"
 						@click="emit('removePage', page.id)">
 						<template #icon>
 							<Icon :path="icons.delete" :inline="false" />
 						</template>
-						{{ t('advancedforms', 'Delete page') }}
+						{{ t('webforms', 'Delete page') }}
 					</NcActionButton>
-					<NcActionCaption v-if="page.rows.length > 0" :name="t('advancedforms', 'Move or delete the fields on this page to delete it.')" />
+					<NcActionCaption v-if="page.rows.length > 0" :name="t('webforms', 'Move or delete the fields on this page to delete it.')" />
 				</NcActions>
 			</div>
 			<NcButton variant="tertiary"
 				:disabled="pages.length >= MAX_PAGES"
-				:aria-label="t('advancedforms', 'Add page')"
-				:title="t('advancedforms', 'Add page')"
+				:aria-label="t('webforms', 'Add page')"
+				:title="t('webforms', 'Add page')"
 				@click="emit('addPage')">
 				<template #icon>
 					<Icon :path="icons.add" />
@@ -378,10 +378,10 @@ function codes(fieldId: string): string[] {
 		<div class="af-canvas__paper">
 			<NcEmptyContent v-if="isEmpty"
 				class="af-canvas__empty"
-				:name="t('advancedforms', 'Start your form')"
-				:description="t('advancedforms', 'Add your first field. You can put several fields side by side later.')">
+				:name="t('webforms', 'Start your form')"
+				:description="t('webforms', 'Add your first field. You can put several fields side by side later.')">
 				<template #action>
-					<AddFieldMenu :label="t('advancedforms', 'Add field')" variant="primary" @pick="(type) => emit('add', type, 0, 0)" />
+					<AddFieldMenu :label="t('webforms', 'Add field')" variant="primary" @pick="(type) => emit('add', type, 0, 0)" />
 				</template>
 			</NcEmptyContent>
 
@@ -403,8 +403,8 @@ function codes(fieldId: string): string[] {
 							<span class="af-row__grip"
 								draggable="true"
 								role="img"
-								:title="t('advancedforms', 'Drag to move this row')"
-								:aria-label="t('advancedforms', 'Drag to move this row')"
+								:title="t('webforms', 'Drag to move this row')"
+								:aria-label="t('webforms', 'Drag to move this row')"
 								@dragstart="startDrag($event, { kind: 'row', rowId: row.id }, ($event.currentTarget as HTMLElement).parentElement)"
 								@dragend="endDrag">
 								<Icon :path="icons.drag" :size="16" />
@@ -430,12 +430,12 @@ function codes(fieldId: string): string[] {
 									:label-position="renderedLabelPosition(definition.fields[cell.field], definition.settings)"
 									:hide-required-indicator="definition.settings.hideRequiredIndicator === true"
 									@select="emit('select', cell.field)" />
-								<div v-if="resizing === null && drag === null" class="af-cell__tools" role="toolbar" :aria-label="t('advancedforms', 'Field actions')">
+								<div v-if="resizing === null && drag === null" class="af-cell__tools" role="toolbar" :aria-label="t('webforms', 'Field actions')">
 									<button type="button"
 										class="af-cell__tool"
 										draggable="false"
-										:title="t('advancedforms', 'Duplicate field')"
-										:aria-label="t('advancedforms', 'Duplicate field')"
+										:title="t('webforms', 'Duplicate field')"
+										:aria-label="t('webforms', 'Duplicate field')"
 										:disabled="Object.keys(definition.fields).length >= MAX_FIELDS"
 										@click.stop="emit('duplicate', cell.field)">
 										<Icon :path="icons.copy" :size="18" />
@@ -443,8 +443,8 @@ function codes(fieldId: string): string[] {
 									<button type="button"
 										class="af-cell__tool af-cell__tool--danger"
 										draggable="false"
-										:title="t('advancedforms', 'Delete field')"
-										:aria-label="t('advancedforms', 'Delete field')"
+										:title="t('webforms', 'Delete field')"
+										:aria-label="t('webforms', 'Delete field')"
 										@click.stop="emit('remove', cell.field)">
 										<Icon :path="icons.delete" :size="18" />
 									</button>
@@ -453,8 +453,8 @@ function codes(fieldId: string): string[] {
 								<button class="af-cell__resize"
 									type="button"
 									draggable="false"
-									:title="t('advancedforms', 'Drag to resize, or use the arrow keys')"
-									:aria-label="t('advancedforms', 'Resize field')"
+									:title="t('webforms', 'Drag to resize, or use the arrow keys')"
+									:aria-label="t('webforms', 'Resize field')"
 									@mousedown.prevent
 									@dragstart.prevent.stop
 									@click.stop
@@ -468,7 +468,7 @@ function codes(fieldId: string): string[] {
 					</template>
 					<div class="af-gap" :class="{ 'af-gap--over': dropHint?.key === 'gap' + activePage.rows.length }" />
 					<div class="af-canvas__add">
-						<AddFieldMenu :label="t('advancedforms', 'Add field')"
+						<AddFieldMenu :label="t('webforms', 'Add field')"
 							variant="secondary"
 							@pick="(type) => emit('add', type, activePage.rows.length, activeIndex)" />
 					</div>

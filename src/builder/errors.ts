@@ -11,83 +11,83 @@ import { t } from '@nextcloud/l10n'
 export function describeError(code: string): string {
 	switch (code) {
 		case 'field_label_invalid':
-			return t('advancedforms', 'Give this field a label.')
+			return t('webforms', 'Give this field a label.')
 		case 'field_text_invalid':
-			return t('advancedforms', 'Add some text.')
+			return t('webforms', 'Add some text.')
 		case 'options_invalid':
-			return t('advancedforms', 'Add at least one option.')
+			return t('webforms', 'Add at least one option.')
 		case 'option_label_invalid':
-			return t('advancedforms', 'Every option needs a label.')
+			return t('webforms', 'Every option needs a label.')
 		case 'option_duplicate_value':
-			return t('advancedforms', 'Two options share the same value.')
+			return t('webforms', 'Two options share the same value.')
 		case 'field_limit_invalid':
-			return t('advancedforms', 'One of the limits is not valid.')
+			return t('webforms', 'One of the limits is not valid.')
 		case 'field_default_invalid':
-			return t('advancedforms', 'The default value is not valid.')
+			return t('webforms', 'The default value is not valid.')
 		case 'field_placeholder_invalid':
-			return t('advancedforms', 'The placeholder is too long.')
+			return t('webforms', 'The placeholder is too long.')
 		case 'field_description_invalid':
-			return t('advancedforms', 'The help text is too long.')
+			return t('webforms', 'The help text is too long.')
 		case 'form_archived':
-			return t('advancedforms', 'This form is archived. Restore it first.')
+			return t('webforms', 'This form is archived. Restore it first.')
 		case 'title_invalid':
-			return t('advancedforms', 'The form needs a title.')
+			return t('webforms', 'The form needs a title.')
 		case 'too_many_fields':
-			return t('advancedforms', 'This form has too many fields.')
+			return t('webforms', 'This form has too many fields.')
 		case 'field_id_retired':
-			return t('advancedforms', 'This field id was used by a deleted field.')
+			return t('webforms', 'This field id was used by a deleted field.')
 		case 'rule_no_targets':
 		case 'rule_unknown_target':
-			return t('advancedforms', 'This rule does not point at a field.')
+			return t('webforms', 'This rule does not point at a field.')
 		case 'rule_require_on_display_field':
-			return t('advancedforms', 'Only input fields can be required.')
+			return t('webforms', 'Only input fields can be required.')
 		case 'rules_cycle':
-			return t('advancedforms', 'Two fields depend on each other. Change one of the conditions.')
+			return t('webforms', 'Two fields depend on each other. Change one of the conditions.')
 		case 'cond_unknown_field':
-			return t('advancedforms', 'A condition uses a field that no longer exists.')
+			return t('webforms', 'A condition uses a field that no longer exists.')
 		case 'cond_source_not_input':
-			return t('advancedforms', 'A condition reads a field that has no answer.')
+			return t('webforms', 'A condition reads a field that has no answer.')
 		case 'cond_bad_operator':
-			return t('advancedforms', 'A condition uses a comparison this field does not support.')
+			return t('webforms', 'A condition uses a comparison this field does not support.')
 		case 'cond_bad_value':
-			return t('advancedforms', 'A condition needs a valid value to compare against.')
+			return t('webforms', 'A condition needs a valid value to compare against.')
 		case 'cond_bad_shape':
 		case 'cond_too_deep':
-			return t('advancedforms', 'A group of conditions is empty or nested too deeply.')
+			return t('webforms', 'A group of conditions is empty or nested too deeply.')
 		case 'action_bad_recipient':
-			return t('advancedforms', 'Choose who should receive this email.')
+			return t('webforms', 'Choose who should receive this email.')
 		case 'action_text_invalid':
-			return t('advancedforms', 'Fill in all the text for this action.')
+			return t('webforms', 'Fill in all the text for this action.')
 		case 'action_bad_url':
-			return t('advancedforms', 'Enter a full address starting with https://.')
+			return t('webforms', 'Enter a full address starting with https://.')
 		case 'action_unknown_placeholder':
-			return t('advancedforms', 'The text uses a field that does not exist.')
+			return t('webforms', 'The text uses a field that does not exist.')
 		case 'action_bad_secret':
-			return t('advancedforms', 'The signing secret is not valid. Generate a new one.')
+			return t('webforms', 'The signing secret is not valid. Generate a new one.')
 		case 'too_many_actions':
-			return t('advancedforms', 'This form has too many actions.')
+			return t('webforms', 'This form has too many actions.')
 		case 'field_upload_invalid':
-			return t('advancedforms', 'One of the upload settings is not valid.')
+			return t('webforms', 'One of the upload settings is not valid.')
 		case 'field_upload_folder_invalid':
-			return t('advancedforms', 'The upload folder is not valid. Use a folder path like Documents/Applications.')
+			return t('webforms', 'The upload folder is not valid. Use a folder path like Documents/Applications.')
 		case 'field_upload_accept_invalid':
-			return t('advancedforms', 'Choose which kinds of files this field accepts.')
+			return t('webforms', 'Choose which kinds of files this field accepts.')
 		case 'field_upload_type_denied':
-			return t('advancedforms', 'Programs, scripts and web pages can never be uploaded.')
+			return t('webforms', 'Programs, scripts and web pages can never be uploaded.')
 		case 'upload_destination_unavailable':
-			return t('advancedforms', 'You cannot save files to this folder. Choose a folder you can write to.')
+			return t('webforms', 'You cannot save files to this folder. Choose a folder you can write to.')
 		case 'upload_anonymous_not_allowed':
-			return t('advancedforms', 'You are not allowed to let anyone upload into your files. Limit this field to signed-in users, or keep the files in the app.')
+			return t('webforms', 'You are not allowed to let anyone upload into your files. Limit this field to signed-in users, or keep the files in the app.')
 		case 'import_not_a_form':
-			return t('advancedforms', 'This file is not an Advanced Webforms export.')
+			return t('webforms', 'This file is not an Advanced Webforms export.')
 		case 'import_too_new':
-			return t('advancedforms', 'This file was made by a newer version of Advanced Webforms. Update the app to import it.')
+			return t('webforms', 'This file was made by a newer version of Advanced Webforms. Update the app to import it.')
 		case 'not_published_yet':
-			return t('advancedforms', 'This form has not been published yet.')
+			return t('webforms', 'This form has not been published yet.')
 		case 'too_large':
-			return t('advancedforms', 'This form is too large.')
+			return t('webforms', 'This form is too large.')
 		default:
-			return t('advancedforms', 'This is not valid ({code}).', { code })
+			return t('webforms', 'This is not valid ({code}).', { code })
 	}
 }
 

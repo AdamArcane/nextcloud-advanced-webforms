@@ -99,7 +99,7 @@ const rows = computed(() => currentPage.value?.rows ?? [])
 const isFirst = computed(() => currentIndex.value === 0)
 const isLast = computed(() => currentIndex.value >= pages.value.length - 1)
 
-const submitLabel = computed(() => definition.value.settings?.submitLabel || t('advancedforms', 'Send'))
+const submitLabel = computed(() => definition.value.settings?.submitLabel || t('webforms', 'Send'))
 
 function isEmpty(field: FormField, value: unknown): boolean {
 	if (field.type === 'checkbox') {
@@ -179,7 +179,7 @@ async function onSubmit() {
 	}
 	clearErrors()
 	if (uploads.busy.value) {
-		formError.value = t('advancedforms', 'Please wait until your files have finished uploading.')
+		formError.value = t('webforms', 'Please wait until your files have finished uploading.')
 		return
 	}
 	if (props.preview) {
@@ -214,7 +214,7 @@ async function onSubmit() {
 	if (captchaConfig.value) {
 		captcha = (await captchaField.value?.response()) ?? undefined
 		if (!captcha) {
-			formError.value = t('advancedforms', 'Please complete the spam check before sending.')
+			formError.value = t('webforms', 'Please complete the spam check before sending.')
 			captchaField.value?.reset()
 			return
 		}
@@ -229,7 +229,7 @@ async function onSubmit() {
 			hp: honeypot.value,
 			captcha,
 		})
-		done.value = { message: result.message ?? t('advancedforms', 'Thank you. Your response has been sent.') }
+		done.value = { message: result.message ?? t('webforms', 'Thank you. Your response has been sent.') }
 		if (result.redirect?.startsWith('https://')) {
 			window.location.assign(result.redirect)
 		}
@@ -244,7 +244,7 @@ async function onSubmit() {
 
 async function showError(error: unknown) {
 	if (!(error instanceof ApiError)) {
-		formError.value = t('advancedforms', 'Something went wrong. Please try again.')
+		formError.value = t('webforms', 'Something went wrong. Please try again.')
 		return
 	}
 	switch (error.status) {
@@ -262,19 +262,19 @@ async function showError(error: unknown) {
 			await focusFirstError()
 			return
 		case 429:
-			formError.value = t('advancedforms', 'Too many attempts. Please wait a moment and try again.')
+			formError.value = t('webforms', 'Too many attempts. Please wait a moment and try again.')
 			return
 		case 413:
-			formError.value = t('advancedforms', 'Your answers are too large to send.')
+			formError.value = t('webforms', 'Your answers are too large to send.')
 			return
 		case 410:
-			formError.value = error.serverMessage ?? t('advancedforms', 'This form is no longer accepting responses.')
+			formError.value = error.serverMessage ?? t('webforms', 'This form is no longer accepting responses.')
 			return
 		case 401:
-			formError.value = t('advancedforms', 'Please log in to submit this form.')
+			formError.value = t('webforms', 'Please log in to submit this form.')
 			return
 		default:
-			formError.value = t('advancedforms', 'Something went wrong. Please try again.')
+			formError.value = t('webforms', 'Something went wrong. Please try again.')
 	}
 }
 </script>
@@ -321,10 +321,10 @@ async function showError(error: unknown) {
 
 		<div class="af-actions">
 			<NcButton v-if="!isFirst" variant="tertiary" :disabled="submitting" @click="goBack">
-				{{ t('advancedforms', 'Back') }}
+				{{ t('webforms', 'Back') }}
 			</NcButton>
 			<NcButton v-if="!isLast" type="submit" variant="primary">
-				{{ t('advancedforms', 'Next') }}
+				{{ t('webforms', 'Next') }}
 			</NcButton>
 			<NcButton v-else
 				type="submit"

@@ -594,7 +594,7 @@ msgid "Each field can override this. Beside labels stay above long text and choi
 msgstr ""
 
 #: src/components/builder/ActionCard.vue:319
-msgid "Each request is signed so the receiver can check it came from this form. The signature is in the X-AdvancedForms-Signature header."
+msgid "Each request is signed so the receiver can check it came from this form. The signature is in the X-Webforms-Signature header."
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:391

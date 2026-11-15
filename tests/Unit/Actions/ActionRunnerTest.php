@@ -7,16 +7,16 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Tests\Unit\Actions;
+namespace OCA\Webforms\Tests\Unit\Actions;
 
-use OCA\AdvancedForms\Actions\ActionContext;
-use OCA\AdvancedForms\Actions\ActionFailed;
-use OCA\AdvancedForms\Actions\ActionRunner;
-use OCA\AdvancedForms\Actions\ActionSkipped;
-use OCA\AdvancedForms\Actions\Ports\AccountPort;
-use OCA\AdvancedForms\Actions\Ports\HttpPort;
-use OCA\AdvancedForms\Actions\Ports\MailPort;
-use OCA\AdvancedForms\Actions\Ports\SecretPort;
+use OCA\Webforms\Actions\ActionContext;
+use OCA\Webforms\Actions\ActionFailed;
+use OCA\Webforms\Actions\ActionRunner;
+use OCA\Webforms\Actions\ActionSkipped;
+use OCA\Webforms\Actions\Ports\AccountPort;
+use OCA\Webforms\Actions\Ports\HttpPort;
+use OCA\Webforms\Actions\Ports\MailPort;
+use OCA\Webforms\Actions\Ports\SecretPort;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -232,8 +232,8 @@ class ActionRunnerTest extends TestCase {
 		$this->assertSame('https://hooks.example.com/x', $url);
 		$this->assertSame(10, $timeout);
 		$this->assertSame('application/json', $headers['Content-Type']);
-		$this->assertSame('99', $headers['X-AdvancedForms-Delivery']);
-		$this->assertSame('entry.created', $headers['X-AdvancedForms-Event']);
+		$this->assertSame('99', $headers['X-Webforms-Delivery']);
+		$this->assertSame('entry.created', $headers['X-Webforms-Event']);
 
 		$payload = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
 		$this->assertSame('entry.created', $payload['event']);
@@ -258,9 +258,9 @@ class ActionRunnerTest extends TestCase {
 	public function testSignsTheBodyWithTheStoredSecret(): void {
 		$this->runner()->run(['type' => 'webhook', 'url' => 'https://hooks.example.com/x', 'secretRef' => 'whsec_one'], $this->context());
 		[, $body, $headers] = $this->posts[0];
-		$this->assertSame('1794700100', $headers['X-AdvancedForms-Timestamp']);
+		$this->assertSame('1794700100', $headers['X-Webforms-Timestamp']);
 		$expected = 'sha256=' . hash_hmac('sha256', '1794700100.' . $body, 'topsecret');
-		$this->assertSame($expected, $headers['X-AdvancedForms-Signature']);
+		$this->assertSame($expected, $headers['X-Webforms-Signature']);
 		$this->assertSame($expected, ActionRunner::signature('topsecret', 1794700100, $body));
 		// The timestamp is signed, so replaying the body with a new one fails verification.
 		$this->assertNotSame($expected, ActionRunner::signature('topsecret', 1794700101, $body));
@@ -270,7 +270,7 @@ class ActionRunnerTest extends TestCase {
 
 	public function testWithoutASecretRefTheRequestIsUnsigned(): void {
 		$this->runner()->run(['type' => 'webhook', 'url' => 'https://hooks.example.com/x'], $this->context());
-		$this->assertArrayNotHasKey('X-AdvancedForms-Signature', $this->posts[0][2]);
+		$this->assertArrayNotHasKey('X-Webforms-Signature', $this->posts[0][2]);
 	}
 
 	public function testAMissingSecretFailsWithoutSendingAnythingUnsigned(): void {

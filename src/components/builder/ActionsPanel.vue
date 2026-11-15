@@ -91,7 +91,7 @@ async function generateSecret(index: number): Promise<void> {
 <template>
 	<div class="af-actions">
 		<p class="af-actions__intro">
-			{{ t('advancedforms', 'Choose what happens after someone sends the form. Emails and webhooks are sent in the background, so a slow mail server never holds up the respondent.') }}
+			{{ t('webforms', 'Choose what happens after someone sends the form. Emails and webhooks are sent in the background, so a slow mail server never holds up the respondent.') }}
 		</p>
 
 		<ActionCard v-for="(action, index) in definition.actions"
@@ -115,12 +115,12 @@ async function generateSecret(index: number): Promise<void> {
 			@dismiss-secret="revealed = null" />
 
 		<p v-if="definition.actions.length === 0" class="af-actions__empty">
-			{{ t('advancedforms', 'No actions yet. Respondents will see a default thank-you.') }}
+			{{ t('webforms', 'No actions yet. Respondents will see a default thank-you.') }}
 		</p>
 
 		<section class="af-actions__add">
 			<h3 class="af-actions__heading">
-				{{ t('advancedforms', 'Add an action') }}
+				{{ t('webforms', 'Add an action') }}
 			</h3>
 			<div class="af-actions__choices">
 				<NcButton v-for="type in ACTION_TYPES"
@@ -136,10 +136,10 @@ async function generateSecret(index: number): Promise<void> {
 				</NcButton>
 			</div>
 			<p v-if="full" class="af-actions__hint">
-				{{ t('advancedforms', 'A form can have up to {max} actions.', { max: MAX_ACTIONS }) }}
+				{{ t('webforms', 'A form can have up to {max} actions.', { max: MAX_ACTIONS }) }}
 			</p>
 			<p v-else class="af-actions__hint">
-				{{ t('advancedforms', 'If several messages or redirects match, the first one is shown. Emails and webhooks all run.') }}
+				{{ t('webforms', 'If several messages or redirects match, the first one is shown. Emails and webhooks all run.') }}
 			</p>
 		</section>
 	</div>

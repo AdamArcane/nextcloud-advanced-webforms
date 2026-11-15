@@ -7,7 +7,7 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Security;
+namespace OCA\Webforms\Security;
 
 /**
  * Signed "form was rendered at" token (docs/SCHEMA.md section 10, step 2).

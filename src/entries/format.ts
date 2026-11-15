@@ -23,7 +23,7 @@ export function displayAnswer(field: FormField, value: unknown): string {
 		return ''
 	}
 	if (typeof value === 'boolean') {
-		return value ? t('advancedforms', 'Yes') : t('advancedforms', 'No')
+		return value ? t('webforms', 'Yes') : t('webforms', 'No')
 	}
 	if (field.type === 'file') {
 		return storedFiles(value).map((file) => file.name).join(', ')
@@ -46,7 +46,7 @@ export function storedFiles(value: unknown): StoredFile[] {
 
 /** Where the owner downloads one file of a response. */
 export function entryFileUrl(formId: number, entryId: number, fieldId: string, index: number): string {
-	return generateUrl('/apps/advancedforms/api/v1/forms/{formId}/entries/{entryId}/files/{fieldId}/{index}', { formId, entryId, fieldId, index })
+	return generateUrl('/apps/webforms/api/v1/forms/{formId}/entries/{entryId}/files/{fieldId}/{index}', { formId, entryId, fieldId, index })
 }
 
 /** Input field ids as laid out on that version of the form, top to bottom, then any not placed. */
@@ -96,13 +96,13 @@ export function inFuture(seconds: number, now: number = Math.floor(Date.now() / 
 	const delta = Math.max(0, seconds - now)
 	if (delta === 0) {
 		// Due now: it goes out the next time background jobs run.
-		return t('advancedforms', 'any moment now')
+		return t('webforms', 'any moment now')
 	}
 	if (delta < 90) {
-		return t('advancedforms', 'in about a minute')
+		return t('webforms', 'in about a minute')
 	}
 	const minutes = Math.round(delta / 60)
 	return minutes < 90
-		? t('advancedforms', 'in {n} minutes', { n: minutes })
-		: t('advancedforms', 'in {n} hours', { n: Math.round(minutes / 60) })
+		? t('webforms', 'in {n} minutes', { n: minutes })
+		: t('webforms', 'in {n} hours', { n: Math.round(minutes / 60) })
 }

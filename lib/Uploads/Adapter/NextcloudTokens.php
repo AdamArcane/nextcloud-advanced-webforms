@@ -7,9 +7,9 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Uploads\Adapter;
+namespace OCA\Webforms\Uploads\Adapter;
 
-use OCA\AdvancedForms\Uploads\Ports\TokenPort;
+use OCA\Webforms\Uploads\Ports\TokenPort;
 use OCP\Security\ISecureRandom;
 
 final class NextcloudTokens implements TokenPort {

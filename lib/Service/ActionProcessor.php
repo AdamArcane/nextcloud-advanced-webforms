@@ -7,19 +7,19 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Service;
+namespace OCA\Webforms\Service;
 
-use OCA\AdvancedForms\Actions\ActionContext;
-use OCA\AdvancedForms\Actions\ActionFailed;
-use OCA\AdvancedForms\Actions\ActionRunner;
-use OCA\AdvancedForms\Actions\ActionSkipped;
-use OCA\AdvancedForms\Actions\Backoff;
-use OCA\AdvancedForms\Db\ActionLog;
-use OCA\AdvancedForms\Db\ActionLogMapper;
-use OCA\AdvancedForms\Db\EntryMapper;
-use OCA\AdvancedForms\Db\FormMapper;
-use OCA\AdvancedForms\Db\VersionMapper;
-use OCA\AdvancedForms\Exception\NotFoundException;
+use OCA\Webforms\Actions\ActionContext;
+use OCA\Webforms\Actions\ActionFailed;
+use OCA\Webforms\Actions\ActionRunner;
+use OCA\Webforms\Actions\ActionSkipped;
+use OCA\Webforms\Actions\Backoff;
+use OCA\Webforms\Db\ActionLog;
+use OCA\Webforms\Db\ActionLogMapper;
+use OCA\Webforms\Db\EntryMapper;
+use OCA\Webforms\Db\FormMapper;
+use OCA\Webforms\Db\VersionMapper;
+use OCA\Webforms\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Utility\ITimeFactory;
 use Psr\Log\LoggerInterface;
@@ -101,7 +101,7 @@ class ActionProcessor {
 			// The entry or its version was deleted while the delivery waited.
 			$this->recordFailure($row, 'entry_deleted', false, $now);
 		} catch (\Throwable $e) {
-			$this->logger->error('Advanced Webforms action failed unexpectedly', ['exception' => $e, 'app' => 'advancedforms']);
+			$this->logger->error('Advanced Webforms action failed unexpectedly', ['exception' => $e, 'app' => 'webforms']);
 			$this->recordFailure($row, 'unexpected_error', true, $now);
 		}
 

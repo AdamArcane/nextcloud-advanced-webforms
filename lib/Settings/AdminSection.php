@@ -7,9 +7,9 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Settings;
+namespace OCA\Webforms\Settings;
 
-use OCA\AdvancedForms\AppInfo\Application;
+use OCA\Webforms\AppInfo\Application;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCP\Settings\IIconSection;

@@ -7,7 +7,7 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Security\Captcha;
+namespace OCA\Webforms\Security\Captcha;
 
 /** Remembers solved challenges for a while so one solution cannot be reused. */
 interface ReplayStore {

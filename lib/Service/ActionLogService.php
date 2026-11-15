@@ -7,15 +7,15 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Service;
+namespace OCA\Webforms\Service;
 
-use OCA\AdvancedForms\BackgroundJob\ProcessActionsNowJob;
-use OCA\AdvancedForms\Db\ActionLog;
-use OCA\AdvancedForms\Db\ActionLogMapper;
-use OCA\AdvancedForms\Db\EntryMapper;
-use OCA\AdvancedForms\Db\VersionMapper;
-use OCA\AdvancedForms\Exception\NotFoundException;
-use OCA\AdvancedForms\Exception\ValidationException;
+use OCA\Webforms\BackgroundJob\ProcessActionsNowJob;
+use OCA\Webforms\Db\ActionLog;
+use OCA\Webforms\Db\ActionLogMapper;
+use OCA\Webforms\Db\EntryMapper;
+use OCA\Webforms\Db\VersionMapper;
+use OCA\Webforms\Exception\NotFoundException;
+use OCA\Webforms\Exception\ValidationException;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\IJobList;
 

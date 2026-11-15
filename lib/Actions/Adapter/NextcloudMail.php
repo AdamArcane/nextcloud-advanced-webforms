@@ -7,9 +7,9 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Actions\Adapter;
+namespace OCA\Webforms\Actions\Adapter;
 
-use OCA\AdvancedForms\Actions\Ports\MailPort;
+use OCA\Webforms\Actions\Ports\MailPort;
 use OCP\Mail\IMailer;
 
 /**

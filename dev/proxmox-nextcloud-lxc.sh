@@ -78,7 +78,7 @@ pw() { tr -dc 'A-Za-z0-9' </dev/urandom | head -c 24; }
 ADMIN_PW="$(pw)"; DB_PW="$(pw)"; DB_ROOT_PW="$(pw)"
 CT_IP="$(pct exec "$CTID" -- hostname -I | awk '{print $1}')"
 
-pct exec "$CTID" -- mkdir -p /opt/nc-dev/custom_apps/advancedforms
+pct exec "$CTID" -- mkdir -p /opt/nc-dev/custom_apps/webforms
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 cat > "$WORK/.env" <<ENV
@@ -120,7 +120,7 @@ services:
     volumes:
       - nextcloud:/var/www/html
       # The app under development, synced here by dev/deploy.sh.
-      - ./custom_apps/advancedforms:/var/www/html/custom_apps/advancedforms
+      - ./custom_apps/webforms:/var/www/html/custom_apps/webforms
 
   # Catches outgoing mail so email actions can be tested. Web UI on port 8025.
   mailpit:

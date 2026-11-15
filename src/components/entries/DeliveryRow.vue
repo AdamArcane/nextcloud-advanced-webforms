@@ -30,10 +30,10 @@ const emit = defineEmits<{
 /** The server sends `@owner` and `@respondent` for the two account recipients, so the words can be translated here. */
 function targetText(row: Delivery): string {
 	if (row.type === 'email' && row.target === '@owner') {
-		return t('advancedforms', 'Form owner')
+		return t('webforms', 'Form owner')
 	}
 	if (row.type === 'email' && row.target === '@respondent') {
-		return t('advancedforms', 'Signed-in respondent')
+		return t('webforms', 'Signed-in respondent')
 	}
 	return row.target ?? ''
 }
@@ -53,16 +53,16 @@ function targetText(row: Delivery): string {
 			<p class="af-delivery__meta">
 				<template v-if="showEntry">
 					<button type="button" class="af-delivery__link" @click="emit('openEntry')">
-						{{ t('advancedforms', 'Response #{id}', { id: delivery.entryId }) }}
+						{{ t('webforms', 'Response #{id}', { id: delivery.entryId }) }}
 					</button>
 					·
 				</template>
 				{{ formatTime(delivery.updatedAt ?? delivery.createdAt) }}
 				<template v-if="delivery.attempt > 0">
-					· {{ t('advancedforms', 'Attempt {n}', { n: delivery.attempt }) }}
+					· {{ t('webforms', 'Attempt {n}', { n: delivery.attempt }) }}
 				</template>
 				<template v-if="delivery.status === 'queued' && delivery.nextAttemptAt">
-					· {{ t('advancedforms', 'next try {when}', { when: inFuture(delivery.nextAttemptAt, now) }) }}
+					· {{ t('webforms', 'next try {when}', { when: inFuture(delivery.nextAttemptAt, now) }) }}
 				</template>
 			</p>
 		</div>
@@ -73,7 +73,7 @@ function targetText(row: Delivery): string {
 			<template #icon>
 				<Icon :path="icons.refresh" />
 			</template>
-			{{ t('advancedforms', 'Try again') }}
+			{{ t('webforms', 'Try again') }}
 		</NcButton>
 	</li>
 </template>

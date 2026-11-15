@@ -553,13 +553,13 @@ condition group (same format as rules) evaluated against the submitted
   - POST with a JSON body (section 7.3), 10 second timeout, redirects are not
     followed.
   - Signing: if the action has a `secretRef`, the request carries
-    `X-AdvancedForms-Timestamp` (Unix seconds) and `X-AdvancedForms-Signature`,
+    `X-Webforms-Timestamp` (Unix seconds) and `X-Webforms-Signature`,
     which is `sha256=` followed by the hex HMAC-SHA256 of `<timestamp>.<body>`
     with the secret. The timestamp is part of what is signed, so a captured
     request cannot be replayed with a fresh one; receivers should also reject
     stale timestamps. Without a `secretRef` the request is unsigned.
-  - Other headers: `X-AdvancedForms-Event: entry.created` and
-    `X-AdvancedForms-Delivery: <log row id>`.
+  - Other headers: `X-Webforms-Event: entry.created` and
+    `X-Webforms-Delivery: <log row id>`.
   - Secrets never appear in a definition, only the reference. The value is
     created by the owner API (`POST /forms/{id}/webhook-secret`), returned once,
     and stored encrypted as a sensitive app config value. It cannot be read
@@ -792,7 +792,7 @@ version**. The forms list has **Import form**.
 
 ```json
 {
-  "format": "advancedforms.form",
+  "format": "webforms.form",
   "formatVersion": 1,
   "source": "draft",
   "exportedAt": 1763100000,

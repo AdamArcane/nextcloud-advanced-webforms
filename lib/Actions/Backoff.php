@@ -7,7 +7,7 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Actions;
+namespace OCA\Webforms\Actions;
 
 /**
  * When to try a failed action again (docs/SCHEMA.md section 7.4): five attempts

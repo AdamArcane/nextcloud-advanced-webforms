@@ -59,7 +59,7 @@ export async function deleteForm(id: number): Promise<void> {
 
 /** The shareable link to the public page, absolute. */
 export function publicFormUrl(token: string): string {
-	return window.location.origin + generateUrl('/apps/advancedforms/f/{token}', { token })
+	return window.location.origin + generateUrl('/apps/webforms/f/{token}', { token })
 }
 
 export interface WebhookSecret {
@@ -99,14 +99,14 @@ export function retryDelivery(id: number, logId: number): Promise<Delivery> {
 
 /** Where the CSV download lives. Opened as a link, so the session cookie authenticates it. */
 export function exportUrl(id: number): string {
-	return generateUrl('/apps/advancedforms/api/v1/forms/{id}/entries/export', { id })
+	return generateUrl('/apps/webforms/api/v1/forms/{id}/entries/export', { id })
 }
 
 export type ExportSource = 'draft' | 'published'
 
 /** Where the form export download lives. Opened as a link, so the session cookie authenticates it. */
 export function formExportUrl(id: number, source: ExportSource): string {
-	return generateUrl('/apps/advancedforms/api/v1/forms/{id}/export', { id }) + '?source=' + source
+	return generateUrl('/apps/webforms/api/v1/forms/{id}/export', { id }) + '?source=' + source
 }
 
 /** Create a new draft form from the parsed contents of an export file. Rejects with an ApiError. */

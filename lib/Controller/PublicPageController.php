@@ -7,11 +7,11 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Controller;
+namespace OCA\Webforms\Controller;
 
-use OCA\AdvancedForms\AppInfo\Application;
-use OCA\AdvancedForms\Security\Captcha\CaptchaProvider;
-use OCA\AdvancedForms\Security\Captcha\CaptchaSettings;
+use OCA\Webforms\AppInfo\Application;
+use OCA\Webforms\Security\Captcha\CaptchaProvider;
+use OCA\Webforms\Security\Captcha\CaptchaSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\ContentSecurityPolicy;
 use OCP\AppFramework\Http\Attribute\FrontpageRoute;

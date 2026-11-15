@@ -7,10 +7,10 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Db;
+namespace OCA\Webforms\Db;
 
-use OCA\AdvancedForms\Uploads\PendingUpload;
-use OCA\AdvancedForms\Uploads\Ports\UploadRegistryPort;
+use OCA\Webforms\Uploads\PendingUpload;
+use OCA\Webforms\Uploads\Ports\UploadRegistryPort;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\QBMapper;
 use OCP\IDBConnection;

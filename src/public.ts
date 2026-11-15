@@ -6,7 +6,7 @@
 import { createApp } from 'vue'
 import PublicApp from './PublicApp.vue'
 
-const root = document.getElementById('advancedforms-public')
+const root = document.getElementById('webforms-public')
 if (root) {
 	createApp(PublicApp, { token: root.dataset.token ?? '' }).mount(root)
 }

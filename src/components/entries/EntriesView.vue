@@ -234,14 +234,14 @@ onMounted(() => {
 	<NcAppContent class="af-entries">
 		<FormBar :form-id="formId" active="responses" :title="title">
 			<template #meta>
-				<span class="af-entries__count">{{ t('advancedforms', '{n} responses', { n: total }) }}</span>
+				<span class="af-entries__count">{{ t('webforms', '{n} responses', { n: total }) }}</span>
 			</template>
 			<template #end>
 				<NcButton variant="secondary" :href="exportUrl(formId)" :disabled="total === 0">
 					<template #icon>
 						<Icon :path="icons.download" />
 					</template>
-					{{ t('advancedforms', 'Download CSV') }}
+					{{ t('webforms', 'Download CSV') }}
 				</NcButton>
 			</template>
 		</FormBar>
@@ -249,17 +249,17 @@ onMounted(() => {
 		<div class="af-entries__body">
 			<SegmentedControl :model-value="tab"
 				class="af-entries__tabs"
-				:group-label="t('advancedforms', 'What to show')"
+				:group-label="t('webforms', 'What to show')"
 				:options="[
-					{ value: 'responses', label: t('advancedforms', 'Responses'), icon: icons.responses },
-					{ value: 'deliveries', icon: icons.deliveries, label: failedCount > 0 ? t('advancedforms', 'Deliveries ({n} failed)', { n: failedCount }) : t('advancedforms', 'Deliveries') },
+					{ value: 'responses', label: t('webforms', 'Responses'), icon: icons.responses },
+					{ value: 'deliveries', icon: icons.deliveries, label: failedCount > 0 ? t('webforms', 'Deliveries ({n} failed)', { n: failedCount }) : t('webforms', 'Deliveries') },
 				]"
 				@update:model-value="openTab" />
 
 			<NcNoteCard v-if="failedCount > 0 && tab === 'responses'" type="warning">
-				{{ t('advancedforms', '{n} emails or webhooks could not be sent.', { n: failedCount }) }}
+				{{ t('webforms', '{n} emails or webhooks could not be sent.', { n: failedCount }) }}
 				<NcButton variant="tertiary" @click="() => { openTab('deliveries'); setFilter('failed') }">
-					{{ t('advancedforms', 'Review') }}
+					{{ t('webforms', 'Review') }}
 				</NcButton>
 			</NcNoteCard>
 
@@ -269,18 +269,18 @@ onMounted(() => {
 					<NcLoadingIcon :size="44" />
 				</div>
 				<NcNoteCard v-else-if="loadFailed && entries.length === 0" type="error">
-					{{ t('advancedforms', 'Could not load the responses.') }}
+					{{ t('webforms', 'Could not load the responses.') }}
 					<NcButton variant="tertiary" @click="loadEntries(false)">
-						{{ t('advancedforms', 'Try again') }}
+						{{ t('webforms', 'Try again') }}
 					</NcButton>
 				</NcNoteCard>
 				<NcEmptyContent v-else-if="entries.length === 0"
-					:name="t('advancedforms', 'No responses yet')"
-					:description="t('advancedforms', 'Responses appear here as soon as someone sends the form.')" />
+					:name="t('webforms', 'No responses yet')"
+					:description="t('webforms', 'Responses appear here as soon as someone sends the form.')" />
 
 				<template v-else>
 					<NcNoteCard v-if="deleteFailed" type="error">
-						{{ t('advancedforms', 'Could not delete the response.') }}
+						{{ t('webforms', 'Could not delete the response.') }}
 					</NcNoteCard>
 					<ul class="af-entries__list">
 						<li v-for="entry in entries" :id="'af-response-' + entry.id" :key="entry.id">
@@ -295,12 +295,12 @@ onMounted(() => {
 					</ul>
 					<div v-if="hasMore" class="af-entries__more">
 						<NcButton variant="secondary" :disabled="loadingMore" @click="loadEntries(true)">
-							{{ loadingMore ? t('advancedforms', 'Loading…') : t('advancedforms', 'Show more') }}
+							{{ loadingMore ? t('webforms', 'Loading…') : t('webforms', 'Show more') }}
 						</NcButton>
-						<span class="af-entries__hint">{{ t('advancedforms', 'Showing {shown} of {total}', { shown: entries.length, total }) }}</span>
+						<span class="af-entries__hint">{{ t('webforms', 'Showing {shown} of {total}', { shown: entries.length, total }) }}</span>
 					</div>
 					<NcNoteCard v-if="loadFailed" type="error">
-						{{ t('advancedforms', 'Could not load more responses.') }}
+						{{ t('webforms', 'Could not load more responses.') }}
 					</NcNoteCard>
 				</template>
 			</template>
@@ -309,13 +309,13 @@ onMounted(() => {
 			<template v-else>
 				<SegmentedControl :model-value="filter"
 					class="af-entries__filter"
-					:group-label="t('advancedforms', 'Filter deliveries')"
+					:group-label="t('webforms', 'Filter deliveries')"
 					:options="[
-						{ value: 'all', label: t('advancedforms', 'All') },
-						{ value: 'failed', label: t('advancedforms', 'Failed') },
-						{ value: 'queued', label: t('advancedforms', 'Waiting') },
-						{ value: 'success', label: t('advancedforms', 'Sent') },
-						{ value: 'skipped', label: t('advancedforms', 'Skipped') },
+						{ value: 'all', label: t('webforms', 'All') },
+						{ value: 'failed', label: t('webforms', 'Failed') },
+						{ value: 'queued', label: t('webforms', 'Waiting') },
+						{ value: 'success', label: t('webforms', 'Sent') },
+						{ value: 'skipped', label: t('webforms', 'Skipped') },
 					]"
 					@update:model-value="setFilter" />
 				<div class="af-entries__refresh">
@@ -326,35 +326,35 @@ onMounted(() => {
 							<NcLoadingIcon v-if="refreshing" :size="20" />
 							<Icon v-else :path="icons.refresh" />
 						</template>
-						{{ t('advancedforms', 'Refresh') }}
+						{{ t('webforms', 'Refresh') }}
 					</NcButton>
 					<span v-if="deliveries.some((row) => row.status === 'queued')" class="af-entries__hint">
-						{{ t('advancedforms', 'This list also refreshes by itself every few seconds while deliveries are waiting.') }}
+						{{ t('webforms', 'This list also refreshes by itself every few seconds while deliveries are waiting.') }}
 					</span>
 				</div>
 				<NcNoteCard v-if="overdue" type="warning">
-					{{ t('advancedforms', 'Some deliveries are overdue. Nextcloud sends them with its background jobs, which do not seem to be running. Ask your administrator to switch background jobs to Cron (Administration settings, Basic settings).') }}
+					{{ t('webforms', 'Some deliveries are overdue. Nextcloud sends them with its background jobs, which do not seem to be running. Ask your administrator to switch background jobs to Cron (Administration settings, Basic settings).') }}
 				</NcNoteCard>
 
 				<div v-if="deliveriesLoading" class="af-entries__center">
 					<NcLoadingIcon :size="44" />
 				</div>
 				<NcNoteCard v-else-if="deliveriesFailed && deliveries.length === 0" type="error">
-					{{ t('advancedforms', 'Could not load the deliveries.') }}
+					{{ t('webforms', 'Could not load the deliveries.') }}
 					<NcButton variant="tertiary" @click="loadDeliveries(false)">
-						{{ t('advancedforms', 'Try again') }}
+						{{ t('webforms', 'Try again') }}
 					</NcButton>
 				</NcNoteCard>
 				<NcEmptyContent v-else-if="deliveries.length === 0"
-					:name="filter === 'all' ? t('advancedforms', 'Nothing sent yet') : t('advancedforms', 'Nothing here')"
-					:description="filter === 'all' ? t('advancedforms', 'Emails and webhooks from your form\'s actions are listed here, with what happened to each.') : t('advancedforms', 'No deliveries match this filter.')" />
+					:name="filter === 'all' ? t('webforms', 'Nothing sent yet') : t('webforms', 'Nothing here')"
+					:description="filter === 'all' ? t('webforms', 'Emails and webhooks from your form\'s actions are listed here, with what happened to each.') : t('webforms', 'No deliveries match this filter.')" />
 
 				<template v-else>
 					<NcNoteCard v-if="deliveriesFailed" type="error">
-						{{ t('advancedforms', 'That did not work. Try again in a moment.') }}
+						{{ t('webforms', 'That did not work. Try again in a moment.') }}
 					</NcNoteCard>
 					<p class="af-entries__hint">
-						{{ t('advancedforms', 'Failed deliveries are tried again automatically, up to five times. Trying again by hand starts over and is sent within a minute.') }}
+						{{ t('webforms', 'Failed deliveries are tried again automatically, up to five times. Trying again by hand starts over and is sent within a minute.') }}
 					</p>
 					<ul class="af-entries__list">
 						<DeliveryRow v-for="delivery in deliveries"
@@ -368,7 +368,7 @@ onMounted(() => {
 					</ul>
 					<div v-if="deliveryHasMore" class="af-entries__more">
 						<NcButton variant="secondary" :disabled="deliveriesMore" @click="loadDeliveries(true)">
-							{{ t('advancedforms', 'Show more') }}
+							{{ t('webforms', 'Show more') }}
 						</NcButton>
 					</div>
 				</template>
@@ -376,11 +376,11 @@ onMounted(() => {
 		</div>
 
 		<NcDialog v-if="confirmDeleteId !== null"
-			:name="t('advancedforms', 'Delete this response?')"
-			:message="t('advancedforms', 'The answers and the record of what was sent are deleted. This cannot be undone.')"
+			:name="t('webforms', 'Delete this response?')"
+			:message="t('webforms', 'The answers and the record of what was sent are deleted. This cannot be undone.')"
 			:buttons="[
-				{ label: t('advancedforms', 'Cancel'), variant: 'tertiary', callback: () => { confirmDeleteId = null } },
-				{ label: t('advancedforms', 'Delete'), variant: 'error', callback: confirmDelete },
+				{ label: t('webforms', 'Cancel'), variant: 'tertiary', callback: () => { confirmDeleteId = null } },
+				{ label: t('webforms', 'Delete'), variant: 'error', callback: confirmDelete },
 			]"
 			@closing="confirmDeleteId = null" />
 	</NcAppContent>

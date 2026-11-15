@@ -7,29 +7,29 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Service;
+namespace OCA\Webforms\Service;
 
-use OCA\AdvancedForms\Db\Entry;
-use OCA\AdvancedForms\Db\EntryMapper;
-use OCA\AdvancedForms\Db\Form;
-use OCA\AdvancedForms\Db\FormMapper;
-use OCA\AdvancedForms\Db\VersionMapper;
-use OCA\AdvancedForms\Exception\FormClosedException;
-use OCA\AdvancedForms\Exception\LoginRequiredException;
-use OCA\AdvancedForms\Exception\NotFoundException;
-use OCA\AdvancedForms\Exception\ValidationException;
-use OCA\AdvancedForms\Forms\JsonShape;
-use OCA\AdvancedForms\Forms\SubmissionValidator;
-use OCA\AdvancedForms\Forms\UploadPolicy;
-use OCA\AdvancedForms\Rules\FieldType;
-use OCA\AdvancedForms\Security\Captcha\CaptchaService;
-use OCA\AdvancedForms\Security\FillTimeToken;
-use OCA\AdvancedForms\Uploads\UploadRejected;
-use OCA\AdvancedForms\Uploads\UploadService;
+use OCA\Webforms\Db\Entry;
+use OCA\Webforms\Db\EntryMapper;
+use OCA\Webforms\Db\Form;
+use OCA\Webforms\Db\FormMapper;
+use OCA\Webforms\Db\VersionMapper;
+use OCA\Webforms\Exception\FormClosedException;
+use OCA\Webforms\Exception\LoginRequiredException;
+use OCA\Webforms\Exception\NotFoundException;
+use OCA\Webforms\Exception\ValidationException;
+use OCA\Webforms\Forms\JsonShape;
+use OCA\Webforms\Forms\SubmissionValidator;
+use OCA\Webforms\Forms\UploadPolicy;
+use OCA\Webforms\Rules\FieldType;
+use OCA\Webforms\Security\Captcha\CaptchaService;
+use OCA\Webforms\Security\FillTimeToken;
+use OCA\Webforms\Uploads\UploadRejected;
+use OCA\Webforms\Uploads\UploadService;
 use OCP\AppFramework\Utility\ITimeFactory;
-use OCA\AdvancedForms\Actions\ActionPlanner;
-use OCA\AdvancedForms\BackgroundJob\ProcessActionsNowJob;
-use OCA\AdvancedForms\Db\ActionLogMapper;
+use OCA\Webforms\Actions\ActionPlanner;
+use OCA\Webforms\BackgroundJob\ProcessActionsNowJob;
+use OCA\Webforms\Db\ActionLogMapper;
 use OCP\BackgroundJob\IJobList;
 use OCP\IConfig;
 use Psr\Log\LoggerInterface;
@@ -257,7 +257,7 @@ class SubmissionService {
 
 			return ['message' => $plan['message'], 'redirect' => $plan['redirect']];
 		} catch (\Throwable $e) {
-			$this->logger->error('Advanced Webforms could not run after-submit actions', ['exception' => $e, 'app' => 'advancedforms']);
+			$this->logger->error('Advanced Webforms could not run after-submit actions', ['exception' => $e, 'app' => 'webforms']);
 			return ['message' => null, 'redirect' => null];
 		}
 	}
@@ -267,7 +267,7 @@ class SubmissionService {
 	 * @throws FormClosedException
 	 * @throws LoginRequiredException
 	 */
-	private function openVersion(Form $form, ?string $userId): \OCA\AdvancedForms\Db\Version {
+	private function openVersion(Form $form, ?string $userId): \OCA\Webforms\Db\Version {
 		if ($form->getStatus() === Form::STATUS_UNPUBLISHED || $form->getLatestVersionId() === null) {
 			throw new NotFoundException();
 		}

@@ -33,18 +33,18 @@ function rename(index: number, label: string): void {
 function add(): void {
 	// The value is the option's identity (rules compare it), so it is generated once and never edited.
 	const value = randomId('opt', new Set(props.options.map((option) => option.value)))
-	commit([...props.options, { value, label: t('advancedforms', 'Option {n}', { n: props.options.length + 1 }) }])
+	commit([...props.options, { value, label: t('webforms', 'Option {n}', { n: props.options.length + 1 }) }])
 }
 
 const listNames: Record<OptionListId, () => string> = {
-	countries: () => t('advancedforms', 'Countries'),
-	usStates: () => t('advancedforms', 'US states'),
-	caProvinces: () => t('advancedforms', 'Canadian provinces'),
-	auStates: () => t('advancedforms', 'Australian states'),
-	currencies: () => t('advancedforms', 'Currencies'),
-	languages: () => t('advancedforms', 'Languages'),
-	months: () => t('advancedforms', 'Months'),
-	weekdays: () => t('advancedforms', 'Days of the week'),
+	countries: () => t('webforms', 'Countries'),
+	usStates: () => t('webforms', 'US states'),
+	caProvinces: () => t('webforms', 'Canadian provinces'),
+	auStates: () => t('webforms', 'Australian states'),
+	currencies: () => t('webforms', 'Currencies'),
+	languages: () => t('webforms', 'Languages'),
+	months: () => t('webforms', 'Months'),
+	weekdays: () => t('webforms', 'Days of the week'),
 }
 
 /** Replace the options with a ready-made list, labelled in the owner's language. The list is copied, not linked. */
@@ -72,40 +72,40 @@ function move(index: number, by: -1 | 1): void {
 		<div v-for="(option, index) in options" :key="option.value" class="af-options__row">
 			<NcTextField class="af-options__label"
 				:model-value="option.label"
-				:label="t('advancedforms', 'Option {n}', { n: index + 1 })"
+				:label="t('webforms', 'Option {n}', { n: index + 1 })"
 				label-outside
-				:aria-label="t('advancedforms', 'Label of option {n}', { n: index + 1 })"
+				:aria-label="t('webforms', 'Label of option {n}', { n: index + 1 })"
 				@update:model-value="(value: string | number) => rename(index, String(value))" />
 			<NcButton variant="tertiary"
 				:disabled="index === 0"
-				:aria-label="t('advancedforms', 'Move option up')"
+				:aria-label="t('webforms', 'Move option up')"
 				@click="move(index, -1)">
 				↑
 			</NcButton>
 			<NcButton variant="tertiary"
 				:disabled="index === options.length - 1"
-				:aria-label="t('advancedforms', 'Move option down')"
+				:aria-label="t('webforms', 'Move option down')"
 				@click="move(index, 1)">
 				↓
 			</NcButton>
 			<NcButton variant="tertiary"
-				:aria-label="t('advancedforms', 'Remove option')"
+				:aria-label="t('webforms', 'Remove option')"
 				@click="remove(index)">
 				✕
 			</NcButton>
 		</div>
 		<div class="af-options__buttons">
 			<NcButton variant="secondary" @click="add">
-				{{ t('advancedforms', 'Add option') }}
+				{{ t('webforms', 'Add option') }}
 			</NcButton>
-			<NcActions :menu-name="t('advancedforms', 'Use a list')" variant="tertiary" :force-name="true">
+			<NcActions :menu-name="t('webforms', 'Use a list')" variant="tertiary" :force-name="true">
 				<NcActionButton v-for="id in OPTION_LIST_IDS" :key="id" @click="useList(id)">
 					{{ listNames[id]() }}
 				</NcActionButton>
 			</NcActions>
 		</div>
 		<p class="af-options__note">
-			{{ t('advancedforms', 'A list replaces the options above. It is copied into this field, so you can still edit it.') }}
+			{{ t('webforms', 'A list replaces the options above. It is copied into this field, so you can still edit it.') }}
 		</p>
 	</div>
 </template>

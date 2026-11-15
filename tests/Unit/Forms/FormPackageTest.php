@@ -7,11 +7,11 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Tests\Unit\Forms;
+namespace OCA\Webforms\Tests\Unit\Forms;
 
-use OCA\AdvancedForms\Exception\ValidationException;
-use OCA\AdvancedForms\Forms\DefinitionValidator;
-use OCA\AdvancedForms\Forms\FormPackage;
+use OCA\Webforms\Exception\ValidationException;
+use OCA\Webforms\Forms\DefinitionValidator;
+use OCA\Webforms\Forms\FormPackage;
 use PHPUnit\Framework\TestCase;
 
 class FormPackageTest extends TestCase {
@@ -48,7 +48,7 @@ class FormPackageTest extends TestCase {
 	public function testBuildWrapsTheDefinitionWithoutSecrets(): void {
 		$package = FormPackage::build(self::definition(), FormPackage::SOURCE_DRAFT, 1700000000);
 
-		$this->assertSame('advancedforms.form', $package['format']);
+		$this->assertSame('webforms.form', $package['format']);
 		$this->assertSame(1, $package['formatVersion']);
 		$this->assertSame('draft', $package['source']);
 		$this->assertSame(1700000000, $package['exportedAt']);

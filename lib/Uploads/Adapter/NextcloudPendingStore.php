@@ -7,15 +7,15 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Uploads\Adapter;
+namespace OCA\Webforms\Uploads\Adapter;
 
-use OCA\AdvancedForms\Uploads\Ports\PendingStorePort;
+use OCA\Webforms\Uploads\Ports\PendingStorePort;
 use OCP\Files\IAppData;
 use OCP\Files\NotFoundException;
 use OCP\Files\SimpleFS\ISimpleFolder;
 
 /**
- * Uploaded files, in the app's own data folder (`appdata_<instance>/advancedforms/uploads`). They
+ * Uploaded files, in the app's own data folder (`appdata_<instance>/webforms/uploads`). They
  * are named by their unguessable token and never served from here: a download goes through the
  * owner's authenticated request.
  */

@@ -7,9 +7,9 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Uploads\Ports;
+namespace OCA\Webforms\Uploads\Ports;
 
-use OCA\AdvancedForms\Uploads\PendingUpload;
+use OCA\Webforms\Uploads\PendingUpload;
 
 /** The list of pending uploads (a database table in the app). */
 interface UploadRegistryPort {

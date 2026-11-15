@@ -63,23 +63,23 @@ const labelChoice = computed(() => {
 	return field.value?.hideLabel === true ? 'hidden' : 'default'
 })
 const labelOptions = computed(() => [
-	{ value: 'default', label: t('advancedforms', 'Form'), icon: icons.labelForm },
-	{ value: 'above', label: t('advancedforms', 'Above'), icon: icons.labelAbove },
+	{ value: 'default', label: t('webforms', 'Form'), icon: icons.labelForm },
+	{ value: 'above', label: t('webforms', 'Above'), icon: icons.labelAbove },
 	{
 		value: 'inline',
-		label: t('advancedforms', 'Beside'),
+		label: t('webforms', 'Beside'),
 		icon: icons.labelBeside,
 		disabled: !supportsInline(type.value),
-		title: supportsInline(type.value) ? undefined : t('advancedforms', 'Not available for this type of field'),
+		title: supportsInline(type.value) ? undefined : t('webforms', 'Not available for this type of field'),
 	},
-	{ value: 'hidden', label: t('advancedforms', 'Hidden'), icon: icons.labelHidden },
+	{ value: 'hidden', label: t('webforms', 'Hidden'), icon: icons.labelHidden },
 ])
 
 function positionName(position: string): string {
 	switch (position) {
-		case 'inline': return t('advancedforms', 'beside the field')
-		case 'hidden': return t('advancedforms', 'hidden')
-		default: return t('advancedforms', 'above the field')
+		case 'inline': return t('webforms', 'beside the field')
+		case 'hidden': return t('webforms', 'hidden')
+		default: return t('webforms', 'above the field')
 	}
 }
 
@@ -88,31 +88,31 @@ const labelHint = computed(() => {
 	if (labelChoice.value === 'default') {
 		const formWide = requestedLabelPosition({ type: type.value }, props.definition.settings)
 		if (formWide === 'inline' && rendered !== 'inline') {
-			return t('advancedforms', 'Following the form setting. The label stays above this kind of field.')
+			return t('webforms', 'Following the form setting. The label stays above this kind of field.')
 		}
-		return t('advancedforms', 'Following the form setting: {position}.', { position: positionName(rendered) })
+		return t('webforms', 'Following the form setting: {position}.', { position: positionName(rendered) })
 	}
 	if (labelChoice.value === 'hidden') {
-		return t('advancedforms', 'Not shown, but still read by screen readers.')
+		return t('webforms', 'Not shown, but still read by screen readers.')
 	}
 	if (labelChoice.value === 'inline') {
-		return t('advancedforms', 'Moves above the field when there is not enough room.')
+		return t('webforms', 'Moves above the field when there is not enough room.')
 	}
-	return t('advancedforms', 'Always above the field.')
+	return t('webforms', 'Always above the field.')
 })
 
 /** Setting a position replaces the older hideLabel flag, so the two never disagree. */
 const headingIcons = [icons.heading1, icons.heading2, icons.heading3, icons.heading4, icons.heading5, icons.heading6]
 const columnIcons = [icons.columns1, icons.columns2, icons.columns3, icons.columns4]
 const lineOptions = computed(() => [
-	{ value: 'solid', label: t('advancedforms', 'Solid'), icon: icons.lineSolid },
-	{ value: 'dashed', label: t('advancedforms', 'Dashed'), icon: icons.lineDashed },
-	{ value: 'dotted', label: t('advancedforms', 'Dotted'), icon: icons.lineDotted },
+	{ value: 'solid', label: t('webforms', 'Solid'), icon: icons.lineSolid },
+	{ value: 'dashed', label: t('webforms', 'Dashed'), icon: icons.lineDashed },
+	{ value: 'dotted', label: t('webforms', 'Dotted'), icon: icons.lineDotted },
 ])
 const alignOptions = computed(() => [
-	{ value: 'start', label: t('advancedforms', 'Left'), icon: icons.alignStart },
-	{ value: 'center', label: t('advancedforms', 'Center'), icon: icons.alignCenter },
-	{ value: 'end', label: t('advancedforms', 'Right'), icon: icons.alignEnd },
+	{ value: 'start', label: t('webforms', 'Left'), icon: icons.alignStart },
+	{ value: 'center', label: t('webforms', 'Center'), icon: icons.alignCenter },
+	{ value: 'end', label: t('webforms', 'Right'), icon: icons.alignEnd },
 ])
 
 /** Start is the default, so it is stored as no value at all. */
@@ -134,9 +134,9 @@ watch(() => props.fieldId, (id) => { idDraft.value = id })
 const idProblem = computed(() => fieldIdProblem(props.definition, props.fieldId, idDraft.value, props.retiredIds ?? []))
 const idMessage = computed(() => {
 	switch (idProblem.value) {
-		case 'pattern': return t('advancedforms', 'Use 3 to 32 lowercase letters, numbers or underscores, starting with a letter.')
-		case 'taken': return t('advancedforms', 'Another field already uses this ID.')
-		case 'retired': return t('advancedforms', 'A published field used this ID before it was deleted, so it cannot be used again.')
+		case 'pattern': return t('webforms', 'Use 3 to 32 lowercase letters, numbers or underscores, starting with a letter.')
+		case 'taken': return t('webforms', 'Another field already uses this ID.')
+		case 'retired': return t('webforms', 'A published field used this ID before it was deleted, so it cannot be used again.')
 		default: return null
 	}
 })
@@ -147,13 +147,13 @@ function applyId(): void {
 	}
 }
 
-const spanLabels: Record<number, string> = { 3: '¼', 4: '⅓', 6: '½', 8: '⅔', 9: '¾', 12: t('advancedforms', 'Full') }
+const spanLabels: Record<number, string> = { 3: '¼', 4: '⅓', 6: '½', 8: '⅔', 9: '¾', 12: t('webforms', 'Full') }
 const allowed = computed(() => allowedSpans(props.definition, props.fieldId))
 const spanOptions = computed(() => SPANS.map((span) => ({
 	value: span as number,
 	label: spanLabels[span],
 	disabled: !allowed.value.includes(span),
-	title: allowed.value.includes(span) ? undefined : t('advancedforms', 'Not enough room in this row'),
+	title: allowed.value.includes(span) ? undefined : t('webforms', 'Not enough room in this row'),
 })))
 const currentSpan = computed(() => locateField(props.definition, props.fieldId)?.cell.span ?? null)
 const canShareRow = computed(() => allowed.value.length > 0 && (locateField(props.definition, props.fieldId)?.row.cells.length ?? 0) >= 1)
@@ -181,11 +181,11 @@ function setRows(value: string | number): void {
 
 // Upload fields (docs/SCHEMA.md 4.6)
 const groupLabels: Record<string, string> = {
-	images: t('advancedforms', 'Images'),
-	documents: t('advancedforms', 'Documents'),
-	archives: t('advancedforms', 'Archives (zip, 7z)'),
-	audio: t('advancedforms', 'Audio'),
-	video: t('advancedforms', 'Video'),
+	images: t('webforms', 'Images'),
+	documents: t('webforms', 'Documents'),
+	archives: t('webforms', 'Archives (zip, 7z)'),
+	audio: t('webforms', 'Audio'),
+	video: t('webforms', 'Video'),
 }
 const accepted = computed(() => field.value?.accept && field.value.accept.length > 0 ? field.value.accept : DEFAULT_ACCEPT)
 const extraExtensions = computed(() => accepted.value.filter((entry) => entry.startsWith('.')).join(', '))
@@ -216,13 +216,13 @@ function setUploadNumber(key: 'maxFiles' | 'maxSizeMb', value: string | number, 
 async function pickFolder() {
 	let chosen: string | null = null
 	const start = '/' + (field.value?.folder ?? '')
-	const picker = getFilePickerBuilder(t('advancedforms', 'Choose a folder for the uploaded files'))
+	const picker = getFilePickerBuilder(t('webforms', 'Choose a folder for the uploaded files'))
 		.setMultiSelect(false)
 		.setMimeTypeFilter(['httpd/unix-directory'])
 		.allowDirectories(true)
 		.startAt(start)
 		.setButtonFactory((nodes, path) => [{
-			label: nodes.length > 0 ? t('advancedforms', 'Choose {name}', { name: nodes[0].basename }) : t('advancedforms', 'Choose this folder'),
+			label: nodes.length > 0 ? t('webforms', 'Choose {name}', { name: nodes[0].basename }) : t('webforms', 'Choose this folder'),
 			variant: 'primary',
 			callback: (picked) => {
 				chosen = picked[0]?.path ?? path
@@ -241,12 +241,12 @@ async function pickFolder() {
 }
 
 const moves: { move: Move, label: string, icon: string }[] = [
-	{ move: 'rowUp', label: t('advancedforms', 'Move row up'), icon: icons.moveRowUp },
-	{ move: 'rowDown', label: t('advancedforms', 'Move row down'), icon: icons.moveRowDown },
-	{ move: 'left', label: t('advancedforms', 'Move left'), icon: icons.moveLeft },
-	{ move: 'right', label: t('advancedforms', 'Move right'), icon: icons.moveRight },
-	{ move: 'joinAbove', label: t('advancedforms', 'Move into the row above'), icon: icons.joinAbove },
-	{ move: 'ownRow', label: t('advancedforms', 'Put in its own row'), icon: icons.ownRow },
+	{ move: 'rowUp', label: t('webforms', 'Move row up'), icon: icons.moveRowUp },
+	{ move: 'rowDown', label: t('webforms', 'Move row down'), icon: icons.moveRowDown },
+	{ move: 'left', label: t('webforms', 'Move left'), icon: icons.moveLeft },
+	{ move: 'right', label: t('webforms', 'Move right'), icon: icons.moveRight },
+	{ move: 'joinAbove', label: t('webforms', 'Move into the row above'), icon: icons.joinAbove },
+	{ move: 'ownRow', label: t('webforms', 'Put in its own row'), icon: icons.ownRow },
 ]
 </script>
 
@@ -261,24 +261,24 @@ const moves: { move: Move, label: string, icon: string }[] = [
 		<section class="af-props__section">
 			<template v-if="hasLabel">
 				<NcTextField :model-value="field.label ?? ''"
-					:label="t('advancedforms', 'Label')"
+					:label="t('webforms', 'Label')"
 					@update:model-value="(value: string | number) => emit('update', { label: String(value) })" />
 				<NcTextField :model-value="field.description ?? ''"
-					:label="t('advancedforms', 'Help text')"
+					:label="t('webforms', 'Help text')"
 					@update:model-value="(value: string | number) => text('description', value)" />
 				<NcTextField v-if="hasPlaceholder"
 					:model-value="field.placeholder ?? ''"
-					:label="type === 'select' ? t('advancedforms', 'Prompt') : t('advancedforms', 'Placeholder')"
+					:label="type === 'select' ? t('webforms', 'Prompt') : t('webforms', 'Placeholder')"
 					@update:model-value="(value: string | number) => text('placeholder', value)" />
 				<NcCheckboxRadioSwitch type="switch"
 					:model-value="field.required === true"
 					@update:model-value="(value: boolean) => emit('update', { required: value })">
-					{{ type === 'checkbox' ? t('advancedforms', 'Must be ticked') : t('advancedforms', 'Required') }}
+					{{ type === 'checkbox' ? t('webforms', 'Must be ticked') : t('webforms', 'Required') }}
 				</NcCheckboxRadioSwitch>
 				<div class="af-props__group">
-					<span class="af-props__caption">{{ t('advancedforms', 'Label position') }}</span>
+					<span class="af-props__caption">{{ t('webforms', 'Label position') }}</span>
 					<SegmentedControl :model-value="labelChoice"
-						:group-label="t('advancedforms', 'Label position')"
+						:group-label="t('webforms', 'Label position')"
 						:options="labelOptions"
 						@update:model-value="(value) => setLabelPosition(String(value))" />
 					<p class="af-props__hint">
@@ -289,23 +289,23 @@ const moves: { move: Move, label: string, icon: string }[] = [
 
 			<template v-else-if="type === 'heading'">
 				<NcTextField :model-value="field.text ?? ''"
-					:label="t('advancedforms', 'Heading text')"
+					:label="t('webforms', 'Heading text')"
 					@update:model-value="(value: string | number) => emit('update', { text: String(value) })" />
 				<div class="af-props__group">
-					<span class="af-props__caption">{{ t('advancedforms', 'Heading level') }}</span>
+					<span class="af-props__caption">{{ t('webforms', 'Heading level') }}</span>
 					<SegmentedControl :model-value="field.level ?? 2"
-						:group-label="t('advancedforms', 'Heading level')"
-						:options="[1, 2, 3, 4, 5, 6].map((level) => ({ value: level, label: t('advancedforms', 'Heading {level}', { level }), icon: headingIcons[level - 1] }))"
+						:group-label="t('webforms', 'Heading level')"
+						:options="[1, 2, 3, 4, 5, 6].map((level) => ({ value: level, label: t('webforms', 'Heading {level}', { level }), icon: headingIcons[level - 1] }))"
 					icon-only
 						@update:model-value="(value) => emit('update', { level: Number(value) })" />
 					<p class="af-props__hint">
-						{{ t('advancedforms', 'H1 is the largest and H6 the smallest. Keep headings in order for screen readers. The form title is already a level 1 heading, so H2 is usually the right start.') }}
+						{{ t('webforms', 'H1 is the largest and H6 the smallest. Keep headings in order for screen readers. The form title is already a level 1 heading, so H2 is usually the right start.') }}
 					</p>
 				</div>
 				<div class="af-props__group">
-					<span class="af-props__caption">{{ t('advancedforms', 'Alignment') }}</span>
+					<span class="af-props__caption">{{ t('webforms', 'Alignment') }}</span>
 					<SegmentedControl :model-value="field.align ?? 'start'"
-						:group-label="t('advancedforms', 'Text alignment')"
+						:group-label="t('webforms', 'Text alignment')"
 						:options="alignOptions"
 						icon-only
 						@update:model-value="(value) => setAlign(String(value))" />
@@ -314,14 +314,14 @@ const moves: { move: Move, label: string, icon: string }[] = [
 
 			<template v-else-if="type === 'paragraph'">
 				<NcTextArea :model-value="field.text ?? ''"
-					:label="t('advancedforms', 'Text')"
-					:helper-text="t('advancedforms', 'Basic markdown works: bold, italic, lists and links.')"
+					:label="t('webforms', 'Text')"
+					:helper-text="t('webforms', 'Basic markdown works: bold, italic, lists and links.')"
 					rows="5"
 					@update:model-value="(value: string) => emit('update', { text: value })" />
 				<div class="af-props__group">
-					<span class="af-props__caption">{{ t('advancedforms', 'Alignment') }}</span>
+					<span class="af-props__caption">{{ t('webforms', 'Alignment') }}</span>
 					<SegmentedControl :model-value="field.align ?? 'start'"
-						:group-label="t('advancedforms', 'Text alignment')"
+						:group-label="t('webforms', 'Text alignment')"
 						:options="alignOptions"
 						icon-only
 						@update:model-value="(value) => setAlign(String(value))" />
@@ -329,9 +329,9 @@ const moves: { move: Move, label: string, icon: string }[] = [
 			</template>
 
 			<div v-else class="af-props__group">
-				<span class="af-props__caption">{{ t('advancedforms', 'Line style') }}</span>
+				<span class="af-props__caption">{{ t('webforms', 'Line style') }}</span>
 				<SegmentedControl :model-value="field.style ?? 'solid'"
-					:group-label="t('advancedforms', 'Line style')"
+					:group-label="t('webforms', 'Line style')"
 					:options="lineOptions"
 					icon-only
 					@update:model-value="(value) => emit('update', { style: value === 'dashed' || value === 'dotted' ? value : undefined })" />
@@ -340,22 +340,22 @@ const moves: { move: Move, label: string, icon: string }[] = [
 
 		<section v-if="type === 'file'" class="af-props__section">
 			<h3 class="af-props__heading">
-				{{ t('advancedforms', 'Files') }}
+				{{ t('webforms', 'Files') }}
 			</h3>
 			<NcTextField :model-value="String(field.maxFiles ?? DEFAULT_MAX_FILES)"
 				type="number"
 				min="1"
 				max="10"
-				:label="t('advancedforms', 'Most files (1 to 10)')"
+				:label="t('webforms', 'Most files (1 to 10)')"
 				@update:model-value="(value: string | number) => setUploadNumber('maxFiles', value, 1, 10)" />
 			<NcTextField :model-value="String(field.maxSizeMb ?? DEFAULT_MAX_SIZE_MB)"
 				type="number"
 				min="1"
 				max="100"
-				:label="t('advancedforms', 'Largest file, in MB')"
+				:label="t('webforms', 'Largest file, in MB')"
 				@update:model-value="(value: string | number) => setUploadNumber('maxSizeMb', value, 1, 100)" />
 			<div class="af-props__group">
-				<span class="af-props__caption">{{ t('advancedforms', 'Accepted types') }}</span>
+				<span class="af-props__caption">{{ t('webforms', 'Accepted types') }}</span>
 				<NcCheckboxRadioSwitch v-for="group in Object.keys(UPLOAD_GROUPS)"
 					:key="group"
 					:model-value="accepted.includes(group)"
@@ -364,62 +364,62 @@ const moves: { move: Move, label: string, icon: string }[] = [
 					{{ groupLabels[group] }}
 				</NcCheckboxRadioSwitch>
 				<NcTextField :model-value="extraExtensions"
-					:label="t('advancedforms', 'Other extensions')"
-					:placeholder="t('advancedforms', 'dwg, stl')"
+					:label="t('webforms', 'Other extensions')"
+					:placeholder="t('webforms', 'dwg, stl')"
 					@update:model-value="(value: string | number) => setExtras(String(value))" />
 				<p class="af-props__hint">
-					{{ t('advancedforms', 'Programs, scripts and web pages are never accepted.') }}
+					{{ t('webforms', 'Programs, scripts and web pages are never accepted.') }}
 				</p>
 			</div>
 		</section>
 
 		<section v-if="type === 'file'" class="af-props__section">
 			<h3 class="af-props__heading">
-				{{ t('advancedforms', 'Who can upload') }}
+				{{ t('webforms', 'Who can upload') }}
 			</h3>
 			<SegmentedControl :model-value="field.audience ?? 'anyone'"
-				:group-label="t('advancedforms', 'Who can upload')"
+				:group-label="t('webforms', 'Who can upload')"
 				:options="[
-					{ value: 'anyone', label: t('advancedforms', 'Anyone'), icon: icons.audienceAnyone },
-					{ value: 'login', label: t('advancedforms', 'Signed-in users'), icon: icons.audienceLogin },
+					{ value: 'anyone', label: t('webforms', 'Anyone'), icon: icons.audienceAnyone },
+					{ value: 'login', label: t('webforms', 'Signed-in users'), icon: icons.audienceLogin },
 				]"
 				@update:model-value="(value) => emit('update', { audience: value === 'login' ? 'login' : undefined })" />
 			<p class="af-props__hint">
 				{{ uploadStorage === 'files' && (field.audience ?? 'anyone') === 'anyone'
-					? t('advancedforms', 'Letting anyone upload into your files works like a public upload link, so it is only allowed if you may share that folder by link.')
-					: t('advancedforms', 'Uploads are only accepted from people who are signed in to this Nextcloud.') }}
+					? t('webforms', 'Letting anyone upload into your files works like a public upload link, so it is only allowed if you may share that folder by link.')
+					: t('webforms', 'Uploads are only accepted from people who are signed in to this Nextcloud.') }}
 			</p>
 
 			<h3 class="af-props__heading">
-				{{ t('advancedforms', 'Where files are saved') }}
+				{{ t('webforms', 'Where files are saved') }}
 			</h3>
 			<SegmentedControl :model-value="uploadStorage"
-				:group-label="t('advancedforms', 'Where files are saved')"
+				:group-label="t('webforms', 'Where files are saved')"
 				:options="[
-					{ value: 'files', label: t('advancedforms', 'Your Files'), icon: icons.storageFiles },
-					{ value: 'app', label: t('advancedforms', 'App only'), icon: icons.storageApp },
+					{ value: 'files', label: t('webforms', 'Your Files'), icon: icons.storageFiles },
+					{ value: 'app', label: t('webforms', 'App only'), icon: icons.storageApp },
 				]"
 				@update:model-value="(value) => emit('update', { storage: value === 'app' ? 'app' : undefined })" />
 			<template v-if="uploadStorage === 'files'">
 				<NcTextField :model-value="field.folder ?? ''"
-					:label="t('advancedforms', 'Folder')"
-					:placeholder="t('advancedforms', 'Webforms/<form title>')"
+					:label="t('webforms', 'Folder')"
+					:placeholder="t('webforms', 'Webforms/<form title>')"
 					@update:model-value="(value: string | number) => text('folder', value)" />
 				<NcButton variant="secondary" @click="pickFolder">
-					{{ t('advancedforms', 'Choose folder') }}
+					{{ t('webforms', 'Choose folder') }}
 				</NcButton>
 				<p class="af-props__hint">
-					{{ t('advancedforms', 'Each response gets its own subfolder here. You can only pick folders you can write to, and this is checked again every time someone submits.') }}
+					{{ t('webforms', 'Each response gets its own subfolder here. You can only pick folders you can write to, and this is checked again every time someone submits.') }}
 				</p>
 			</template>
 			<p v-else class="af-props__hint">
-				{{ t('advancedforms', 'Files stay in the app and are downloaded from the Responses view.') }}
+				{{ t('webforms', 'Files stay in the app and are downloaded from the Responses view.') }}
 			</p>
 		</section>
 
 		<section v-if="['text', 'textarea', 'number', 'date', 'time'].includes(type) || hasOptions" class="af-props__section">
 			<h3 class="af-props__heading">
-				{{ hasOptions ? t('advancedforms', 'Options') : t('advancedforms', 'Limits') }}
+				{{ hasOptions ? t('webforms', 'Options') : t('webforms', 'Limits') }}
 			</h3>
 			<OptionsEditor v-if="hasOptions"
 				:options="field.options ?? []"
@@ -427,11 +427,11 @@ const moves: { move: Move, label: string, icon: string }[] = [
 			<template v-if="type === 'text' || type === 'textarea'">
 				<NcTextField :model-value="field.minLength === undefined ? '' : String(field.minLength)"
 					type="number"
-					:label="t('advancedforms', 'Minimum length')"
+					:label="t('webforms', 'Minimum length')"
 					@update:model-value="(value: string | number) => number('minLength', value)" />
 				<NcTextField :model-value="field.maxLength === undefined ? '' : String(field.maxLength)"
 					type="number"
-					:label="t('advancedforms', 'Maximum length')"
+					:label="t('webforms', 'Maximum length')"
 					@update:model-value="(value: string | number) => number('maxLength', value)" />
 			</template>
 			<NcTextField v-if="type === 'textarea'"
@@ -439,11 +439,11 @@ const moves: { move: Move, label: string, icon: string }[] = [
 				type="number"
 				min="2"
 				max="20"
-				:label="t('advancedforms', 'Visible lines (2 to 20)')"
+				:label="t('webforms', 'Visible lines (2 to 20)')"
 				@update:model-value="(value: string | number) => setRows(value)" />
 			<template v-if="type === 'date' || type === 'time'">
 				<div class="af-props__group">
-					<label class="af-props__caption" for="af-props-min">{{ type === 'date' ? t('advancedforms', 'Earliest date') : t('advancedforms', 'Earliest time') }}</label>
+					<label class="af-props__caption" for="af-props-min">{{ type === 'date' ? t('webforms', 'Earliest date') : t('webforms', 'Earliest time') }}</label>
 					<input id="af-props-min"
 						:type="type"
 						:value="typeof field.min === 'string' ? field.min : ''"
@@ -451,7 +451,7 @@ const moves: { move: Move, label: string, icon: string }[] = [
 						@change="text('min', ($event.target as HTMLInputElement).value)">
 				</div>
 				<div class="af-props__group">
-					<label class="af-props__caption" for="af-props-max">{{ type === 'date' ? t('advancedforms', 'Latest date') : t('advancedforms', 'Latest time') }}</label>
+					<label class="af-props__caption" for="af-props-max">{{ type === 'date' ? t('webforms', 'Latest date') : t('webforms', 'Latest time') }}</label>
 					<input id="af-props-max"
 						:type="type"
 						:value="typeof field.max === 'string' ? field.max : ''"
@@ -460,55 +460,55 @@ const moves: { move: Move, label: string, icon: string }[] = [
 				</div>
 			</template>
 			<div v-if="type === 'radio' || type === 'checkboxes'" class="af-props__group">
-				<span class="af-props__caption">{{ t('advancedforms', 'Columns') }}</span>
+				<span class="af-props__caption">{{ t('webforms', 'Columns') }}</span>
 				<SegmentedControl :model-value="field.columns ?? 1"
-					:group-label="t('advancedforms', 'Columns')"
-					:options="[1, 2, 3, 4].map((n) => ({ value: n, label: t('advancedforms', '{n} columns', { n }), icon: columnIcons[n - 1] }))"
+					:group-label="t('webforms', 'Columns')"
+					:options="[1, 2, 3, 4].map((n) => ({ value: n, label: t('webforms', '{n} columns', { n }), icon: columnIcons[n - 1] }))"
 					icon-only
 					@update:model-value="(value) => emit('update', { columns: Number(value) > 1 ? Number(value) : undefined })" />
 			</div>
 			<template v-if="type === 'number'">
 				<NcTextField :model-value="field.prefix ?? ''"
-					:label="t('advancedforms', 'Text before the number')"
-					:placeholder="t('advancedforms', '$')"
+					:label="t('webforms', 'Text before the number')"
+					:placeholder="t('webforms', '$')"
 					@update:model-value="(value: string | number) => text('prefix', String(value).slice(0, 16))" />
 				<NcTextField :model-value="field.suffix ?? ''"
-					:label="t('advancedforms', 'Text after the number')"
-					:placeholder="t('advancedforms', 'kg')"
+					:label="t('webforms', 'Text after the number')"
+					:placeholder="t('webforms', 'kg')"
 					@update:model-value="(value: string | number) => text('suffix', String(value).slice(0, 16))" />
 				<NcTextField :model-value="field.min === undefined ? '' : String(field.min)"
 					type="number"
-					:label="t('advancedforms', 'Minimum')"
+					:label="t('webforms', 'Minimum')"
 					@update:model-value="(value: string | number) => number('min', value)" />
 				<NcTextField :model-value="field.max === undefined ? '' : String(field.max)"
 					type="number"
-					:label="t('advancedforms', 'Maximum')"
+					:label="t('webforms', 'Maximum')"
 					@update:model-value="(value: string | number) => number('max', value)" />
 				<NcTextField :model-value="field.step === undefined ? '' : String(field.step)"
 					type="number"
-					:label="t('advancedforms', 'Step')"
+					:label="t('webforms', 'Step')"
 					@update:model-value="(value: string | number) => number('step', value)" />
 			</template>
 			<template v-if="type === 'checkboxes'">
 				<NcTextField :model-value="field.minSelected === undefined ? '' : String(field.minSelected)"
 					type="number"
-					:label="t('advancedforms', 'Choose at least')"
+					:label="t('webforms', 'Choose at least')"
 					@update:model-value="(value: string | number) => number('minSelected', value)" />
 				<NcTextField :model-value="field.maxSelected === undefined ? '' : String(field.maxSelected)"
 					type="number"
-					:label="t('advancedforms', 'Choose at most')"
+					:label="t('webforms', 'Choose at most')"
 					@update:model-value="(value: string | number) => number('maxSelected', value)" />
 			</template>
 		</section>
 
 		<section class="af-props__section">
 			<h3 class="af-props__heading">
-				{{ t('advancedforms', 'Layout') }}
+				{{ t('webforms', 'Layout') }}
 			</h3>
 			<div class="af-props__group">
-				<span class="af-props__caption">{{ t('advancedforms', 'Width') }}</span>
+				<span class="af-props__caption">{{ t('webforms', 'Width') }}</span>
 				<SegmentedControl :model-value="currentSpan"
-					:group-label="t('advancedforms', 'Field width')"
+					:group-label="t('webforms', 'Field width')"
 					:options="spanOptions"
 					@update:model-value="(value) => emit('span', Number(value))" />
 			</div>
@@ -526,54 +526,54 @@ const moves: { move: Move, label: string, icon: string }[] = [
 				</NcButton>
 			</div>
 			<div v-if="definition.pages.length > 1" class="af-props__group">
-				<label class="af-props__caption" for="af-props-page">{{ t('advancedforms', 'Page') }}</label>
+				<label class="af-props__caption" for="af-props-page">{{ t('webforms', 'Page') }}</label>
 				<select id="af-props-page"
 					:value="locateField(definition, fieldId)?.pageIndex ?? 0"
 					@change="emit('toPage', Number(($event.target as HTMLSelectElement).value))">
 					<option v-for="(page, index) in definition.pages" :key="page.id" :value="index">
-						{{ page.title || t('advancedforms', 'Page {n}', { n: index + 1 }) }}
+						{{ page.title || t('webforms', 'Page {n}', { n: index + 1 }) }}
 					</option>
 				</select>
 			</div>
 			<AddFieldMenu v-if="roomBeside || canShareRow"
-				:label="t('advancedforms', 'Add a field beside this one')"
+				:label="t('webforms', 'Add a field beside this one')"
 				variant="tertiary"
 				@pick="(newType) => emit('addBeside', newType)" />
 		</section>
 
 		<section class="af-props__section">
 			<h3 class="af-props__heading">
-				{{ t('advancedforms', 'Advanced') }}
+				{{ t('webforms', 'Advanced') }}
 			</h3>
 			<NcTextField :model-value="idDraft"
-				:label="t('advancedforms', 'Field ID')"
+				:label="t('webforms', 'Field ID')"
 				:error="idMessage !== null"
-				:helper-text="idMessage ?? t('advancedforms', 'Sent with webhooks and used in exports. It follows the label until you change it yourself. Rules, actions and layout follow if you change it.')"
+				:helper-text="idMessage ?? t('webforms', 'Sent with webhooks and used in exports. It follows the label until you change it yourself. Rules, actions and layout follow if you change it.')"
 				@update:model-value="(value: string | number) => { idDraft = String(value) }"
 				@keydown.enter.prevent="applyId" />
 			<NcNoteCard v-if="published && idProblem === null" type="info">
-				{{ t('advancedforms', 'This form is published. After you publish again, webhooks and exports use the new ID. Responses already received keep the old one.') }}
+				{{ t('webforms', 'This form is published. After you publish again, webhooks and exports use the new ID. Responses already received keep the old one.') }}
 			</NcNoteCard>
 			<NcButton variant="secondary" :disabled="idProblem !== null" @click="applyId">
-				{{ t('advancedforms', 'Change ID') }}
+				{{ t('webforms', 'Change ID') }}
 			</NcButton>
 		</section>
 
 		<section class="af-props__section af-props__actions">
 			<NcButton variant="secondary"
 				:disabled="Object.keys(definition.fields).length >= MAX_FIELDS"
-				:title="Object.keys(definition.fields).length >= MAX_FIELDS ? t('advancedforms', 'This form has the most fields it can have.') : undefined"
+				:title="Object.keys(definition.fields).length >= MAX_FIELDS ? t('webforms', 'This form has the most fields it can have.') : undefined"
 				@click="emit('duplicate')">
 				<template #icon>
 					<Icon :path="icons.copy" />
 				</template>
-				{{ t('advancedforms', 'Duplicate field') }}
+				{{ t('webforms', 'Duplicate field') }}
 			</NcButton>
 			<NcButton variant="error" @click="emit('remove')">
 				<template #icon>
 					<Icon :path="icons.delete" />
 				</template>
-				{{ t('advancedforms', 'Delete field') }}
+				{{ t('webforms', 'Delete field') }}
 			</NcButton>
 		</section>
 	</div>

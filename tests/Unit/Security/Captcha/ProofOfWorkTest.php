@@ -7,10 +7,10 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Tests\Unit\Security\Captcha;
+namespace OCA\Webforms\Tests\Unit\Security\Captcha;
 
-use OCA\AdvancedForms\Security\Captcha\ProofOfWork;
-use OCA\AdvancedForms\Security\Captcha\ReplayStore;
+use OCA\Webforms\Security\Captcha\ProofOfWork;
+use OCA\Webforms\Security\Captcha\ReplayStore;
 use PHPUnit\Framework\TestCase;
 
 class ProofOfWorkTest extends TestCase {

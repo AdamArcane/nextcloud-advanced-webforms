@@ -37,7 +37,7 @@ Docker.
 
 3. Open `http://<container ip>/`, log in as `admin` with the printed password,
    create a form through the API (the builder UI does not exist yet) and open
-   `/index.php/apps/advancedforms/f/<token>`.
+   `/index.php/apps/webforms/f/<token>`.
 
 Notes:
 

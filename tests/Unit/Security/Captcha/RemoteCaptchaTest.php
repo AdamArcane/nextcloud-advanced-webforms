@@ -7,11 +7,11 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Tests\Unit\Security\Captcha;
+namespace OCA\Webforms\Tests\Unit\Security\Captcha;
 
-use OCA\AdvancedForms\Security\Captcha\CaptchaHttp;
-use OCA\AdvancedForms\Security\Captcha\CaptchaProvider;
-use OCA\AdvancedForms\Security\Captcha\RemoteCaptcha;
+use OCA\Webforms\Security\Captcha\CaptchaHttp;
+use OCA\Webforms\Security\Captcha\CaptchaProvider;
+use OCA\Webforms\Security\Captcha\RemoteCaptcha;
 use PHPUnit\Framework\TestCase;
 
 class RemoteCaptchaTest extends TestCase {

@@ -7,9 +7,9 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Actions\Adapter;
+namespace OCA\Webforms\Actions\Adapter;
 
-use OCA\AdvancedForms\Actions\Ports\AccountPort;
+use OCA\Webforms\Actions\Ports\AccountPort;
 use OCP\IUserManager;
 
 final class NextcloudAccounts implements AccountPort {

@@ -7,25 +7,25 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Service;
+namespace OCA\Webforms\Service;
 
-use OCA\AdvancedForms\Actions\Adapter\NextcloudSecrets;
-use OCA\AdvancedForms\Db\ActionLogMapper;
-use OCA\AdvancedForms\Db\EntryMapper;
-use OCA\AdvancedForms\Db\Form;
-use OCA\AdvancedForms\Db\FormMapper;
-use OCA\AdvancedForms\Db\Version;
-use OCA\AdvancedForms\Db\VersionMapper;
-use OCA\AdvancedForms\Exception\NotFoundException;
-use OCA\AdvancedForms\Forms\UploadPolicy;
-use OCA\AdvancedForms\Rules\FieldType;
-use OCA\AdvancedForms\Uploads\UploadRejected;
-use OCA\AdvancedForms\Uploads\UploadService;
-use OCA\AdvancedForms\Exception\ValidationException;
-use OCA\AdvancedForms\Forms\DefinitionValidator;
-use OCA\AdvancedForms\Forms\FormPackage;
-use OCA\AdvancedForms\Forms\JsonShape;
-use OCA\AdvancedForms\Forms\RetiredIds;
+use OCA\Webforms\Actions\Adapter\NextcloudSecrets;
+use OCA\Webforms\Db\ActionLogMapper;
+use OCA\Webforms\Db\EntryMapper;
+use OCA\Webforms\Db\Form;
+use OCA\Webforms\Db\FormMapper;
+use OCA\Webforms\Db\Version;
+use OCA\Webforms\Db\VersionMapper;
+use OCA\Webforms\Exception\NotFoundException;
+use OCA\Webforms\Forms\UploadPolicy;
+use OCA\Webforms\Rules\FieldType;
+use OCA\Webforms\Uploads\UploadRejected;
+use OCA\Webforms\Uploads\UploadService;
+use OCA\Webforms\Exception\ValidationException;
+use OCA\Webforms\Forms\DefinitionValidator;
+use OCA\Webforms\Forms\FormPackage;
+use OCA\Webforms\Forms\JsonShape;
+use OCA\Webforms\Forms\RetiredIds;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Security\ISecureRandom;
 
@@ -146,7 +146,7 @@ class FormService {
 		$slug = trim((string)preg_replace('/[^a-z0-9]+/', '-', strtolower($form->getTitle())), '-');
 		return [
 			'package' => FormPackage::build($definition, $source, $this->time->getTime()),
-			'filename' => ($slug !== '' ? $slug : 'form') . '.advancedforms.json',
+			'filename' => ($slug !== '' ? $slug : 'form') . '.webforms.json',
 		];
 	}
 

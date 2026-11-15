@@ -5,9 +5,9 @@
 
 // Translation tooling without extra dependencies.
 //
-//   node tools/l10n.mjs extract   collect every t('advancedforms', '...') into
-//                                 translationfiles/templates/advancedforms.pot
-//   node tools/l10n.mjs compile   turn translationfiles/<lang>/advancedforms.po into
+//   node tools/l10n.mjs extract   collect every t('webforms', '...') into
+//                                 translationfiles/templates/webforms.pot
+//   node tools/l10n.mjs compile   turn translationfiles/<lang>/webforms.po into
 //                                 l10n/<lang>.js and l10n/<lang>.json, the files Nextcloud loads
 //
 // English is the source language and needs no file. Translators work on the .pot / .po files
@@ -16,7 +16,7 @@
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
-const APP_ID = 'advancedforms'
+const APP_ID = 'webforms'
 const DEFAULT_PLURAL = 'nplurals=2; plural=(n != 1);'
 // Written in pieces so licence scanners read the real header above, not these strings.
 const POT_HEADER = [
@@ -41,8 +41,8 @@ function sourceFiles(root) {
 	return found
 }
 
-/** `t('advancedforms', 'text')` with a single-quoted literal, the only form this code base uses. */
-const CALL = /\bt\(\s*'advancedforms'\s*,\s*'((?:[^'\\\n]|\\.)*)'/g
+/** `t('webforms', 'text')` with a single-quoted literal, the only form this code base uses. */
+const CALL = /\bt\(\s*'webforms'\s*,\s*'((?:[^'\\\n]|\\.)*)'/g
 
 function unescapeJs(text) {
 	return text.replace(/\\(.)/g, (_, char) => (char === 'n' ? '\n' : char === 't' ? '\t' : char))

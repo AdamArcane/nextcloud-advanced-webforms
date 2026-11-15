@@ -7,9 +7,9 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Tests\Unit\Forms;
+namespace OCA\Webforms\Tests\Unit\Forms;
 
-use OCA\AdvancedForms\Forms\SubmissionValidator;
+use OCA\Webforms\Forms\SubmissionValidator;
 use PHPUnit\Framework\TestCase;
 
 class SubmissionValidatorTest extends TestCase {

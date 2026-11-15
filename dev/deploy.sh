@@ -17,7 +17,7 @@ rsync -a --delete \
 	--include='/js/***' --include='/css/***' --include='/img/***' --include='/l10n/***' \
 	--include='/LICENSES/***' --include='/CHANGELOG.md' --include='/README.md' \
 	--exclude='*' \
-	./ "$TARGET:/opt/nc-dev/custom_apps/advancedforms/"
+	./ "$TARGET:/opt/nc-dev/custom_apps/webforms/"
 
 # Docker creates custom_apps as root (bind mount parent); Nextcloud needs to write there.
 ssh "$TARGET" 'cd /opt/nc-dev && docker compose exec -T app chown www-data:www-data /var/www/html/custom_apps'
@@ -36,7 +36,7 @@ ssh "$TARGET" "$OCC config:system:set mail_smtpmode --value=smtp && $OCC config:
 # Nextcloud only runs an app's migrations when its version changed, and the version stays the same
 # between dev deploys. Resetting the recorded version makes `upgrade` treat the app as updated, so new
 # migrations apply (applied ones are skipped).
-ssh "$TARGET" "$OCC config:app:set advancedforms installed_version --value=0.0.0" >/dev/null
+ssh "$TARGET" "$OCC config:app:set webforms installed_version --value=0.0.0" >/dev/null
 ssh "$TARGET" "$OCC upgrade" | tail -3
-ssh "$TARGET" "$OCC app:enable advancedforms && $OCC app:list | grep -A1 advancedforms"
+ssh "$TARGET" "$OCC app:enable webforms && $OCC app:list | grep -A1 webforms"
 echo "Deployed. Logs: ssh $TARGET 'cd /opt/nc-dev && docker compose logs -f app'"

@@ -30,5 +30,5 @@ export function toApiError(error: unknown): ApiError {
 }
 
 export function url(path: string): string {
-	return generateUrl('/apps/advancedforms/api/v1' + path)
+	return generateUrl('/apps/webforms/api/v1' + path)
 }

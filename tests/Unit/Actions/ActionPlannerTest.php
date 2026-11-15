@@ -7,10 +7,10 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Tests\Unit\Actions;
+namespace OCA\Webforms\Tests\Unit\Actions;
 
-use OCA\AdvancedForms\Actions\ActionPlanner;
-use OCA\AdvancedForms\Rules\RuleEngine;
+use OCA\Webforms\Actions\ActionPlanner;
+use OCA\Webforms\Rules\RuleEngine;
 use PHPUnit\Framework\TestCase;
 
 class ActionPlannerTest extends TestCase {

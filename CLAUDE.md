@@ -12,7 +12,7 @@ rules semantics, actions, versioning and the submit algorithm.
 
 ## Fixed decisions
 
-- App ID `advancedforms`, namespace `OCA\AdvancedForms`, DB prefix `advforms_`.
+- App ID `webforms`, namespace `OCA\Webforms`, DB prefix `advforms_`.
   The app ID can never change (it would become a different app).
 - License AGPL-3.0-or-later, copyright holder "ArcaneX". Every file needs an
   SPDX header (`reuse lint` must pass).

@@ -5,4 +5,4 @@
  */
 ?>
 
-<div id="advancedforms-public" data-token="<?php p($_['token']); ?>"></div>
+<div id="webforms-public" data-token="<?php p($_['token']); ?>"></div>

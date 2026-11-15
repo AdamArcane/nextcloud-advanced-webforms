@@ -7,12 +7,12 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Service;
+namespace OCA\Webforms\Service;
 
-use OCA\AdvancedForms\Db\EntryMapper;
-use OCA\AdvancedForms\Db\VersionMapper;
-use OCA\AdvancedForms\Exception\NotFoundException;
-use OCA\AdvancedForms\Forms\CsvExporter;
+use OCA\Webforms\Db\EntryMapper;
+use OCA\Webforms\Db\VersionMapper;
+use OCA\Webforms\Exception\NotFoundException;
+use OCA\Webforms\Forms\CsvExporter;
 
 /**
  * Exports a form's responses as CSV.

@@ -7,11 +7,11 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Tests\Unit\Rules;
+namespace OCA\Webforms\Tests\Unit\Rules;
 
-use OCA\AdvancedForms\Rules\RuleCycleException;
-use OCA\AdvancedForms\Rules\RuleEngine;
-use OCA\AdvancedForms\Rules\RuleValidator;
+use OCA\Webforms\Rules\RuleCycleException;
+use OCA\Webforms\Rules\RuleEngine;
+use OCA\Webforms\Rules\RuleValidator;
 use PHPUnit\Framework\TestCase;
 
 class RuleValidatorTest extends TestCase {

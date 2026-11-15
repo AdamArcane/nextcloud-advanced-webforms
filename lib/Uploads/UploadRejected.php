@@ -7,7 +7,7 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Uploads;
+namespace OCA\Webforms\Uploads;
 
 /**
  * An upload that cannot be accepted. The code is shown to the respondent (see src/components/render/messages.ts).

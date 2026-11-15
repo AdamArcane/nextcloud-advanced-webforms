@@ -38,7 +38,7 @@ function errorText(error: unknown): string {
 			return messageFor(error.errors[0].code)
 		}
 		if (error.status === 429) {
-			return t('advancedforms', 'Too many uploads. Please wait a moment and try again.')
+			return t('webforms', 'Too many uploads. Please wait a moment and try again.')
 		}
 		if (error.status === 413) {
 			return messageFor('upload_too_large')

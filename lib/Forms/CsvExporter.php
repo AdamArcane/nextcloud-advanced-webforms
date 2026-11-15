@@ -7,10 +7,10 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Forms;
+namespace OCA\Webforms\Forms;
 
-use OCA\AdvancedForms\Actions\Template;
-use OCA\AdvancedForms\Rules\FieldType;
+use OCA\Webforms\Actions\Template;
+use OCA\Webforms\Rules\FieldType;
 
 /**
  * Builds a CSV of a form's responses.

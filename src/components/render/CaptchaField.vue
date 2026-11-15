@@ -152,12 +152,12 @@ defineExpose({ response, reset })
 	<div class="af-captcha">
 		<div v-if="config.provider !== 'builtin'" ref="widget" class="af-captcha__widget" />
 		<p v-if="config.provider === 'builtin' && status === 'working'" class="af-captcha__status" role="status">
-			{{ t('advancedforms', 'Checking that you are not a bot…') }}
+			{{ t('webforms', 'Checking that you are not a bot…') }}
 		</p>
 		<p v-else-if="status === 'failed'" class="af-captcha__status af-captcha__status--failed" role="alert">
-			{{ t('advancedforms', 'The spam check could not be loaded.') }}
+			{{ t('webforms', 'The spam check could not be loaded.') }}
 			<NcButton variant="tertiary" @click="retry">
-				{{ t('advancedforms', 'Try again') }}
+				{{ t('webforms', 'Try again') }}
 			</NcButton>
 		</p>
 	</div>

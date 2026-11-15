@@ -156,10 +156,10 @@ async function flush(): Promise<void> {
 
 const saveLabel = computed(() => {
 	switch (saveState.value) {
-		case 'saving': return t('advancedforms', 'Saving…')
-		case 'dirty': return t('advancedforms', 'Unsaved changes')
-		case 'error': return t('advancedforms', 'Could not save')
-		default: return t('advancedforms', 'Saved')
+		case 'saving': return t('webforms', 'Saving…')
+		case 'dirty': return t('webforms', 'Unsaved changes')
+		case 'error': return t('webforms', 'Could not save')
+		default: return t('webforms', 'Saved')
 	}
 })
 
@@ -206,9 +206,9 @@ const selectedKey = computed(() => (selectedId.value && draft.value ? (locateFie
 const selectedCodes = computed(() => (selectedId.value ? (errorGroups.value.get(selectedId.value) ?? []).map((e) => e.code) : []))
 const sidebarName = computed(() => {
 	if (selectedField.value) {
-		return selectedField.value.label || selectedField.value.text || t('advancedforms', 'Field')
+		return selectedField.value.label || selectedField.value.text || t('webforms', 'Field')
 	}
-	return t('advancedforms', 'Field')
+	return t('webforms', 'Field')
 })
 
 function select(fieldId: string): void {
@@ -274,7 +274,7 @@ function onDuplicate(fieldId: string | null = selectedId.value): void {
 	if (!draft.value || !fieldId) {
 		return
 	}
-	const result = duplicateField(draft.value, fieldId, (label) => t('advancedforms', '{label} (copy)', { label }))
+	const result = duplicateField(draft.value, fieldId, (label) => t('webforms', '{label} (copy)', { label }))
 	if (result) {
 		// The copy is "<label> (copy)", so its id follows that rather than staying random.
 		const named = followLabel(result.definition, result.fieldId, undefined, form.value?.retiredIds ?? [], frozenIds)
@@ -417,8 +417,8 @@ async function onDeleteConfirmed(): Promise<void> {
 <template>
 	<NcAppContent class="af-builder">
 		<div v-if="loadError" class="af-builder__center">
-			<NcEmptyContent :name="t('advancedforms', 'Form not found')"
-				:description="t('advancedforms', 'It may have been deleted, or you may not have access to it.')" />
+			<NcEmptyContent :name="t('webforms', 'Form not found')"
+				:description="t('webforms', 'It may have been deleted, or you may not have access to it.')" />
 		</div>
 		<div v-else-if="!draft || !form" class="af-builder__center">
 			<NcLoadingIcon :size="44" />
@@ -438,16 +438,16 @@ async function onDeleteConfirmed(): Promise<void> {
 						<Icon v-else :path="icons.check" :size="18" />
 						<span class="af-sr-only">{{ saveLabel }}</span>
 					</span>
-					<span v-if="archived" class="af-bar__chip af-bar__chip--quiet">{{ t('advancedforms', 'Archived') }}</span>
+					<span v-if="archived" class="af-bar__chip af-bar__chip--quiet">{{ t('webforms', 'Archived') }}</span>
 					<span v-else-if="published" class="af-bar__chip">
-						{{ t('advancedforms', 'Published') }}
+						{{ t('webforms', 'Published') }}
 					</span>
-					<span v-else class="af-bar__chip af-bar__chip--quiet">{{ t('advancedforms', 'Draft') }}</span>
+					<span v-else class="af-bar__chip af-bar__chip--quiet">{{ t('webforms', 'Draft') }}</span>
 				</template>
 				<template #icons>
 					<NcButton variant="tertiary"
-						:aria-label="t('advancedforms', 'Preview')"
-						:title="t('advancedforms', 'Preview')"
+						:aria-label="t('webforms', 'Preview')"
+						:title="t('webforms', 'Preview')"
 						@click="previewOpen = true">
 						<template #icon>
 							<Icon :path="icons.preview" />
@@ -458,8 +458,8 @@ async function onDeleteConfirmed(): Promise<void> {
 						:href="shareUrl"
 						target="_blank"
 						rel="noopener"
-						:aria-label="t('advancedforms', 'Open published form')"
-						:title="t('advancedforms', 'Open published form')">
+						:aria-label="t('webforms', 'Open published form')"
+						:title="t('webforms', 'Open published form')">
 						<template #icon>
 							<Icon :path="icons.openNew" />
 						</template>
@@ -467,44 +467,44 @@ async function onDeleteConfirmed(): Promise<void> {
 				</template>
 				<template v-if="view === 'edit'" #center>
 					<SegmentedControl v-model="canvasWidth"
-						:group-label="t('advancedforms', 'Canvas width')"
+						:group-label="t('webforms', 'Canvas width')"
 						:options="[
-							{ value: 'desktop', label: t('advancedforms', 'Desktop'), icon: icons.desktop },
-							{ value: 'mobile', label: t('advancedforms', 'Mobile'), icon: icons.mobile },
+							{ value: 'desktop', label: t('webforms', 'Desktop'), icon: icons.desktop },
+							{ value: 'mobile', label: t('webforms', 'Mobile'), icon: icons.mobile },
 						]"
 						icon-only />
 				</template>
 				<template #end>
 					<NcButton variant="primary" :disabled="!canPublish" @click="publish">
-						{{ publishing ? t('advancedforms', 'Publishing…') : t('advancedforms', 'Publish') }}
+						{{ publishing ? t('webforms', 'Publishing…') : t('webforms', 'Publish') }}
 					</NcButton>
 				</template>
 			</FormBar>
 
 			<div class="af-builder__notes">
 				<NcNoteCard v-if="saveState === 'error'" type="error">
-					{{ t('advancedforms', 'Your latest changes could not be saved. Check your connection; they will be retried when you edit again.') }}
+					{{ t('webforms', 'Your latest changes could not be saved. Check your connection; they will be retried when you edit again.') }}
 				</NcNoteCard>
 				<NcNoteCard v-if="archived" type="info">
-					{{ t('advancedforms', 'This form is archived. It is not taking responses.') }}
+					{{ t('webforms', 'This form is archived. It is not taking responses.') }}
 					<NcButton variant="secondary" @click="toggleArchived">
 						<template #icon>
 							<Icon :path="icons.restore" />
 						</template>
-						{{ t('advancedforms', 'Restore form') }}
+						{{ t('webforms', 'Restore form') }}
 					</NcButton>
 				</NcNoteCard>
 				<NcNoteCard v-if="archiveFailed" type="error">
-					{{ t('advancedforms', 'Could not change the archive state. Try again.') }}
+					{{ t('webforms', 'Could not change the archive state. Try again.') }}
 				</NcNoteCard>
 				<NcNoteCard v-if="publishFailed && errors.length > 0" type="warning">
-					{{ t('advancedforms', 'Fix the highlighted problems before publishing.') }}
+					{{ t('webforms', 'Fix the highlighted problems before publishing.') }}
 					<template v-if="formErrors.length > 0">
 						<br>{{ formErrors.map((error) => describeError(error.code)).join(' ') }}
 					</template>
 				</NcNoteCard>
 				<NcNoteCard v-else-if="publishFailed" type="error">
-					{{ t('advancedforms', 'The form could not be published.') }}
+					{{ t('webforms', 'The form could not be published.') }}
 				</NcNoteCard>
 			</div>
 
@@ -513,12 +513,12 @@ async function onDeleteConfirmed(): Promise<void> {
 					<SegmentedControl v-model="settingsTab"
 						class="af-settings__tabs"
 						collapse
-						:group-label="t('advancedforms', 'Settings section')"
+						:group-label="t('webforms', 'Settings section')"
 						:options="[
-							{ value: 'general', label: t('advancedforms', 'General'), icon: icons.settings },
-							{ value: 'design', label: t('advancedforms', 'Design'), icon: icons.design },
-							{ value: 'sharing', label: t('advancedforms', 'Sharing'), icon: icons.share },
-							{ value: 'actions', label: t('advancedforms', 'Actions'), icon: icons.tabActions },
+							{ value: 'general', label: t('webforms', 'General'), icon: icons.settings },
+							{ value: 'design', label: t('webforms', 'Design'), icon: icons.design },
+							{ value: 'sharing', label: t('webforms', 'Sharing'), icon: icons.share },
+							{ value: 'actions', label: t('webforms', 'Actions'), icon: icons.tabActions },
 						]" />
 					<ActionsPanel v-if="settingsTab === 'actions'"
 						:definition="draft"
@@ -558,20 +558,20 @@ async function onDeleteConfirmed(): Promise<void> {
 			<PreviewDialog v-if="previewOpen" :definition="draft" @close="previewOpen = false" />
 
 			<NcDialog v-if="confirmRemoveField"
-				:name="t('advancedforms', 'Delete this field?')"
-				:message="t('advancedforms', 'Rules that use this field will be updated or removed. Responses already received keep their answers.')"
+				:name="t('webforms', 'Delete this field?')"
+				:message="t('webforms', 'Rules that use this field will be updated or removed. Responses already received keep their answers.')"
 				:buttons="[
-					{ label: t('advancedforms', 'Cancel'), variant: 'tertiary', callback: () => { confirmRemoveField = false } },
-					{ label: t('advancedforms', 'Delete'), variant: 'error', callback: onRemoveConfirmed },
+					{ label: t('webforms', 'Cancel'), variant: 'tertiary', callback: () => { confirmRemoveField = false } },
+					{ label: t('webforms', 'Delete'), variant: 'error', callback: onRemoveConfirmed },
 				]"
 				@closing="confirmRemoveField = false" />
 
 			<NcDialog v-if="confirmDeleteForm"
-				:name="t('advancedforms', 'Delete this form?')"
-				:message="t('advancedforms', 'The form and all of its responses will be deleted. This cannot be undone.')"
+				:name="t('webforms', 'Delete this form?')"
+				:message="t('webforms', 'The form and all of its responses will be deleted. This cannot be undone.')"
 				:buttons="[
-					{ label: t('advancedforms', 'Cancel'), variant: 'tertiary', callback: () => { confirmDeleteForm = false } },
-					{ label: t('advancedforms', 'Delete form'), variant: 'error', callback: onDeleteConfirmed },
+					{ label: t('webforms', 'Cancel'), variant: 'tertiary', callback: () => { confirmDeleteForm = false } },
+					{ label: t('webforms', 'Delete form'), variant: 'error', callback: onDeleteConfirmed },
 				]"
 				@closing="confirmDeleteForm = false" />
 		</template>
@@ -581,7 +581,7 @@ async function onDeleteConfirmed(): Promise<void> {
 		v-model:active="tab"
 		v-model:open="sidebarOpen"
 		:name="sidebarName">
-		<NcAppSidebarTab id="field" :name="t('advancedforms', 'Field')" :order="1">
+		<NcAppSidebarTab id="field" :name="t('webforms', 'Field')" :order="1">
 			<template #icon>
 				<Icon :path="icons.tabField" />
 			</template>
@@ -602,10 +602,10 @@ async function onDeleteConfirmed(): Promise<void> {
 				@remove="confirmRemoveField = true" />
 			<NcEmptyContent v-else
 				class="af-builder__hint"
-				:name="t('advancedforms', 'No field selected')"
-				:description="t('advancedforms', 'Select a field on the canvas to edit it.')" />
+				:name="t('webforms', 'No field selected')"
+				:description="t('webforms', 'Select a field on the canvas to edit it.')" />
 		</NcAppSidebarTab>
-		<NcAppSidebarTab id="logic" :name="t('advancedforms', 'Logic')" :order="2">
+		<NcAppSidebarTab id="logic" :name="t('webforms', 'Logic')" :order="2">
 			<template #icon>
 				<Icon :path="icons.logic" />
 			</template>
@@ -618,8 +618,8 @@ async function onDeleteConfirmed(): Promise<void> {
 				@select="select" />
 			<NcEmptyContent v-else
 				class="af-builder__hint"
-				:name="t('advancedforms', 'No field selected')"
-				:description="t('advancedforms', 'Select a field on the canvas to set up its rules.')" />
+				:name="t('webforms', 'No field selected')"
+				:description="t('webforms', 'Select a field on the canvas to set up its rules.')" />
 		</NcAppSidebarTab>
 	</NcAppSidebar>
 </template>

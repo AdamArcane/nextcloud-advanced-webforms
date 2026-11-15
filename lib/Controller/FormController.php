@@ -7,15 +7,15 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Controller;
+namespace OCA\Webforms\Controller;
 
-use OCA\AdvancedForms\Actions\Adapter\NextcloudSecrets;
-use OCA\AdvancedForms\AppInfo\Application;
-use OCA\AdvancedForms\Exception\NotFoundException;
-use OCA\AdvancedForms\Exception\ValidationException;
-use OCA\AdvancedForms\Service\ActionLogService;
-use OCA\AdvancedForms\Service\EntryExportService;
-use OCA\AdvancedForms\Service\FormService;
+use OCA\Webforms\Actions\Adapter\NextcloudSecrets;
+use OCA\Webforms\AppInfo\Application;
+use OCA\Webforms\Exception\NotFoundException;
+use OCA\Webforms\Exception\ValidationException;
+use OCA\Webforms\Service\ActionLogService;
+use OCA\Webforms\Service\EntryExportService;
+use OCA\Webforms\Service\FormService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\FrontpageRoute;

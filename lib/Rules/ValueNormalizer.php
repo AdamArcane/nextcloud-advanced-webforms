@@ -7,7 +7,7 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Rules;
+namespace OCA\Webforms\Rules;
 
 /**
  * Turns a raw submitted value, or a rule's value, into the form used for

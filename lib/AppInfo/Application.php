@@ -7,34 +7,34 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\AppInfo;
+namespace OCA\Webforms\AppInfo;
 
-use OCA\AdvancedForms\Actions\Adapter\NextcloudHttp;
-use OCA\AdvancedForms\Actions\Adapter\NextcloudMail;
-use OCA\AdvancedForms\Actions\Adapter\NextcloudSecrets;
-use OCA\AdvancedForms\Actions\Adapter\NextcloudAccounts;
-use OCA\AdvancedForms\Actions\Ports\AccountPort;
-use OCA\AdvancedForms\Actions\Ports\HttpPort;
-use OCA\AdvancedForms\Actions\Ports\MailPort;
-use OCA\AdvancedForms\Actions\Ports\SecretPort;
-use OCA\AdvancedForms\Db\UploadMapper;
-use OCA\AdvancedForms\Listener\UserDeletedListener;
-use OCA\AdvancedForms\Security\Captcha\AppConfigStore;
-use OCA\AdvancedForms\Security\Captcha\CacheReplayStore;
-use OCA\AdvancedForms\Security\Captcha\CaptchaHttp;
-use OCA\AdvancedForms\Security\Captcha\ConfigStore;
-use OCA\AdvancedForms\Security\Captcha\NextcloudCaptchaHttp;
-use OCA\AdvancedForms\Security\Captcha\ProofOfWork;
-use OCA\AdvancedForms\Security\Captcha\ReplayStore;
-use OCA\AdvancedForms\Uploads\Adapter\NextcloudMime;
-use OCA\AdvancedForms\Uploads\Adapter\NextcloudOwnerFiles;
-use OCA\AdvancedForms\Uploads\Adapter\NextcloudPendingStore;
-use OCA\AdvancedForms\Uploads\Adapter\NextcloudTokens;
-use OCA\AdvancedForms\Uploads\Ports\MimePort;
-use OCA\AdvancedForms\Uploads\Ports\OwnerFilesPort;
-use OCA\AdvancedForms\Uploads\Ports\PendingStorePort;
-use OCA\AdvancedForms\Uploads\Ports\TokenPort;
-use OCA\AdvancedForms\Uploads\Ports\UploadRegistryPort;
+use OCA\Webforms\Actions\Adapter\NextcloudHttp;
+use OCA\Webforms\Actions\Adapter\NextcloudMail;
+use OCA\Webforms\Actions\Adapter\NextcloudSecrets;
+use OCA\Webforms\Actions\Adapter\NextcloudAccounts;
+use OCA\Webforms\Actions\Ports\AccountPort;
+use OCA\Webforms\Actions\Ports\HttpPort;
+use OCA\Webforms\Actions\Ports\MailPort;
+use OCA\Webforms\Actions\Ports\SecretPort;
+use OCA\Webforms\Db\UploadMapper;
+use OCA\Webforms\Listener\UserDeletedListener;
+use OCA\Webforms\Security\Captcha\AppConfigStore;
+use OCA\Webforms\Security\Captcha\CacheReplayStore;
+use OCA\Webforms\Security\Captcha\CaptchaHttp;
+use OCA\Webforms\Security\Captcha\ConfigStore;
+use OCA\Webforms\Security\Captcha\NextcloudCaptchaHttp;
+use OCA\Webforms\Security\Captcha\ProofOfWork;
+use OCA\Webforms\Security\Captcha\ReplayStore;
+use OCA\Webforms\Uploads\Adapter\NextcloudMime;
+use OCA\Webforms\Uploads\Adapter\NextcloudOwnerFiles;
+use OCA\Webforms\Uploads\Adapter\NextcloudPendingStore;
+use OCA\Webforms\Uploads\Adapter\NextcloudTokens;
+use OCA\Webforms\Uploads\Ports\MimePort;
+use OCA\Webforms\Uploads\Ports\OwnerFilesPort;
+use OCA\Webforms\Uploads\Ports\PendingStorePort;
+use OCA\Webforms\Uploads\Ports\TokenPort;
+use OCA\Webforms\Uploads\Ports\UploadRegistryPort;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
@@ -44,7 +44,7 @@ use OCP\User\Events\UserDeletedEvent;
 use Psr\Container\ContainerInterface;
 
 class Application extends App implements IBootstrap {
-	public const APP_ID = 'advancedforms';
+	public const APP_ID = 'webforms';
 
 	/**
 	 * @param array<string, mixed> $urlParams

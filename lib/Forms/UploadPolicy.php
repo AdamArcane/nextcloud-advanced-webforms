@@ -7,7 +7,7 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Forms;
+namespace OCA\Webforms\Forms;
 
 /**
  * The rules for upload fields that need no Nextcloud: which file types a field accepts,

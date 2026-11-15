@@ -15,7 +15,7 @@ describe('l10n tooling', () => {
 		const root = mkdtempSync(join(tmpdir(), 'l10n-'))
 		mkdirSync(join(root, 'src'))
 		const file = join(root, 'src', 'a.vue')
-		writeFileSync(file, "t('advancedforms', 'Hello {name}')\nt('advancedforms', 'It\\'s here')\nt('advancedforms', 'Hello {name}')\n")
+		writeFileSync(file, "t('webforms', 'Hello {name}')\nt('webforms', 'It\\'s here')\nt('webforms', 'Hello {name}')\n")
 		const messages = extractMessages([file], root)
 		expect([...messages.keys()]).toEqual(['Hello {name}', "It's here"])
 		expect(messages.get('Hello {name}')).toEqual(['src/a.vue:1', 'src/a.vue:3'])

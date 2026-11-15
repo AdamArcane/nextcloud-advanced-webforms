@@ -85,7 +85,7 @@ async function create(): Promise<void> {
 	creating.value = true
 	createFailed.value = false
 	try {
-		const form = await createForm(t('advancedforms', 'Untitled form'))
+		const form = await createForm(t('webforms', 'Untitled form'))
 		forms.value = [form, ...forms.value]
 		open(form.id)
 	} catch {
@@ -129,7 +129,7 @@ async function onImportFile(event: Event): Promise<void> {
 	} catch (error) {
 		const first = error instanceof ApiError ? (error.errors[0]?.code ?? error.code) : 'failed'
 		importError.value = first === 'failed' || first === 'network'
-			? t('advancedforms', 'Could not import the form.')
+			? t('webforms', 'Could not import the form.')
 			: describeError(first)
 	} finally {
 		importing.value = false
@@ -163,18 +163,18 @@ function hasNewerDraft(form: OwnerForm): boolean {
 
 function statusText(form: OwnerForm): string {
 	switch (form.status) {
-		case FORM_STATUS_PUBLISHED: return t('advancedforms', 'Published')
-		case FORM_STATUS_CLOSED: return t('advancedforms', 'Closed')
-		default: return t('advancedforms', 'Draft')
+		case FORM_STATUS_PUBLISHED: return t('webforms', 'Published')
+		case FORM_STATUS_CLOSED: return t('webforms', 'Closed')
+		default: return t('webforms', 'Draft')
 	}
 }
 </script>
 
 <template>
-	<NcContent app-name="advancedforms">
-		<NcAppNavigation :aria-label="t('advancedforms', 'Forms')">
+	<NcContent app-name="webforms">
+		<NcAppNavigation :aria-label="t('webforms', 'Forms')">
 			<template #list>
-				<NcAppNavigationNew :text="t('advancedforms', 'New form')"
+				<NcAppNavigationNew :text="t('webforms', 'New form')"
 					:disabled="creating"
 					@click="create">
 					<template #icon>
@@ -190,8 +190,8 @@ function statusText(form: OwnerForm): string {
 						:href="'#/f/' + form.id"
 						:details="statusText(form)"
 						:class="{ 'af-nav--newer': hasNewerDraft(form) }"
-						:title="hasNewerDraft(form) ? t('advancedforms', '{title} (unpublished changes)', { title: form.title }) : undefined"
-						:aria-description="hasNewerDraft(form) ? t('advancedforms', 'The draft has changes that are not published yet') : undefined"
+						:title="hasNewerDraft(form) ? t('webforms', '{title} (unpublished changes)', { title: form.title }) : undefined"
+						:aria-description="hasNewerDraft(form) ? t('webforms', 'The draft has changes that are not published yet') : undefined"
 						@click="open(form.id)">
 						<template #actions>
 							<NcActionLink :href="formExportUrl(form.id, 'draft')"
@@ -200,7 +200,7 @@ function statusText(form: OwnerForm): string {
 								<template #icon>
 									<Icon :path="icons.download" :inline="false" />
 								</template>
-								{{ t('advancedforms', 'Export draft') }}
+								{{ t('webforms', 'Export draft') }}
 							</NcActionLink>
 							<NcActionLink v-if="form.latestVersionId !== null"
 								:href="formExportUrl(form.id, 'published')"
@@ -209,20 +209,20 @@ function statusText(form: OwnerForm): string {
 								<template #icon>
 									<Icon :path="icons.download" :inline="false" />
 								</template>
-								{{ t('advancedforms', 'Export published version') }}
+								{{ t('webforms', 'Export published version') }}
 							</NcActionLink>
 							<NcActionButton close-after-click @click="toggleArchived(form)">
 								<template #icon>
 									<Icon :path="icons.archive" :inline="false" />
 								</template>
-								{{ t('advancedforms', 'Archive') }}
+								{{ t('webforms', 'Archive') }}
 							</NcActionButton>
 						</template>
 					</NcAppNavigationItem>
 				</NcAppNavigationList>
 				<NcAppNavigationList v-if="archivedForms.length > 0">
 					<NcAppNavigationItem v-model:open="archiveOpen"
-						:name="t('advancedforms', 'Archived')"
+						:name="t('webforms', 'Archived')"
 						:allow-collapse="true"
 						:counter-number="archivedForms.length"
 						:force-display-actions="false">
@@ -240,7 +240,7 @@ function statusText(form: OwnerForm): string {
 									<template #icon>
 										<Icon :path="icons.restore" :inline="false" />
 									</template>
-									{{ t('advancedforms', 'Restore') }}
+									{{ t('webforms', 'Restore') }}
 								</NcActionButton>
 								<NcActionLink :href="formExportUrl(form.id, 'draft')"
 									:download="''"
@@ -248,13 +248,13 @@ function statusText(form: OwnerForm): string {
 									<template #icon>
 										<Icon :path="icons.download" :inline="false" />
 									</template>
-									{{ t('advancedforms', 'Export draft') }}
+									{{ t('webforms', 'Export draft') }}
 								</NcActionLink>
 							</template>
 						</NcAppNavigationItem>
 					</NcAppNavigationItem>
 				</NcAppNavigationList>
-				<NcAppNavigationItem :name="t('advancedforms', 'Import form')"
+				<NcAppNavigationItem :name="t('webforms', 'Import form')"
 					:disabled="importing"
 					@click="pickImportFile">
 					<template #icon>
@@ -273,16 +273,16 @@ function statusText(form: OwnerForm): string {
 					{{ importError }}
 				</NcNoteCard>
 				<NcNoteCard v-if="loadFailed" type="error">
-					{{ t('advancedforms', 'Could not load your forms.') }}
+					{{ t('webforms', 'Could not load your forms.') }}
 					<NcButton variant="tertiary" @click="load">
-						{{ t('advancedforms', 'Try again') }}
+						{{ t('webforms', 'Try again') }}
 					</NcButton>
 				</NcNoteCard>
 				<NcNoteCard v-if="archiveError" type="error">
-					{{ t('advancedforms', 'Could not change the archive state. Try again.') }}
+					{{ t('webforms', 'Could not change the archive state. Try again.') }}
 				</NcNoteCard>
 				<NcNoteCard v-if="createFailed" type="error">
-					{{ t('advancedforms', 'Could not create the form.') }}
+					{{ t('webforms', 'Could not create the form.') }}
 				</NcNoteCard>
 			</template>
 		</NcAppNavigation>
@@ -303,17 +303,17 @@ function statusText(form: OwnerForm): string {
 			<div class="af-home">
 				<NcLoadingIcon v-if="loading" :size="44" />
 				<NcEmptyContent v-else-if="forms.length === 0"
-					:name="t('advancedforms', 'Create your first form')"
-					:description="t('advancedforms', 'Build forms with conditional fields and flexible layouts. Responses stay on your server.')">
+					:name="t('webforms', 'Create your first form')"
+					:description="t('webforms', 'Build forms with conditional fields and flexible layouts. Responses stay on your server.')">
 					<template #action>
 						<NcButton variant="primary" :disabled="creating" @click="create">
-							{{ t('advancedforms', 'New form') }}
+							{{ t('webforms', 'New form') }}
 						</NcButton>
 					</template>
 				</NcEmptyContent>
 				<NcEmptyContent v-else
-					:name="t('advancedforms', 'Select a form')"
-					:description="t('advancedforms', 'Choose a form from the list to edit it, or create a new one.')" />
+					:name="t('webforms', 'Select a form')"
+					:description="t('webforms', 'Choose a form from the list to edit it, or create a new one.')" />
 			</div>
 		</NcAppContent>
 	</NcContent>

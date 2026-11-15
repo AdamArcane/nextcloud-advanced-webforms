@@ -41,17 +41,17 @@ or newer (a build dependency declares it; the build also ran on Node 22 with an
 engine warning).
 
 ```
-git clone https://github.com/AdamArcane/nextcloud-advanced-forms advancedforms
-cd advancedforms
+git clone https://github.com/AdamArcane/nextcloud-advanced-forms webforms
+cd webforms
 npm ci
 npm run build
 ```
 
-The folder name must be `advancedforms` (it has to match the app ID). Place it
+The folder name must be `webforms` (it has to match the app ID). Place it
 in your Nextcloud `apps` or `apps-extra` directory, then enable it:
 
 ```
-occ app:enable advancedforms
+occ app:enable webforms
 ```
 
 Useful commands:

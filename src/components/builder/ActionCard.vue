@@ -63,12 +63,12 @@ function recipientSummary(to: EmailAction['to']): string {
 		return to
 	}
 	if ('owner' in to) {
-		return t('advancedforms', 'you')
+		return t('webforms', 'you')
 	}
 	if ('respondent' in to) {
-		return t('advancedforms', 'the signed-in respondent')
+		return t('webforms', 'the signed-in respondent')
 	}
-	return props.definition.fields[to.field]?.label || t('advancedforms', 'the respondent')
+	return props.definition.fields[to.field]?.label || t('webforms', 'the respondent')
 }
 
 const summary = computed(() => {
@@ -79,7 +79,7 @@ const summary = computed(() => {
 		case 'webhook': return action.url
 		default: {
 			const to = recipientSummary(action.to)
-			return t('advancedforms', 'To {to}: {subject}', { to: to || '…', subject: readablePlaceholders(action.subject, props.definition) })
+			return t('webforms', 'To {to}: {subject}', { to: to || '…', subject: readablePlaceholders(action.subject, props.definition) })
 		}
 	}
 })
@@ -132,8 +132,8 @@ interface RecipientOption {
 	kind: RecipientKind
 }
 
-const OWNER_OPTION: RecipientOption = { id: '@owner', label: t('advancedforms', 'Me (the form owner)'), kind: 'owner' }
-const RESPONDENT_OPTION: RecipientOption = { id: '@respondent', label: t('advancedforms', 'The signed-in respondent'), kind: 'respondent' }
+const OWNER_OPTION: RecipientOption = { id: '@owner', label: t('webforms', 'Me (the form owner)'), kind: 'owner' }
+const RESPONDENT_OPTION: RecipientOption = { id: '@respondent', label: t('webforms', 'The signed-in respondent'), kind: 'respondent' }
 
 // The two account entries come first; the form's email fields follow. Typing adds a fixed address.
 const recipientOptions = computed<RecipientOption[]>(() => [
@@ -179,10 +179,10 @@ function createRecipient(text: string): RecipientOption {
 
 function recipientTag(kind: RecipientKind): string {
 	switch (kind) {
-		case 'owner': return t('advancedforms', 'Your account email')
-		case 'respondent': return t('advancedforms', 'Their account email')
-		case 'field': return t('advancedforms', 'Form field · the answer given')
-		default: return t('advancedforms', 'Use this address')
+		case 'owner': return t('webforms', 'Your account email')
+		case 'respondent': return t('webforms', 'Their account email')
+		case 'field': return t('webforms', 'Form field · the answer given')
+		default: return t('webforms', 'Use this address')
 	}
 }
 
@@ -217,9 +217,9 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 			:aria-expanded="expanded"
 			@click="emit('toggle')">
 			<span class="af-action__title">{{ title }}</span>
-			<span v-if="usesResponseSlot(action)" class="af-action__chip">{{ t('advancedforms', 'Shown to respondent') }}</span>
-			<span v-if="conditional" class="af-action__chip">{{ t('advancedforms', 'Conditional') }}</span>
-			<span v-if="unreachable" class="af-action__chip af-action__chip--warn">{{ t('advancedforms', 'Never used') }}</span>
+			<span v-if="usesResponseSlot(action)" class="af-action__chip">{{ t('webforms', 'Shown to respondent') }}</span>
+			<span v-if="conditional" class="af-action__chip">{{ t('webforms', 'Conditional') }}</span>
+			<span v-if="unreachable" class="af-action__chip af-action__chip--warn">{{ t('webforms', 'Never used') }}</span>
 			<span class="af-action__summary">{{ summary }}</span>
 			<span class="af-action__chevron" :class="{ 'af-action__chevron--open': expanded }" aria-hidden="true" />
 		</button>
@@ -231,16 +231,16 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 				</p>
 			</NcNoteCard>
 			<NcNoteCard v-if="unreachable" type="info">
-				{{ t('advancedforms', 'An earlier message or redirect always applies, so this one is never shown. Give the earlier one a condition, or move this one up.') }}
+				{{ t('webforms', 'An earlier message or redirect always applies, so this one is never shown. Give the earlier one a condition, or move this one up.') }}
 			</NcNoteCard>
 			<NcNoteCard v-if="brokenPlaceholders.length > 0" type="warning">
-				{{ t('advancedforms', 'Uses answers that no longer exist: {names}', { names: brokenPlaceholders.map((name) => '{' + name + '}').join(', ') }) }}
+				{{ t('webforms', 'Uses answers that no longer exist: {names}', { names: brokenPlaceholders.map((name) => '{' + name + '}').join(', ') }) }}
 			</NcNoteCard>
 
 			<!-- Message -->
 			<template v-if="action.type === 'message'">
 				<NcTextArea :model-value="message.text"
-					:label="t('advancedforms', 'Message')"
+					:label="t('webforms', 'Message')"
 					rows="3"
 					@update:model-value="(value: string) => patch({ text: value })" />
 				<PlaceholderMenu :definition="definition" @pick="(id) => patch({ text: withPlaceholder(message.text, id) })" />
@@ -249,8 +249,8 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 			<!-- Redirect -->
 			<template v-else-if="action.type === 'redirect'">
 				<NcTextField :model-value="redirect.url"
-					:label="t('advancedforms', 'Address')"
-					:helper-text="t('advancedforms', 'Must start with https://. Answers can be added after the address, for example ?name=…')"
+					:label="t('webforms', 'Address')"
+					:helper-text="t('webforms', 'Must start with https://. Answers can be added after the address, for example ?name=…')"
 					@update:model-value="(value: string | number) => patch({ url: String(value) })" />
 				<PlaceholderMenu :definition="definition" @pick="(id) => patch({ url: withPlaceholder(redirect.url, id) })" />
 			</template>
@@ -258,8 +258,8 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 			<!-- Email -->
 			<template v-else-if="action.type === 'email'">
 				<NcSelect :model-value="recipient"
-					:input-label="t('advancedforms', 'Send to')"
-					:placeholder="t('advancedforms', 'Pick an email field or type an address')"
+					:input-label="t('webforms', 'Send to')"
+					:placeholder="t('webforms', 'Pick an email field or type an address')"
 					:options="recipientOptions"
 					taggable
 					:create-option="createRecipient"
@@ -281,61 +281,61 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 				</NcSelect>
 				<p class="af-action__hint">
 					<template v-if="recipientKind === 'field'">
-						{{ t('advancedforms', 'Sent to the address the respondent typed. To limit abuse, at most 30 such emails are sent per hour for this form.') }}
+						{{ t('webforms', 'Sent to the address the respondent typed. To limit abuse, at most 30 such emails are sent per hour for this form.') }}
 					</template>
 					<template v-else-if="recipientKind === 'owner'">
-						{{ t('advancedforms', 'Sent to the email address on your Nextcloud account. If you change it, forms follow automatically.') }}
+						{{ t('webforms', 'Sent to the email address on your Nextcloud account. If you change it, forms follow automatically.') }}
 					</template>
 					<template v-else-if="recipientKind === 'respondent'">
-						{{ t('advancedforms', 'Sent to the Nextcloud account the respondent is signed in with. Use it on forms that require login; otherwise anonymous responses are skipped.') }}
+						{{ t('webforms', 'Sent to the Nextcloud account the respondent is signed in with. Use it on forms that require login; otherwise anonymous responses are skipped.') }}
 					</template>
 					<template v-else>
-						{{ t('advancedforms', 'Pick who receives it, or type an address and press Enter.') }}
+						{{ t('webforms', 'Pick who receives it, or type an address and press Enter.') }}
 					</template>
 				</p>
 				<NcTextField :model-value="email.subject"
-					:label="t('advancedforms', 'Subject')"
+					:label="t('webforms', 'Subject')"
 					@update:model-value="(value: string | number) => patch({ subject: String(value) })" />
 				<NcTextArea :model-value="email.body"
-					:label="t('advancedforms', 'Body')"
+					:label="t('webforms', 'Body')"
 					rows="6"
 					@update:model-value="(value: string) => patch({ body: value })" />
 				<div class="af-action__inserts">
 					<PlaceholderMenu :definition="definition" @pick="(id) => patch({ body: withPlaceholder(email.body, id) })" />
-					<span class="af-action__hint">{{ t('advancedforms', 'Adds an answer to the end of the body.') }}</span>
+					<span class="af-action__hint">{{ t('webforms', 'Adds an answer to the end of the body.') }}</span>
 				</div>
 			</template>
 
 			<!-- Webhook -->
 			<template v-else>
 				<NcTextField :model-value="webhook.url"
-					:label="t('advancedforms', 'Webhook address')"
-					:helper-text="t('advancedforms', 'Must start with https://. Nextcloud blocks addresses on private networks unless an administrator allows them.')"
+					:label="t('webforms', 'Webhook address')"
+					:helper-text="t('webforms', 'Must start with https://. Nextcloud blocks addresses on private networks unless an administrator allows them.')"
 					@update:model-value="(value: string | number) => patch({ url: String(value) })" />
 
 				<div class="af-action__group">
-					<span class="af-action__caption">{{ t('advancedforms', 'Signing secret') }}</span>
+					<span class="af-action__caption">{{ t('webforms', 'Signing secret') }}</span>
 					<p class="af-action__hint">
-						{{ t('advancedforms', 'Each request is signed so the receiver can check it came from this form. The signature is in the X-AdvancedForms-Signature header.') }}
+						{{ t('webforms', 'Each request is signed so the receiver can check it came from this form. The signature is in the X-Webforms-Signature header.') }}
 					</p>
 					<NcNoteCard v-if="revealedSecret" type="success">
-						<p><strong>{{ t('advancedforms', 'Copy this secret now. It will not be shown again.') }}</strong></p>
+						<p><strong>{{ t('webforms', 'Copy this secret now. It will not be shown again.') }}</strong></p>
 						<code class="af-action__secret">{{ revealedSecret }}</code>
 						<NcButton variant="tertiary" @click="emit('dismissSecret')">
-							{{ t('advancedforms', 'I have copied it') }}
+							{{ t('webforms', 'I have copied it') }}
 						</NcButton>
 					</NcNoteCard>
 					<NcNoteCard v-if="secretFailed" type="error">
-						{{ t('advancedforms', 'Could not create a secret. Try again.') }}
+						{{ t('webforms', 'Could not create a secret. Try again.') }}
 					</NcNoteCard>
 					<div class="af-action__row">
-						<span v-if="webhook.secretRef && !revealedSecret" class="af-action__ok">{{ t('advancedforms', 'A secret is set') }}</span>
+						<span v-if="webhook.secretRef && !revealedSecret" class="af-action__ok">{{ t('webforms', 'A secret is set') }}</span>
 						<NcButton variant="secondary" :disabled="secretBusy" @click="emit('generateSecret')">
-							{{ webhook.secretRef ? t('advancedforms', 'Generate a new secret') : t('advancedforms', 'Generate a secret') }}
+							{{ webhook.secretRef ? t('webforms', 'Generate a new secret') : t('webforms', 'Generate a secret') }}
 						</NcButton>
 					</div>
 					<p v-if="!webhook.secretRef" class="af-action__hint">
-						{{ t('advancedforms', 'Without a secret the request is sent unsigned.') }}
+						{{ t('webforms', 'Without a secret the request is sent unsigned.') }}
 					</p>
 				</div>
 			</template>
@@ -346,7 +346,7 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 					:model-value="conditional"
 					:disabled="!conditional && !canAddWhen"
 					@update:model-value="setWhenEnabled">
-					{{ t('advancedforms', 'Only when the answers match') }}
+					{{ t('webforms', 'Only when the answers match') }}
 				</NcCheckboxRadioSwitch>
 				<ConditionGroup v-if="whenGroup"
 					:node="whenGroup"
@@ -360,12 +360,12 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 			</div>
 
 			<div class="af-action__footer">
-				<NcButton variant="tertiary" :disabled="index === 0" :aria-label="t('advancedforms', 'Move action up')" @click="emit('move', -1)">
+				<NcButton variant="tertiary" :disabled="index === 0" :aria-label="t('webforms', 'Move action up')" @click="emit('move', -1)">
 					<template #icon>
 						<Icon :path="ARROW_UP" />
 					</template>
 				</NcButton>
-				<NcButton variant="tertiary" :disabled="index === count - 1" :aria-label="t('advancedforms', 'Move action down')" @click="emit('move', 1)">
+				<NcButton variant="tertiary" :disabled="index === count - 1" :aria-label="t('webforms', 'Move action down')" @click="emit('move', 1)">
 					<template #icon>
 						<Icon :path="ARROW_DOWN" />
 					</template>
@@ -374,7 +374,7 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 					<template #icon>
 						<Icon :path="TRASH" />
 					</template>
-					{{ t('advancedforms', 'Delete action') }}
+					{{ t('webforms', 'Delete action') }}
 				</NcButton>
 			</div>
 		</div>

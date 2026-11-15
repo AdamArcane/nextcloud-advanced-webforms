@@ -41,7 +41,7 @@ const isChoice = computed(() => ['select', 'radio', 'checkboxes'].includes(type.
 
 const fieldOptions = computed(() => props.sources.map((source) => ({
 	id: source.id,
-	label: source.field.label || t('advancedforms', 'Untitled field'),
+	label: source.field.label || t('webforms', 'Untitled field'),
 	disabled: props.forbidden.has(source.id),
 })))
 
@@ -73,7 +73,7 @@ function setList(raw: string | number): void {
 	<div class="af-cond">
 		<div class="af-cond__main">
 			<NcSelect :model-value="leaf.field"
-				:input-label="t('advancedforms', 'When this field')"
+				:input-label="t('webforms', 'When this field')"
 				:options="fieldOptions"
 				:reduce="(option: { id: string }) => option.id"
 				:selectable="(option: { disabled: boolean }) => !option.disabled"
@@ -82,7 +82,7 @@ function setList(raw: string | number): void {
 				@update:model-value="(id: string) => emit('update', changeLeafField(definition, id))" />
 
 			<NcSelect :model-value="leaf.op"
-				:input-label="t('advancedforms', 'Comparison')"
+				:input-label="t('webforms', 'Comparison')"
 				:options="opOptions"
 				:reduce="(option: { id: string }) => option.id"
 				:clearable="false"
@@ -92,16 +92,16 @@ function setList(raw: string | number): void {
 			<template v-if="kind !== 'none'">
 				<SegmentedControl v-if="type === 'checkbox'"
 					:model-value="leaf.value === false ? 'no' : 'yes'"
-					:group-label="t('advancedforms', 'Value')"
+					:group-label="t('webforms', 'Value')"
 					:options="[
-						{ value: 'yes', label: t('advancedforms', 'Ticked') },
-						{ value: 'no', label: t('advancedforms', 'Not ticked') },
+						{ value: 'yes', label: t('webforms', 'Ticked') },
+						{ value: 'no', label: t('webforms', 'Not ticked') },
 					]"
 					@update:model-value="(value) => emit('update', { ...leaf, value: value === 'yes' })" />
 
 				<NcSelect v-else-if="isChoice && kind === 'list'"
 					:model-value="Array.isArray(leaf.value) ? leaf.value : []"
-					:input-label="t('advancedforms', 'Value')"
+					:input-label="t('webforms', 'Value')"
 					:options="choiceOptions"
 					:reduce="(option: { id: string }) => option.id"
 					label="label"
@@ -110,7 +110,7 @@ function setList(raw: string | number): void {
 
 				<NcSelect v-else-if="isChoice"
 					:model-value="typeof leaf.value === 'string' ? leaf.value : null"
-					:input-label="t('advancedforms', 'Value')"
+					:input-label="t('webforms', 'Value')"
 					:options="choiceOptions"
 					:reduce="(option: { id: string }) => option.id"
 					:clearable="false"
@@ -119,12 +119,12 @@ function setList(raw: string | number): void {
 
 				<NcTextField v-else-if="kind === 'list'"
 					:model-value="listText"
-					:label="t('advancedforms', 'Values, separated by commas')"
+					:label="t('webforms', 'Values, separated by commas')"
 					@update:model-value="setList" />
 
 				<!-- NcTextField has no date or time type, so these use a native input styled to match. -->
 				<label v-else-if="isTemporal" class="af-cond__native">
-					<span>{{ t('advancedforms', 'Value') }}</span>
+					<span>{{ t('webforms', 'Value') }}</span>
 					<input :type="type"
 						:value="scalarText"
 						@input="setScalar(($event.target as HTMLInputElement).value)">
@@ -133,7 +133,7 @@ function setList(raw: string | number): void {
 				<NcTextField v-else
 					:model-value="scalarText"
 					:type="type === 'number' ? 'number' : 'text'"
-					:label="t('advancedforms', 'Value')"
+					:label="t('webforms', 'Value')"
 					@update:model-value="setScalar" />
 			</template>
 		</div>
@@ -142,8 +142,8 @@ function setList(raw: string | number): void {
 		<NcButton v-if="removable"
 			variant="tertiary"
 			class="af-cond__remove"
-			:aria-label="t('advancedforms', 'Remove condition')"
-			:title="t('advancedforms', 'Remove condition')"
+			:aria-label="t('webforms', 'Remove condition')"
+			:title="t('webforms', 'Remove condition')"
 			@click="emit('remove')">
 			<template #icon>
 				<Icon :path="icons.close" />

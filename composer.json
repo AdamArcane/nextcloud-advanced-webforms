@@ -15,12 +15,12 @@
   },
   "autoload": {
     "psr-4": {
-      "OCA\\AdvancedForms\\": "lib/"
+      "OCA\\Webforms\\": "lib/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "OCA\\AdvancedForms\\Tests\\": "tests/"
+      "OCA\\Webforms\\Tests\\": "tests/"
     }
   },
   "require-dev": {

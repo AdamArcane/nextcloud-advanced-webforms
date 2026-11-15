@@ -7,9 +7,9 @@
 
 declare(strict_types=1);
 
-namespace OCA\AdvancedForms\Tests\Unit\Forms;
+namespace OCA\Webforms\Tests\Unit\Forms;
 
-use OCA\AdvancedForms\Forms\JsonShape;
+use OCA\Webforms\Forms\JsonShape;
 use PHPUnit\Framework\TestCase;
 
 class JsonShapeTest extends TestCase {

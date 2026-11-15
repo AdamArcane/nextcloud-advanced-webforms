@@ -7,7 +7,7 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\AdvancedForms\Security\Captcha;
+namespace OCA\Webforms\Security\Captcha;
 
 /**
  * Built-in captcha: the browser must find a number that hashes to a challenge the server
@@ -77,6 +77,6 @@ final class ProofOfWork {
 	}
 
 	private function sign(string $challenge): string {
-		return hash_hmac('sha256', $challenge, hash_hmac('sha256', 'advancedforms-captcha', $this->secret));
+		return hash_hmac('sha256', $challenge, hash_hmac('sha256', 'webforms-captcha', $this->secret));
 	}
 }
