@@ -907,3 +907,26 @@ An action of type `tables` adds a row to a Nextcloud Tables table for each match
   Tables fails visibly in the delivery log and nothing else.
 - Endpoints for the builder: `GET /api/v1/tables` (the tables the user may add rows to) and
   `GET /api/v1/tables/{id}/columns` (with each column's `kind` and whether it is `supported`).
+
+### 15.1 Create a table from a form
+
+`POST /api/v1/tables/from-form` with `{ "title": "...", "fields": [...] }` creates a Tables table owned
+by the signed-in user and answers `201 { tableId, title, map }`, where `map` is ready to be the action's
+`map`. The builder sends the form's input fields in order (id, type, label, and for choices their
+options, for numbers the step, prefix and suffix).
+
+- One column per input field, in form order, then a `Submitted` column filled from `@submitted`.
+  Headings, paragraphs and dividers have no column.
+- Text, long text, email, phone, web address and uploads become text columns (an upload is its file
+  names). Numbers become number columns with the step's decimals (two when there is no step) and the
+  prefix and suffix. A select or radio becomes a single choice column, checkboxes a multiple choice
+  column, a checkbox a yes or no column, a date a date column, a time a time column. Choice columns get
+  the field's option labels, once each.
+- **Every column is optional**, even for a required field. A field hidden by a rule or left blank has
+  no answer, and Tables rejects a whole row when a required column stays empty.
+- The table is a snapshot. Fields added or renamed later are not copied: add the column in Tables and
+  choose it in the action. Column titles are the field labels at that moment.
+- If a column cannot be created the table is deleted again, so a failure leaves nothing behind.
+- Refused with `422 tables_no_fields` when the form has no input field, `403 tables_forbidden` when
+  Tables will not let the user create tables, and `409 tables_unavailable` when Tables is off.
+  Limited to 10 per minute per user.

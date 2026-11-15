@@ -74,6 +74,8 @@ export function describeError(code: string): string {
 			return t('webforms', 'A mapped column no longer exists in the table.')
 		case 'tables_type_mismatch':
 			return t('webforms', 'An answer does not fit its column. Choose a different answer or column.')
+		case 'tables_no_fields':
+			return t('webforms', 'Add some questions to the form first, there is nothing to store yet.')
 		case 'tables_forbidden':
 			return t('webforms', 'You are not allowed to use that table.')
 		case 'action_unknown_placeholder':

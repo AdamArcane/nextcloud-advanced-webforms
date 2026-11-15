@@ -88,7 +88,58 @@ final class NextcloudTables implements TablesPort {
 	}
 
 	public function createTable(string $title, array $columns, string $userId): array {
-		throw new TablesFailure('tables_create_unsupported');
+		$tableId = null;
+		try {
+			$table = $this->service('TableService')->create($title, 'custom', null, '', $userId);
+			$tableId = (int)$table->getId();
+			$created = [];
+			foreach ($columns as $spec) {
+				$column = $this->service('ColumnService')->create($userId, $tableId, null, \OCA\Tables\Dto\Column::createFromArray(self::columnInput($spec)));
+				$created[] = ['id' => (int)$column->getId(), 'title' => (string)$column->getTitle()];
+			}
+			return ['tableId' => $tableId, 'columns' => $created];
+		} catch (\Throwable $e) {
+			if ($tableId !== null) {
+				// Do not leave half a table behind.
+				try {
+					$this->service('TableService')->delete($tableId, $userId);
+				} catch (\Throwable) {
+				}
+			}
+			throw $this->fail($e);
+		}
+	}
+
+	/**
+	 * What Tables' column service wants for one of TablesSchema's columns.
+	 *
+	 * @param array<string, mixed> $spec
+	 * @return array<string, mixed>
+	 */
+	private static function columnInput(array $spec): array {
+		$input = [
+			'title' => (string)$spec['title'],
+			'type' => (string)$spec['type'],
+			'subtype' => (string)($spec['subtype'] ?? ''),
+			'mandatory' => (bool)($spec['mandatory'] ?? false),
+		];
+		if (isset($spec['decimals'])) {
+			$input['numberDecimals'] = (int)$spec['decimals'];
+		}
+		if (isset($spec['prefix'])) {
+			$input['numberPrefix'] = (string)$spec['prefix'];
+		}
+		if (isset($spec['suffix'])) {
+			$input['numberSuffix'] = (string)$spec['suffix'];
+		}
+		if (isset($spec['options'])) {
+			$options = [];
+			foreach (array_values((array)$spec['options']) as $index => $label) {
+				$options[] = ['id' => $index + 1, 'label' => (string)$label];
+			}
+			$input['selectionOptions'] = $options;
+		}
+		return $input;
 	}
 
 	private function service(string $name): object {

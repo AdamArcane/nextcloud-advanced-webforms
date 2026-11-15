@@ -16,9 +16,20 @@ let tables: TablesList = { available: true, tables: [{ id: 3, title: 'Leads', em
 let columns: TablesColumn[] = []
 let tablesFail = false
 const columnCalls: number[] = []
+const createCalls: { title: string, fields: unknown[] }[] = []
+let createFailure: string | null = null
 
 vi.mock('../../api/tables.ts', () => ({
 	fetchTables: () => (tablesFail ? Promise.reject(new Error('network')) : Promise.resolve(tables)),
+	createTableFromForm: (title: string, fields: unknown[]) => {
+		createCalls.push({ title, fields })
+		if (createFailure) {
+			const error = Object.assign(new Error(createFailure), { code: createFailure })
+			// Rejects later, so Vitest does not report the handled rejection as unhandled.
+			return new Promise((_resolve, reject) => setTimeout(() => reject(error), 0))
+		}
+		return Promise.resolve({ tableId: 8, title, map: { 31: 'f_x', 32: '@submitted' } })
+	},
 	fetchTableColumns: (id: number) => {
 		columnCalls.push(id)
 		return Promise.resolve(columns)
@@ -54,6 +65,8 @@ describe('TablesActionBody', () => {
 		]
 		tablesFail = false
 		columnCalls.length = 0
+		createCalls.length = 0
+		createFailure = null
 	})
 
 	it('asks for a table and loads no columns until one is set', async () => {
@@ -108,6 +121,41 @@ describe('TablesActionBody', () => {
 		const quiet = mountBody({ tableId: 3, map: {} }, def)
 		await flushPromises()
 		expect(quiet.text()).not.toContain('No matching option')
+	})
+
+	it('creates a table from the form and points the action at it', async () => {
+		const { def, name } = form()
+		const wrapper = mountBody({}, def)
+		await flushPromises()
+		const create = wrapper.findAll('button').find((b) => b.text() === 'Create table')!
+		await create.trigger('click')
+		await flushPromises()
+		expect(createCalls).toHaveLength(1)
+		expect(createCalls[0].title).toBe('T')
+		// The form's input fields go along, in order, with their labels.
+		expect((createCalls[0].fields as { id: string, label: string }[]).map((field) => [field.id, field.label])).toContainEqual([name, 'Full name'])
+		expect(wrapper.emitted('patch')![0][0]).toEqual({ tableId: 8, map: { 31: 'f_x', 32: '@submitted' } })
+		expect(wrapper.text()).toContain('Created the table "T"')
+	})
+
+	it('explains why a table could not be created', async () => {
+		createFailure = 'tables_forbidden'
+		const { def } = form()
+		const wrapper = mountBody({}, def)
+		await flushPromises()
+		await wrapper.findAll('button').find((b) => b.text() === 'Create table')!.trigger('click')
+		await new Promise((resolve) => setTimeout(resolve, 5))
+		await flushPromises()
+		expect(wrapper.text()).toContain('You are not allowed to use that table.')
+		expect(wrapper.emitted('patch')).toBeUndefined()
+	})
+
+	it('cannot create a table for a form with no questions', async () => {
+		const wrapper = mountBody({}, emptyDefinition('Empty'))
+		await flushPromises()
+		const create = wrapper.findAll('button').find((b) => b.text() === 'Create table')!
+		expect(create.attributes('disabled')).toBeDefined()
+		expect(wrapper.text()).toContain('Add some questions to the form first.')
 	})
 
 	it('says so when the owner cannot add rows to the saved table', async () => {

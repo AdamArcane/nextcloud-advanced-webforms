@@ -14,10 +14,12 @@
 
 - Tables action: add a row to a Nextcloud Tables table for each response, as the form owner. In the
   Actions tab, pick a table, choose which answer goes in each column (or let "Match by name" do it),
-  and add the submission time, the respondent or the response number if you want them. A choice the
-  Tables column has no option for is flagged, because those responses leave the column empty. Text, number,
-  choice, yes/no and date columns are supported, people and relation columns are not. It runs in the
-  background with retries and shows in the delivery log. See `docs/SCHEMA.md` section 15.
+  and add the submission time, the respondent or the response number if you want them. "Create table"
+  in the same card makes a new table with one column for each question and fills in the mapping. A
+  choice the Tables column has no option for is flagged, because those responses leave the column
+  empty. Text, number, choice, yes/no and date columns are supported, people and relation columns are
+  not. It runs in the background with retries and shows in the delivery log. See `docs/SCHEMA.md`
+  section 15.
 
 ## 0.3.1 - 2026-11-15
 

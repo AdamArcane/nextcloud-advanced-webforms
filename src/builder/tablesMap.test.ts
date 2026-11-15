@@ -9,7 +9,7 @@ import type { DraftDefinition } from '../types.ts'
 import { describe, expect, it } from 'vitest'
 import { addField, emptyDefinition } from './definition.ts'
 import { addAction } from './actions.ts'
-import { brokenMappings, compatible, META_ENTRY, META_RESPONDENT, META_SUBMITTED, setMapping, sourcesForColumn, suggestMap, unmatchedOptions } from './tablesMap.ts'
+import { brokenMappings, compatible, META_ENTRY, META_RESPONDENT, META_SUBMITTED, setMapping, sourcesForColumn, fieldsForTable, suggestMap, unmatchedOptions } from './tablesMap.ts'
 
 function column(id: number, title: string, kind: ColumnKind | null, extra: Partial<TablesColumn> = {}): TablesColumn {
 	return { id, title, type: 'text', subtype: '', mandatory: false, options: [], kind, supported: kind !== null, ...extra }
@@ -126,6 +126,19 @@ describe('unmatchedOptions', () => {
 		expect(unmatchedOptions(def, column(2, 'Notes', 'text'), ids.kind)).toEqual([])
 		expect(unmatchedOptions(def, single, ids.name)).toEqual([])
 		expect(unmatchedOptions(def, single, META_ENTRY)).toEqual([])
+	})
+})
+
+describe('fieldsForTable', () => {
+	it('lists the input fields in form order with what columns copy', () => {
+		const { def, ids } = form()
+		def.fields[ids.kind] = { ...def.fields[ids.kind], options: [{ value: 'opt_a', label: 'Support' }, { value: 'opt_b' }] } as DraftDefinition['fields'][string]
+		def.fields[ids.size] = { ...def.fields[ids.size], step: 0.5, prefix: '$' } as DraftDefinition['fields'][string]
+		const specs = fieldsForTable(def)
+		expect(specs.map((spec) => spec.id)).toEqual([ids.name, ids.kind, ids.size, ids.agree, ids.when])
+		expect(specs[0]).toEqual({ id: ids.name, type: 'text', label: 'Full Name' })
+		expect(specs[1].options).toEqual([{ value: 'opt_a', label: 'Support' }, { value: 'opt_b', label: 'opt_b' }])
+		expect(specs[2]).toMatchObject({ step: 0.5, prefix: '$' })
 	})
 })
 

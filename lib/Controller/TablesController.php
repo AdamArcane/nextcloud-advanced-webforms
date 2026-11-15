@@ -11,12 +11,14 @@ namespace OCA\Webforms\Controller;
 
 use OCA\Webforms\Actions\Ports\TablesFailure;
 use OCA\Webforms\Actions\Ports\TablesPort;
+use OCA\Webforms\Actions\TablesSchema;
 use OCA\Webforms\Actions\TablesValue;
 use OCA\Webforms\AppInfo\Application;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\Attribute\UserRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUserSession;
@@ -67,6 +69,43 @@ class TablesController extends Controller {
 		} catch (TablesFailure $e) {
 			return new JSONResponse(['error' => $e->reason], $e->reason === 'tables_error' ? Http::STATUS_BAD_GATEWAY : Http::STATUS_NOT_FOUND);
 		}
+	}
+
+	/**
+	 * Create a Tables table for a form: one optional column per field, in form order, then one for
+	 * when the response arrived. The table belongs to the signed-in user. Answers `map`, column id
+	 * to source, ready to use as a Tables action (docs/SCHEMA.md section 15.1).
+	 *
+	 * @param list<array<string, mixed>> $fields the form's fields in order: id, type, label, options
+	 */
+	#[NoAdminRequired]
+	#[UserRateLimit(limit: 10, period: 60)]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/tables/from-form')]
+	public function createFromForm(string $title = '', array $fields = []): JSONResponse {
+		$title = trim($title);
+		if ($title === '' || mb_strlen($title) > 255 || count($fields) > TablesSchema::MAX_COLUMNS) {
+			return new JSONResponse(['error' => 'tables_bad_request'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+		if (!$this->tables->isAvailable()) {
+			return new JSONResponse(['error' => 'tables_unavailable'], Http::STATUS_CONFLICT);
+		}
+		$schema = TablesSchema::forFields(array_values(array_filter($fields, 'is_array')));
+		if (count($schema['sources']) < 2) {
+			// Only the "submitted" column: a form with no questions has nothing to store.
+			return new JSONResponse(['error' => 'tables_no_fields'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+		try {
+			$created = $this->tables->createTable($title, $schema['columns'], $this->userId());
+		} catch (TablesFailure $e) {
+			return new JSONResponse(['error' => $e->reason], $e->reason === 'tables_forbidden' ? Http::STATUS_FORBIDDEN : Http::STATUS_BAD_GATEWAY);
+		}
+		$map = [];
+		foreach ($created['columns'] as $index => $column) {
+			if (isset($schema['sources'][$index])) {
+				$map[(string)$column['id']] = $schema['sources'][$index];
+			}
+		}
+		return new JSONResponse(['tableId' => $created['tableId'], 'title' => $title, 'map' => $map], Http::STATUS_CREATED);
 	}
 
 	private function userId(): string {

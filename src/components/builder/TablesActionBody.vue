@@ -12,8 +12,10 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import { computed, onMounted, ref, watch } from 'vue'
-import { fetchTableColumns, fetchTables } from '../../api/tables.ts'
-import { brokenMappings, setMapping, sourcesForColumn, suggestMap, unmatchedOptions } from '../../builder/tablesMap.ts'
+import { createTableFromForm, fetchTableColumns, fetchTables } from '../../api/tables.ts'
+import { brokenMappings, fieldsForTable, setMapping, sourcesForColumn, suggestMap, unmatchedOptions } from '../../builder/tablesMap.ts'
+import { describeError } from '../../builder/errors.ts'
+import NcTextField from '@nextcloud/vue/components/NcTextField'
 
 const props = defineProps<{
 	action: TablesAction
@@ -49,6 +51,12 @@ const supported = computed(() => columns.value.filter((column) => column.support
 const unsupported = computed(() => columns.value.filter((column) => !column.supported))
 const broken = computed(() => brokenMappings(props.definition, columns.value, props.action.map))
 const mappedCount = computed(() => Object.keys(props.action.map).length)
+
+const newTitle = ref(props.definition.title)
+const creating = ref(false)
+const createError = ref<string | null>(null)
+const createdTitle = ref<string | null>(null)
+const hasQuestions = computed(() => fieldsForTable(props.definition).length > 0)
 
 onMounted(async () => {
 	try {
@@ -103,6 +111,24 @@ function unmatched(column: TablesColumn): string[] {
 	return unmatchedOptions(props.definition, column, props.action.map[String(column.id)])
 }
 
+async function createTable(): Promise<void> {
+	creating.value = true
+	createError.value = null
+	createdTitle.value = null
+	try {
+		const created = await createTableFromForm(newTitle.value.trim(), fieldsForTable(props.definition))
+		// The new table must be in the list before the action points at it, or it reads as unusable.
+		tables.value = await fetchTables()
+		createdTitle.value = created.title
+		emit('patch', { tableId: created.tableId, map: created.map })
+	} catch (error) {
+		const code = (error as { code?: string }).code
+		createError.value = code ? describeError(code) : t('webforms', 'Could not create the table. Try again.')
+	} finally {
+		creating.value = false
+	}
+}
+
 function matchByLabel(): void {
 	emit('patch', { map: suggestMap(props.definition, columns.value, props.action.map) })
 }
@@ -151,6 +177,32 @@ function kindLabel(column: TablesColumn): string {
 			<p class="af-tables__hint">
 				{{ t('webforms', 'Rows are added as you, so you need to be allowed to add rows to the table. Each response becomes one row.') }}
 			</p>
+
+			<div class="af-tables__create">
+				<span class="af-tables__caption">{{ t('webforms', 'Or start a new table from this form') }}</span>
+				<div class="af-tables__create-row">
+					<NcTextField v-model="newTitle"
+						class="af-tables__title"
+						:label="t('webforms', 'Table name')"
+						:disabled="creating" />
+					<NcButton variant="secondary"
+						:disabled="creating || newTitle.trim() === '' || !hasQuestions"
+						@click="createTable">
+						{{ creating ? t('webforms', 'Creating…') : t('webforms', 'Create table') }}
+					</NcButton>
+				</div>
+				<p class="af-tables__hint">
+					{{ hasQuestions
+						? t('webforms', 'Makes a table you own with one column for each question, plus when it was submitted, and fills in the mapping. Later changes to the form are not copied to the table: add a column in Tables, then choose it here.')
+						: t('webforms', 'Add some questions to the form first.') }}
+				</p>
+				<NcNoteCard v-if="createError" type="error">
+					{{ createError }}
+				</NcNoteCard>
+				<NcNoteCard v-else-if="createdTitle" type="success">
+					{{ t('webforms', 'Created the table "{name}" in Tables and mapped every column.', { name: createdTitle }) }}
+				</NcNoteCard>
+			</div>
 
 			<template v-if="action.tableId > 0 && !unusable">
 				<NcNoteCard v-if="columnsFailed" type="error">
@@ -252,6 +304,24 @@ function kindLabel(column: TablesColumn): string {
 }
 
 .af-tables__source {
+	min-width: 0;
+}
+
+.af-tables__create {
+	display: flex;
+	flex-direction: column;
+	gap: var(--default-grid-baseline);
+}
+
+.af-tables__create-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: var(--default-grid-baseline);
+}
+
+.af-tables__title {
+	flex: 1 1 220px;
 	min-width: 0;
 }
 

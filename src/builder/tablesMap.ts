@@ -166,3 +166,35 @@ export function unmatchedOptions(definition: DraftDefinition, column: TablesColu
 		.map((option: { label?: string, value: string }) => (option.label || option.value).trim())
 		.filter((label: string) => !known.has(normal(label)))
 }
+
+/** A field as the server needs it to design a table: its id, type, label and the settings columns copy. */
+export interface TableFieldSpec {
+	id: string
+	type: string
+	label: string
+	options?: { value: string, label: string }[]
+	step?: number
+	prefix?: string
+	suffix?: string
+}
+
+/** The form's input fields in form order, for "create a table from this form". */
+export function fieldsForTable(definition: DraftDefinition): TableFieldSpec[] {
+	return sourceFields(definition).map(({ id, field }) => {
+		const spec: TableFieldSpec = { id, type: field.type, label: field.label || '' }
+		const extra = field as unknown as Record<string, unknown>
+		if (Array.isArray(extra.options)) {
+			spec.options = (extra.options as { value: string, label?: string }[]).map((option) => ({ value: option.value, label: option.label || option.value }))
+		}
+		if (typeof extra.step === 'number') {
+			spec.step = extra.step
+		}
+		if (typeof extra.prefix === 'string') {
+			spec.prefix = extra.prefix
+		}
+		if (typeof extra.suffix === 'string') {
+			spec.suffix = extra.suffix
+		}
+		return spec
+	})
+}

@@ -179,6 +179,14 @@ msgstr ""
 msgid "Add rule"
 msgstr ""
 
+#: src/builder/errors.ts:78
+msgid "Add some questions to the form first, there is nothing to store yet."
+msgstr ""
+
+#: src/components/builder/TablesActionBody.vue:197
+msgid "Add some questions to the form first."
+msgstr ""
+
 #: src/builder/errors.ts:16
 msgid "Add some text."
 msgstr ""
@@ -347,7 +355,7 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:122
+#: src/components/builder/TablesActionBody.vue:148
 msgid "Cannot be filled by a form"
 msgstr ""
 
@@ -379,7 +387,7 @@ msgstr ""
 msgid "Checking that you are not a bot…"
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:116
+#: src/components/builder/TablesActionBody.vue:142
 msgid "Choice"
 msgstr ""
 
@@ -404,7 +412,7 @@ msgstr ""
 msgid "Choose a form from the list to edit it, or create a new one."
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:201
+#: src/components/builder/TablesActionBody.vue:253
 msgid "Choose an answer for at least one column. Answers that are empty are left out, and columns marked * are required by Tables."
 msgstr ""
 
@@ -441,7 +449,7 @@ msgstr ""
 msgid "Choose which answer goes in at least one column."
 msgstr ""
 
-#: src/builder/errors.ts:90
+#: src/builder/errors.ts:92
 msgid "Choose which kinds of files this field accepts."
 msgstr ""
 
@@ -504,6 +512,10 @@ msgstr ""
 msgid "Could not create the form."
 msgstr ""
 
+#: src/components/builder/TablesActionBody.vue:126
+msgid "Could not create the table. Try again."
+msgstr ""
+
 #: src/components/entries/EntriesView.vue:283
 msgid "Could not delete the response."
 msgstr ""
@@ -532,7 +544,7 @@ msgstr ""
 msgid "Could not load the settings."
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:157
+#: src/components/builder/TablesActionBody.vue:209
 msgid "Could not load the table columns."
 msgstr ""
 
@@ -540,7 +552,7 @@ msgstr ""
 msgid "Could not load your forms."
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:130
+#: src/components/builder/TablesActionBody.vue:156
 msgid "Could not load your Tables. Try again later."
 msgstr ""
 
@@ -560,8 +572,20 @@ msgstr ""
 msgid "Create a site in the provider's dashboard to get the keys:"
 msgstr ""
 
+#: src/components/builder/TablesActionBody.vue:191
+msgid "Create table"
+msgstr ""
+
 #: src/App.vue:306
 msgid "Create your first form"
+msgstr ""
+
+#: src/components/builder/TablesActionBody.vue:203
+msgid "Created the table \"{name}\" in Tables and mapped every column."
+msgstr ""
+
+#: src/components/builder/TablesActionBody.vue:191
+msgid "Creating…"
 msgstr ""
 
 #: src/components/builder/OptionsEditor.vue:44
@@ -573,12 +597,12 @@ msgid "Dashed"
 msgstr ""
 
 #: src/builder/fieldTypeNames.ts:23
-#: src/components/builder/TablesActionBody.vue:119
+#: src/components/builder/TablesActionBody.vue:145
 msgid "Date"
 msgstr ""
 
 #: src/builder/fieldTypeNames.ts:60
-#: src/components/builder/TablesActionBody.vue:121
+#: src/components/builder/TablesActionBody.vue:147
 msgid "Date and time"
 msgstr ""
 
@@ -838,7 +862,7 @@ msgstr ""
 msgid "Fill in all the text for this action."
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:169
+#: src/components/builder/TablesActionBody.vue:221
 msgid "Fill these columns"
 msgstr ""
 
@@ -915,7 +939,7 @@ msgstr ""
 msgid "Generate a secret"
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:182
+#: src/components/builder/TablesActionBody.vue:234
 msgid "Gets the answer from"
 msgstr ""
 
@@ -1131,7 +1155,7 @@ msgstr ""
 msgid "Layout"
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:183
+#: src/components/builder/TablesActionBody.vue:235
 msgid "Leave empty"
 msgstr ""
 
@@ -1152,11 +1176,11 @@ msgstr ""
 msgid "Line style"
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:160
+#: src/components/builder/TablesActionBody.vue:212
 msgid "Loading columns…"
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:139
+#: src/components/builder/TablesActionBody.vue:165
 #: src/components/entries/EntriesView.vue:298
 msgid "Loading…"
 msgstr ""
@@ -1177,6 +1201,10 @@ msgstr ""
 msgid "Long text"
 msgstr ""
 
+#: src/components/builder/TablesActionBody.vue:196
+msgid "Makes a table you own with one column for each question, plus when it was submitted, and fills in the mapping. Later changes to the form are not copied to the table: add a column in Tables, then choose it here."
+msgstr ""
+
 #: src/components/builder/ConditionGroup.vue:83
 msgid "Match"
 msgstr ""
@@ -1185,7 +1213,7 @@ msgstr ""
 msgid "Match all or any of the conditions"
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:171
+#: src/components/builder/TablesActionBody.vue:223
 msgid "Match by name"
 msgstr ""
 
@@ -1352,7 +1380,7 @@ msgstr ""
 msgid "No field type matches that."
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:193
+#: src/components/builder/TablesActionBody.vue:245
 msgid "No matching option in Tables for: {names}. A response that picks one of these leaves this column empty. Add the option in Tables, or give it the same name."
 msgstr ""
 
@@ -1372,7 +1400,7 @@ msgstr ""
 msgid "Not available for this type of field"
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:198
+#: src/components/builder/TablesActionBody.vue:250
 msgid "Not available: {names}. People and relation columns cannot be filled from a form."
 msgstr ""
 
@@ -1401,7 +1429,7 @@ msgid "Nothing was sent for this response."
 msgstr ""
 
 #: src/builder/fieldTypeNames.ts:18
-#: src/components/builder/TablesActionBody.vue:113
+#: src/components/builder/TablesActionBody.vue:139
 msgid "Number"
 msgstr ""
 
@@ -1417,7 +1445,7 @@ msgstr ""
 msgid "One of the limits is not valid."
 msgstr ""
 
-#: src/builder/errors.ts:86
+#: src/builder/errors.ts:88
 msgid "One of the upload settings is not valid."
 msgstr ""
 
@@ -1461,6 +1489,10 @@ msgstr ""
 
 #: src/components/render/FileInput.vue:84
 msgid "or drop here"
+msgstr ""
+
+#: src/components/builder/TablesActionBody.vue:182
+msgid "Or start a new table from this form"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:367
@@ -1507,7 +1539,7 @@ msgid "Pick a day"
 msgstr ""
 
 #: src/components/builder/ActionCard.vue:78
-#: src/components/builder/TablesActionBody.vue:139
+#: src/components/builder/TablesActionBody.vue:165
 msgid "Pick a table"
 msgstr ""
 
@@ -1577,11 +1609,11 @@ msgstr ""
 msgid "Programs, scripts and web pages are never accepted."
 msgstr ""
 
-#: src/builder/errors.ts:92
+#: src/builder/errors.ts:94
 msgid "Programs, scripts and web pages can never be uploaded."
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:115
+#: src/components/builder/TablesActionBody.vue:141
 msgid "Progress"
 msgstr ""
 
@@ -1661,7 +1693,7 @@ msgstr ""
 msgid "Required"
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:177
+#: src/components/builder/TablesActionBody.vue:229
 msgid "Required in Tables"
 msgstr ""
 
@@ -1704,7 +1736,7 @@ msgstr ""
 msgid "Right"
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:152
+#: src/components/builder/TablesActionBody.vue:178
 msgid "Rows are added as you, so you need to be allowed to add rows to the table. Each response becomes one row."
 msgstr ""
 
@@ -1819,7 +1851,7 @@ msgstr ""
 msgid "Settings section"
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:117
+#: src/components/builder/TablesActionBody.vue:143
 msgid "Several choices"
 msgstr ""
 
@@ -1913,7 +1945,7 @@ msgstr ""
 msgid "Some explanatory text"
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:165
+#: src/components/builder/TablesActionBody.vue:217
 msgid "Some mapped columns no longer exist or no longer fit their answer. Choose them again."
 msgstr ""
 
@@ -1938,7 +1970,7 @@ msgstr ""
 msgid "Standard"
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:114
+#: src/components/builder/TablesActionBody.vue:140
 msgid "Stars"
 msgstr ""
 
@@ -1970,8 +2002,12 @@ msgstr ""
 msgid "Submitting"
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:138
+#: src/components/builder/TablesActionBody.vue:164
 msgid "Table"
+msgstr ""
+
+#: src/components/builder/TablesActionBody.vue:186
+msgid "Table name"
 msgstr ""
 
 #: src/components/builder/PreviewDialog.vue:60
@@ -1980,7 +2016,7 @@ msgstr ""
 
 #: src/builder/fieldTypeNames.ts:58
 #: src/components/builder/FieldProperties.vue:317
-#: src/components/builder/TablesActionBody.vue:112
+#: src/components/builder/TablesActionBody.vue:138
 msgid "Text"
 msgstr ""
 
@@ -2105,7 +2141,7 @@ msgstr ""
 msgid "The signed-in respondent"
 msgstr ""
 
-#: src/builder/errors.ts:82
+#: src/builder/errors.ts:84
 msgid "The signing secret is not valid. Generate a new one."
 msgstr ""
 
@@ -2121,11 +2157,11 @@ msgstr ""
 msgid "The Tables app is not available on this server."
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:133
+#: src/components/builder/TablesActionBody.vue:159
 msgid "The Tables app is not installed or not enabled on this server, so this action cannot run. Ask an administrator to enable it."
 msgstr ""
 
-#: src/builder/errors.ts:80
+#: src/builder/errors.ts:82
 msgid "The text uses a field that does not exist."
 msgstr ""
 
@@ -2133,7 +2169,7 @@ msgstr ""
 msgid "The upload did not work. Please try again."
 msgstr ""
 
-#: src/builder/errors.ts:88
+#: src/builder/errors.ts:90
 msgid "The upload folder is not valid. Use a folder path like Documents/Applications."
 msgstr ""
 
@@ -2197,7 +2233,7 @@ msgstr ""
 msgid "This file is empty."
 msgstr ""
 
-#: src/builder/errors.ts:98
+#: src/builder/errors.ts:100
 msgid "This file is not an Advanced Webforms export."
 msgstr ""
 
@@ -2209,11 +2245,11 @@ msgstr ""
 msgid "This file name is not valid."
 msgstr ""
 
-#: src/builder/errors.ts:100
+#: src/builder/errors.ts:102
 msgid "This file was made by a newer version of Advanced Webforms. Update the app to import it."
 msgstr ""
 
-#: src/builder/errors.ts:102
+#: src/builder/errors.ts:104
 msgid "This form has not been published yet."
 msgstr ""
 
@@ -2221,7 +2257,7 @@ msgstr ""
 msgid "This form has the most fields it can have."
 msgstr ""
 
-#: src/builder/errors.ts:84
+#: src/builder/errors.ts:86
 msgid "This form has too many actions."
 msgstr ""
 
@@ -2250,11 +2286,11 @@ msgstr ""
 msgid "This form is published. After you publish again, webhooks and exports use the new ID. Responses already received keep the old one."
 msgstr ""
 
-#: src/builder/errors.ts:104
+#: src/builder/errors.ts:106
 msgid "This form is too large."
 msgstr ""
 
-#: src/builder/errors.ts:106
+#: src/builder/errors.ts:108
 msgid "This is not valid ({code})."
 msgstr ""
 
@@ -2319,7 +2355,7 @@ msgid "Ticked"
 msgstr ""
 
 #: src/builder/fieldTypeNames.ts:24
-#: src/components/builder/TablesActionBody.vue:120
+#: src/components/builder/TablesActionBody.vue:146
 msgid "Time"
 msgstr ""
 
@@ -2524,7 +2560,7 @@ msgstr ""
 msgid "Yes"
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:118
+#: src/components/builder/TablesActionBody.vue:144
 msgid "Yes or no"
 msgstr ""
 
@@ -2540,19 +2576,19 @@ msgstr ""
 msgid "You are not allowed to add rows to that table."
 msgstr ""
 
-#: src/builder/errors.ts:96
+#: src/builder/errors.ts:98
 msgid "You are not allowed to let anyone upload into your files. Limit this field to signed-in users, or keep the files in the app."
 msgstr ""
 
-#: src/builder/errors.ts:78
+#: src/builder/errors.ts:80
 msgid "You are not allowed to use that table."
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:149
+#: src/components/builder/TablesActionBody.vue:175
 msgid "You cannot add rows to the table this action points at (it may have been deleted or unshared). Pick another table."
 msgstr ""
 
-#: src/builder/errors.ts:94
+#: src/builder/errors.ts:96
 msgid "You cannot save files to this folder. Choose a folder you can write to."
 msgstr ""
 
@@ -2560,7 +2596,7 @@ msgstr ""
 msgid "You have already submitted this form."
 msgstr ""
 
-#: src/components/builder/TablesActionBody.vue:146
+#: src/components/builder/TablesActionBody.vue:172
 msgid "You have no Tables tables you can add rows to. Create one in the Tables app first."
 msgstr ""
 
