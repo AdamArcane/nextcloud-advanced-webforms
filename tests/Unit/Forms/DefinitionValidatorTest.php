@@ -395,6 +395,45 @@ class DefinitionValidatorTest extends TestCase {
 		}
 	}
 
+	public function testReplyToIsOptionalAndWrittenLikeTheRecipient(): void {
+		foreach (['desk@example.com', ['field' => 'f_email'], ['owner' => true], ['respondent' => true]] as $replyTo) {
+			$this->assertSame([], $this->codes(static function (array $d) use ($replyTo): array {
+				$d['actions'][0]['replyTo'] = $replyTo;
+				return $d;
+			}));
+		}
+		foreach (['', 'not an address', ['field' => 'f_name'], ['field' => 'f_missing'], ['owner' => false], ['user' => 'alice'], null, 5] as $replyTo) {
+			$this->assertSame(['action_bad_reply_to'], $this->codes(static function (array $d) use ($replyTo): array {
+				$d['actions'][0]['replyTo'] = $replyTo;
+				return $d;
+			}));
+		}
+	}
+
+	public function testAllFieldsIsAllowedInAnEmailBodyOnly(): void {
+		$this->assertSame([], $this->codes(static function (array $d): array {
+			$d['actions'][0]['body'] = "New response:\n{all_fields}";
+			return $d;
+		}));
+		$this->assertSame(['action_unknown_placeholder'], $this->codes(static function (array $d): array {
+			$d['actions'][0]['subject'] = 'New {all_fields}';
+			return $d;
+		}));
+	}
+
+	public function testSubmitButtonAlignment(): void {
+		foreach (['left', 'center', 'right', 'justify'] as $align) {
+			$this->assertSame([], $this->codes(static function (array $d) use ($align): array {
+				$d['settings']['design'] = ['submitAlign' => $align];
+				return $d;
+			}));
+		}
+		$this->assertSame(['settings_invalid'], $this->codes(static function (array $d): array {
+			$d['settings']['design'] = ['submitAlign' => 'middle'];
+			return $d;
+		}));
+	}
+
 	public function testPlaceholderMustReferenceInputField(): void {
 		$this->assertSame(['action_unknown_placeholder'], $this->codes(static function (array $d): array {
 			$d['actions'][0]['body'] = 'Hi {f_note}';

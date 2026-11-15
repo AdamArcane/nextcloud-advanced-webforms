@@ -90,6 +90,7 @@ class ActionProcessor {
 				now: $now,
 				recentEmails: $row->getType() === 'email' ? $this->log->countRecentEmails($row->getFormId(), $now - 3600) : 0,
 				ownerId: $this->forms->find($row->getFormId())->getOwnerId(),
+				pages: is_array($definition['pages'] ?? null) ? $definition['pages'] : [],
 			);
 			$this->runner->run($action, $context);
 

@@ -157,6 +157,32 @@ describe('ActionsPanel', () => {
 		expect(lastChange(wrapper).actions[0]).toMatchObject({ to: '' })
 	})
 
+	it('sets where replies go the same way, and removes the setting when the box is cleared', async () => {
+		const { def, email } = base()
+		const wrapper = mountPanel(addAction(def, 'email').definition)
+		await wrapper.find('.af-action__head').trigger('click')
+		const replySelect = () => wrapper.findAllComponents({ name: 'NcSelect' }).find((select) => select.props('inputLabel') === 'Reply to (optional)')!
+		expect(replySelect().props('modelValue')).toBeNull()
+		expect(replySelect().props('options')).toEqual(recipientSelect(wrapper).props('options'))
+
+		replySelect().vm.$emit('update:modelValue', { id: email, label: 'Email', kind: 'field' })
+		expect(lastChange(wrapper).actions[0]).toMatchObject({ replyTo: { field: email } })
+		await wrapper.setProps({ definition: lastChange(wrapper) })
+		expect(replySelect().props('modelValue')).toMatchObject({ id: email, kind: 'field' })
+
+		replySelect().vm.$emit('update:modelValue', { id: ' desk@example.com ', label: 'desk@example.com', kind: 'address' })
+		expect(lastChange(wrapper).actions[0]).toMatchObject({ replyTo: 'desk@example.com' })
+
+		replySelect().vm.$emit('update:modelValue', { id: '@owner', label: 'Me', kind: 'owner' })
+		expect(lastChange(wrapper).actions[0]).toMatchObject({ replyTo: { owner: true } })
+
+		await wrapper.setProps({ definition: lastChange(wrapper) })
+		replySelect().vm.$emit('update:modelValue', null)
+		expect('replyTo' in lastChange(wrapper).actions[0]).toBe(false)
+		// The recipient is untouched by any of it.
+		expect(lastChange(wrapper).actions[0]).toMatchObject({ to: { field: email } })
+	})
+
 	it('can address the form owner or the signed-in respondent, and says what each means', async () => {
 		const wrapper = mountPanel(addAction(base().def, 'email').definition)
 		await wrapper.find('.af-action__head').trigger('click')

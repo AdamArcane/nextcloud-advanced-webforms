@@ -20,6 +20,7 @@ import {
 	unknownPlaceholders,
 	unreachableResponseActions,
 	updateAction,
+	withAllFields,
 	withPlaceholder,
 } from './actions.ts'
 import { addField, emptyDefinition } from './definition.ts'
@@ -172,5 +173,18 @@ describe('readablePlaceholders', () => {
 		const text = `Hi {${name}}`
 		readablePlaceholders(text, def)
 		expect(text).toBe(`Hi {${name}}`)
+	})
+})
+
+describe('all answers in an email body', () => {
+	it('adds the list on a line of its own', () => {
+		expect(withAllFields('')).toBe('{all_fields}')
+		expect(withAllFields('New response:\n')).toBe('New response:\n\n{all_fields}')
+	})
+
+	it('is not a broken placeholder in a body, and is one anywhere else', () => {
+		const definition = emptyDefinition('T')
+		expect(unknownPlaceholders('{all_fields} {f_gone}', definition, true)).toEqual(['f_gone'])
+		expect(unknownPlaceholders('{all_fields}', definition)).toEqual(['all_fields'])
 	})
 })

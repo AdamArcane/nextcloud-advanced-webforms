@@ -66,3 +66,9 @@ export function pageBackground(design: FormDesign | undefined): string | null {
 			return null
 	}
 }
+
+/** Where the buttons under the form sit, as the server validated it. Anything else is the default, left. */
+export function submitAlign(design: FormDesign | undefined): 'left' | 'center' | 'right' | 'justify' {
+	const value = design?.submitAlign
+	return value === 'center' || value === 'right' || value === 'justify' ? value : 'left'
+}

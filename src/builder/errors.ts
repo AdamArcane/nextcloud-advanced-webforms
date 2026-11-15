@@ -56,6 +56,8 @@ export function describeError(code: string): string {
 			return t('webforms', 'A group of conditions is empty or nested too deeply.')
 		case 'action_bad_recipient':
 			return t('webforms', 'Choose who should receive this email.')
+		case 'action_bad_reply_to':
+			return t('webforms', 'The reply-to address is not a valid email address or email field.')
 		case 'action_text_invalid':
 			return t('webforms', 'Fill in all the text for this action.')
 		case 'action_bad_url':

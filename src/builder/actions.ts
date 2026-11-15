@@ -129,10 +129,25 @@ export function errorActionIndex(path: string): number | null {
 	return match ? Number(match[1]) : null
 }
 
-/** Placeholders in a text that name a field the form no longer has. */
-export function unknownPlaceholders(text: string, definition: DraftDefinition): string[] {
+/** In an email body, `{all_fields}` stands for every answer the respondent gave (docs/SCHEMA.md section 7.2). */
+export const ALL_FIELDS = 'all_fields'
+
+/** `text` with the list of all answers added on a line of its own at the end. */
+export function withAllFields(text: string): string {
+	const trimmed = text.replace(/\s+$/, '')
+	return (trimmed === '' ? '' : trimmed + '\n\n') + '{' + ALL_FIELDS + '}'
+}
+
+/**
+ * Placeholders in a text that name a field the form no longer has. `allFields` says the text is an
+ * email body, where `{all_fields}` is not a field but still means something.
+ */
+export function unknownPlaceholders(text: string, definition: DraftDefinition, allFields: boolean = false): string[] {
 	const unknown: string[] = []
 	for (const match of text.matchAll(/\{([^{}]*)\}/g)) {
+		if (allFields && match[1] === ALL_FIELDS) {
+			continue
+		}
 		if (!(match[1] in definition.fields) && !unknown.includes(match[1])) {
 			unknown.push(match[1])
 		}

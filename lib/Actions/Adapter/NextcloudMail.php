@@ -21,11 +21,17 @@ final class NextcloudMail implements MailPort {
 	) {
 	}
 
-	public function send(string $to, string $subject, string $body): void {
+	public function send(string $to, string $subject, string $body, ?string $html = null, ?string $replyTo = null): void {
 		$message = $this->mailer->createMessage();
 		$message->setTo([$to]);
 		$message->setSubject($subject);
 		$message->setPlainBody($body);
+		if ($html !== null) {
+			$message->setHtmlBody($html);
+		}
+		if ($replyTo !== null) {
+			$message->setReplyTo([$replyTo]);
+		}
 		$failed = $this->mailer->send($message);
 		if ($failed !== []) {
 			throw new \RuntimeException('The mail server rejected the recipient.');
