@@ -44,6 +44,7 @@ export function actionLabel(type: ActionType): string {
 		case 'message': return t('webforms', 'Show a message')
 		case 'redirect': return t('webforms', 'Redirect')
 		case 'email': return t('webforms', 'Send an email')
+		case 'tables': return t('webforms', 'Add a row to Tables')
 		default: return t('webforms', 'Call a webhook')
 	}
 }
@@ -53,6 +54,7 @@ export function actionHint(type: ActionType): string {
 		case 'message': return t('webforms', 'Thank the respondent on the page after they send the form.')
 		case 'redirect': return t('webforms', 'Send the respondent to another page after they send the form.')
 		case 'email': return t('webforms', 'Email you, or the respondent, a copy of the answers.')
+		case 'tables': return t('webforms', 'Save each response as a row in a Nextcloud Tables table.')
 		default: return t('webforms', 'Send the answers to another system, such as n8n or Zapier.')
 	}
 }

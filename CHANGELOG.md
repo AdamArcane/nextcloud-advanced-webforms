@@ -12,9 +12,11 @@
   administrator can send them anywhere with the Webhook Listeners app. They also show up in Flow as a
   "Webforms" trigger. See `docs/SCHEMA.md` section 14.
 
-- Tables action (in progress): add a row to a Nextcloud Tables table for each response, as the form
-  owner, mapped by field id. Backend and API only for now, the builder screen comes next. See
-  `docs/SCHEMA.md` section 15.
+- Tables action: add a row to a Nextcloud Tables table for each response, as the form owner. In the
+  Actions tab, pick a table, choose which answer goes in each column (or let "Match by name" do it),
+  and add the submission time, the respondent or the response number if you want them. Text, number,
+  choice, yes/no and date columns are supported, people and relation columns are not. It runs in the
+  background with retries and shows in the delivery log. See `docs/SCHEMA.md` section 15.
 
 ## 0.3.1 - 2026-11-15
 

@@ -4,9 +4,9 @@
 -->
 
 <script setup lang="ts">
-import type { DraftDefinition, EmailAction, FormAction, MessageAction, RedirectAction, WebhookAction } from '../../types.ts'
+import type { DraftDefinition, EmailAction, FormAction, MessageAction, RedirectAction, TablesAction, WebhookAction } from '../../types.ts'
 
-import { t } from '@nextcloud/l10n'
+import { n, t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import { fieldTypeIcon, icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
@@ -22,6 +22,7 @@ import { actionLabel } from '../../builder/labels.ts'
 import { sourceFields } from '../../builder/rules.ts'
 import ConditionGroup from './ConditionGroup.vue'
 import PlaceholderMenu from './PlaceholderMenu.vue'
+import TablesActionBody from './TablesActionBody.vue'
 
 const ARROW_UP: string = icons.arrowUp
 const ARROW_DOWN: string = icons.arrowDown
@@ -71,12 +72,21 @@ function recipientSummary(to: EmailAction['to']): string {
 	return props.definition.fields[to.field]?.label || t('webforms', 'the respondent')
 }
 
+function tablesSummary(action: TablesAction): string {
+	const count = Object.keys(action.map).length
+	if (action.tableId < 1) {
+		return t('webforms', 'Pick a table')
+	}
+	return n('webforms', '{count} column filled', '{count} columns filled', count, { count })
+}
+
 const summary = computed(() => {
 	const action = props.action
 	switch (action.type) {
 		case 'message': return readablePlaceholders(action.text, props.definition)
 		case 'redirect': return readablePlaceholders(action.url, props.definition)
 		case 'webhook': return action.url
+		case 'tables': return tablesSummary(action)
 		default: {
 			const to = recipientSummary(action.to)
 			return t('webforms', 'To {to}: {subject}', { to: to || '…', subject: readablePlaceholders(action.subject, props.definition) })
@@ -110,6 +120,7 @@ const message = computed(() => props.action as MessageAction)
 const redirect = computed(() => props.action as RedirectAction)
 const email = computed(() => props.action as EmailAction)
 const webhook = computed(() => props.action as WebhookAction)
+const tablesAction = computed(() => props.action as TablesAction)
 
 function patch(changes: Record<string, unknown>): void {
 	emit('update', { ...props.action, ...changes } as FormAction)
@@ -305,6 +316,12 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 					<span class="af-action__hint">{{ t('webforms', 'Adds an answer to the end of the body.') }}</span>
 				</div>
 			</template>
+
+			<!-- Tables -->
+			<TablesActionBody v-else-if="action.type === 'tables'"
+				:action="tablesAction"
+				:definition="definition"
+				@patch="patch" />
 
 			<!-- Webhook -->
 			<template v-else>

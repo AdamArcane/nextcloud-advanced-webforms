@@ -60,6 +60,22 @@ export function describeError(code: string): string {
 			return t('webforms', 'Fill in all the text for this action.')
 		case 'action_bad_url':
 			return t('webforms', 'Enter a full address starting with https://.')
+		case 'action_bad_table':
+			return t('webforms', 'Pick the Tables table that should get the rows.')
+		case 'action_bad_table_map':
+			return t('webforms', 'Choose which answer goes in at least one column.')
+		case 'tables_unavailable':
+			return t('webforms', 'The Tables app is not available on this server.')
+		case 'tables_not_allowed':
+			return t('webforms', 'You are not allowed to add rows to that table.')
+		case 'tables_not_found':
+			return t('webforms', 'That table no longer exists.')
+		case 'tables_column_missing':
+			return t('webforms', 'A mapped column no longer exists in the table.')
+		case 'tables_type_mismatch':
+			return t('webforms', 'An answer does not fit its column. Choose a different answer or column.')
+		case 'tables_forbidden':
+			return t('webforms', 'You are not allowed to use that table.')
 		case 'action_unknown_placeholder':
 			return t('webforms', 'The text uses a field that does not exist.')
 		case 'action_bad_secret':

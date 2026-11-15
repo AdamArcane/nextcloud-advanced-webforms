@@ -73,6 +73,7 @@ import {
 	mdiTextBoxOutline,
 	mdiTextLong,
 	mdiPalette,
+	mdiTable,
 	mdiTableRowPlusAfter,
 	mdiWeb,
 	mdiWebhook,
@@ -177,6 +178,7 @@ export const actionTypeIcons: Record<string, string> = {
 	redirect: mdiLinkVariant,
 	email: mdiEmailOutline,
 	webhook: mdiWebhook,
+	tables: mdiTable,
 }
 
 export function fieldTypeIcon(type: string): string {

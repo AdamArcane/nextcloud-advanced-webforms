@@ -14,7 +14,7 @@ import { defaultLeaf, sourceFields } from './rules.ts'
 /** The server allows this many actions (DefinitionValidator::MAX_ACTIONS). */
 export const MAX_ACTIONS = 10
 
-export const ACTION_TYPES: readonly ActionType[] = ['message', 'redirect', 'email', 'webhook']
+export const ACTION_TYPES: readonly ActionType[] = ['message', 'redirect', 'email', 'webhook', 'tables']
 
 /** Message and redirect share one slot: the first that matches is the one shown. */
 export function usesResponseSlot(action: FormAction): boolean {
@@ -54,6 +54,9 @@ export function addAction(definition: DraftDefinition, type: ActionType): { defi
 			}
 			break
 		}
+		case 'tables':
+			action = { id, type, tableId: 0, map: {} }
+			break
 		default:
 			action = { id, type: 'webhook', url: 'https://' }
 	}

@@ -138,7 +138,7 @@ export interface FieldError {
 	code: string
 }
 
-export type ActionType = 'message' | 'redirect' | 'email' | 'webhook'
+export type ActionType = 'message' | 'redirect' | 'email' | 'webhook' | 'tables'
 
 interface ActionBase {
 	/** Stable id, unique in the form. */
@@ -175,7 +175,15 @@ export interface WebhookAction extends ActionBase {
 	secretRef?: string
 }
 
-export type FormAction = MessageAction | RedirectAction | EmailAction | WebhookAction
+export interface TablesAction extends ActionBase {
+	type: 'tables'
+	/** The Nextcloud Tables table that gets a row for each response. 0 until one is picked. */
+	tableId: number
+	/** Column id to source: a field id, or `@submitted`, `@respondent`, `@entry` (docs/SCHEMA.md section 15). */
+	map: Record<string, string>
+}
+
+export type FormAction = MessageAction | RedirectAction | EmailAction | WebhookAction | TablesAction
 
 /** The owner's editable definition (docs/SCHEMA.md section 3), including `actions`. */
 export interface DraftDefinition {

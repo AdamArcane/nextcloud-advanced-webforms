@@ -23,8 +23,11 @@ store yet, so you install it from a GitHub release. Please back up before you up
   Rules run live in the browser and are checked again on the server.
 - **Multi-page forms** with Back and Next. Required fields are checked per page, and pages whose
   fields are all hidden by rules are skipped.
-- **After-submit actions.** Confirmation message, redirect, email and signed webhooks (HMAC-SHA256).
-  Emails and webhooks are sent in the background with retries, and each action can have conditions.
+- **After-submit actions.** Confirmation message, redirect, email, signed webhooks (HMAC-SHA256) and a
+  row in a Nextcloud Tables table. Emails, webhooks and Tables rows are sent in the background with
+  retries, and each action can have conditions.
+- **Flow.** Submissions, deleted responses, publishing and status changes are Nextcloud events and a
+  "Webforms" trigger in Flow, so other apps can react to them.
 - **File uploads.** Per field limits for file count, size and type, and a choice of where files go: a
   folder in the form owner's Files, or the app's own storage. Executable and web page types are
   never accepted.
