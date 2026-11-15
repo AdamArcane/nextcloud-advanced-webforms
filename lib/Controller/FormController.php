@@ -14,6 +14,7 @@ use OCA\Webforms\AppInfo\Application;
 use OCA\Webforms\Exception\NotFoundException;
 use OCA\Webforms\Exception\ValidationException;
 use OCA\Webforms\Service\ActionLogService;
+use OCA\Webforms\Forms\EntryFilter;
 use OCA\Webforms\Service\EntryExportService;
 use OCA\Webforms\Service\FormService;
 use OCP\AppFramework\Controller;
@@ -158,9 +159,24 @@ class FormController extends Controller {
 
 	#[NoAdminRequired]
 	#[FrontpageRoute(verb: 'GET', url: '/api/v1/forms/{id}/entries')]
-	public function entries(int $id, int $limit = 50, int $offset = 0): JSONResponse {
+	public function entries(
+		int $id,
+		int $limit = 50,
+		int $offset = 0,
+		string $q = '',
+		string $from = '',
+		string $to = '',
+		string $respondent = '',
+		string $where = '',
+		string $sort = '',
+	): JSONResponse {
+		try {
+			$filter = EntryFilter::fromInput($q, $from, $to, $respondent, $where, $sort);
+		} catch (\InvalidArgumentException $e) {
+			return new JSONResponse(['error' => 'filter_invalid', 'reason' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
-			$this->service->listEntries($this->userId(), $id, $limit, $offset),
+			$this->service->listEntries($this->userId(), $id, $limit, $offset, $filter),
 		));
 	}
 

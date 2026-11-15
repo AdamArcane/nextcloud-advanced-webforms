@@ -3,10 +3,12 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+import type { EntryFilterState } from '../entries/filter.ts'
 import type { DefinitionError, DeliveriesPage, Delivery, DeliveryStatus, DraftDefinition, EntriesPage, OwnerForm } from '../types.ts'
 
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
+import { EMPTY_FILTER, filterParams } from '../entries/filter.ts'
 import { toApiError, url } from './http.ts'
 
 async function call<T>(request: Promise<{ data: T }>): Promise<T> {
@@ -73,8 +75,8 @@ export function createWebhookSecret(id: number, ref?: string): Promise<WebhookSe
 	return call(axios.post<WebhookSecret>(url('/forms/' + id + '/webhook-secret'), ref ? { ref } : {}))
 }
 
-export function listEntries(id: number, limit: number, offset: number): Promise<EntriesPage> {
-	return call(axios.get<EntriesPage>(url('/forms/' + id + '/entries'), { params: { limit, offset } }))
+export function listEntries(id: number, limit: number, offset: number, filter: EntryFilterState = EMPTY_FILTER): Promise<EntriesPage> {
+	return call(axios.get<EntriesPage>(url('/forms/' + id + '/entries'), { params: { limit, offset, ...filterParams(filter) } }))
 }
 
 export async function deleteEntry(id: number, entryId: number): Promise<void> {

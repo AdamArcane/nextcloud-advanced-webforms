@@ -60,7 +60,7 @@ function delivery(id: number, overrides: Partial<Delivery> = {}): Delivery {
 }
 
 function page(entries: EntryRecord[], total = entries.length): EntriesPage {
-	return { total, entries, versions: { 1: version } }
+	return { total, grandTotal: total, truncated: false, entries, versions: { 1: version } }
 }
 
 function deliveries(rows: Delivery[], total = rows.length): DeliveriesPage {
@@ -75,6 +75,8 @@ const buttonByText = (wrapper: ReturnType<typeof mountView>, text: string) => wr
 
 describe('EntriesView', () => {
 	beforeEach(() => {
+		// These tests describe the cards, which stay available as a choice. The table has its own tests.
+		window.localStorage.setItem('webforms.responsesView', 'cards')
 		failEntries = false
 		failRetry = false
 		failDelete = false
@@ -218,7 +220,7 @@ describe('EntriesView', () => {
 		expect(wrapper.text()).toContain('Showing 2 of 3')
 		await buttonByText(wrapper, 'Show more').trigger('click')
 		await flushPromises()
-		expect(listEntriesMock).toHaveBeenLastCalledWith(7, 50, 2)
+		expect(listEntriesMock).toHaveBeenLastCalledWith(7, 50, 2, expect.objectContaining({ text: '', sort: 'newest' }))
 		expect(wrapper.findAllComponents({ name: 'ResponseCard' })).toHaveLength(3)
 		expect(buttonByText(wrapper, 'Show more')).toBeUndefined()
 		wrapper.unmount()
@@ -416,5 +418,138 @@ describe('EntriesView deliveries', () => {
 			expect(callsForList()).toBe(before + 1)
 			wrapper.unmount()
 		})
+	})
+})
+
+describe('EntriesView table and filters', () => {
+	beforeEach(() => {
+		window.localStorage.clear()
+		failEntries = false
+		listEntriesMock.mockReset().mockResolvedValue(page([entry(3, { f_name: 'Cy', f_kind: 'new' }), entry(2, { f_name: 'Bo' }), entry(1)]))
+		deleteEntryMock.mockReset().mockResolvedValue(undefined)
+		listDeliveriesMock.mockReset().mockResolvedValue(deliveries([]))
+		document.body.innerHTML = ''
+	})
+
+	const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+	const lastFilter = () => listEntriesMock.mock.calls[listEntriesMock.mock.calls.length - 1][3]
+
+	it('shows responses as a table by default, with a column for each question and answers as text', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		const headers = wrapper.findAll('th').map((th) => th.text())
+		expect(headers).toEqual(expect.arrayContaining(['#', 'Sent by', 'Name', 'Kind']))
+		const rows = wrapper.findAll('tbody tr.af-table__row')
+		expect(rows).toHaveLength(3)
+		expect(rows[0].text()).toContain('Cy')
+		expect(rows[0].text()).toContain('New website')
+		expect(rows[0].text()).toContain('Anonymous')
+		// A response that left a question empty shows an empty cell, not a dash or "undefined".
+		expect(rows[1].text()).not.toContain('undefined')
+		wrapper.unmount()
+	})
+
+	it('opens a response under its row, and closes it again', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		await wrapper.findAll('tbody tr.af-table__row')[1].trigger('click')
+		expect(wrapper.find('#af-response-2').exists()).toBe(true)
+		expect(wrapper.findAllComponents({ name: 'ResponseCard' })).toHaveLength(1)
+		await wrapper.findAll('tbody tr.af-table__row')[1].trigger('click')
+		expect(wrapper.find('#af-response-2').exists()).toBe(false)
+		wrapper.unmount()
+	})
+
+	it('remembers the choice of cards over the table', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		const cards = wrapper.findAll('button').find((b) => b.attributes('aria-label') === 'Cards' || b.text() === 'Cards')
+		expect(cards).toBeDefined()
+		await cards!.trigger('click')
+		expect(window.localStorage.getItem('webforms.responsesView')).toBe('cards')
+		expect(wrapper.findAllComponents({ name: 'ResponseCard' })).toHaveLength(3)
+		wrapper.unmount()
+	})
+
+	it('searches after a pause in typing, not on every key', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		const calls = listEntriesMock.mock.calls.length
+		const search = wrapper.find('input[type="search"]')
+		await search.setValue('a')
+		await search.setValue('ad')
+		await wait(100)
+		expect(listEntriesMock.mock.calls.length).toBe(calls)
+		await wait(300)
+		await flushPromises()
+		expect(listEntriesMock.mock.calls.length).toBe(calls + 1)
+		expect(lastFilter()).toMatchObject({ text: 'ad' })
+		wrapper.unmount()
+	})
+
+	it('shows how many match out of all, and says when nothing does', async () => {
+		listEntriesMock.mockReset()
+			.mockResolvedValueOnce({ ...page([entry(1)], 3), grandTotal: 3 })
+			.mockResolvedValueOnce({ ...page([], 0), grandTotal: 3 })
+		const wrapper = mountView()
+		await flushPromises()
+		await wrapper.find('input[type="search"]').setValue('zzz')
+		await wait(350)
+		await flushPromises()
+		expect(wrapper.text()).toContain('0 of 3 responses')
+		expect(wrapper.text()).toContain('No responses match')
+		listEntriesMock.mockResolvedValue({ ...page([entry(1)], 3), grandTotal: 3 })
+		await wrapper.findAll('button').find((b) => b.text() === 'Clear filters')!.trigger('click')
+		await flushPromises()
+		expect(lastFilter()).toMatchObject({ text: '' })
+		wrapper.unmount()
+	})
+
+	it('sorts by when it was submitted from the column header', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		await wrapper.find('.af-table__sort').trigger('click')
+		await flushPromises()
+		expect(lastFilter()).toMatchObject({ sort: 'oldest' })
+		await wrapper.find('.af-table__sort').trigger('click')
+		await flushPromises()
+		expect(lastFilter()).toMatchObject({ sort: 'newest' })
+		wrapper.unmount()
+	})
+
+	it('filters by date and by who sent it, straight away', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		const dates = wrapper.findAll('input[type="date"]')
+		await dates[0].setValue('2026-11-01')
+		await flushPromises()
+		expect(lastFilter()).toMatchObject({ from: '2026-11-01' })
+		await wrapper.find('select').setValue('anonymous')
+		await flushPromises()
+		expect(lastFilter()).toMatchObject({ from: '2026-11-01', respondent: 'anonymous' })
+		wrapper.unmount()
+	})
+
+	it('says when a search stopped early', async () => {
+		listEntriesMock.mockReset().mockResolvedValue({ ...page([entry(1)], 1), truncated: true })
+		const wrapper = mountView()
+		await flushPromises()
+		expect(wrapper.text()).toContain('Searched the first 20,000 responses')
+		wrapper.unmount()
+	})
+
+	it('lets a person choose which question columns to show', async () => {
+		const wrapper = mountView()
+		await flushPromises()
+		expect(wrapper.findAll('th').map((th) => th.text())).toContain('Kind')
+		// The column picker keeps the choice per form.
+		window.localStorage.setItem('webforms.columns.7', JSON.stringify(['f_name']))
+		const again = mountView()
+		await flushPromises()
+		const headers = again.findAll('th').map((th) => th.text())
+		expect(headers).toContain('Name')
+		expect(headers).not.toContain('Kind')
+		wrapper.unmount()
+		again.unmount()
 	})
 })

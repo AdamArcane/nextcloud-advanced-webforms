@@ -7,6 +7,11 @@
 
 ## Unreleased
 
+- Responses as a table, with search and filters. Search the text of answers (choices by their label),
+  filter by date range, by signed-in or anonymous, and by the answers themselves with the same
+  conditions as rules. Sort by when it was submitted, pick which question columns to show, and switch
+  back to cards if you prefer them. See `docs/SCHEMA.md` section 17.
+
 - Administration settings under "Forms and responses": switch action types off for the whole server
   (hidden in the builder, refused at publish, and stopped on live forms), delete responses
   automatically after a number of days (off by default, with a count of what would be deleted and a
