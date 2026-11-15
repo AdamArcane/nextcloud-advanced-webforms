@@ -22,7 +22,7 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { createForm, formExportUrl, importForm, listForms, setFormArchived } from './api/forms.ts'
 import { ApiError } from './api/http.ts'
-import { fetchUserPolicy, OPEN_POLICY } from './api/settings.ts'
+import { DEFAULT_PREFERENCES, fetchUserPolicy, fetchUserPreferences, OPEN_POLICY } from './api/settings.ts'
 import type { UserPolicy } from './api/settings.ts'
 import { describeError } from './builder/errors.ts'
 import Icon from './components/common/Icon.vue'
@@ -30,6 +30,7 @@ import { icons } from './icons.ts'
 import BuilderView from './components/builder/BuilderView.vue'
 import EntriesView from './components/entries/EntriesView.vue'
 import { statusText } from './availability.ts'
+import { FORM_STATUS_PUBLISHED } from './types.ts'
 
 const forms = ref<OwnerForm[]>([])
 const loading = ref(true)
@@ -37,6 +38,7 @@ const loadFailed = ref(false)
 const creating = ref(false)
 const createFailed = ref(false)
 const policy = ref<UserPolicy>(OPEN_POLICY)
+const openPublishedOnResponses = ref(DEFAULT_PREFERENCES.openPublishedOnResponses)
 const importing = ref(false)
 const importError = ref<string | null>(null)
 const importInput = ref<HTMLInputElement | null>(null)
@@ -66,6 +68,20 @@ function open(id: number | null): void {
 	window.location.hash = id === null ? '' : '/f/' + id
 }
 
+/**
+ * Where a form in the list opens. A published form with nothing left to publish has no editing
+ * waiting, so it opens on its responses, unless the user switched that off in Personal settings.
+ * A typed or shared `#/f/<id>` address still means the editor.
+ */
+function formHash(form: OwnerForm): string {
+	const settled = openPublishedOnResponses.value && form.status === FORM_STATUS_PUBLISHED && form.hasUnpublishedChanges === false
+	return '#/f/' + form.id + (settled ? '/responses' : '')
+}
+
+function openForm(form: OwnerForm): void {
+	window.location.hash = formHash(form).slice(1)
+}
+
 async function load(): Promise<void> {
 	try {
 		forms.value = await listForms()
@@ -81,6 +97,9 @@ onMounted(() => {
 	window.addEventListener('hashchange', onHashChange)
 	void fetchUserPolicy().then((loadedPolicy) => {
 		policy.value = loadedPolicy
+	})
+	void fetchUserPreferences().then((preferences) => {
+		openPublishedOnResponses.value = preferences.openPublishedOnResponses
 	})
 	void load()
 })
@@ -186,12 +205,12 @@ function hasNewerDraft(form: OwnerForm): boolean {
 						:key="form.id"
 						:name="form.title"
 						:active="form.id === selectedId"
-						:href="'#/f/' + form.id"
+						:href="formHash(form)"
 						:details="statusText(form)"
 						:class="{ 'af-nav--newer': hasNewerDraft(form) }"
 						:title="hasNewerDraft(form) ? t('webforms', '{title} (unpublished changes)', { title: form.title }) : undefined"
 						:aria-description="hasNewerDraft(form) ? t('webforms', 'The draft has changes that are not published yet') : undefined"
-						@click="open(form.id)">
+						@click="openForm(form)">
 						<template #actions>
 							<NcActionLink :href="formExportUrl(form.id, 'draft')"
 								:download="''"

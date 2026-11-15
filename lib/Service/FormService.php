@@ -39,6 +39,7 @@ use OCA\Webforms\Forms\FormPackage;
 use OCA\Webforms\Forms\JsonShape;
 use OCA\Webforms\Forms\RetiredIds;
 use OCA\Webforms\Forms\Availability;
+use OCA\Webforms\Forms\ShareSettings;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Security\ISecureRandom;
 
@@ -304,6 +305,54 @@ class FormService {
 			$form->getPublicToken(),
 		)));
 		return $form;
+	}
+
+	/**
+	 * Change how a form is shared (docs/SCHEMA.md section 18): its custom address and whether other
+	 * websites may frame it. These belong to the form, so they take effect at once, without publishing.
+	 *
+	 * @param string|null $slug the custom address, or null (or empty) for none
+	 * @param array<mixed> $embedOrigins origins allowed to frame the form; empty means any site
+	 * @throws NotFoundException
+	 * @throws ValidationException
+	 */
+	public function setShare(string $userId, int $id, ?string $slug, bool $embed, array $embedOrigins): Form {
+		$form = $this->get($userId, $id);
+		$slug = $slug === null ? null : strtolower(trim($slug));
+		if ($slug === '') {
+			$slug = null;
+		}
+		$errors = [];
+		if ($slug !== null && $slug !== $form->getSlug()) {
+			$code = ShareSettings::slugError($slug);
+			if ($code === null && $this->forms->addressTaken($slug, $form->getId())) {
+				$code = 'slug_taken';
+			}
+			if ($code !== null) {
+				$errors[] = ['code' => $code, 'path' => 'slug'];
+			}
+		}
+		$origins = ShareSettings::normalizeOrigins($embedOrigins);
+		if ($origins === null) {
+			$errors[] = ['code' => 'embed_origins_invalid', 'path' => 'embedOrigins'];
+		}
+		if ($errors !== []) {
+			throw new ValidationException($errors);
+		}
+
+		$form->setSlug($slug);
+		$form->setEmbed($embed ? 1 : 0);
+		$form->setEmbedOrigins($origins === [] ? null : $this->encode($origins));
+		$form->setUpdatedAt($this->time->getTime());
+		try {
+			return $this->forms->update($form);
+		} catch (\OCP\DB\Exception $e) {
+			// Two people asked for the same address at the same moment, and the other one got it.
+			if ($e->getReason() === \OCP\DB\Exception::REASON_UNIQUE_CONSTRAINT_VIOLATION) {
+				throw new ValidationException([['code' => 'slug_taken', 'path' => 'slug']]);
+			}
+			throw $e;
+		}
 	}
 
 	/**
@@ -664,6 +713,9 @@ class FormService {
 			'description' => $form->getDescription(),
 			'status' => $form->getStatus(),
 			'publicToken' => $form->getPublicToken(),
+			'slug' => $form->getSlug(),
+			'embed' => $form->isEmbeddable(),
+			'embedOrigins' => $form->getEmbedOriginList(),
 			'latestVersionId' => $form->getLatestVersionId(),
 			'archivedAt' => $form->getArchivedAt(),
 			'createdAt' => $form->getCreatedAt(),

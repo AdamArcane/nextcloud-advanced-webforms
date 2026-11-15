@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\Webforms\Db;
 
+use OCA\Webforms\Forms\ShareSettings;
 use OCP\AppFramework\Db\Entity;
 
 /**
@@ -26,6 +27,12 @@ use OCP\AppFramework\Db\Entity;
  * @method void setStatus(int $status)
  * @method string|null getPublicToken()
  * @method void setPublicToken(?string $publicToken)
+ * @method string|null getSlug()
+ * @method void setSlug(?string $slug)
+ * @method int getEmbed()
+ * @method void setEmbed(int $embed)
+ * @method string|null getEmbedOrigins()
+ * @method void setEmbedOrigins(?string $embedOrigins)
  * @method int|null getLatestVersionId()
  * @method void setLatestVersionId(?int $latestVersionId)
  * @method int|null getArchivedAt()
@@ -47,6 +54,9 @@ class Form extends Entity {
 	protected $retiredIds;
 	protected $status = self::STATUS_UNPUBLISHED;
 	protected $publicToken;
+	protected $slug;
+	protected $embed = 0;
+	protected $embedOrigins;
 	protected $latestVersionId;
 	protected $archivedAt;
 	protected $createdAt;
@@ -60,6 +70,9 @@ class Form extends Entity {
 		$this->addType('retiredIds', 'string');
 		$this->addType('status', 'integer');
 		$this->addType('publicToken', 'string');
+		$this->addType('slug', 'string');
+		$this->addType('embed', 'integer');
+		$this->addType('embedOrigins', 'string');
 		$this->addType('latestVersionId', 'integer');
 		$this->addType('archivedAt', 'integer');
 		$this->addType('createdAt', 'integer');
@@ -68,6 +81,20 @@ class Form extends Entity {
 
 	public function isArchived(): bool {
 		return $this->getArchivedAt() !== null;
+	}
+
+	/** Whether other websites may show this form in a frame. */
+	public function isEmbeddable(): bool {
+		return (int)$this->getEmbed() === 1;
+	}
+
+	/**
+	 * Origins allowed to frame the form. Empty means any site.
+	 *
+	 * @return list<string>
+	 */
+	public function getEmbedOriginList(): array {
+		return ShareSettings::decodeOrigins($this->getEmbedOrigins());
 	}
 
 	/**

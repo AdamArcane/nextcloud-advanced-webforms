@@ -8,11 +8,6 @@
 What is planned, in rough order, and what is missing compared with other form builders. For how things
 work see [SCHEMA.md](SCHEMA.md). Nothing here is promised for a date.
 
-## Next
-
-- **Release 0.3.2.** Ships what is on `main` and not yet released: the Nextcloud events, the Flow
-  trigger, the Flow category and the Tables action.
-
 ## Integrations and storage
 
 Responses always live in the app's own database, and everything that sends them elsewhere is an
@@ -35,6 +30,20 @@ after-submit action (see the decision below). The work here makes that model com
    forms would show them.
 6. **More events for Flow.** A failed delivery, and a whole form being deleted. More actions in the
    same pattern (Deck, Talk, Calendar) once there is a clear use.
+
+## Sharing
+
+Done: custom address, QR code, and embedding in a frame with a list of allowed websites (SCHEMA.md
+section 18). Still open, roughly in order:
+
+1. A server-wide switch for administrators to forbid embedding.
+2. A plain HTML version of a form, with no script, that takes the look of the website it is pasted
+   into. Only for simple forms: no rules, one page, no uploads, and the pasted code goes stale when
+   the form is published again. Needs a form-encoded submit route and a page for errors.
+3. A button that opens the form in an overlay on the host website.
+4. Regenerating the random link, to revoke one that leaked.
+5. More than one link per form, to tell where a response came from.
+6. A password, and open and close dates, on a link (goes with response limits and scheduling below).
 
 ## Responses view
 
@@ -106,7 +115,7 @@ Gap review written against 0.3.x (2026-11-15), from README.md, docs/SCHEMA.md an
   - No review states or assignment.
 - **Save and resume.** Drafts autosave for the owner, but respondents cannot resume a long form.
 - **Respondent experience.** No progress indicator in multi-page forms, no per-form language, no field-level images.
-- **Sharing.** Public link only. No collaborator or co-editor sharing and no per-user form permissions.
+- **Sharing.** Public link, custom address, QR code and embedding (see Sharing above). No collaborator or co-editor sharing and no per-user form permissions.
 - **Question types.** No scale or slider, color, consent checkbox, or date-range field.
 - **Builder.** Touch dragging is not supported.
 - **Rules.** Show, hide and require only. No conditional values or calculated fields.

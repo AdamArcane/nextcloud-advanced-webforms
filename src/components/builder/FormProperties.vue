@@ -14,10 +14,11 @@ import Icon from '../common/Icon.vue'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { availabilityNote, fromLocalInput, toLocalInput } from '../../availability.ts'
 import { DEFAULT_ACCENT, DEFAULT_BACKGROUND_COLOR, safeColor } from '../../design.ts'
 import SegmentedControl from './SegmentedControl.vue'
+import SharePanel from './SharePanel.vue'
 
 const props = defineProps<{
 	/** Which page of the settings to show. */
@@ -26,7 +27,7 @@ const props = defineProps<{
 	/** The public link, once the form has been published. */
 	shareUrl: string | null
 	archived?: boolean
-	/** The form as the server has it, for what the published form is doing now. */
+	/** The form as the server has it: the sharing options saved apart from the draft, and what the published form is doing now. */
 	form?: OwnerForm | null
 }>()
 
@@ -36,9 +37,9 @@ const emit = defineEmits<{
 	settings: [patch: Partial<FormSettings>]
 	archive: []
 	delete: []
+	/** The sharing options were saved; this is the form as the server has it now. */
+	share: [form: OwnerForm]
 }>()
-
-const copied = ref(false)
 
 const published = computed(() => (props.form ? availabilityNote(props.form) : null))
 const windowInvalid = computed(() => {
@@ -56,24 +57,6 @@ function setLimit(value: string | number): void {
 	const maxResponses = limit(value)
 	// Without a limit there is nothing left to count down.
 	emit('settings', maxResponses === undefined ? { maxResponses, showRemaining: undefined } : { maxResponses })
-}
-
-async function copy(url: string): Promise<void> {
-	try {
-		await navigator.clipboard.writeText(url)
-	} catch {
-		// navigator.clipboard only exists on secure origins, and a dev server is often plain http.
-		const area = document.createElement('textarea')
-		area.value = url
-		document.body.append(area)
-		area.select()
-		document.execCommand('copy')
-		area.remove()
-	}
-	copied.value = true
-	setTimeout(() => {
-		copied.value = false
-	}, 2000)
 }
 
 /** Change one design option; `undefined` puts it back to the default, and an empty design is dropped. */
@@ -223,22 +206,19 @@ function str(value: string | number): string | undefined {
 			</section>
 		</template>
 
-		<section v-if="section === 'sharing'" class="af-form-props__section">
+		<SharePanel v-if="section === 'sharing' && form"
+			:form="form"
+			:require-login="definition.settings.requireLogin === true"
+			@changed="(saved: OwnerForm) => emit('share', saved)" />
+		<section v-else-if="section === 'sharing'" class="af-form-props__section">
 			<h3 class="af-form-props__heading">
 				{{ t('webforms', 'Public link') }}
 			</h3>
-			<template v-if="shareUrl">
-				<NcTextField :model-value="shareUrl"
-					:label="t('webforms', 'Public link')"
-					readonly
-					@focus="($event.target as HTMLInputElement).select()" />
-				<NcButton variant="secondary" @click="copy(shareUrl)">
-					<template #icon>
-						<Icon :path="icons.copy" />
-					</template>
-					{{ copied ? t('webforms', 'Copied') : t('webforms', 'Copy link') }}
-				</NcButton>
-			</template>
+			<NcTextField v-if="shareUrl"
+				:model-value="shareUrl"
+				:label="t('webforms', 'Public link')"
+				readonly
+				@focus="($event.target as HTMLInputElement).select()" />
 			<p v-else class="af-form-props__hint">
 				{{ t('webforms', 'Publish the form to get a link you can share.') }}
 			</p>

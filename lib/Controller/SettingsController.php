@@ -11,6 +11,7 @@ namespace OCA\Webforms\Controller;
 
 use OCA\Webforms\AppInfo\Application;
 use OCA\Webforms\Service\PolicyService;
+use OCA\Webforms\Settings\UserPreferences;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -27,6 +28,7 @@ class SettingsController extends Controller {
 		IRequest $request,
 		private readonly PolicyService $policy,
 		private readonly IUserSession $userSession,
+		private readonly UserPreferences $preferences,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 	}
@@ -35,5 +37,20 @@ class SettingsController extends Controller {
 	#[FrontpageRoute(verb: 'GET', url: '/api/v1/settings')]
 	public function index(): JSONResponse {
 		return new JSONResponse($this->policy->forUser((string)$this->userSession->getUser()?->getUID()));
+	}
+
+	/** The signed-in user's own preferences (Personal settings). */
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/preferences')]
+	public function preferences(): JSONResponse {
+		return new JSONResponse($this->preferences->forUser((string)$this->userSession->getUser()?->getUID()));
+	}
+
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'PUT', url: '/api/v1/preferences')]
+	public function savePreferences(bool $openPublishedOnResponses): JSONResponse {
+		$userId = (string)$this->userSession->getUser()?->getUID();
+		$this->preferences->setOpenPublishedOnResponses($userId, $openPublishedOnResponses);
+		return new JSONResponse($this->preferences->forUser($userId));
 	}
 }

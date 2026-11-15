@@ -11,13 +11,16 @@ import { generateUrl } from '@nextcloud/router'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
-import { onBeforeUnmount, onMounted, ref, watchEffect } from 'vue'
+import { onBeforeUnmount, onMounted, ref, useTemplateRef, watchEffect } from 'vue'
 import { ApiError, fetchPublicForm } from './api/public.ts'
 import { pageBackground } from './design.ts'
+import { reportHeight } from './embedded.ts'
 import FormPage from './components/render/FormPage.vue'
 
 const props = defineProps<{
 	token: string
+	/** Shown in a frame on another website: no page background, and the frame is told how tall the form is. */
+	embed?: boolean
 }>()
 
 type Problem = 'not_found' | 'closed' | 'login_required' | 'failed'
@@ -32,7 +35,18 @@ const loginUrl = generateUrl('/login?redirect_url={url}', {
 	url: window.location.pathname + window.location.search,
 })
 
-onMounted(load)
+/** Where the form opens on its own page, for when it cannot be used inside a frame. */
+const fullPageUrl = generateUrl('/apps/webforms/f/{token}', { token: props.token })
+
+const root = useTemplateRef<HTMLElement>('root')
+let stopReporting = () => {}
+
+onMounted(() => {
+	if (props.embed && root.value) {
+		stopReporting = reportHeight(root.value)
+	}
+	return load()
+})
 
 // Nextcloud paints its own background on the page; a form can ask for a plain colour instead.
 watchEffect(() => {
@@ -46,6 +60,7 @@ watchEffect(() => {
 	}
 })
 onBeforeUnmount(() => {
+	stopReporting()
 	document.body.style.removeProperty('background')
 	document.body.style.removeProperty('background-image')
 })
@@ -82,7 +97,7 @@ async function refreshToken() {
 </script>
 
 <template>
-	<main class="af-public">
+	<main ref="root" class="af-public" :class="{ 'af-public--embed': embed }">
 		<NcLoadingIcon v-if="!form && !problem" :size="44" />
 
 		<NcEmptyContent v-else-if="problem === 'not_found'"
@@ -100,6 +115,17 @@ async function refreshToken() {
 		<NcEmptyContent v-else-if="problem === 'closed'"
 			:name="t('webforms', 'Form closed')"
 			:description="closedMessage ?? t('webforms', 'This form is no longer accepting responses.')" />
+
+		<NcEmptyContent v-else-if="problem === 'login_required' && embed"
+			:name="t('webforms', 'Login required')"
+			:description="t('webforms', 'This form needs a login, so it cannot be filled in here.')">
+			<template #action>
+				<a class="button primary"
+					:href="fullPageUrl"
+					target="_blank"
+					rel="noopener">{{ t('webforms', 'Open the form') }}</a>
+			</template>
+		</NcEmptyContent>
 
 		<NcEmptyContent v-else-if="problem === 'login_required'"
 			:name="t('webforms', 'Login required')"
@@ -129,6 +155,11 @@ async function refreshToken() {
 	flex-direction: column;
 	align-items: center;
 }
+
+/* In a frame the website around it already gives the form its room. */
+.af-public--embed {
+	padding: 8px;
+}
 </style>
 
 <style>
@@ -143,6 +174,38 @@ async function refreshToken() {
  */
 #content.app-webforms {
 	overflow-y: auto;
+}
+
+/*
+ * In a frame on another website. Nextcloud paints its own colour on the root element and pins the page
+ * to the window, clipping what does not fit. A frame needs the opposite: let the website around it
+ * show through, and let the page be as tall as the form, so a frame of a fixed height can scroll and
+ * the height reported to the website is the form's own.
+ */
+html.af-embed,
+html.af-embed body {
+	background: transparent !important;
+	background-image: none !important;
+}
+
+/*
+ * A browser paints a solid backdrop behind a frame whose colour scheme differs from the page around
+ * it, and Nextcloud declares "light dark". Websites are light unless they say otherwise, so say light.
+ */
+html.af-embed {
+	color-scheme: light !important;
+}
+
+html.af-embed,
+html.af-embed body,
+html.af-embed #content {
+	position: static !important;
+	width: auto !important;
+	height: auto !important;
+	min-height: 0 !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	overflow: visible !important;
 }
 
 #webforms-public {

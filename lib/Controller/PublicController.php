@@ -21,6 +21,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\Attribute\UserRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -32,6 +33,12 @@ use OCP\IUserSession;
  * Respondent API, reachable without an account unless the form requires
  * login. Submitting keeps CSRF protection on: the public page is served by
  * this app, so its script has a request token.
+ *
+ * The `embed` routes are the same calls for a form framed by another website
+ * (docs/SCHEMA.md section 18.3). A browser sends no session cookie from such a
+ * frame, so a request token can never match there and these routes do without
+ * it. They only answer for forms that allow embedding, and always as an
+ * anonymous respondent, so there is no signed-in identity to abuse.
  */
 class PublicController extends Controller {
 	/** Upper bound for the decoded values, a cheap guard before any validation. */
@@ -81,12 +88,65 @@ class PublicController extends Controller {
 		));
 	}
 
+	#[PublicPage]
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	#[UserRateLimit(limit: 60, period: 60)]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/public/{token}/embed')]
+	public function showEmbedded(string $token): JSONResponse {
+		return $this->guard(fn (): JSONResponse => new JSONResponse(
+			$this->service->getPublic($token, null, true),
+		));
+	}
+
 	/**
-	 * A fresh challenge for the built-in captcha. It says nothing about any form, so a form that
-	 * does not exist answers the same as one that does.
+	 * @param array<string, mixed> $values
 	 */
 	#[PublicPage]
 	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 10, period: 60)]
+	#[UserRateLimit(limit: 20, period: 60)]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/public/{token}/embed/submit')]
+	public function submitEmbedded(
+		string $token,
+		int $versionId = 0,
+		array $values = [],
+		string $fillToken = '',
+		string $hp = '',
+		string $captcha = '',
+	): JSONResponse {
+		if (strlen((string)json_encode($values)) > self::MAX_VALUES_BYTES) {
+			return new JSONResponse(['error' => 'too_large'], Http::STATUS_REQUEST_ENTITY_TOO_LARGE);
+		}
+		return $this->guard(fn (): JSONResponse => new JSONResponse(
+			$this->service->submit($token, null, $versionId, $values, $fillToken, $hp, $captcha, $this->request->getRemoteAddress(), true),
+		));
+	}
+
+	#[PublicPage]
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 30, period: 60)]
+	#[UserRateLimit(limit: 60, period: 60)]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/public/{token}/embed/upload')]
+	public function uploadEmbedded(string $token, int $versionId = 0, string $fieldId = '', string $fillToken = ''): JSONResponse {
+		$file = $this->request->getUploadedFile('file');
+		return $this->guard(fn (): JSONResponse => new JSONResponse(
+			$this->service->upload($token, null, $versionId, $fieldId, $fillToken, is_array($file) ? $file : null, true),
+			Http::STATUS_CREATED,
+		));
+	}
+
+	/**
+	 * A fresh challenge for the built-in captcha. It says nothing about any form, so a form that
+	 * does not exist answers the same as one that does. It needs no request token: it changes
+	 * nothing, and an embedded form has no token to send.
+	 */
+	#[PublicPage]
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 30, period: 60)]
 	#[FrontpageRoute(verb: 'GET', url: '/api/v1/public/captcha/challenge')]
 	public function challenge(): JSONResponse {
