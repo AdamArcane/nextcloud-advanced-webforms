@@ -58,6 +58,10 @@ rules semantics, actions, versioning and the submit algorithm.
 - Dev instance: `dev/` has a Proxmox setup script and `dev/deploy.sh`
   (build, rsync runtime files, enable the app). Dev VM is Proxmox VM 102 `nc-dev`
   on host `pve` (reachable over Tailscale as `user@proxmox-host`).
+  Real forms live on dev. Export them (form menu, Export) before dropping tables or removing
+  the app, and ask Adam first. MariaDB there keeps a row-format binlog, which saved the forms once.
+- Live release: push a `v<version>` tag (must match `appinfo/info.xml`). `.github/workflows/release.yml`
+  builds `webforms-<version>.tar.gz` and attaches it to a GitHub release. Live fetches it from there.
 
 ## Status
 
