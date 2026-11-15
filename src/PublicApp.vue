@@ -25,6 +25,8 @@ type Problem = 'not_found' | 'closed' | 'login_required' | 'failed'
 const form = ref<PublicForm | null>(null)
 const problem = ref<Problem | null>(null)
 const closedMessage = ref<string | null>(null)
+/** Why the form takes no responses: closed, not open yet, or full. */
+const closedReason = ref<'closed' | 'not_open' | 'full'>('closed')
 
 const loginUrl = generateUrl('/login?redirect_url={url}', {
 	url: window.location.pathname + window.location.search,
@@ -57,6 +59,7 @@ async function load() {
 		} else if (error instanceof ApiError && error.status === 410) {
 			problem.value = 'closed'
 			closedMessage.value = error.serverMessage
+			closedReason.value = error.data.reason === 'not_open' || error.data.reason === 'full' ? error.data.reason : 'closed'
 		} else if (error instanceof ApiError && error.status === 401) {
 			problem.value = 'login_required'
 		} else {
@@ -85,6 +88,14 @@ async function refreshToken() {
 		<NcEmptyContent v-else-if="problem === 'not_found'"
 			:name="t('webforms', 'Form not found')"
 			:description="t('webforms', 'This link does not lead to an open form.')" />
+
+		<NcEmptyContent v-else-if="problem === 'closed' && closedReason === 'not_open'"
+			:name="t('webforms', 'Form not open yet')"
+			:description="closedMessage ?? t('webforms', 'This form is not open yet.')" />
+
+		<NcEmptyContent v-else-if="problem === 'closed' && closedReason === 'full'"
+			:name="t('webforms', 'Form full')"
+			:description="closedMessage ?? t('webforms', 'This form has received the maximum number of responses.')" />
 
 		<NcEmptyContent v-else-if="problem === 'closed'"
 			:name="t('webforms', 'Form closed')"

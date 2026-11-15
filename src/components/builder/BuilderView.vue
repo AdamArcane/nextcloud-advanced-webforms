@@ -539,6 +539,7 @@ async function onDeleteConfirmed(): Promise<void> {
 						:definition="draft"
 						:share-url="shareUrl"
 						:archived="archived"
+						:form="form"
 						@archive="toggleArchived"
 						@title="onTitle"
 						@description="onDescription"

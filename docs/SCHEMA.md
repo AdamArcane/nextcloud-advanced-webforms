@@ -144,6 +144,56 @@ still validated.
 `accentColor`) (`#rrggbb` only, so a value can
 never carry CSS).
 
+### 3.1 Response limit and opening dates (DECISION)
+
+A form can stop taking responses by itself: after a number of responses, before an opening time, and
+after a closing time. All of it is optional and lives in `settings`, so it is versioned with the rest
+of the definition, travels with export and import, and takes effect when the form is published. To
+extend a deadline or raise the limit on a live form, change it and publish again.
+
+| Key | Value | Meaning |
+| --- | --- | --- |
+| `maxResponses` | integer, 1 to 1 000 000 | the form takes at most this many responses |
+| `showRemaining` | boolean, default false | tell respondents how many more responses the form takes. Only with `maxResponses` |
+| `opensAt` | unix seconds | the form takes responses from this moment |
+| `closesAt` | unix seconds, later than `opensAt` (`window_invalid`) | the form takes responses until this moment |
+| `notOpenMessage` | string, up to 500 | shown before `opensAt`. Default "This form is not open yet." |
+| `fullMessage` | string, up to 500 | shown at the limit. Default "This form has received the maximum number of responses." |
+
+Times are unix seconds, so they mean the same moment everywhere. The builder shows and takes them in
+the owner's own time zone. A time in the past is allowed: a `closesAt` that has passed simply
+publishes a form that has ended.
+
+A published form is in one of four states, worked out by `Availability` on every request. The first
+that applies wins:
+
+1. `ended`: `closesAt` has come. Answered like a closed form, with `closedMessage`.
+2. `scheduled`: `opensAt` has not come yet. Answered with `notOpenMessage`.
+3. `full`: the form has as many responses as its limit. Answered with `fullMessage`.
+4. `open`.
+
+The limit that counts is the lower of `maxResponses` and the server's cap (section 16). Every response
+the form has counts, whichever version it was sent to, and deleting a response frees a place. As with
+the server's cap, responses sent at the same instant can pass the limit by one.
+
+The public page, the submit and the upload routes all answer `410` with
+`{"error": "closed", "reason": ..., "message": ...}` when the form does not take responses. `reason` is
+`closed` (closed by the owner, archived, or ended), `not_open` or `full`, and the page picks its
+heading by it. Someone who opened the form before it closed or filled up gets the same answer when they
+submit, and keeps what they typed.
+
+A closed or archived form stays closed whatever its dates say: the owner's own status always wins, and
+nothing here ever opens or closes a form by changing its status.
+
+With `showRemaining` and `maxResponses`, the public form carries `remaining` (how many more responses
+it takes, by the limit that counts) and the page shows it under the description. Otherwise `remaining`
+is null.
+
+The owner API adds `availability` to every form: `{state, opensAt, closesAt, cap, responses}` for the
+published version, or null before the first publish. `cap` is the limit that counts, 0 for none. The
+forms list shows Scheduled, Ended or Full in place of Published, and the settings show the state with
+the responses counted against the limit.
+
 ## 4. Fields
 
 Fields live in a map keyed by field ID. The layout references fields by ID, so
@@ -699,8 +749,9 @@ retention limit.
 
 The server never trusts the client's idea of visibility.
 
-1. Load the form and the submitted version. Reject if the form is closed or
-   requires login and the user is not logged in.
+1. Load the form and the submitted version. Reject if the form is closed, not
+   open yet, ended or full (section 3.1), or requires login and the user is not
+   logged in.
 2. Public endpoint protections (before parsing the body): body size limit,
    rate limit per IP, honeypot field must be empty, signed minimum-fill-time
    token must be present and old enough.
@@ -952,7 +1003,8 @@ of allowed actions allows none, the safe side.
 - **Actions per form.** More actions than the policy allows is `policy_too_many_actions` at publish.
 - **Responses per form.** When a form has this many responses its public page and submit answer
   `410 closed` with the message "This form has received the maximum number of responses." Responses sent
-  at the same instant can pass the limit by one.
+  at the same instant can pass the limit by one. A form can set a lower limit of its own, and its own
+  message (section 3.1); the lower of the two limits counts.
 - **Who can create forms.** Creating and importing a form need membership of a creator group or the
   administrator role (`create_not_allowed`). Forms that exist stay editable by their owners, and a
   group that is later deleted simply matches nobody.

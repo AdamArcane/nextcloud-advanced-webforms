@@ -33,7 +33,7 @@ final class DefinitionValidator {
 	public const MAX_TABLES_COLUMNS = 100;
 	public const ACTION_TYPES = ['email', 'webhook', 'message', 'redirect', 'tables'];
 
-	private const SETTINGS_KEYS = ['submitLabel', 'labelPosition', 'requireLogin', 'allowMultipleSubmissions', 'hideRequiredIndicator', 'hideTitle', 'captcha', 'closedMessage', 'design'];
+	private const SETTINGS_KEYS = ['submitLabel', 'labelPosition', 'requireLogin', 'allowMultipleSubmissions', 'hideRequiredIndicator', 'hideTitle', 'captcha', 'closedMessage', 'maxResponses', 'showRemaining', 'opensAt', 'closesAt', 'notOpenMessage', 'fullMessage', 'design'];
 	private const MAX_PAGES = 20;
 	private const TOP_KEYS = ['schemaVersion', 'title', 'description', 'settings', 'fields', 'pages', 'rules', 'actions'];
 	private const COMMON_INPUT_KEYS = ['type', 'label', 'description', 'required', 'defaultValue', 'labelPosition', 'hideLabel'];
@@ -121,13 +121,25 @@ final class DefinitionValidator {
 				if (!in_array($value, self::LABEL_POSITIONS, true)) {
 					$this->err('settings_invalid', $path);
 				}
-			} elseif (in_array($key, ['requireLogin', 'allowMultipleSubmissions', 'hideRequiredIndicator', 'hideTitle', 'captcha'], true)) {
+			} elseif (in_array($key, ['requireLogin', 'allowMultipleSubmissions', 'hideRequiredIndicator', 'hideTitle', 'captcha', 'showRemaining'], true)) {
 				if (!is_bool($value)) {
+					$this->err('settings_invalid', $path);
+				}
+			} elseif ($key === 'maxResponses') {
+				if (!is_int($value) || $value < 1 || $value > Availability::MAX_RESPONSES) {
+					$this->err('settings_invalid', $path);
+				}
+			} elseif ($key === 'opensAt' || $key === 'closesAt') {
+				if (!is_int($value) || $value < 1 || $value > Availability::MAX_TIME) {
 					$this->err('settings_invalid', $path);
 				}
 			} elseif (!is_string($value) || mb_strlen($value) > ($key === 'submitLabel' ? 64 : 500)) {
 				$this->err('settings_invalid', $path);
 			}
+		}
+		// A form that closes before it opens would never take a response.
+		if (is_int($settings['opensAt'] ?? null) && is_int($settings['closesAt'] ?? null) && $settings['closesAt'] <= $settings['opensAt']) {
+			$this->err('window_invalid', 'settings.closesAt');
 		}
 	}
 

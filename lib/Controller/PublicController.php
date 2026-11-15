@@ -126,7 +126,7 @@ class PublicController extends Controller {
 		} catch (NotFoundException) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		} catch (FormClosedException $e) {
-			return new JSONResponse(['error' => 'closed', 'message' => $e->getClosedMessage()], Http::STATUS_GONE);
+			return new JSONResponse(['error' => 'closed', 'reason' => $e->getReason(), 'message' => $e->getClosedMessage()], Http::STATUS_GONE);
 		} catch (LoginRequiredException) {
 			return new JSONResponse(['error' => 'login_required'], Http::STATUS_UNAUTHORIZED);
 		} catch (ValidationException $e) {

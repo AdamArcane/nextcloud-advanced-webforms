@@ -30,6 +30,8 @@ export function describeError(code: string): string {
 			return t('webforms', 'The help text is too long.')
 		case 'form_archived':
 			return t('webforms', 'This form is archived. Restore it first.')
+		case 'window_invalid':
+			return t('webforms', 'The closing time must be after the opening time.')
 		case 'title_invalid':
 			return t('webforms', 'The form needs a title.')
 		case 'too_many_fields':

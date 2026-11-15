@@ -5,6 +5,14 @@
 
 # Changelog
 
+## Unreleased
+
+- Response limit and opening dates. A form can take at most a number of responses, open at a set time
+  and close at a set time, each with its own message, and can show respondents how many places are
+  left. Set them under Settings, Sharing; they apply when the form is published. The forms list shows
+  Scheduled, Ended or Full, and the settings show the responses counted against the limit. See
+  `docs/SCHEMA.md` section 3.1.
+
 ## 0.3.3 - 2026-11-15
 
 - A summary above the responses: responses per day (per month for long periods), how often each choice

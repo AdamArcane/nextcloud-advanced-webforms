@@ -4,26 +4,30 @@
 -->
 
 <script setup lang="ts">
-import type { DraftDefinition, FormDesign, FormSettings } from '../../types.ts'
+import type { DraftDefinition, FormDesign, FormSettings, OwnerForm } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { availabilityNote, fromLocalInput, toLocalInput } from '../../availability.ts'
 import { DEFAULT_ACCENT, DEFAULT_BACKGROUND_COLOR, safeColor } from '../../design.ts'
 import SegmentedControl from './SegmentedControl.vue'
 
-defineProps<{
+const props = defineProps<{
 	/** Which page of the settings to show. */
 	section: 'general' | 'design' | 'sharing'
 	definition: DraftDefinition
 	/** The public link, once the form has been published. */
 	shareUrl: string | null
 	archived?: boolean
+	/** The form as the server has it, for what the published form is doing now. */
+	form?: OwnerForm | null
 }>()
 
 const emit = defineEmits<{
@@ -35,6 +39,24 @@ const emit = defineEmits<{
 }>()
 
 const copied = ref(false)
+
+const published = computed(() => (props.form ? availabilityNote(props.form) : null))
+const windowInvalid = computed(() => {
+	const { opensAt, closesAt } = props.definition.settings
+	return opensAt !== undefined && closesAt !== undefined && closesAt <= opensAt
+})
+
+/** A whole number from 1 to a million, or undefined (no limit) for anything else. */
+function limit(value: string | number): number | undefined {
+	const number = Number(value)
+	return String(value).trim() !== '' && Number.isInteger(number) && number >= 1 && number <= 1000000 ? number : undefined
+}
+
+function setLimit(value: string | number): void {
+	const maxResponses = limit(value)
+	// Without a limit there is nothing left to count down.
+	emit('settings', maxResponses === undefined ? { maxResponses, showRemaining: undefined } : { maxResponses })
+}
 
 async function copy(url: string): Promise<void> {
 	try {
@@ -249,6 +271,65 @@ function str(value: string | number): string | undefined {
 				@update:model-value="(value: string | number) => emit('settings', { closedMessage: str(value) })" />
 		</section>
 
+		<section v-if="section === 'sharing'" class="af-form-props__section">
+			<h3 class="af-form-props__heading">
+				{{ t('webforms', 'Response limit') }}
+			</h3>
+			<NcNoteCard v-if="published" type="info" class="af-form-props__now">
+				{{ published }}
+			</NcNoteCard>
+			<NcTextField :model-value="definition.settings.maxResponses === undefined ? '' : String(definition.settings.maxResponses)"
+				:label="t('webforms', 'Maximum number of responses')"
+				:placeholder="t('webforms', 'No limit')"
+				type="number"
+				min="1"
+				max="1000000"
+				step="1"
+				@update:model-value="setLimit" />
+			<NcCheckboxRadioSwitch type="switch"
+				:model-value="definition.settings.showRemaining === true"
+				:disabled="definition.settings.maxResponses === undefined"
+				@update:model-value="(value: boolean) => emit('settings', { showRemaining: value ? true : undefined })">
+				{{ t('webforms', 'Show respondents how many places are left') }}
+			</NcCheckboxRadioSwitch>
+			<NcTextField :model-value="definition.settings.fullMessage ?? ''"
+				:label="t('webforms', 'Message when full')"
+				:placeholder="t('webforms', 'This form has received the maximum number of responses.')"
+				@update:model-value="(value: string | number) => emit('settings', { fullMessage: str(value) })" />
+		</section>
+
+		<section v-if="section === 'sharing'" class="af-form-props__section">
+			<h3 class="af-form-props__heading">
+				{{ t('webforms', 'Opening and closing') }}
+			</h3>
+			<label class="af-form-props__date">
+				<span>{{ t('webforms', 'Opens') }}</span>
+				<input type="datetime-local"
+					:value="toLocalInput(definition.settings.opensAt)"
+					@change="emit('settings', { opensAt: fromLocalInput(($event.target as HTMLInputElement).value) })">
+			</label>
+			<label class="af-form-props__date">
+				<span>{{ t('webforms', 'Closes') }}</span>
+				<input type="datetime-local"
+					:value="toLocalInput(definition.settings.closesAt)"
+					:aria-invalid="windowInvalid ? 'true' : undefined"
+					@change="emit('settings', { closesAt: fromLocalInput(($event.target as HTMLInputElement).value) })">
+			</label>
+			<p v-if="windowInvalid" class="af-form-props__hint af-form-props__hint--error" role="alert">
+				{{ t('webforms', 'The closing time must be after the opening time.') }}
+			</p>
+			<p class="af-form-props__hint">
+				{{ t('webforms', 'Leave a time empty to have no opening or no closing time. Times are in your own time zone. Like the other settings here, the limit and the times apply once the form is published.') }}
+			</p>
+			<NcTextField :model-value="definition.settings.notOpenMessage ?? ''"
+				:label="t('webforms', 'Message before opening')"
+				:placeholder="t('webforms', 'This form is not open yet.')"
+				@update:model-value="(value: string | number) => emit('settings', { notOpenMessage: str(value) })" />
+			<p class="af-form-props__hint">
+				{{ t('webforms', 'After the closing time the form shows the message when closed.') }}
+			</p>
+		</section>
+
 		<section v-if="section === 'general'" class="af-form-props__section">
 			<h3 class="af-form-props__heading">
 				{{ t('webforms', 'Archive') }}
@@ -317,5 +398,25 @@ function str(value: string | number): string | undefined {
 	margin: 0;
 	color: var(--color-text-maxcontrast);
 	font-size: 13px;
+}
+
+.af-form-props__hint--error {
+	color: var(--color-text-error, var(--color-error));
+}
+
+.af-form-props__now {
+	margin: 0;
+}
+
+.af-form-props__date {
+	display: flex;
+	flex-direction: column;
+	gap: var(--default-grid-baseline);
+}
+
+.af-form-props__date input {
+	width: 100%;
+	max-width: 280px;
+	margin: 0;
 }
 </style>

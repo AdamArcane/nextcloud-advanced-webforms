@@ -6,6 +6,7 @@
 <script setup lang="ts">
 import type { PublicForm } from '../../types.ts'
 
+import { n } from '@nextcloud/l10n'
 import { computed } from 'vue'
 import { accentStyle, WIDTHS } from '../../design.ts'
 import FormRenderer from './FormRenderer.vue'
@@ -39,6 +40,9 @@ const style = computed(() => ({
 			<p v-if="form.definition.description" class="af-page__intro">
 				{{ form.definition.description }}
 			</p>
+			<p v-if="typeof form.remaining === 'number' && form.remaining > 0" class="af-page__remaining">
+				{{ n('webforms', '{count} place left', '{count} places left', form.remaining, { count: form.remaining }) }}
+			</p>
 		</header>
 		<FormRenderer :form="form" :preview="preview" :validate="validate" @refresh-token="emit('refreshToken')" />
 	</div>
@@ -66,8 +70,13 @@ const style = computed(() => ({
 	margin-bottom: 28px;
 }
 
-.af-page__head:has(.af-page__title--hidden):not(:has(.af-page__intro)) {
+.af-page__head:has(.af-page__title--hidden):not(:has(.af-page__intro, .af-page__remaining)) {
 	margin-bottom: 0;
+}
+
+.af-page__remaining {
+	margin: 8px 0 0;
+	font-weight: 600;
 }
 
 .af-page__title {

@@ -83,6 +83,53 @@ class DefinitionValidatorTest extends TestCase {
 		}));
 	}
 
+	public function testResponseLimitAndDates(): void {
+		$this->assertSame([], $this->codes(static function (array $d): array {
+			$d['settings'] += [
+				'maxResponses' => 50,
+				'showRemaining' => true,
+				'opensAt' => 1800000000,
+				'closesAt' => 1800003600,
+				'notOpenMessage' => 'Registration opens on Monday.',
+				'fullMessage' => 'All places are taken.',
+			];
+			return $d;
+		}));
+		foreach ([0, -1, 1000001, '50', 1.5, true] as $bad) {
+			$this->assertSame(['settings_invalid'], $this->codes(static function (array $d) use ($bad): array {
+				$d['settings']['maxResponses'] = $bad;
+				return $d;
+			}), var_export($bad, true));
+		}
+		foreach (['opensAt', 'closesAt'] as $key) {
+			foreach ([0, -5, '2030-01-01T10:00', 32503680001] as $bad) {
+				$this->assertSame(['settings_invalid'], $this->codes(static function (array $d) use ($key, $bad): array {
+					$d['settings'][$key] = $bad;
+					return $d;
+				}), $key . ' ' . var_export($bad, true));
+			}
+		}
+		$this->assertSame(['settings_invalid', 'settings_invalid', 'settings_invalid'], $this->codes(static function (array $d): array {
+			$d['settings']['showRemaining'] = 'yes';
+			$d['settings']['notOpenMessage'] = str_repeat('a', 501);
+			$d['settings']['fullMessage'] = 5;
+			return $d;
+		}));
+	}
+
+	public function testClosingMustComeAfterOpening(): void {
+		$this->assertSame(['window_invalid'], $this->codes(static function (array $d): array {
+			$d['settings']['opensAt'] = 1800000000;
+			$d['settings']['closesAt'] = 1800000000;
+			return $d;
+		}));
+		$this->assertSame(['window_invalid'], $this->codes(static function (array $d): array {
+			$d['settings']['opensAt'] = 1800000000;
+			$d['settings']['closesAt'] = 1799999999;
+			return $d;
+		}));
+	}
+
 	public function testHideTitleSetting(): void {
 		$this->assertSame([], $this->codes(static function (array $d): array {
 			$d['settings']['hideTitle'] = true;

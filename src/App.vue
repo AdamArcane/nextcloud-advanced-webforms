@@ -29,7 +29,7 @@ import Icon from './components/common/Icon.vue'
 import { icons } from './icons.ts'
 import BuilderView from './components/builder/BuilderView.vue'
 import EntriesView from './components/entries/EntriesView.vue'
-import { FORM_STATUS_CLOSED, FORM_STATUS_PUBLISHED } from './types.ts'
+import { statusText } from './availability.ts'
 
 const forms = ref<OwnerForm[]>([])
 const loading = ref(true)
@@ -167,13 +167,6 @@ function hasNewerDraft(form: OwnerForm): boolean {
 	return form.latestVersionId !== null && form.hasUnpublishedChanges === true
 }
 
-function statusText(form: OwnerForm): string {
-	switch (form.status) {
-		case FORM_STATUS_PUBLISHED: return t('webforms', 'Published')
-		case FORM_STATUS_CLOSED: return t('webforms', 'Closed')
-		default: return t('webforms', 'Draft')
-	}
-}
 </script>
 
 <template>
