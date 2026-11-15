@@ -9,6 +9,7 @@ import type { EntrySort } from '../../entries/filter.ts'
 import type { EntryRecord, VersionDefinition } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { cellText } from '../../entries/columns.ts'
 import { formatTime } from '../../entries/format.ts'
 import { icons } from '../../icons.ts'
@@ -32,10 +33,30 @@ const emit = defineEmits<{
 }>()
 
 const EMPTY: VersionDefinition = { fields: {}, pages: [] }
+
+// An opened response sits in a cell that spans every column, so it would be as wide as the whole table
+// and, on a phone, mostly off screen. It is pinned to the left edge at the width that is visible.
+const wrap = ref<HTMLElement | null>(null)
+const panelWidth = ref(0)
+let observer: ResizeObserver | null = null
+
+function measure(): void {
+	panelWidth.value = wrap.value?.clientWidth ?? 0
+}
+
+onMounted(() => {
+	measure()
+	if (typeof ResizeObserver !== 'undefined' && wrap.value) {
+		observer = new ResizeObserver(measure)
+		observer.observe(wrap.value)
+	}
+})
+
+onBeforeUnmount(() => observer?.disconnect())
 </script>
 
 <template>
-	<div class="af-table-wrap">
+	<div ref="wrap" class="af-table-wrap">
 		<table class="af-table">
 			<thead>
 				<tr>
@@ -81,13 +102,15 @@ const EMPTY: VersionDefinition = { fields: {}, pages: [] }
 					</tr>
 					<tr v-if="expandedId === entry.id" :id="'af-response-' + entry.id" class="af-table__detail">
 						<td :colspan="3 + columns.length">
-							<ResponseCard :form-id="formId"
-								:entry="entry"
-								:definition="versions[String(entry.versionId)] ?? EMPTY"
-								expanded
-								@toggle="emit('toggle', entry.id)"
-								@delete="emit('delete', entry.id)"
-								@changed="emit('changed')" />
+							<div class="af-table__panel" :style="panelWidth > 0 ? { width: panelWidth + 'px' } : undefined">
+								<ResponseCard :form-id="formId"
+									:entry="entry"
+									:definition="versions[String(entry.versionId)] ?? EMPTY"
+									expanded
+									@toggle="emit('toggle', entry.id)"
+									@delete="emit('delete', entry.id)"
+									@changed="emit('changed')" />
+							</div>
 						</td>
 					</tr>
 				</template>
@@ -165,7 +188,18 @@ const EMPTY: VersionDefinition = { fields: {}, pages: [] }
 
 .af-table__detail > td {
 	max-width: none;
+	padding: 0;
+	/* Cells clip for the ellipsis, which would make this cell the thing the panel sticks to. */
+	overflow: visible;
 	white-space: normal;
 	background: var(--color-main-background);
+}
+
+.af-table__panel {
+	position: sticky;
+	inset-inline-start: 0;
+	box-sizing: border-box;
+	max-width: 100%;
+	padding: calc(var(--default-grid-baseline) * 2);
 }
 </style>
