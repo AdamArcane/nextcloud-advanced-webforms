@@ -77,6 +77,10 @@ responses, delivery log, CSV export), actions pipeline (email, webhook, message,
 retries), builder (fields, logic, actions, settings, multi-page, design tab, drag and drop
 with live preview, row moves, resize handles, text alignment, hide required indicator).
 
+Sharing (docs/SCHEMA.md section 18): custom address, QR code, and embedding in a frame through the
+`embed` routes, which skip the request token and are always anonymous. Loading and submitting were
+tried in a real frame on another site; uploads and the redirect action in a frame were not.
+
 Verified on the dev instance by hand. Not yet verified: `info.xml`
 against the app store XSD, a fresh install migration, rate-limit attributes under load.
 

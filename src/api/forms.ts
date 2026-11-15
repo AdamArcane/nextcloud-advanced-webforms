@@ -62,9 +62,28 @@ export async function deleteForm(id: number): Promise<void> {
 	await call(axios.delete(url('/forms/' + id)))
 }
 
-/** The shareable link to the public page, absolute. */
+/** The shareable link to the public page, absolute. `token` is the form's token or its custom address. */
 export function publicFormUrl(token: string): string {
 	return window.location.origin + generateUrl('/apps/webforms/f/{token}', { token })
+}
+
+/** The page other websites put in a frame: the form without Nextcloud's header. */
+export function embedFormUrl(token: string): string {
+	return publicFormUrl(token) + '/embed'
+}
+
+export interface ShareOptions {
+	/** The custom address, or null for none. */
+	slug: string | null
+	/** Whether other websites may show the form in a frame. */
+	embed: boolean
+	/** Websites allowed to do so. Empty means any. */
+	embedOrigins: string[]
+}
+
+/** Rejects with an ApiError (status 422) whose `errors` say what is wrong: `slug_invalid`, `slug_reserved`, `slug_taken`, `embed_origins_invalid`. */
+export function setFormShare(id: number, share: ShareOptions): Promise<OwnerForm> {
+	return call(axios.put<OwnerForm>(url('/forms/' + id + '/share'), share))
 }
 
 export interface WebhookSecret {

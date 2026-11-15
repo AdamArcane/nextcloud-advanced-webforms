@@ -13,6 +13,7 @@ import { computed, nextTick, reactive, ref } from 'vue'
 import { ApiError, submitPublicForm } from '../../api/public.ts'
 import { renderedLabelPosition } from '../../layout/labelPosition.ts'
 import { submitButtonStyle } from '../../design.ts'
+import { leaveTo } from '../../embedded.ts'
 import { visiblePages } from '../../layout/visibleLayout.ts'
 import { evaluateRules } from '../../rules/engine.ts'
 import { isInputType } from '../../rules/fieldTypes.ts'
@@ -231,7 +232,7 @@ async function onSubmit() {
 		})
 		done.value = { message: result.message ?? t('webforms', 'Thank you. Your response has been sent.') }
 		if (result.redirect?.startsWith('https://')) {
-			window.location.assign(result.redirect)
+			leaveTo(result.redirect)
 		}
 	} catch (error) {
 		// An answer to the spam check works once, so the next attempt needs a new one.

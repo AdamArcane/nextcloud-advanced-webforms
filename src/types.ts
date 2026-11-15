@@ -208,6 +208,11 @@ export interface OwnerForm {
 	description: string | null
 	status: number
 	publicToken: string | null
+	/** A custom address that leads to the form beside its token. */
+	slug?: string | null
+	/** Whether other websites may show the form in a frame, and which (empty means any). */
+	embed?: boolean
+	embedOrigins?: string[]
 	latestVersionId: number | null
 	/** When the form was archived (unix time), null if it is not. */
 	archivedAt?: number | null
