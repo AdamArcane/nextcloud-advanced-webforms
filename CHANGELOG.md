@@ -5,6 +5,18 @@
 
 # Changelog
 
+## 0.3.4 - 2026-11-15
+
+- Picking a published form that has no unpublished changes now opens its responses instead of the
+  editor. Drafts, closed forms and forms with unpublished changes still open in the editor. Each user
+  can switch this off under Personal settings, "Advanced Webforms". See `docs/SCHEMA.md` section 16.1.
+
+- More ways to share a form, under Settings, Sharing. Give a form a custom address such as
+  `/apps/webforms/f/contact` beside its random link. Download a QR code of the link as PNG or SVG. Allow
+  other websites to embed the form in a frame, for any website or only the ones you list, and copy the
+  code as plain HTML or with a short script that fits the frame to the form. Embedding is off until you
+  switch it on for a form. See `docs/SCHEMA.md` section 18.
+
 ## 0.3.3 - 2026-11-15
 
 - A summary above the responses: responses per day (per month for long periods), how often each choice

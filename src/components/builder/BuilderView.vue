@@ -173,7 +173,20 @@ const saveLabel = computed(() => {
 
 const published = computed(() => form.value?.status === FORM_STATUS_PUBLISHED)
 const archived = computed(() => form.value?.archivedAt != null)
-const shareUrl = computed(() => (form.value?.publicToken ? publicFormUrl(form.value.publicToken) : null))
+const shareUrl = computed(() => {
+	// The custom address when there is one: it is the one the owner hands out.
+	const address = form.value?.slug || form.value?.publicToken
+	return address ? publicFormUrl(address) : null
+})
+
+/** The sharing options are saved apart from the draft, so only they are taken from the answer. */
+function onShare(saved: OwnerForm): void {
+	if (!form.value) {
+		return
+	}
+	form.value = { ...form.value, slug: saved.slug, embed: saved.embed, embedOrigins: saved.embedOrigins, updatedAt: saved.updatedAt }
+	emit('changed', form.value)
+}
 const hasChanges = computed(() => form.value?.hasUnpublishedChanges !== false)
 const canPublish = computed(() => !publishing.value && !archived.value && saveState.value !== 'error' && (hasChanges.value || !published.value))
 
@@ -538,7 +551,9 @@ async function onDeleteConfirmed(): Promise<void> {
 						:section="settingsTab"
 						:definition="draft"
 						:share-url="shareUrl"
+						:form="form"
 						:archived="archived"
+						@share="onShare"
 						@archive="toggleArchived"
 						@title="onTitle"
 						@description="onDescription"
