@@ -8,11 +8,6 @@
 What is planned, in rough order, and what is missing compared with other form builders. For how things
 work see [SCHEMA.md](SCHEMA.md). Nothing here is promised for a date.
 
-## Next
-
-- **Release 0.3.2.** Ships what is on `main` and not yet released: the Nextcloud events, the Flow
-  trigger, the Flow category and the Tables action.
-
 ## Integrations and storage
 
 Responses always live in the app's own database, and everything that sends them elsewhere is an
