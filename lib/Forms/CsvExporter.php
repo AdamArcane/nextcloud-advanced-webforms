@@ -27,24 +27,56 @@ final class CsvExporter {
 	/**
 	 * @param list<array{id: int, versionId: int, userId: string|null, submittedAt: int, data: array<string, mixed>}> $entries oldest first
 	 * @param array<int, array<string, mixed>> $definitions form definitions keyed by version id
+	 * @param list<string>|null $columnIds only these questions, in form order. Null means every question.
 	 */
-	public static function build(array $entries, array $definitions, string $submittedHeader = 'Submitted (UTC)'): string {
-		$columns = self::columns($definitions);
+	public static function build(array $entries, array $definitions, string $submittedHeader = 'Submitted (UTC)', ?array $columnIds = null): string {
+		$table = self::table($entries, $definitions, $submittedHeader, $columnIds);
 
-		$rows = [array_merge(['Response ID', $submittedHeader, 'Respondent'], array_column($columns, 'header'))];
+		$lines = [implode(',', array_map(static fn (string $cell): string => self::quote(self::neutralize($cell)), $table['header']))];
+		foreach ($table['rows'] as $rowIndex => $row) {
+			$cells = [];
+			foreach ($row as $columnIndex => $text) {
+				// A number is data, so a negative one must stay a number rather than be treated as text.
+				$cells[] = self::quote($table['numbers'][$rowIndex][$columnIndex] !== null ? $text : self::neutralize($text));
+			}
+			$lines[] = implode(',', $cells);
+		}
+		return self::BOM . implode("\r\n", $lines) . "\r\n";
+	}
+
+	/**
+	 * The responses as a table, before it is written as CSV or a workbook: a header, and for each response
+	 * its cells as text (not made safe for any one format) with, alongside, the number a cell holds or null.
+	 *
+	 * @param list<array{id: int, versionId: int, userId: string|null, submittedAt: int, data: array<string, mixed>}> $entries oldest first
+	 * @param array<int, array<string, mixed>> $definitions
+	 * @param list<string>|null $columnIds
+	 * @return array{header: list<string>, rows: list<list<string>>, numbers: list<list<int|float|null>>}
+	 */
+	public static function table(array $entries, array $definitions, string $submittedHeader = 'Submitted (UTC)', ?array $columnIds = null): array {
+		$columns = self::columns($definitions);
+		if ($columnIds !== null) {
+			$wanted = array_flip($columnIds);
+			$columns = array_values(array_filter($columns, static fn (array $column): bool => isset($wanted[$column['id']])));
+		}
+
+		$header = array_merge(['Response ID', $submittedHeader, 'Respondent'], array_column($columns, 'header'));
+		$rows = [];
+		$numbers = [];
 		foreach ($entries as $entry) {
 			$fields = is_array($definitions[$entry['versionId']]['fields'] ?? null) ? $definitions[$entry['versionId']]['fields'] : [];
 			$row = [(string)$entry['id'], gmdate('Y-m-d H:i:s', $entry['submittedAt']), $entry['userId'] ?? ''];
+			$numberRow = [$entry['id'], null, null];
 			foreach ($columns as $column) {
 				$value = $entry['data'][$column['id']] ?? null;
 				$field = $fields[$column['id']] ?? null;
-				$row[] = is_array($field) && $value !== null ? self::cell($field, $value) : '';
+				$row[] = is_array($field) && $value !== null ? Template::display($field, $value) : '';
+				$numberRow[] = is_array($field) && (is_int($value) || is_float($value)) ? $value : null;
 			}
 			$rows[] = $row;
+			$numbers[] = $numberRow;
 		}
-
-		$lines = array_map(static fn (array $row): string => implode(',', array_map(self::quote(...), $row)), $rows);
-		return self::BOM . implode("\r\n", $lines) . "\r\n";
+		return ['header' => $header, 'rows' => $rows, 'numbers' => $numbers];
 	}
 
 	/**
@@ -68,7 +100,7 @@ final class CsvExporter {
 		$counts = array_count_values($labels);
 		$columns = [];
 		foreach ($labels as $id => $label) {
-			$columns[] = ['id' => (string)$id, 'header' => self::neutralize($counts[$label] > 1 ? $label . ' (' . $id . ')' : $label)];
+			$columns[] = ['id' => (string)$id, 'header' => $counts[$label] > 1 ? $label . ' (' . $id . ')' : $label];
 		}
 		return $columns;
 	}
@@ -96,15 +128,6 @@ final class CsvExporter {
 			$order[] = (string)$id;
 		}
 		return array_values(array_unique($order));
-	}
-
-	/**
-	 * @param array<string, mixed> $field
-	 */
-	private static function cell(array $field, mixed $value): string {
-		$text = Template::display($field, $value);
-		// Numbers are data, so a negative one must stay a number rather than be treated as text.
-		return is_int($value) || is_float($value) ? $text : self::neutralize($text);
 	}
 
 	/**

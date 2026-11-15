@@ -994,3 +994,31 @@ many match), `grandTotal` (how many the form has), and `truncated`.
 - The Responses view shows a table by default, with a column for each question (union across versions,
   newest labels), a sortable submitted column, and cards as an alternative. The columns a person picks
   are remembered in their browser for that form.
+
+### 17.1 Downloading and deleting several responses
+
+**Download.** `GET /api/v1/forms/{id}/entries/export` takes the same filter parameters as the list, plus:
+
+| Parameter | Meaning |
+| --- | --- |
+| `format` | `csv` (default) or `xlsx` |
+| `ids` | comma separated response ids, at most 500. When given, the filter is not used |
+| `columns` | comma separated field ids. Only these questions, in form order. Unknown ids are ignored. Without it, every question |
+
+The three fixed columns (response id, submitted in UTC, respondent) are always there. Responses are
+written oldest first, up to 20 000. CSV keeps its leading apostrophe on text that starts with `=`, `+`,
+`-` or `@`, the only defence a CSV has. The Excel file stores text as text, so a response can never run as
+a formula and needs no apostrophe, and keeps numbers as numbers so they can be summed. Ids of another
+form are ignored, and a bad format, list or filter is `422`.
+
+**Delete.** `POST /api/v1/forms/{id}/entries/bulk-delete` takes either `{ "ids": [...] }` (at most 500) or
+`{ "filter": {q, from, to, respondent, where}, "expected": N }`. It does the same clean-up as deleting
+one response: uploaded files, delivery log rows, and an `entry.deleted` event for each. A filter is
+deleted only if it still matches exactly `expected` responses, the number the person confirmed, and
+otherwise nothing is deleted and the answer is `409 count_changed` with `current`. More than 5 000
+matches, or a search that stopped early, is refused (`422 too_many_matches`): narrow it, or let retention
+(section 16) do it.
+
+The Responses view ticks rows in the table. Ticking the whole page offers "select all N matching",
+which uses the filter route. One Download menu follows what is ticked, else what the filter matches,
+else everything, and passes the columns the person chose.

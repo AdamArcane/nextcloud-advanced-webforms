@@ -11,6 +11,7 @@ namespace OCA\Webforms\Controller;
 
 use OCA\Webforms\Actions\Adapter\NextcloudSecrets;
 use OCA\Webforms\AppInfo\Application;
+use OCA\Webforms\Exception\CountChangedException;
 use OCA\Webforms\Exception\NotFoundException;
 use OCA\Webforms\Exception\ValidationException;
 use OCA\Webforms\Service\ActionLogService;
@@ -190,20 +191,107 @@ class FormController extends Controller {
 	}
 
 	/**
-	 * Download all responses as a CSV file.
+	 * Download responses as CSV or an Excel workbook (docs/SCHEMA.md section 17.1): all of them, what a
+	 * filter matches (the same parameters as the list), or the ones in `ids`, with all the questions or
+	 * only the ones in `columns`.
+	 *
+	 * @param string $ids comma separated response ids, at most 500, or empty
+	 * @param string $columns comma separated field ids, or empty for all questions
 	 */
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
 	#[FrontpageRoute(verb: 'GET', url: '/api/v1/forms/{id}/entries/export')]
-	public function exportEntries(int $id): DataDownloadResponse|JSONResponse {
+	public function exportEntries(
+		int $id,
+		string $format = 'csv',
+		string $q = '',
+		string $from = '',
+		string $to = '',
+		string $respondent = '',
+		string $where = '',
+		string $sort = '',
+		string $ids = '',
+		string $columns = '',
+	): DataDownloadResponse|JSONResponse {
+		if (!in_array($format, [EntryExportService::CSV, EntryExportService::XLSX], true)) {
+			return new JSONResponse(['error' => 'format_invalid'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
 		try {
-			$file = $this->export->csv($this->userId(), $id);
+			$filter = EntryFilter::fromInput($q, $from, $to, $respondent, $where, $sort);
+		} catch (\InvalidArgumentException $e) {
+			return new JSONResponse(['error' => 'filter_invalid', 'reason' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+		$idList = $ids === '' ? null : self::intList($ids, FormService::MAX_BULK_IDS);
+		$columnList = $columns === '' ? null : array_values(array_filter(explode(',', $columns), static fn (string $column): bool => preg_match('/^[a-z][a-z0-9_]{2,31}$/D', $column) === 1));
+		if (($ids !== '' && $idList === null) || ($columns !== '' && count($columnList ?? []) > 200)) {
+			return new JSONResponse(['error' => 'filter_invalid', 'reason' => 'list_invalid'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+		try {
+			$file = $this->export->export($this->userId(), $id, $filter, $idList, $columnList, $format);
 		} catch (NotFoundException) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
-		$response = new DataDownloadResponse($file['csv'], $file['filename'], 'text/csv; charset=utf-8');
+		$response = new DataDownloadResponse($file['body'], $file['filename'], $file['mime']);
 		$response->addHeader('Cache-Control', 'no-store');
 		return $response;
+	}
+
+	/**
+	 * Delete several responses: the ones in `ids`, or everything `filter` matches. A filter must come with
+	 * `expected`, the number the person confirmed, and a different number deletes nothing (409).
+	 *
+	 * @param list<int>|null $ids
+	 * @param array<string, mixed> $filter the list parameters: q, from, to, respondent, where
+	 */
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/forms/{id}/entries/bulk-delete')]
+	public function bulkDeleteEntries(int $id, ?array $ids = null, array $filter = [], int $expected = -1): JSONResponse {
+		if ($ids !== null) {
+			foreach ($ids as $one) {
+				if (!is_int($one) || $one < 1) {
+					return new JSONResponse(['error' => 'ids_invalid'], Http::STATUS_UNPROCESSABLE_ENTITY);
+				}
+			}
+		} elseif ($expected < 0) {
+			return new JSONResponse(['error' => 'expected_required'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+		try {
+			$entryFilter = EntryFilter::fromInput(
+				(string)($filter['q'] ?? ''),
+				(string)($filter['from'] ?? ''),
+				(string)($filter['to'] ?? ''),
+				(string)($filter['respondent'] ?? ''),
+				(string)($filter['where'] ?? ''),
+				'',
+			);
+		} catch (\InvalidArgumentException $e) {
+			return new JSONResponse(['error' => 'filter_invalid', 'reason' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+		try {
+			return $this->guard(fn (): JSONResponse => new JSONResponse([
+				'deleted' => $this->service->deleteEntries($this->userId(), $id, $ids === null ? null : array_values($ids), $entryFilter, $expected),
+			]));
+		} catch (CountChangedException $e) {
+			return new JSONResponse(['error' => 'count_changed', 'current' => $e->current], Http::STATUS_CONFLICT);
+		}
+	}
+
+	/**
+	 * @return list<int>|null null when it is not a list of ids, or has too many
+	 */
+	private static function intList(string $csv, int $max): ?array {
+		$parts = explode(',', $csv);
+		if (count($parts) > $max) {
+			return null;
+		}
+		$ids = [];
+		foreach ($parts as $part) {
+			if (preg_match('/^[1-9][0-9]{0,18}$/D', $part) !== 1) {
+				return null;
+			}
+			$ids[] = (int)$part;
+		}
+		return $ids;
 	}
 
 	/**

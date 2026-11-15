@@ -19,6 +19,7 @@ use OCA\Webforms\Event\EventPayload;
 use OCA\Webforms\Event\EventPublisher;
 use OCA\Webforms\Event\FormPublishedEvent;
 use OCA\Webforms\Event\FormStatusChangedEvent;
+use OCA\Webforms\Db\Entry;
 use OCA\Webforms\Db\EntryMapper;
 use OCA\Webforms\Db\Form;
 use OCA\Webforms\Forms\EntryFilter;
@@ -46,6 +47,10 @@ use OCP\Security\ISecureRandom;
 class FormService {
 	public const MAX_DEFINITION_BYTES = 512 * 1024;
 	public const MAX_PAGE_SIZE = 100;
+	/** Selected responses in one bulk delete (they travel in the request). */
+	public const MAX_BULK_IDS = 500;
+	/** Responses one filtered bulk delete may remove. */
+	public const MAX_BULK_MATCHES = 5000;
 
 	public function __construct(
 		private readonly FormMapper $forms,
@@ -417,7 +422,50 @@ class FormService {
 	 */
 	public function deleteEntry(string $userId, int $id, int $entryId): void {
 		$form = $this->get($userId, $id);
-		$entry = $this->entries->findInForm($form->getId(), $entryId);
+		$this->removeEntry($form, $this->entries->findInForm($form->getId(), $entryId), $userId);
+	}
+
+	/**
+	 * Delete several responses (docs/SCHEMA.md section 17.1): the ones with these ids, or every response a
+	 * filter matches. A filter needs `$expected`, the number the person confirmed, and nothing is deleted
+	 * if it no longer matches that many.
+	 *
+	 * @param list<int>|null $ids
+	 * @return int how many were deleted
+	 * @throws NotFoundException
+	 * @throws ValidationException
+	 * @throws \OCA\Webforms\Exception\CountChangedException
+	 */
+	public function deleteEntries(string $userId, int $id, ?array $ids, EntryFilter $filter, int $expected): int {
+		$form = $this->get($userId, $id);
+		if ($ids !== null) {
+			if (count($ids) > self::MAX_BULK_IDS) {
+				throw new ValidationException([['code' => 'too_many_selected', 'path' => 'ids']]);
+			}
+			$entries = $this->query->byIds($form->getId(), $ids);
+		} else {
+			$found = $this->query->all($form->getId(), $filter, self::MAX_BULK_MATCHES);
+			if ($found['truncated']) {
+				// Too many to delete in one go: narrow the filter, or let retention do it.
+				throw new ValidationException([['code' => 'too_many_matches', 'path' => 'filter']]);
+			}
+			if (count($found['entries']) !== $expected) {
+				throw new \OCA\Webforms\Exception\CountChangedException(count($found['entries']));
+			}
+			$entries = $found['entries'];
+		}
+
+		foreach ($entries as $entry) {
+			$this->removeEntry($form, $entry, $userId);
+		}
+		return count($entries);
+	}
+
+	/**
+	 * Everything that goes with one response: its uploaded files, its delivery log, and the response itself,
+	 * then the event for Flow.
+	 */
+	private function removeEntry(Form $form, Entry $entry, string $deletedBy): void {
 		$definition = $this->versions->find($entry->getVersionId())->getDefinitionArray();
 		$this->uploads->deleteFilesOf($form->getOwnerId(), self::fieldsOf($definition), $entry->getDataArray());
 		// Its deliveries go with it, so the log never points at a response that no longer exists.
@@ -429,7 +477,7 @@ class FormService {
 			$form->getOwnerId(),
 			$entry->getVersionId(),
 			$entry->getId(),
-			$userId,
+			$deletedBy,
 		)));
 	}
 

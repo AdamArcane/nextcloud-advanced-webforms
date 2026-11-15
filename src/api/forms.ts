@@ -3,11 +3,13 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+import type { BulkDeleteRequest, ExportOptions } from '../entries/exporting.ts'
 import type { EntryFilterState } from '../entries/filter.ts'
 import type { DefinitionError, DeliveriesPage, Delivery, DeliveryStatus, DraftDefinition, EntriesPage, OwnerForm } from '../types.ts'
 
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
+import { bulkDeleteBody, exportQuery } from '../entries/exporting.ts'
 import { EMPTY_FILTER, filterParams } from '../entries/filter.ts'
 import { toApiError, url } from './http.ts'
 
@@ -99,9 +101,15 @@ export function retryDelivery(id: number, logId: number): Promise<Delivery> {
 	return call(axios.post<Delivery>(url('/forms/' + id + '/deliveries/' + logId + '/retry')))
 }
 
-/** Where the CSV download lives. Opened as a link, so the session cookie authenticates it. */
-export function exportUrl(id: number): string {
-	return generateUrl('/apps/webforms/api/v1/forms/{id}/entries/export', { id })
+/** Where a download of responses lives. Opened as a link, so the session cookie authenticates it. */
+export function exportUrl(id: number, options: ExportOptions = {}): string {
+	const query = exportQuery(options)
+	return generateUrl('/apps/webforms/api/v1/forms/{id}/entries/export', { id }) + (query === '' ? '' : '?' + query)
+}
+
+/** Delete the ticked responses, or everything a filter matches. Resolves to how many were deleted. */
+export async function bulkDeleteEntries(id: number, request: BulkDeleteRequest): Promise<number> {
+	return (await call(axios.post<{ deleted: number }>(url('/forms/' + id + '/entries/bulk-delete'), bulkDeleteBody(request)))).deleted
 }
 
 export type ExportSource = 'draft' | 'published'

@@ -9,20 +9,22 @@ import type { EntrySort } from '../../entries/filter.ts'
 import type { EntryRecord, VersionDefinition } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { cellText } from '../../entries/columns.ts'
 import { formatTime } from '../../entries/format.ts'
 import { icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
 import ResponseCard from './ResponseCard.vue'
 
-defineProps<{
+const props = defineProps<{
 	formId: number
 	entries: EntryRecord[]
 	versions: Record<string, VersionDefinition>
 	columns: ResponseColumn[]
 	expandedId: number | null
 	sort: EntrySort
+	/** The ids of the responses that are ticked. */
+	selected: ReadonlySet<number>
 }>()
 
 const emit = defineEmits<{
@@ -30,9 +32,15 @@ const emit = defineEmits<{
 	delete: [id: number]
 	changed: []
 	sort: [sort: EntrySort]
+	select: [id: number, on: boolean]
+	/** Tick or untick every response on the page. */
+	selectPage: [on: boolean]
 }>()
 
 const EMPTY: VersionDefinition = { fields: {}, pages: [] }
+
+const pageSelected = computed(() => props.entries.length > 0 && props.entries.every((entry) => props.selected.has(entry.id)))
+const someSelected = computed(() => !pageSelected.value && props.entries.some((entry) => props.selected.has(entry.id)))
 
 // An opened response sits in a cell that spans every column, so it would be as wide as the whole table
 // and, on a phone, mostly off screen. It is pinned to the left edge at the width that is visible.
@@ -60,6 +68,13 @@ onBeforeUnmount(() => observer?.disconnect())
 		<table class="af-table">
 			<thead>
 				<tr>
+					<th scope="col" class="af-table__check">
+						<input type="checkbox"
+							:checked="pageSelected"
+							:indeterminate.prop="someSelected"
+							:aria-label="t('webforms', 'Select all responses on this page')"
+							@change="emit('selectPage', ($event.target as HTMLInputElement).checked)">
+					</th>
 					<th scope="col" class="af-table__id">
 						#
 					</th>
@@ -83,12 +98,18 @@ onBeforeUnmount(() => observer?.disconnect())
 			<tbody>
 				<template v-for="entry in entries" :key="entry.id">
 					<tr class="af-table__row"
-						:class="{ 'af-table__row--open': expandedId === entry.id }"
+						:class="{ 'af-table__row--open': expandedId === entry.id, 'af-table__row--selected': selected.has(entry.id) }"
 						tabindex="0"
 						:aria-expanded="expandedId === entry.id"
 						@click="emit('toggle', entry.id)"
 						@keydown.enter.self.prevent="emit('toggle', entry.id)"
 						@keydown.space.self.prevent="emit('toggle', entry.id)">
+						<td class="af-table__check" @click.stop>
+							<input type="checkbox"
+								:checked="selected.has(entry.id)"
+								:aria-label="t('webforms', 'Select response {id}', { id: entry.id })"
+								@change="emit('select', entry.id, ($event.target as HTMLInputElement).checked)">
+						</td>
 						<td class="af-table__id">
 							{{ entry.id }}
 						</td>
@@ -101,7 +122,7 @@ onBeforeUnmount(() => observer?.disconnect())
 						</td>
 					</tr>
 					<tr v-if="expandedId === entry.id" :id="'af-response-' + entry.id" class="af-table__detail">
-						<td :colspan="3 + columns.length">
+						<td :colspan="4 + columns.length">
 							<div class="af-table__panel" :style="panelWidth > 0 ? { width: panelWidth + 'px' } : undefined">
 								<ResponseCard :form-id="formId"
 									:entry="entry"
@@ -155,6 +176,20 @@ onBeforeUnmount(() => observer?.disconnect())
 .af-table__id {
 	width: 1%;
 	color: var(--color-text-maxcontrast);
+}
+
+.af-table__check {
+	width: 1%;
+	padding-inline-end: 0;
+}
+
+.af-table__check input {
+	margin: 0;
+	cursor: pointer;
+}
+
+.af-table__row--selected {
+	background: var(--color-primary-element-light-hover, var(--color-background-hover));
 }
 
 .af-table__when {
