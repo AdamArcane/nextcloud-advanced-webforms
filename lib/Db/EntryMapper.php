@@ -81,6 +81,29 @@ class EntryMapper extends QBMapper {
 	}
 
 	/**
+	 * The responses of one form with these ids, oldest first. Ids of other forms, or that do not exist, are
+	 * simply not returned.
+	 *
+	 * @param list<int> $ids
+	 * @return list<Entry>
+	 * @throws Exception
+	 */
+	public function findByIds(int $formId, array $ids): array {
+		$found = [];
+		foreach (array_chunk(array_values(array_unique($ids)), 500) as $chunk) {
+			$qb = $this->db->getQueryBuilder();
+			$qb->select('*')->from($this->getTableName())
+				->where($qb->expr()->eq('form_id', $qb->createNamedParameter($formId, IQueryBuilder::PARAM_INT)))
+				->andWhere($qb->expr()->in('id', $qb->createNamedParameter($chunk, IQueryBuilder::PARAM_INT_ARRAY)));
+			foreach ($this->findEntities($qb) as $entry) {
+				$found[] = $entry;
+			}
+		}
+		usort($found, static fn (Entry $a, Entry $b): int => [$a->getSubmittedAt(), $a->getId()] <=> [$b->getSubmittedAt(), $b->getId()]);
+		return $found;
+	}
+
+	/**
 	 * @throws Exception
 	 */
 	public function countFiltered(int $formId, EntryFilter $filter): int {

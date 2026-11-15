@@ -45,41 +45,85 @@ class EntryQueryService {
 			];
 		}
 
-		/** @var array<int, array<string, array<string, mixed>>> $fieldsByVersion */
-		$fieldsByVersion = [];
-		// Questions the form asks now, for conditions on one an older response was never asked.
-		$latest = $this->versions->findLatest($formId);
-		$currentFields = $latest === null ? [] : self::fieldsOf($latest->getDefinitionArray());
 		$page = [];
 		$matched = 0;
+		$matches = $this->matching($formId, $filter);
+		foreach ($matches as $entry) {
+			if ($matched >= $offset && count($page) < $limit) {
+				$page[] = $entry;
+			}
+			$matched++;
+		}
+		return ['entries' => $page, 'total' => $matched, 'truncated' => $matches->getReturn()];
+	}
+
+	/**
+	 * Every matching response, for an export or a bulk delete, in the filter's order and at most $cap of them.
+	 * `truncated` says there are more than that (or the search itself stopped early).
+	 *
+	 * @return array{entries: list<Entry>, truncated: bool}
+	 */
+	public function all(int $formId, EntryFilter $filter, int $cap): array {
+		$found = [];
+		$matches = $this->matching($formId, $filter);
+		foreach ($matches as $entry) {
+			if (count($found) >= $cap) {
+				return ['entries' => $found, 'truncated' => true];
+			}
+			$found[] = $entry;
+		}
+		return ['entries' => $found, 'truncated' => $matches->getReturn()];
+	}
+
+	/**
+	 * The responses a person selected, oldest first. Ids that are not this form's are ignored.
+	 *
+	 * @param list<int> $ids
+	 * @return list<Entry>
+	 */
+	public function byIds(int $formId, array $ids): array {
+		return $this->entries->findByIds($formId, $ids);
+	}
+
+	/**
+	 * Walks a form's responses in the filter's order and yields the ones that match, reading each against
+	 * its own version when the filter needs that. Stops after MAX_SCAN responses. The generator's return
+	 * value says whether it stopped with more left.
+	 *
+	 * @return \Generator<int, Entry, mixed, bool>
+	 */
+	private function matching(int $formId, EntryFilter $filter): \Generator {
+		$scan = $filter->needsScan();
+		/** @var array<int, array<string, array<string, mixed>>> $fieldsByVersion */
+		$fieldsByVersion = [];
+		$currentFields = [];
+		if ($scan) {
+			// Questions the form asks now, for conditions on one an older response was never asked.
+			$latest = $this->versions->findLatest($formId);
+			$currentFields = $latest === null ? [] : self::fieldsOf($latest->getDefinitionArray());
+		}
+
 		$scanned = 0;
-		$truncated = false;
 		for ($position = 0; ; $position += self::BATCH) {
 			if ($scanned >= self::MAX_SCAN) {
-				// There may be more; the count so far is a lower bound.
-				$truncated = $this->entries->findFiltered($formId, $filter, 1, $scanned) !== [];
-				break;
+				// There may be more; what was found so far is a lower bound.
+				return $this->entries->findFiltered($formId, $filter, 1, $scanned) !== [];
 			}
 			$batch = $this->entries->findFiltered($formId, $filter, self::BATCH, $position);
-			if ($batch === []) {
-				break;
-			}
 			foreach ($batch as $entry) {
 				$scanned++;
-				$fields = $fieldsByVersion[$entry->getVersionId()] ??= self::fieldsOf($this->versions->find($entry->getVersionId())->getDefinitionArray());
-				if (!$filter->matches($this->engine, $fields, $entry->getDataArray(), $entry->getUserId(), $currentFields)) {
-					continue;
+				if ($scan) {
+					$fields = $fieldsByVersion[$entry->getVersionId()] ??= self::fieldsOf($this->versions->find($entry->getVersionId())->getDefinitionArray());
+					if (!$filter->matches($this->engine, $fields, $entry->getDataArray(), $entry->getUserId(), $currentFields)) {
+						continue;
+					}
 				}
-				if ($matched >= $offset && count($page) < $limit) {
-					$page[] = $entry;
-				}
-				$matched++;
+				yield $entry;
 			}
 			if (count($batch) < self::BATCH) {
-				break;
+				return false;
 			}
 		}
-		return ['entries' => $page, 'total' => $matched, 'truncated' => $truncated];
 	}
 
 	/**

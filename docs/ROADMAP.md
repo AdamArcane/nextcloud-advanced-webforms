@@ -36,6 +36,18 @@ after-submit action (see the decision below). The work here makes that model com
 6. **More events for Flow.** A failed delivery, and a whole form being deleted. More actions in the
    same pattern (Deck, Talk, Calendar) once there is a clear use.
 
+## Responses view
+
+Done: table with search and filters, selecting, bulk delete, and CSV or Excel download that follows the
+filter, the selection and the chosen columns (SCHEMA.md sections 17 and 17.1). Still open, roughly in
+order:
+
+1. ODS export, and a zip of uploaded files.
+2. A small summary above the table: responses over time, counts per choice, averages for numbers.
+3. Statuses (new, reviewed, done, spam), private notes and assignment. Needs a migration.
+4. A per-response page that can be printed or shared with a colleague.
+5. Sharing results with someone who cannot edit the form.
+
 ## Decision: actions, not pluggable storage
 
 Recorded 2026-11-15 so it is not argued again from scratch.

@@ -9,7 +9,9 @@ import type { Delivery, DeliveryStatus, DraftDefinition, EntryRecord, VersionDef
 
 import { t } from '@nextcloud/l10n'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
+import NcActionCaption from '@nextcloud/vue/components/NcActionCaption'
 import NcActionCheckbox from '@nextcloud/vue/components/NcActionCheckbox'
+import NcActionLink from '@nextcloud/vue/components/NcActionLink'
 import NcActions from '@nextcloud/vue/components/NcActions'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
@@ -19,8 +21,11 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
-import { deleteEntry, exportUrl, listDeliveries, listEntries, retryDelivery } from '../../api/forms.ts'
+import { bulkDeleteEntries, deleteEntry, exportUrl, listDeliveries, listEntries, retryDelivery } from '../../api/forms.ts'
+import { ApiError } from '../../api/http.ts'
 import { defaultColumnIds, loadColumnChoice, responseColumns, saveColumnChoice, visibleColumns } from '../../entries/columns.ts'
+import { exportScope, MAX_SELECTED } from '../../entries/exporting.ts'
+import type { ExportFormat } from '../../entries/exporting.ts'
 import { EMPTY_FILTER, isFilterActive } from '../../entries/filter.ts'
 import FormBar from '../FormBar.vue'
 import SegmentedControl from '../builder/SegmentedControl.vue'
@@ -67,6 +72,9 @@ function loadView(): ResponsesView {
 const view = ref<ResponsesView>(loadView())
 function setView(value: ResponsesView): void {
 	view.value = value
+	if (value === 'cards') {
+		clearSelection()
+	}
 	try {
 		window.localStorage.setItem(VIEW_KEY, value)
 	} catch {
@@ -75,6 +83,95 @@ function setView(value: ResponsesView): void {
 }
 
 const chosenColumns = ref<string[] | null>(loadColumnChoice(props.formId))
+
+// ---- Selecting and bulk actions ------------------------------------------
+
+const selected = ref<Set<number>>(new Set())
+/** Every response the filter matches is selected, not just the ones loaded. */
+const allMatching = ref(false)
+const confirmBulk = ref(false)
+const bulkBusy = ref(false)
+const bulkError = ref<string | null>(null)
+const bulkDone = ref<number | null>(null)
+
+const selectedCount = computed(() => (allMatching.value ? total.value : selected.value.size))
+const pageAllSelected = computed(() => entries.value.length > 0 && entries.value.every((entry) => selected.value.has(entry.id)))
+/** Offer "all N matching" once the whole page is ticked and there is more than the page. */
+const canSelectAllMatching = computed(() => pageAllSelected.value && !allMatching.value && total.value > entries.value.length && !truncated.value)
+/** Ticked responses travel in the request, so only so many at a time. */
+const tooManySelected = computed(() => !allMatching.value && selected.value.size > MAX_SELECTED)
+
+function clearSelection(): void {
+	selected.value = new Set()
+	allMatching.value = false
+}
+
+function selectOne(id: number, on: boolean): void {
+	const next = new Set(selected.value)
+	if (on) {
+		next.add(id)
+	} else {
+		next.delete(id)
+		allMatching.value = false
+	}
+	selected.value = next
+}
+
+function selectPage(on: boolean): void {
+	if (!on) {
+		clearSelection()
+		return
+	}
+	selected.value = new Set([...selected.value, ...entries.value.map((entry) => entry.id)])
+}
+
+async function bulkDelete(): Promise<void> {
+	confirmBulk.value = false
+	bulkBusy.value = true
+	bulkError.value = null
+	bulkDone.value = null
+	try {
+		const deleted = await bulkDeleteEntries(props.formId, allMatching.value
+			? { filter: entryFilter.value, expected: total.value }
+			: { ids: [...selected.value] })
+		clearSelection()
+		bulkDone.value = deleted
+		expandedId.value = null
+		await loadEntries(false)
+		void refreshFailedCount()
+	} catch (error) {
+		if (error instanceof ApiError && error.code === 'count_changed') {
+			bulkError.value = t('webforms', 'The number of matching responses changed from {before} to {now}, so nothing was deleted. Check the list and try again.', { before: total.value, now: Number(error.data.current ?? 0) })
+			clearSelection()
+			await loadEntries(false)
+		} else if (error instanceof ApiError && error.code === 'validation') {
+			bulkError.value = t('webforms', 'That is too many responses to delete at once. Narrow the filter, or select fewer.')
+		} else {
+			bulkError.value = t('webforms', 'Could not delete the responses.')
+		}
+	} finally {
+		bulkBusy.value = false
+	}
+}
+
+const scope = computed(() => exportScope(selected.value.size, allMatching.value, filtered.value))
+const scopeLabel = computed(() => {
+	switch (scope.value) {
+		case 'selected': return t('webforms', '{n} selected responses', { n: selected.value.size })
+		case 'matching': return t('webforms', '{n} matching responses', { n: total.value })
+		default: return t('webforms', 'All {n} responses', { n: grandTotal.value })
+	}
+})
+
+/** The download for the current scope: ticked responses, the filter, or everything, and the chosen columns. */
+function downloadUrl(format: ExportFormat): string {
+	return exportUrl(props.formId, {
+		format,
+		ids: scope.value === 'selected' ? [...selected.value] : undefined,
+		filter: scope.value === 'selected' ? undefined : entryFilter.value,
+		columns: chosenColumns.value ?? undefined,
+	})
+}
 const loading = ref(true)
 const loadingMore = ref(false)
 const loadFailed = ref(false)
@@ -119,6 +216,9 @@ const filterDefinition = computed<DraftDefinition | null>(() => {
 function applyFilter(next: EntryFilterState): void {
 	entryFilter.value = next
 	expandedId.value = null
+	clearSelection()
+	bulkDone.value = null
+	bulkError.value = null
 	void loadEntries(false)
 }
 
@@ -297,12 +397,28 @@ onMounted(() => {
 				</span>
 			</template>
 			<template #end>
-				<NcButton variant="secondary" :href="exportUrl(formId)" :disabled="grandTotal === 0">
+				<NcActions :name="t('webforms', 'Download')"
+					:aria-label="t('webforms', 'Download responses')"
+					:disabled="grandTotal === 0 || tooManySelected"
+					variant="secondary"
+					force-name>
 					<template #icon>
 						<Icon :path="icons.download" />
 					</template>
-					{{ t('webforms', 'Download CSV') }}
-				</NcButton>
+					<NcActionCaption :name="scopeLabel" />
+					<NcActionLink :href="downloadUrl('csv')" download>
+						<template #icon>
+							<Icon :path="icons.download" />
+						</template>
+						{{ t('webforms', 'CSV (.csv)') }}
+					</NcActionLink>
+					<NcActionLink :href="downloadUrl('xlsx')" download>
+						<template #icon>
+							<Icon :path="icons.download" />
+						</template>
+						{{ t('webforms', 'Excel (.xlsx)') }}
+					</NcActionLink>
+				</NcActions>
 			</template>
 		</FormBar>
 
@@ -360,6 +476,34 @@ onMounted(() => {
 						{{ t('webforms', 'Searched the first 20,000 responses. There may be more matches, narrow the dates to find them.') }}
 					</NcNoteCard>
 
+					<NcNoteCard v-if="bulkDone !== null" type="success">
+						{{ t('webforms', 'Deleted {n} responses.', { n: bulkDone }) }}
+					</NcNoteCard>
+					<NcNoteCard v-if="bulkError" type="error">
+						{{ bulkError }}
+					</NcNoteCard>
+
+					<div v-if="selectedCount > 0 && view === 'table'" class="af-entries__bulk" role="region" :aria-label="t('webforms', 'Selected responses')">
+						<strong>{{ allMatching ? t('webforms', 'All {n} matching responses are selected', { n: total }) : t('webforms', '{n} selected', { n: selected.size }) }}</strong>
+						<NcButton v-if="canSelectAllMatching" variant="tertiary" @click="allMatching = true">
+							{{ t('webforms', 'Select all {n} matching', { n: total }) }}
+						</NcButton>
+						<span v-if="tooManySelected" class="af-entries__hint">
+							{{ t('webforms', 'Select up to {max} at a time, or use "Select all matching".', { max: MAX_SELECTED }) }}
+						</span>
+						<span class="af-entries__spacer" />
+						<NcButton variant="error" :disabled="tooManySelected || bulkBusy" @click="confirmBulk = true">
+							<template #icon>
+								<NcLoadingIcon v-if="bulkBusy" :size="20" />
+								<Icon v-else :path="icons.delete" />
+							</template>
+							{{ t('webforms', 'Delete') }}
+						</NcButton>
+						<NcButton variant="tertiary" :disabled="bulkBusy" @click="clearSelection">
+							{{ t('webforms', 'Clear selection') }}
+						</NcButton>
+					</div>
+
 					<div class="af-entries__tools">
 						<SegmentedControl :model-value="view"
 							:group-label="t('webforms', 'How to show responses')"
@@ -389,6 +533,9 @@ onMounted(() => {
 						:columns="shownColumns"
 						:expanded-id="expandedId"
 						:sort="entryFilter.sort"
+						:selected="selected"
+						@select="selectOne"
+						@select-page="selectPage"
 						@toggle="(id) => (expandedId = expandedId === id ? null : id)"
 						@delete="(id) => (confirmDeleteId = id)"
 						@changed="refreshFailedCount"
@@ -494,6 +641,17 @@ onMounted(() => {
 				{ label: t('webforms', 'Delete'), variant: 'error', callback: confirmDelete },
 			]"
 			@closing="confirmDeleteId = null" />
+
+		<NcDialog v-if="confirmBulk"
+			:name="t('webforms', 'Delete {n} responses?', { n: selectedCount })"
+			:message="allMatching
+				? t('webforms', 'Every response that matches the filter is deleted, with its answers, uploaded files and the record of what was sent. This cannot be undone.')
+				: t('webforms', 'The selected responses are deleted, with their answers, uploaded files and the record of what was sent. This cannot be undone.')"
+			:buttons="[
+				{ label: t('webforms', 'Cancel'), variant: 'tertiary', callback: () => { confirmBulk = false } },
+				{ label: t('webforms', 'Delete {n}', { n: selectedCount }), variant: 'error', callback: bulkDelete },
+			]"
+			@closing="confirmBulk = false" />
 	</NcAppContent>
 </template>
 
@@ -555,6 +713,21 @@ onMounted(() => {
 	justify-content: center;
 	padding: calc(var(--default-grid-baseline) * 10) 0;
 }
+.af-entries__bulk {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--default-grid-baseline) calc(var(--default-grid-baseline) * 2);
+	padding: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 3);
+	border: 1px solid var(--color-primary-element);
+	border-radius: var(--border-radius-large);
+	background: var(--color-primary-element-light, var(--color-background-hover));
+}
+
+.af-entries__spacer {
+	flex: 1 1 auto;
+}
+
 .af-entries__tools {
 	display: flex;
 	flex-wrap: wrap;

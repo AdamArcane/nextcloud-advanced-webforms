@@ -19,16 +19,28 @@ msgstr ""
 msgid "{n} columns"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:320
+#: src/components/entries/EntriesView.vue:436
 msgid "{n} emails or webhooks could not be sent."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:296
+#: src/components/entries/EntriesView.vue:161
+msgid "{n} matching responses"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:396
 msgid "{n} of {all} responses"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:296
+#: src/components/entries/EntriesView.vue:396
 msgid "{n} responses"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:487
+msgid "{n} selected"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:160
+msgid "{n} selected responses"
 msgstr ""
 
 #: src/App.vue:199
@@ -226,8 +238,16 @@ msgid "Alignment"
 msgstr ""
 
 #: src/components/builder/ConditionGroup.vue:88
-#: src/components/entries/EntriesView.vue:425
+#: src/components/entries/EntriesView.vue:572
 msgid "All"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:487
+msgid "All {n} matching responses are selected"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:162
+msgid "All {n} responses"
 msgstr ""
 
 #: src/components/builder/FormProperties.vue:237
@@ -263,7 +283,7 @@ msgid "and"
 msgstr ""
 
 #: src/components/entries/ResponseFilters.vue:63
-#: src/components/entries/ResponsesTable.vue:77
+#: src/components/entries/ResponsesTable.vue:119
 msgid "Anonymous"
 msgstr ""
 
@@ -393,7 +413,7 @@ msgstr ""
 msgid "Canvas width"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:369
+#: src/components/entries/EntriesView.vue:513
 msgid "Cards"
 msgstr ""
 
@@ -458,7 +478,7 @@ msgstr ""
 msgid "Choose at most"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:372
+#: src/components/entries/EntriesView.vue:516
 msgid "Choose columns"
 msgstr ""
 
@@ -495,9 +515,13 @@ msgstr ""
 msgid "Choose who should receive this email."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:347
+#: src/components/entries/EntriesView.vue:463
 #: src/components/entries/ResponseFilters.vue:140
 msgid "Clear filters"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:503
+msgid "Clear selection"
 msgstr ""
 
 #: src/App.vue:173
@@ -514,7 +538,7 @@ msgstr ""
 
 #: src/components/builder/FieldProperties.vue:463
 #: src/components/builder/FieldProperties.vue:465
-#: src/components/entries/EntriesView.vue:372
+#: src/components/entries/EntriesView.vue:516
 msgid "Columns"
 msgstr ""
 
@@ -560,15 +584,19 @@ msgstr ""
 msgid "Could not create the table. Try again."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:357
+#: src/components/entries/EntriesView.vue:473
 msgid "Could not delete the response."
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:150
+msgid "Could not delete the responses."
 msgstr ""
 
 #: src/App.vue:138
 msgid "Could not import the form."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:414
+#: src/components/entries/EntriesView.vue:561
 msgid "Could not load more responses."
 msgstr ""
 
@@ -576,11 +604,11 @@ msgstr ""
 msgid "Could not load or update the deliveries."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:454
+#: src/components/entries/EntriesView.vue:601
 msgid "Could not load the deliveries."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:337
+#: src/components/entries/EntriesView.vue:453
 msgid "Could not load the responses."
 msgstr ""
 
@@ -637,6 +665,10 @@ msgstr ""
 msgid "Creating…"
 msgstr ""
 
+#: src/components/entries/EntriesView.vue:413
+msgid "CSV (.csv)"
+msgstr ""
+
 #: src/components/builder/OptionsEditor.vue:44
 msgid "Currencies"
 msgstr ""
@@ -664,8 +696,17 @@ msgid "Days to keep a response"
 msgstr ""
 
 #: src/components/builder/BuilderView.vue:573
-#: src/components/entries/EntriesView.vue:494
+#: src/components/entries/EntriesView.vue:500
+#: src/components/entries/EntriesView.vue:641
 msgid "Delete"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:652
+msgid "Delete {n}"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:646
+msgid "Delete {n} responses?"
 msgstr ""
 
 #: src/components/builder/ActionCard.vue:399
@@ -717,15 +758,19 @@ msgstr ""
 msgid "Delete this form?"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:490
+#: src/components/entries/EntriesView.vue:637
 msgid "Delete this response?"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:315
+#: src/components/entries/EntriesView.vue:480
+msgid "Deleted {n} responses."
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:431
 msgid "Deliveries"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:315
+#: src/components/entries/EntriesView.vue:431
 msgid "Deliveries ({n} failed)"
 msgstr ""
 
@@ -758,8 +803,12 @@ msgstr ""
 msgid "Dotted"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:304
-msgid "Download CSV"
+#: src/components/entries/EntriesView.vue:400
+msgid "Download"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:401
+msgid "Download responses"
 msgstr ""
 
 #: src/App.vue:174
@@ -831,7 +880,7 @@ msgstr ""
 msgid "Emails and webhooks"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:461
+#: src/components/entries/EntriesView.vue:608
 msgid "Emails and webhooks from your form's actions are listed here, with what happened to each."
 msgstr ""
 
@@ -875,8 +924,16 @@ msgstr ""
 msgid "Every option needs a label."
 msgstr ""
 
+#: src/components/entries/EntriesView.vue:648
+msgid "Every response that matches the filter is deleted, with its answers, uploaded files and the record of what was sent. This cannot be undone."
+msgstr ""
+
 #: src/components/admin/PolicyAdmin.vue:215
 msgid "Everyone"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:419
+msgid "Excel (.xlsx)"
 msgstr ""
 
 #: src/App.vue:209
@@ -888,12 +945,12 @@ msgstr ""
 msgid "Export published version"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:426
+#: src/components/entries/EntriesView.vue:573
 #: src/entries/deliveryText.ts:13
 msgid "Failed"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:468
+#: src/components/entries/EntriesView.vue:615
 msgid "Failed deliveries are tried again automatically, up to five times. Trying again by hand starts over and is sent within a minute."
 msgstr ""
 
@@ -935,7 +992,7 @@ msgstr ""
 msgid "Fill these columns"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:423
+#: src/components/entries/EntriesView.vue:570
 msgid "Filter deliveries"
 msgstr ""
 
@@ -1082,7 +1139,7 @@ msgstr ""
 msgid "Hide the required indicator (*)"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:365
+#: src/components/entries/EntriesView.vue:509
 msgid "How to show responses"
 msgstr ""
 
@@ -1286,7 +1343,7 @@ msgid "Loading columns…"
 msgstr ""
 
 #: src/components/builder/TablesActionBody.vue:165
-#: src/components/entries/EntriesView.vue:409
+#: src/components/entries/EntriesView.vue:556
 msgid "Loading…"
 msgstr ""
 
@@ -1480,7 +1537,7 @@ msgstr ""
 msgid "No answers"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:461
+#: src/components/entries/EntriesView.vue:608
 msgid "No deliveries match this filter."
 msgstr ""
 
@@ -1501,11 +1558,11 @@ msgstr ""
 msgid "No matching option in Tables for: {names}. A response that picks one of these leaves this column empty. Add the option in Tables, or give it the same name."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:343
+#: src/components/entries/EntriesView.vue:459
 msgid "No responses match"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:352
+#: src/components/entries/EntriesView.vue:468
 msgid "No responses yet"
 msgstr ""
 
@@ -1537,11 +1594,11 @@ msgstr ""
 msgid "Not ticked"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:460
+#: src/components/entries/EntriesView.vue:607
 msgid "Nothing here"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:460
+#: src/components/entries/EntriesView.vue:607
 msgid "Nothing sent yet"
 msgstr ""
 
@@ -1792,7 +1849,7 @@ msgstr ""
 msgid "Redirect"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:440
+#: src/components/entries/EntriesView.vue:587
 msgid "Refresh"
 msgstr ""
 
@@ -1848,11 +1905,11 @@ msgid "Response number"
 msgstr ""
 
 #: src/components/FormNav.vue:30
-#: src/components/entries/EntriesView.vue:314
+#: src/components/entries/EntriesView.vue:430
 msgid "Responses"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:353
+#: src/components/entries/EntriesView.vue:469
 msgid "Responses appear here as soon as someone sends the form."
 msgstr ""
 
@@ -1873,7 +1930,7 @@ msgstr ""
 msgid "Restore form"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:322
+#: src/components/entries/EntriesView.vue:438
 msgid "Review"
 msgstr ""
 
@@ -1927,7 +1984,7 @@ msgstr ""
 msgid "Search responses"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:360
+#: src/components/entries/EntriesView.vue:476
 msgid "Searched the first 20,000 responses. There may be more matches, narrow the dates to find them."
 msgstr ""
 
@@ -1951,12 +2008,32 @@ msgstr ""
 msgid "Select a form"
 msgstr ""
 
+#: src/components/entries/EntriesView.vue:489
+msgid "Select all {n} matching"
+msgstr ""
+
+#: src/components/entries/ResponsesTable.vue:75
+msgid "Select all responses on this page"
+msgstr ""
+
 #: src/components/render/messages.ts:46
 msgid "Select fewer options."
 msgstr ""
 
 #: src/components/render/messages.ts:44
 msgid "Select more options."
+msgstr ""
+
+#: src/components/entries/ResponsesTable.vue:110
+msgid "Select response {id}"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:492
+msgid "Select up to {max} at a time, or use \"Select all matching\"."
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:486
+msgid "Selected responses"
 msgstr ""
 
 #: src/components/builder/FormProperties.vue:119
@@ -1980,13 +2057,13 @@ msgstr ""
 msgid "Send to"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:428
+#: src/components/entries/EntriesView.vue:575
 #: src/entries/deliveryText.ts:12
 msgid "Sent"
 msgstr ""
 
 #: src/components/entries/ResponseFilters.vue:121
-#: src/components/entries/ResponsesTable.vue:55
+#: src/components/entries/ResponsesTable.vue:91
 msgid "Sent by"
 msgstr ""
 
@@ -2043,8 +2120,8 @@ msgstr ""
 msgid "Show a message"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:409
-#: src/components/entries/EntriesView.vue:482
+#: src/components/entries/EntriesView.vue:556
+#: src/components/entries/EntriesView.vue:629
 msgid "Show more"
 msgstr ""
 
@@ -2060,7 +2137,7 @@ msgstr ""
 msgid "Show, hide or require this field depending on the answers to other fields."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:411
+#: src/components/entries/EntriesView.vue:558
 msgid "Showing {shown} of {total}"
 msgstr ""
 
@@ -2104,7 +2181,7 @@ msgstr ""
 msgid "Site key"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:429
+#: src/components/entries/EntriesView.vue:576
 #: src/entries/deliveryText.ts:14
 msgid "Skipped"
 msgstr ""
@@ -2113,7 +2190,7 @@ msgstr ""
 msgid "Solid"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:447
+#: src/components/entries/EntriesView.vue:594
 msgid "Some deliveries are overdue. Nextcloud sends them with its background jobs, which do not seem to be running. Ask your administrator to switch background jobs to Cron (Administration settings, Basic settings)."
 msgstr ""
 
@@ -2174,15 +2251,15 @@ msgstr ""
 msgid "Submit button text"
 msgstr ""
 
-#: src/components/entries/ResponsesTable.vue:50
+#: src/components/entries/ResponsesTable.vue:86
 msgid "Submitted"
 msgstr ""
 
-#: src/components/entries/ResponsesTable.vue:48
+#: src/components/entries/ResponsesTable.vue:84
 msgid "Submitted, newest first. Show oldest first."
 msgstr ""
 
-#: src/components/entries/ResponsesTable.vue:48
+#: src/components/entries/ResponsesTable.vue:84
 msgid "Submitted, oldest first. Show newest first."
 msgstr ""
 
@@ -2191,7 +2268,7 @@ msgid "Submitting"
 msgstr ""
 
 #: src/components/builder/TablesActionBody.vue:164
-#: src/components/entries/EntriesView.vue:368
+#: src/components/entries/EntriesView.vue:512
 msgid "Table"
 msgstr ""
 
@@ -2230,8 +2307,12 @@ msgstr ""
 msgid "Thank you. Your response has been sent."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:465
+#: src/components/entries/EntriesView.vue:612
 msgid "That did not work. Try again in a moment."
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:148
+msgid "That is too many responses to delete at once. Narrow the filter, or select fewer."
 msgstr ""
 
 #: src/entries/deliveryText.ts:38
@@ -2250,7 +2331,7 @@ msgstr ""
 msgid "The administrator chooses the kind of check. Logged-in users never see it."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:491
+#: src/components/entries/EntriesView.vue:638
 msgid "The answers and the record of what was sent are deleted. This cannot be undone."
 msgstr ""
 
@@ -2298,6 +2379,10 @@ msgstr ""
 msgid "The mail server refused it:{detail}"
 msgstr ""
 
+#: src/components/entries/EntriesView.vue:144
+msgid "The number of matching responses changed from {before} to {now}, so nothing was deleted. Check the list and try again."
+msgstr ""
+
 #: src/builder/errors.ts:28
 msgid "The placeholder is too long."
 msgstr ""
@@ -2324,6 +2409,10 @@ msgstr ""
 
 #: src/entries/deliveryText.ts:45
 msgid "The response was deleted before this could be sent."
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:649
+msgid "The selected responses are deleted, with their answers, uploaded files and the record of what was sent. This cannot be undone."
 msgstr ""
 
 #: src/components/builder/ActionCard.vue:72
@@ -2515,7 +2604,7 @@ msgstr ""
 msgid "This link does not lead to an open form."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:443
+#: src/components/entries/EntriesView.vue:590
 msgid "This list also refreshes by itself every few seconds while deliveries are waiting."
 msgstr ""
 
@@ -2600,13 +2689,13 @@ msgstr ""
 msgid "Too many uploads. Please wait a moment and try again."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:344
+#: src/components/entries/EntriesView.vue:460
 msgid "Try a different search, or clear the filters."
 msgstr ""
 
 #: src/App.vue:284
 #: src/components/entries/DeliveryRow.vue:76
-#: src/components/entries/EntriesView.vue:339
+#: src/components/entries/EntriesView.vue:455
 msgid "Try again"
 msgstr ""
 
@@ -2698,7 +2787,7 @@ msgstr ""
 msgid "Visible lines (2 to 20)"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:427
+#: src/components/entries/EntriesView.vue:574
 #: src/entries/deliveryText.ts:15
 msgid "Waiting"
 msgstr ""
@@ -2727,7 +2816,7 @@ msgstr ""
 msgid "What the rule does"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:312
+#: src/components/entries/EntriesView.vue:428
 msgid "What to show"
 msgstr ""
 
