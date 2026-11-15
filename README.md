@@ -3,7 +3,7 @@
   - SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 
-# Advanced Forms for Nextcloud
+# Advanced Webforms for Nextcloud
 
 Forms with conditional logic, grid layouts, and after-submit actions, for
 Nextcloud. Your data stays on your server.

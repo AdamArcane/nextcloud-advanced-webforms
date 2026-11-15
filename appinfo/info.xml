@@ -6,7 +6,7 @@
 <info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
 	<id>advancedforms</id>
-	<name>Advanced Forms</name>
+	<name>Advanced Webforms</name>
 	<summary>Forms with conditional logic, grid layouts, and after-submit actions</summary>
 	<description><![CDATA[**Forms with the features larger form builders have, self-hosted.**
 
@@ -49,7 +49,7 @@ This app is in early development.
 
 	<navigations>
 		<navigation>
-			<name>Advanced Forms</name>
+			<name>Webforms</name>
 			<route>advancedforms.page.index</route>
 		</navigation>
 	</navigations>

@@ -26,7 +26,7 @@ class AdminSection implements IIconSection {
 	}
 
 	public function getName(): string {
-		return $this->l->t('Advanced Forms');
+		return $this->l->t('Advanced Webforms');
 	}
 
 	public function getPriority(): int {
