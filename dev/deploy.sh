@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
 # Build the app and sync it into the dev container, then enable it.
-# Usage: dev/deploy.sh root@nc-dev      (or root@<container ip or tailscale name>)
+# Usage: dev/deploy.sh <user>@<host>   (the dev container or VM; see dev/README.md)
 set -euo pipefail
 
 TARGET="${1:?usage: dev/deploy.sh user@host}"

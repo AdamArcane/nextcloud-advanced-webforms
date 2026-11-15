@@ -6,7 +6,7 @@
 # Advanced Webforms (Nextcloud app) - working notes
 
 Gravity Forms-style forms app for Nextcloud. Brand new app, not a fork of core
-Forms. Owner: Adam (ArcaneX). Private repo `AdamArcane/nextcloud-advanced-forms`.
+Forms. Owner: ArcaneX. Repo `AdamArcane/nextcloud-advanced-forms`.
 Read `docs/SCHEMA.md` first: it is the source of truth for the data format,
 rules semantics, actions, versioning and the submit algorithm.
 
@@ -24,9 +24,8 @@ rules semantics, actions, versioning and the submit algorithm.
   owner's own Nextcloud permissions, checked on publish and on every submission.
 - Deferred: theming, Nextcloud Tables as an
   optional entry storage backend (all entry access goes through `EntryMapper`).
-- Never use em dashes in any text written for Adam.
-- Commits are authored as Adam (repo-local git config) with the Claude
-  co-author trailer. Push to `main` is fine.
+- Never use em dashes in any text written for the owner.
+- Commits carry the Claude co-author trailer. Push to `main` is fine.
 
 ## Architecture
 
@@ -56,12 +55,12 @@ rules semantics, actions, versioning and the submit algorithm.
   8.3 and 8.4, `reuse lint`, and an em dash scan of the Markdown docs.
 - `reuse lint`, and scan for em dashes before committing.
 - Dev instance: `dev/` has a Proxmox setup script and `dev/deploy.sh`
-  (build, rsync runtime files, enable the app). Dev VM is Proxmox VM 102 `nc-dev`
-  on host `pve` (reachable over Tailscale as `user@proxmox-host`).
-  Real forms live on dev. Export them (form menu, Export) before dropping tables or removing
-  the app, and ask Adam first. MariaDB there keeps a row-format binlog, which saved the forms once.
-- Live release and deploy: see `docs/RELEASING.md` ("Deploy to the live site"). Push a `v<version>` tag,
-  then run `dev/live-install.sh` on the server. Ploi cannot deploy that site (no repository).
+  (build, rsync runtime files, enable the app). Real forms may live on dev: export them before
+  dropping tables or removing the app, and ask the owner first.
+- Releases: push a `v<version>` tag, GitHub Actions builds the archive, and
+  `tools/install-release.sh` installs it on a server. See `docs/RELEASING.md`.
+- Hosts, addresses, accounts and deploy targets are in `CLAUDE.local.md`, which is not in git.
+  Keep that kind of detail out of tracked files.
 
 ## Status
 
@@ -71,8 +70,7 @@ responses, delivery log, CSV export), actions pipeline (email, webhook, message,
 retries), builder (fields, logic, actions, settings, multi-page, design tab, drag and drop
 with live preview, row moves, resize handles, text alignment, hide required indicator).
 
-Verified on the dev instance by hand (deploy with `dev/deploy.sh user@dev-host`;
-`user@proxmox-host` is the Proxmox host and is the wrong target). Not yet verified: `info.xml`
+Verified on the dev instance by hand. Not yet verified: `info.xml`
 against the app store XSD, a fresh install migration, rate-limit attributes under load.
 
 Phase 7 so far: security pass done (account deletion now cleans up forms and responses),

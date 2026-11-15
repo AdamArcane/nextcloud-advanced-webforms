@@ -9,3 +9,5 @@ build/
 .vscode/
 .phpunit.cache/
 dist/
+
+CLAUDE.local.md

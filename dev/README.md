@@ -12,32 +12,26 @@ Docker.
 1. Copy `proxmox-nextcloud-lxc.sh` to the Proxmox host and run it as root:
 
    ```
-   scp dev/proxmox-nextcloud-lxc.sh user@proxmox-host:/tmp/
-   ssh -t user@proxmox-host 'sudo bash /tmp/proxmox-nextcloud-lxc.sh'
+   scp dev/proxmox-nextcloud-lxc.sh <user>@<proxmox host>:/tmp/
+   ssh -t <user>@<proxmox host> 'sudo bash /tmp/proxmox-nextcloud-lxc.sh'
    ```
 
    Override defaults with environment variables (`CTID`, `STORAGE`, `BRIDGE`,
    `SSH_KEYS_FILE`, `NC_IMAGE`, ...). `SSH_KEYS_FILE` should point at a file of
-   public keys, so `dev/deploy.sh` can log in as root in the container.
+   public keys, so `dev/deploy.sh` can log in to the container.
 
 2. From the repo on your laptop, build, sync and enable the app:
 
    ```
-   dev/deploy.sh <user>@<host ip or tailscale name>
+   dev/deploy.sh <user>@<container or VM address>
    ```
 
-   The current dev box is a full VM (Proxmox VM 102, `nc-dev`), not an LXC. Root
-   login is disabled there; use the `youruser` user, which owns `/opt/nc-dev` and is
-   in the `docker` group. Find its IP with
-   `ssh user@proxmox-host 'sudo qm guest cmd 102 network-get-interfaces'`.
-
-   ```
-   dev/deploy.sh youruser@<vm ip>
-   ```
+   The login user must own `/opt/nc-dev` and be able to run `docker compose`
+   (for example be in the `docker` group). The script also works against a full VM
+   instead of an LXC, as long as it has the same `/opt/nc-dev` Docker layout.
 
 3. Open `http://<container ip>/`, log in as `admin` with the printed password,
-   create a form through the API (the builder UI does not exist yet) and open
-   `/index.php/apps/webforms/f/<token>`.
+   enable the app if needed, and create a form from the Webforms menu.
 
 Notes:
 
@@ -47,5 +41,3 @@ Notes:
   both). If containers refuse to start, check the Proxmox version and AppArmor.
 - The container is not on Tailscale by default. Install it inside the container
   if you want a stable name.
-- Real PHPUnit can be run here once the repo is in the container, since
-  Packagist is reachable from your network (it is not from my workspace).
