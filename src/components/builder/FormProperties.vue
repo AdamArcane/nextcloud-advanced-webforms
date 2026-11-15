@@ -4,7 +4,7 @@
 -->
 
 <script setup lang="ts">
-import type { DraftDefinition, FormDesign, FormSettings } from '../../types.ts'
+import type { DraftDefinition, FormDesign, FormSettings, OwnerForm } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -13,9 +13,9 @@ import Icon from '../common/Icon.vue'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { ref } from 'vue'
 import { DEFAULT_ACCENT, DEFAULT_BACKGROUND_COLOR, safeColor } from '../../design.ts'
 import SegmentedControl from './SegmentedControl.vue'
+import SharePanel from './SharePanel.vue'
 
 defineProps<{
 	/** Which page of the settings to show. */
@@ -24,6 +24,8 @@ defineProps<{
 	/** The public link, once the form has been published. */
 	shareUrl: string | null
 	archived?: boolean
+	/** The form itself, for the sharing options that are saved apart from the draft. */
+	form?: OwnerForm | null
 }>()
 
 const emit = defineEmits<{
@@ -32,27 +34,9 @@ const emit = defineEmits<{
 	settings: [patch: Partial<FormSettings>]
 	archive: []
 	delete: []
+	/** The sharing options were saved; this is the form as the server has it now. */
+	share: [form: OwnerForm]
 }>()
-
-const copied = ref(false)
-
-async function copy(url: string): Promise<void> {
-	try {
-		await navigator.clipboard.writeText(url)
-	} catch {
-		// navigator.clipboard only exists on secure origins, and a dev server is often plain http.
-		const area = document.createElement('textarea')
-		area.value = url
-		document.body.append(area)
-		area.select()
-		document.execCommand('copy')
-		area.remove()
-	}
-	copied.value = true
-	setTimeout(() => {
-		copied.value = false
-	}, 2000)
-}
 
 /** Change one design option; `undefined` puts it back to the default, and an empty design is dropped. */
 function setDesign(current: FormDesign | undefined, patch: Partial<FormDesign>): void {
@@ -201,22 +185,19 @@ function str(value: string | number): string | undefined {
 			</section>
 		</template>
 
-		<section v-if="section === 'sharing'" class="af-form-props__section">
+		<SharePanel v-if="section === 'sharing' && form"
+			:form="form"
+			:require-login="definition.settings.requireLogin === true"
+			@changed="(saved: OwnerForm) => emit('share', saved)" />
+		<section v-else-if="section === 'sharing'" class="af-form-props__section">
 			<h3 class="af-form-props__heading">
 				{{ t('webforms', 'Public link') }}
 			</h3>
-			<template v-if="shareUrl">
-				<NcTextField :model-value="shareUrl"
-					:label="t('webforms', 'Public link')"
-					readonly
-					@focus="($event.target as HTMLInputElement).select()" />
-				<NcButton variant="secondary" @click="copy(shareUrl)">
-					<template #icon>
-						<Icon :path="icons.copy" />
-					</template>
-					{{ copied ? t('webforms', 'Copied') : t('webforms', 'Copy link') }}
-				</NcButton>
-			</template>
+			<NcTextField v-if="shareUrl"
+				:model-value="shareUrl"
+				:label="t('webforms', 'Public link')"
+				readonly
+				@focus="($event.target as HTMLInputElement).select()" />
 			<p v-else class="af-form-props__hint">
 				{{ t('webforms', 'Publish the form to get a link you can share.') }}
 			</p>

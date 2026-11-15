@@ -76,8 +76,9 @@ class SubmissionService {
 	 * @throws FormClosedException
 	 * @throws LoginRequiredException
 	 */
-	public function getPublic(string $token, ?string $userId): array {
-		$form = $this->forms->findByToken($token);
+	public function getPublic(string $token, ?string $userId, bool $embedded = false): array {
+		$form = $this->findForm($token, $embedded);
+		$userId = $embedded ? null : $userId;
 		$version = $this->openVersion($form, $userId);
 		$definition = $version->getDefinitionArray();
 		unset($definition['actions']);
@@ -117,8 +118,10 @@ class SubmissionService {
 		string $honeypot,
 		string $captcha = '',
 		string $remoteIp = '',
+		bool $embedded = false,
 	): array {
-		$form = $this->forms->findByToken($token);
+		$form = $this->findForm($token, $embedded);
+		$userId = $embedded ? null : $userId;
 		$latest = $this->openVersion($form, $userId);
 
 		$version = $versionId === $latest->getId() ? $latest : $this->versions->find($versionId);
@@ -216,8 +219,9 @@ class SubmissionService {
 	 * @throws LoginRequiredException
 	 * @throws ValidationException
 	 */
-	public function upload(string $token, ?string $userId, int $versionId, string $fieldId, string $fillToken, ?array $file): array {
-		$form = $this->forms->findByToken($token);
+	public function upload(string $token, ?string $userId, int $versionId, string $fieldId, string $fillToken, ?array $file, bool $embedded = false): array {
+		$form = $this->findForm($token, $embedded);
+		$userId = $embedded ? null : $userId;
 		$latest = $this->openVersion($form, $userId);
 		$version = $versionId === $latest->getId() ? $latest : $this->versions->find($versionId);
 		if ($version->getFormId() !== $form->getId()) {
@@ -288,6 +292,21 @@ class SubmissionService {
 	 * @throws FormClosedException
 	 * @throws LoginRequiredException
 	 */
+	/**
+	 * The form behind a public address. An embedded request (docs/SCHEMA.md section 18.3) comes from a
+	 * frame on another website: it is only answered for a form that allows embedding, and its caller is
+	 * always treated as anonymous, because those endpoints do without the request token.
+	 *
+	 * @throws NotFoundException
+	 */
+	private function findForm(string $token, bool $embedded): Form {
+		$form = $this->forms->findByToken($token);
+		if ($embedded && !$form->isEmbeddable()) {
+			throw new NotFoundException();
+		}
+		return $form;
+	}
+
 	private function openVersion(Form $form, ?string $userId): \OCA\Webforms\Db\Version {
 		if ($form->getStatus() === Form::STATUS_UNPUBLISHED || $form->getLatestVersionId() === null) {
 			throw new NotFoundException();

@@ -5,4 +5,4 @@
  */
 ?>
 
-<div id="webforms-public" data-token="<?php p($_['token']); ?>"></div>
+<div id="webforms-public" data-token="<?php p($_['token']); ?>" data-embed="<?php p(($_['embed'] ?? false) ? '1' : '0'); ?>"></div>

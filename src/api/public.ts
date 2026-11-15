@@ -7,14 +7,23 @@ import type { PublicForm, SubmitResult } from '../types.ts'
 import type { PowChallenge } from '../captcha/pow.ts'
 
 import axios from '@nextcloud/axios'
+import { isEmbedded } from '../embedded.ts'
 import { toApiError, url } from './http.ts'
 
 // Kept so existing imports of ApiError from this module keep working.
 export { ApiError } from './http.ts'
 
+/**
+ * The address of a call for one form. An embedded form uses the `embed` routes, which work without the
+ * session cookie a browser will not send from a frame on another website.
+ */
+function formUrl(token: string, action: '' | '/submit' | '/upload'): string {
+	return url('/public/' + encodeURIComponent(token) + (isEmbedded() ? '/embed' : '') + action)
+}
+
 export async function fetchPublicForm(token: string): Promise<PublicForm> {
 	try {
-		const response = await axios.get<PublicForm>(url('/public/' + encodeURIComponent(token)))
+		const response = await axios.get<PublicForm>(formUrl(token, ''))
 		return response.data
 	} catch (error) {
 		throw toApiError(error)
@@ -32,7 +41,7 @@ export interface SubmitBody {
 
 export async function submitPublicForm(token: string, body: SubmitBody): Promise<SubmitResult> {
 	try {
-		const response = await axios.post<SubmitResult>(url('/public/' + encodeURIComponent(token) + '/submit'), body)
+		const response = await axios.post<SubmitResult>(formUrl(token, '/submit'), body)
 		return response.data
 	} catch (error) {
 		throw toApiError(error)
@@ -59,7 +68,7 @@ export async function uploadPublicFile(
 	body.append('fillToken', context.fillToken)
 	body.append('file', file)
 	try {
-		const response = await axios.post<UploadedFile>(url('/public/' + encodeURIComponent(token) + '/upload'), body, {
+		const response = await axios.post<UploadedFile>(formUrl(token, '/upload'), body, {
 			onUploadProgress: (event) => onProgress(event.total ? event.loaded / event.total : 0),
 		})
 		return response.data
