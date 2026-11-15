@@ -141,6 +141,19 @@ class FormController extends Controller {
 		));
 	}
 
+	/**
+	 * Sharing options: the custom address and embedding (docs/SCHEMA.md section 18).
+	 *
+	 * @param list<string> $embedOrigins
+	 */
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'PUT', url: '/api/v1/forms/{id}/share')]
+	public function setShare(int $id, ?string $slug = null, bool $embed = false, array $embedOrigins = []): JSONResponse {
+		return $this->guard(fn (): JSONResponse => new JSONResponse(
+			$this->service->toArray($this->service->setShare($this->userId(), $id, $slug, $embed, $embedOrigins)),
+		));
+	}
+
 	#[NoAdminRequired]
 	#[FrontpageRoute(verb: 'PUT', url: '/api/v1/forms/{id}/archived')]
 	public function setArchived(int $id, bool $archived = false): JSONResponse {

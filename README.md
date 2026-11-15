@@ -42,7 +42,8 @@ store yet, so you install it from a GitHub release. Please back up before you up
   submitted against. Drafts autosave.
 - **Import and export** a whole form as a file (definition only: no responses or secrets), and
   **archive** forms you no longer use.
-- **Sharing.** Public forms by link (`/apps/webforms/f/<token>`). Any user can create forms.
+- **Sharing.** Public forms by link (`/apps/webforms/f/<token>`), with an optional custom address, a QR
+  code, and code to embed the form in another website. Any user can create forms.
 
 Not included: payments, calculations, PDF generation, theming and custom CSS. Storing responses in
 Nextcloud Tables is a destination, not a storage backend (see the roadmap).

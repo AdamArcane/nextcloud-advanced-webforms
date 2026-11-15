@@ -5,6 +5,14 @@
 
 # Changelog
 
+## Unreleased
+
+- More ways to share a form, under Settings, Sharing. Give a form a custom address such as
+  `/apps/webforms/f/contact` beside its random link. Download a QR code of the link as PNG or SVG. Allow
+  other websites to embed the form in a frame, for any website or only the ones you list, and copy the
+  code as plain HTML or with a short script that fits the frame to the form. Embedding is off until you
+  switch it on for a form. See `docs/SCHEMA.md` section 18.
+
 ## 0.3.3 - 2026-11-15
 
 - A summary above the responses: responses per day (per month for long periods), how often each choice

@@ -1053,3 +1053,71 @@ answers what the matching responses add up to:
   and with the arrow keys, horizontal bars in the form's own option order with the count and share at
   the tip, and figures (not a chart) for numbers. Screen readers get the timeline as a table. It follows
   the filters, and whether it is open is remembered in the browser.
+
+## 18. Sharing (DECISION)
+
+How a form reaches people: its link, a custom address, a QR code, and a frame on another website. These
+options belong to the form, not to a published version. They are columns on `advforms_forms`, they are
+saved with `PUT /api/v1/forms/{id}/share` (`slug`, `embed`, `embedOrigins`) and take effect at once,
+without publishing. They are not part of the definition, so they are not in an export file and an
+imported form starts without them.
+
+### 18.1 Link and custom address
+
+- Publishing gives a form a random token, and `/apps/webforms/f/<token>` is its link. That does not
+  change.
+- A form can also have one custom address (`slug`), for example `/apps/webforms/f/contact`. Both
+  addresses lead to the same form, and every public route that takes a token takes the custom address
+  too. A lookup tries the token first, so a custom address can never take over another form's link.
+- A custom address is 3 to 64 characters: lowercase letters, digits and hyphens, starting and ending
+  with a letter or digit, with no two hyphens in a row (`slug_invalid`). A few words the app's own
+  addresses use are refused (`slug_reserved`). It is unique on the server, first come first served
+  (`slug_taken`), and a form keeps it while archived. Deleting the form or clearing the field frees it.
+- A custom address can be guessed, which the token cannot. The form still has to be published and open
+  to be seen, and `requireLogin` still applies. The builder says so where the address is set.
+- Changing or removing a custom address breaks links, QR codes and embed codes that used it. The token
+  link keeps working.
+- It can be set before the first publish. It leads nowhere until the form is published.
+
+### 18.2 QR code
+
+The builder draws a QR code of the link (the custom address when there is one) and offers it as PNG
+and SVG. It is made in the browser from the link alone, black on white with the standard quiet zone,
+at error correction level M. Nothing is stored and no service is called.
+
+### 18.3 Embedding in another website
+
+Off by default. `embed` (boolean) allows it for a form, and `embedOrigins` optionally limits it to a
+list of at most 20 websites, each written as an origin: scheme, host and optional port, with an optional
+leading `*.` for subdomains (`embed_origins_invalid` otherwise). An empty list allows any website.
+
+- **The page.** `/apps/webforms/f/<token>/embed` is the form without Nextcloud's header and page
+  background. Nextcloud forbids framing by other sites, so for a form that allows embedding this page
+  answers with a `frame-ancestors` policy naming the listed origins, or `*`. For any other form, and
+  for an address that leads nowhere, nothing is opened up and the browser refuses to draw the frame.
+  The ordinary page `/f/<token>` can never be framed. Origins are validated when saved and again when
+  read, because they end up in a response header.
+- **No session.** A browser does not send Nextcloud's session cookie from a frame on another site, so
+  a request token can never match there. The embedded form therefore uses its own routes, which do
+  without the request token: `GET /api/v1/public/{token}/embed`, `POST .../embed/submit` and
+  `POST .../embed/upload`. They answer `404` unless the form allows embedding, and they always treat
+  the respondent as anonymous, even if a session cookie did arrive. That is what makes leaving out the
+  request token safe: there is no signed-in identity for another site to act as. Everything else is
+  the same as section 10: fill token, honeypot, spam check and rate limits.
+- **Consequences of being anonymous.** A form with `requireLogin` shows "login required" in the frame
+  with a link that opens the form on its own page. Upload fields limited to signed-in users cannot be
+  used. `allowMultipleSubmissions: false` has nothing to go by, as for any anonymous respondent.
+- **Height.** A frame cannot size itself to its content. The builder shows one code with a switch: a plain
+  `<iframe>` of a fixed height (HTML only, the form scrolls inside it), or the same with a short
+  script. The embedded page posts `{ type: "webforms:height", height }` to its parent whenever its
+  height changes, and the script sets the frame's height from messages that come from that frame.
+- **Look.** The embedded page has a transparent background, so the website shows around the form, and
+  it is as tall as the form instead of pinned to the window. It always uses the light theme and the
+  light colour scheme: the form cannot see how the website looks, and a browser paints a solid backdrop
+  behind a frame whose colour scheme differs from the page around it. A website that declares a dark
+  colour scheme therefore gets a white backdrop. The form's own design settings (card, accent colour,
+  background colour) apply as usual.
+- **Redirect.** A `redirect` action takes the whole page to the address, not only the frame. If the
+  browser does not allow that, the frame itself goes there.
+- **Not done yet.** A server-wide switch for administrators to forbid embedding, and a form rendered
+  as plain HTML with no script (ROADMAP.md).
