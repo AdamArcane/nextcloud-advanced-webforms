@@ -22,8 +22,9 @@ rules semantics, actions, versioning and the submit algorithm.
   forms. Public link only. No payments.
 - File uploads are in (docs/SCHEMA.md 4.6): per field audience and storage, limited by the
   owner's own Nextcloud permissions, checked on publish and on every submission.
-- Deferred: theming, Nextcloud Tables as an
-  optional entry storage backend (all entry access goes through `EntryMapper`).
+- Deferred: theming. Tables is an after-submit action, not a storage backend (decision in
+  `docs/ROADMAP.md`); all entry access still goes through `EntryMapper`. Planned work is in
+  `docs/ROADMAP.md`.
 - Never use em dashes in any text written for the owner.
 - Commits carry the Claude co-author trailer. Push to `main` is fine.
 

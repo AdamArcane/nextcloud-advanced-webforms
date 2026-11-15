@@ -657,11 +657,8 @@ Initial proposal, one row per entry:
 | `data` | JSON text, keyed by field ID, only visible fields |
 
 Entry access goes through one class (`EntryMapper`) so the storage can be
-swapped. **Planned integration:** an optional backend that stores submissions
-as rows in Nextcloud Tables (one table per form, one column per field, mapped
-from the entry's version). Open design points: how a field rename or type change
-maps to Tables columns, whether the table is created and owned by the form
-owner, and whether entries are written to both stores or only to Tables.
+swapped. Tables is not a storage backend: it is an after-submit action (section 15), and the built-in
+store stays the source of truth. The reasons, and when to revisit, are in `docs/ROADMAP.md`.
 
 ### 9.1 CSV export
 
@@ -774,9 +771,10 @@ vectors first, and both test suites must pass.
    before adding a dependency.
 8. Markdown renderer and sanitizer: choose during implementation, preferring
    whatever the Nextcloud frontend stack already provides over a new dependency.
-9. Nextcloud Tables as an entry storage backend (see section 9): decide the
-   column mapping, ownership and sharing model, and the failure behaviour when
-   Tables is unavailable. Not in v1.
+9. Nextcloud Tables as an entry storage backend: decided against for now, see
+   `docs/ROADMAP.md`. Only revisit for a Tables-only mode, which needs the column
+   mapping, ownership and sharing model, and the failure behaviour when Tables is
+   unavailable.
 10. Case-insensitive text comparison uses full Unicode lowercasing in both PHP
    (`mb_strtolower`) and JavaScript (`toLowerCase`). They agree for common text,
    but unusual characters (for example context-dependent letter forms) may

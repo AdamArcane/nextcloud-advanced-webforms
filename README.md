@@ -43,7 +43,7 @@ store yet, so you install it from a GitHub release. Please back up before you up
 - **Sharing.** Public forms by link (`/apps/webforms/f/<token>`). Any user can create forms.
 
 Not included: payments, calculations, PDF generation, theming and custom CSS. Storing responses in
-Nextcloud Tables is planned as an optional backend.
+Nextcloud Tables is a destination, not a storage backend (see the roadmap).
 
 ## Requirements
 
@@ -91,6 +91,8 @@ Administrators pick the spam check for the whole server under Administration set
 
 - [docs/SCHEMA.md](docs/SCHEMA.md): the form definition format, rules semantics, action pipeline,
   versioning and submit algorithm.
+- [docs/ROADMAP.md](docs/ROADMAP.md): what is planned and why, and what is missing compared with
+  other form builders.
 - [docs/RELEASING.md](docs/RELEASING.md): building and installing a release.
 - [CHANGELOG.md](CHANGELOG.md)
 
