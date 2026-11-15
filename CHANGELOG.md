@@ -5,7 +5,12 @@
 
 # Changelog
 
-## 0.3.0 - Unreleased
+## 0.3.1 - 2026-11-15
+
+- First release build. The app ID is now `webforms`, so public links are `/apps/webforms/f/<token>`.
+  Release archives are built by GitHub Actions on `v*` tags.
+
+## 0.3.0 - 2026-11-14
 
 - Archive forms. The three dot menu in the sidebar and the form settings both have Archive; archived
   forms move to a collapsible Archived section in the sidebar where they can be opened, exported and
