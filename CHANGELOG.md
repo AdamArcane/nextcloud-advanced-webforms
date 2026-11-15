@@ -5,6 +5,15 @@
 
 # Changelog
 
+## Unreleased
+
+- Administration settings under "Forms and responses": switch action types off for the whole server
+  (hidden in the builder, refused at publish, and stopped on live forms), delete responses
+  automatically after a number of days (off by default, with a count of what would be deleted and a
+  confirmation before existing responses go), cap responses per form, lower the number of actions per
+  form, and limit who can create forms to chosen groups. Everything defaults to the old behaviour. See
+  `docs/SCHEMA.md` section 16.
+
 ## 0.3.2 - 2026-11-15
 
 - Nextcloud events for Flow and other automation: a response was submitted, a response was deleted,

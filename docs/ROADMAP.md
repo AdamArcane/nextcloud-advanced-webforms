@@ -21,12 +21,9 @@ after-submit action (see the decision below). The work here makes that model com
 1. **Send existing responses to a destination (backfill).** Adding a Tables action after responses
    were collected leaves the old ones behind. A "send existing responses" button on the action replays
    them through the same queue, with the same retries and delivery log.
-2. **Administration settings for destinations.** Server wide policy, next to the spam check that
-   already lives under Administration settings:
-   - which action types are allowed (for example, switch webhooks off);
-   - how long responses are kept, with automatic deletion;
-   - limits (responses per form, actions per form);
-   - defaults for destinations.
+2. **Administration settings.** Done: allowed action types, response retention, limits per form and who
+   can create forms (SCHEMA.md section 16). Still open: defaults for destinations, such as a default
+   Tables folder or sender address.
 3. **Files destination.** Append each response to a CSV file in the form owner's Files. Real
    spreadsheet formats are harder, since Nextcloud has no native spreadsheet storage, and wait until
    there is demand.

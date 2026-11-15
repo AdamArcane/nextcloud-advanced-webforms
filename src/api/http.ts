@@ -15,6 +15,8 @@ export class ApiError extends Error {
 		public readonly code: string,
 		public readonly errors: FieldError[] = [],
 		public readonly serverMessage: string | null = null,
+		/** The rest of the response body, for errors that carry numbers (like how many responses would be deleted). */
+		public readonly data: Record<string, unknown> = {},
 	) {
 		super(code)
 		this.name = 'ApiError'
@@ -23,8 +25,8 @@ export class ApiError extends Error {
 
 export function toApiError(error: unknown): ApiError {
 	if (isAxiosError(error) && error.response) {
-		const body = (error.response.data ?? {}) as { error?: string, errors?: FieldError[], message?: string }
-		return new ApiError(error.response.status, body.error ?? 'failed', body.errors ?? [], body.message ?? null)
+		const body = (error.response.data ?? {}) as { error?: string, errors?: FieldError[], message?: string } & Record<string, unknown>
+		return new ApiError(error.response.status, body.error ?? 'failed', body.errors ?? [], body.message ?? null, body)
 	}
 	return new ApiError(0, 'network')
 }

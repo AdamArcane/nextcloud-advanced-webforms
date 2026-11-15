@@ -14,6 +14,11 @@ import BuilderView from './BuilderView.vue'
 const getFormMock = vi.fn()
 const saveDraftMock = vi.fn()
 const publishMock = vi.fn()
+vi.mock('../../api/settings.ts', () => {
+	const open = { canCreate: true, allowedActionTypes: ['message', 'redirect', 'email', 'webhook', 'tables'], maxActions: 10 }
+	return { OPEN_POLICY: open, fetchUserPolicy: () => Promise.resolve(open) }
+})
+
 vi.mock('../../api/forms.ts', () => ({
 	getForm: (...args: unknown[]) => getFormMock(...args),
 	saveDraft: (...args: unknown[]) => saveDraftMock(...args),
