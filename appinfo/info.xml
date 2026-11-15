@@ -47,6 +47,8 @@ This app is in early development.
 	<settings>
 		<admin>OCA\Webforms\Settings\AdminSettings</admin>
 		<admin-section>OCA\Webforms\Settings\AdminSection</admin-section>
+		<personal>OCA\Webforms\Settings\PersonalSettings</personal>
+		<personal-section>OCA\Webforms\Settings\PersonalSection</personal-section>
 	</settings>
 
 	<navigations>

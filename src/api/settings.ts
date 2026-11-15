@@ -30,3 +30,26 @@ export async function fetchUserPolicy(): Promise<UserPolicy> {
 		return OPEN_POLICY
 	}
 }
+
+/** The signed-in user's own preferences, set under Personal settings. */
+export interface UserPreferences {
+	/** Picking a published form with no unpublished changes opens its responses instead of the editor. */
+	openPublishedOnResponses: boolean
+}
+
+export const DEFAULT_PREFERENCES: UserPreferences = {
+	openPublishedOnResponses: true,
+}
+
+export async function fetchUserPreferences(): Promise<UserPreferences> {
+	try {
+		return { ...DEFAULT_PREFERENCES, ...(await axios.get<UserPreferences>(url('/preferences'))).data }
+	} catch {
+		return DEFAULT_PREFERENCES
+	}
+}
+
+/** Rejects when the preferences could not be saved. */
+export async function saveUserPreferences(preferences: UserPreferences): Promise<UserPreferences> {
+	return (await axios.put<UserPreferences>(url('/preferences'), preferences)).data
+}

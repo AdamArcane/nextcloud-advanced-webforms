@@ -5,6 +5,12 @@
 
 # Changelog
 
+## Unreleased
+
+- Picking a published form that has no unpublished changes now opens its responses instead of the
+  editor. Drafts, closed forms and forms with unpublished changes still open in the editor. Each user
+  can switch this off under Personal settings, "Advanced Webforms". See `docs/SCHEMA.md` section 16.1.
+
 ## 0.3.3 - 2026-11-15
 
 - A summary above the responses: responses per day (per month for long periods), how often each choice

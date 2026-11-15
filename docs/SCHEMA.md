@@ -968,6 +968,20 @@ of allowed actions allows none, the safe side.
   user can read `GET /api/v1/settings` (`canCreate`, `allowedActionTypes`, `maxActions`), which the
   builder uses to hide what the server would refuse.
 
+### 16.1 Personal preferences
+
+Each user has their own preferences under Personal settings, "Advanced Webforms". They are user config,
+so they are removed with the account, and they change nothing about forms or other people.
+
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| Open published forms on their responses | on | picking a form in the list opens its responses when the form is published and has no unpublished changes |
+
+- Drafts, closed forms and published forms with unpublished changes always open in the editor, and so
+  does the address `#/f/<id>` when it is typed or shared: only the links in the form list change.
+- Endpoints (any signed-in user, own preferences only): `GET` and `PUT /api/v1/preferences` with
+  `openPublishedOnResponses` (boolean).
+
 ## 17. Finding responses
 
 `GET /api/v1/forms/{id}/entries` takes a filter besides `limit` and `offset`. The answer has `total` (how

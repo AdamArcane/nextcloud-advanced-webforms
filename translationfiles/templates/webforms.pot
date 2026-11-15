@@ -43,7 +43,7 @@ msgstr ""
 msgid "{n} selected responses"
 msgstr ""
 
-#: src/App.vue:199
+#: src/App.vue:217
 msgid "{title} (unpublished changes)"
 msgstr ""
 
@@ -232,6 +232,10 @@ msgstr ""
 msgid "Advanced"
 msgstr ""
 
+#: src/PersonalApp.vue:39
+msgid "Advanced Webforms"
+msgstr ""
+
 #: src/components/builder/FieldProperties.vue:306
 #: src/components/builder/FieldProperties.vue:322
 msgid "Alignment"
@@ -316,7 +320,11 @@ msgstr ""
 msgid "Applies to people who are not logged in. Form owners can turn the check off for a single form. Every form also has a hidden trap field, a minimum fill time and a rate limit."
 msgstr ""
 
-#: src/App.vue:224
+#: src/PersonalApp.vue:48
+msgid "Applies when you pick a published form that has no unpublished changes. Drafts, closed forms and forms with unpublished changes open in the editor."
+msgstr ""
+
+#: src/App.vue:242
 #: src/components/builder/FormProperties.vue:254
 msgid "Archive"
 msgstr ""
@@ -325,7 +333,7 @@ msgstr ""
 msgid "Archive form"
 msgstr ""
 
-#: src/App.vue:231
+#: src/App.vue:249
 #: src/components/builder/BuilderView.vue:447
 msgid "Archived"
 msgstr ""
@@ -383,7 +391,7 @@ msgstr ""
 msgid "Body"
 msgstr ""
 
-#: src/App.vue:316
+#: src/App.vue:334
 msgid "Build forms with conditional fields and flexible layouts. Responses stay on your server."
 msgstr ""
 
@@ -474,7 +482,7 @@ msgstr ""
 msgid "Choose a folder for the uploaded files"
 msgstr ""
 
-#: src/App.vue:325
+#: src/App.vue:343
 msgid "Choose a form from the list to edit it, or create a new one."
 msgstr ""
 
@@ -536,7 +544,7 @@ msgstr ""
 msgid "Clear selection"
 msgstr ""
 
-#: src/App.vue:173
+#: src/App.vue:191
 msgid "Closed"
 msgstr ""
 
@@ -579,7 +587,7 @@ msgstr ""
 msgid "Copy this secret now. It will not be shown again."
 msgstr ""
 
-#: src/App.vue:288
+#: src/App.vue:306
 #: src/components/builder/BuilderView.vue:504
 msgid "Could not change the archive state. Try again."
 msgstr ""
@@ -588,7 +596,7 @@ msgstr ""
 msgid "Could not create a secret. Try again."
 msgstr ""
 
-#: src/App.vue:294
+#: src/App.vue:312
 msgid "Could not create the form."
 msgstr ""
 
@@ -604,7 +612,7 @@ msgstr ""
 msgid "Could not delete the responses."
 msgstr ""
 
-#: src/App.vue:138
+#: src/App.vue:156
 msgid "Could not import the form."
 msgstr ""
 
@@ -637,7 +645,7 @@ msgstr ""
 msgid "Could not load the table columns."
 msgstr ""
 
-#: src/App.vue:282
+#: src/App.vue:300
 msgid "Could not load your forms."
 msgstr ""
 
@@ -647,6 +655,10 @@ msgstr ""
 
 #: src/components/builder/BuilderView.vue:167
 msgid "Could not save"
+msgstr ""
+
+#: src/PersonalApp.vue:31
+msgid "Could not save the setting."
 msgstr ""
 
 #: src/components/admin/PolicyAdmin.vue:130
@@ -669,7 +681,7 @@ msgstr ""
 msgid "Create table"
 msgstr ""
 
-#: src/App.vue:315
+#: src/App.vue:333
 msgid "Create your first form"
 msgstr ""
 
@@ -828,7 +840,7 @@ msgstr ""
 msgid "Download responses"
 msgstr ""
 
-#: src/App.vue:174
+#: src/App.vue:192
 #: src/components/builder/BuilderView.vue:451
 msgid "Draft"
 msgstr ""
@@ -953,12 +965,12 @@ msgstr ""
 msgid "Excel (.xlsx)"
 msgstr ""
 
-#: src/App.vue:209
-#: src/App.vue:257
+#: src/App.vue:227
+#: src/App.vue:275
 msgid "Export draft"
 msgstr ""
 
-#: src/App.vue:218
+#: src/App.vue:236
 msgid "Export published version"
 msgstr ""
 
@@ -1058,7 +1070,7 @@ msgstr ""
 msgid "Form width"
 msgstr ""
 
-#: src/App.vue:181
+#: src/App.vue:199
 msgid "Forms"
 msgstr ""
 
@@ -1160,6 +1172,10 @@ msgstr ""
 msgid "Highest"
 msgstr ""
 
+#: src/PersonalApp.vue:40
+msgid "How the app behaves for you. These settings do not affect other people or your forms."
+msgstr ""
+
 #: src/components/entries/EntriesView.vue:575
 msgid "How to show responses"
 msgstr ""
@@ -1176,7 +1192,7 @@ msgstr ""
 msgid "Images"
 msgstr ""
 
-#: src/App.vue:263
+#: src/App.vue:281
 msgid "Import form"
 msgstr ""
 
@@ -1533,8 +1549,8 @@ msgstr ""
 msgid "Never used"
 msgstr ""
 
-#: src/App.vue:183
-#: src/App.vue:319
+#: src/App.vue:201
+#: src/App.vue:337
 msgid "New form"
 msgstr ""
 
@@ -1688,6 +1704,10 @@ msgstr ""
 #: src/components/builder/BuilderView.vue:467
 #: src/components/builder/BuilderView.vue:468
 msgid "Open published form"
+msgstr ""
+
+#: src/PersonalApp.vue:45
+msgid "Open published forms on their responses"
 msgstr ""
 
 #: src/components/builder/OptionsEditor.vue:36
@@ -1862,7 +1882,7 @@ msgstr ""
 msgid "Publish the form to get a link you can share."
 msgstr ""
 
-#: src/App.vue:172
+#: src/App.vue:190
 #: src/components/builder/BuilderView.vue:449
 msgid "Published"
 msgstr ""
@@ -1972,7 +1992,7 @@ msgstr ""
 msgid "Responses per month"
 msgstr ""
 
-#: src/App.vue:249
+#: src/App.vue:267
 msgid "Restore"
 msgstr ""
 
@@ -2055,7 +2075,7 @@ msgstr ""
 msgid "Select a field on the canvas to set up its rules."
 msgstr ""
 
-#: src/App.vue:324
+#: src/App.vue:342
 msgid "Select a form"
 msgstr ""
 
@@ -2398,7 +2418,7 @@ msgstr ""
 msgid "The default value is not valid."
 msgstr ""
 
-#: src/App.vue:200
+#: src/App.vue:218
 msgid "The draft has changes that are not published yet"
 msgstr ""
 
@@ -2764,7 +2784,7 @@ msgstr ""
 msgid "Try a different search, or clear the filters."
 msgstr ""
 
-#: src/App.vue:284
+#: src/App.vue:302
 #: src/components/entries/DeliveryRow.vue:76
 #: src/components/entries/EntriesView.vue:516
 msgid "Try again"
@@ -2792,7 +2812,7 @@ msgstr ""
 msgid "Untitled field"
 msgstr ""
 
-#: src/App.vue:94
+#: src/App.vue:112
 msgid "Untitled form"
 msgstr ""
 
@@ -2982,7 +3002,7 @@ msgstr ""
 msgid "You cannot add rows to the table this action points at (it may have been deleted or unshared). Pick another table."
 msgstr ""
 
-#: src/App.vue:291
+#: src/App.vue:309
 msgid "You cannot create forms on this server. Ask an administrator to add you to a group that can."
 msgstr ""
 
