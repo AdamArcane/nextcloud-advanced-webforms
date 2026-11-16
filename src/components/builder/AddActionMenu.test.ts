@@ -40,6 +40,16 @@ describe('add action menu', () => {
 		wrapper.unmount()
 	})
 
+	it('fits the list into the room left below the button', async () => {
+		const height = window.innerHeight
+		Object.defineProperty(window, 'innerHeight', { configurable: true, value: 500 })
+		const wrapper = await opened(['message', 'redirect', 'email', 'webhook', 'tables', 'files'])
+		// happy-dom lays nothing out, so the button sits at the top: 500 - 0 - 16 is left.
+		expect(document.body.querySelector<HTMLElement>('.af-add-action')!.style.maxHeight).toBe('min(560px, 484px)')
+		wrapper.unmount()
+		Object.defineProperty(window, 'innerHeight', { configurable: true, value: height })
+	})
+
 	it('cannot be opened when disabled or empty', () => {
 		expect(mount(AddActionMenu, { props: { types: ['message'], disabled: true } }).find('button').attributes('disabled')).toBeDefined()
 		expect(mount(AddActionMenu, { props: { types: [] } }).find('button').attributes('disabled')).toBeDefined()

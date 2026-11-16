@@ -9,7 +9,7 @@ import type { ActionType } from '../../types.ts'
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcPopover from '@nextcloud/vue/components/NcPopover'
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { actionHint, actionLabel } from '../../builder/labels.ts'
 import { actionTypeIcons, icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
@@ -25,6 +25,33 @@ const emit = defineEmits<{
 }>()
 
 const open = ref(false)
+const trigger = ref<{ $el: HTMLElement } | null>(null)
+/** Room below the button, in pixels. Null keeps the size from the style sheet. */
+const room = ref<number | null>(null)
+
+/**
+ * The list floats above the page, so the page does not scroll to show the rest of it. On a short
+ * screen, such as a phone, it gets the height that is left below the button and scrolls inside.
+ */
+function measure(): void {
+	const button = trigger.value?.$el
+	if (!button || typeof button.getBoundingClientRect !== 'function') {
+		room.value = null
+		return
+	}
+	const viewport = window.visualViewport?.height ?? window.innerHeight
+	room.value = Math.max(200, Math.floor(viewport - button.getBoundingClientRect().bottom - 16))
+}
+
+watch(open, async (isOpen) => {
+	if (isOpen) {
+		await nextTick()
+		measure()
+		window.addEventListener('resize', measure)
+	} else {
+		window.removeEventListener('resize', measure)
+	}
+})
 
 /** Message and redirect share the one slot the respondent sees (usesResponseSlot). */
 function onPage(type: ActionType): boolean {
@@ -58,6 +85,7 @@ function pick(type: ActionType): void {
 	<NcPopover v-model:shown="open" placement="bottom-start">
 		<template #trigger="{ attrs }">
 			<NcButton v-bind="attrs"
+				ref="trigger"
 				class="af-add-action__trigger"
 				variant="primary"
 				:disabled="disabled || types.length === 0">
@@ -67,7 +95,7 @@ function pick(type: ActionType): void {
 				{{ t('webforms', 'Add an action') }}
 			</NcButton>
 		</template>
-		<div class="af-add-action">
+		<div class="af-add-action" :style="room === null ? undefined : { maxHeight: 'min(560px, ' + room + 'px)' }">
 			<section v-for="group in groups" :key="group.key" class="af-add-action__group">
 				<h3 class="af-add-action__heading">
 					{{ group.name }}
@@ -98,6 +126,8 @@ function pick(type: ActionType): void {
 	width: min(480px, 90vw);
 	max-height: min(560px, 80vh);
 	overflow-y: auto;
+	overscroll-behavior: contain;
+	-webkit-overflow-scrolling: touch;
 	box-sizing: border-box;
 	padding: calc(var(--default-grid-baseline) * 3);
 }
