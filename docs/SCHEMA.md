@@ -147,7 +147,8 @@ still validated.
 `accentColor`) (`#rrggbb` only, so a value can
 never carry CSS), and `submitAlign` (`left`, `center`, `right` or `justify`; default `left`), where
 the buttons under the form sit. `justify` makes them share the full width. Back and Next on a form
-with several pages follow it too.
+with several pages follow it too. `progress`, `progressLabel` and `progressColor` set the progress indicator of a form
+with several pages (section 5.1).
 
 ### 3.1 Response limit and opening dates (DECISION)
 
@@ -484,6 +485,34 @@ Responsive behavior (renderer contract):
   remaining cells in the row keep their own spans (the row does not stretch the
   survivors; this avoids layout shifting every time an answer changes).
 - A row whose cells are all hidden is removed entirely.
+
+### 5.1 Page progress (DECISION)
+
+A form with more than one page shows where the respondent is, above the fields. Three optional keys in
+`settings.design` set how:
+
+| Key | Values | Default | Meaning |
+| --- | --- | --- | --- |
+| `progress` | `bar`, `steps`, `none` | `bar` | A bar that fills, a row of numbered steps, or no indicator. |
+| `progressLabel` | `step`, `title`, `percent`, `none` | `step` | The line of text with it: "Step 2 of 4", the page's `title`, "50%", or no text. |
+| `progressColor` | `#rrggbb` | `accentColor` | The colour of the bar or the steps. |
+
+- **On by default.** A form that sets neither key gets the bar with the step number, so forms published
+  before this existed show it too. Setting both to `none` shows nothing.
+- **What is counted.** Pages, not answers. The total is the pages a respondent can reach right now:
+  a page whose fields are all hidden by rules is not counted, so the total can change as answers change.
+  A form that is down to one reachable page shows no progress.
+- **How full.** The step over the total: the first of four pages is 25% and the last page is 100%.
+- **Page name.** With `title`, a page that has no title shows its step number instead.
+- **Steps.** Numbered and not clickable: Back and Next are the only way to move, because Next checks
+  the required fields. In a narrow container the numbers are left out and the steps are plain dots.
+- **Colour.** The indicator uses `progressColor`, or the form's `accentColor` without one. The text keeps
+  the theme's own colour, so it stays readable in light and dark, and the numbers in filled steps are
+  black or white, whichever reads better on the colour.
+- **Assistive technology.** The bar is a `progressbar` whose value text is the step ("Step 2 of 4")
+  whatever the label shows, and the current step in the row is marked `aria-current="step"`. After Next
+  and Back the label takes focus, so the new page is announced and the keyboard carries on from its top.
+- This is display only. The server takes no part in it and nothing about it is stored with a response.
 
 ## 6. Rules
 

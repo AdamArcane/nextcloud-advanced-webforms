@@ -83,6 +83,12 @@ export interface FormDesign {
 	buttonColor?: string
 	/** Where the buttons under the form sit. `justify` makes them fill the row. Default `left`. */
 	submitAlign?: 'left' | 'center' | 'right' | 'justify'
+	/** The progress indicator above a form with several pages. Default `bar`. */
+	progress?: 'bar' | 'steps' | 'none'
+	/** The line of text with the indicator: step number, page name, or percent. Default `step`. */
+	progressLabel?: 'step' | 'title' | 'percent' | 'none'
+	/** `#rrggbb` for the progress bar or steps. Defaults to the accent colour. */
+	progressColor?: string
 }
 
 export interface FormSettings {

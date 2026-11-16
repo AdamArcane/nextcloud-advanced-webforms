@@ -227,6 +227,48 @@ function str(value: string | number): string | undefined {
 					{{ t('webforms', 'On a form with several pages, Back and Next sit the same way. Use Preview to see the result.') }}
 				</p>
 			</section>
+
+			<section v-if="definition.pages.length > 1" class="af-form-props__section">
+				<h3 class="af-form-props__heading">
+					{{ t('webforms', 'Page progress') }}
+				</h3>
+				<SegmentedControl :model-value="definition.settings.design?.progress ?? 'bar'"
+					:group-label="t('webforms', 'Page progress')"
+					:options="[
+						{ value: 'bar', label: t('webforms', 'Bar') },
+						{ value: 'steps', label: t('webforms', 'Steps') },
+						{ value: 'none', label: t('webforms', 'None') },
+					]"
+					@update:model-value="(value) => setDesign(definition.settings.design, { progress: value === 'bar' ? undefined : value as FormDesign['progress'] })" />
+				<template v-if="definition.settings.design?.progress !== 'none'">
+					<label class="af-form-props__color">
+						<input type="color"
+							:value="safeColor(definition.settings.design?.progressColor) ?? safeColor(definition.settings.design?.accentColor) ?? DEFAULT_ACCENT"
+							@input="setDesign(definition.settings.design, { progressColor: ($event.target as HTMLInputElement).value })">
+						{{ t('webforms', 'Progress colour') }}
+					</label>
+					<NcButton v-if="definition.settings.design?.progressColor"
+						variant="tertiary"
+						@click="setDesign(definition.settings.design, { progressColor: undefined })">
+						{{ t('webforms', 'Same as the accent colour') }}
+					</NcButton>
+				</template>
+				<h3 class="af-form-props__heading">
+					{{ t('webforms', 'Progress text') }}
+				</h3>
+				<SegmentedControl :model-value="definition.settings.design?.progressLabel ?? 'step'"
+					:group-label="t('webforms', 'Progress text')"
+					:options="[
+						{ value: 'step', label: t('webforms', 'Step number') },
+						{ value: 'title', label: t('webforms', 'Page name') },
+						{ value: 'percent', label: t('webforms', 'Percent') },
+						{ value: 'none', label: t('webforms', 'None') },
+					]"
+					@update:model-value="(value) => setDesign(definition.settings.design, { progressLabel: value === 'step' ? undefined : value as FormDesign['progressLabel'] })" />
+				<p class="af-form-props__hint">
+					{{ t('webforms', 'Shown above the form, counting only the pages a respondent can reach. A page without a name shows its step number.') }}
+				</p>
+			</section>
 		</template>
 
 		<SharePanel v-if="section === 'sharing' && form"
