@@ -16,6 +16,14 @@ const deleteEntryMock = vi.fn()
 const listDeliveriesMock = vi.fn()
 const retryMock = vi.fn()
 const bulkDeleteMock = vi.fn()
+const seenMock = vi.fn()
+const setStatusMock = vi.fn()
+const bulkStatusMock = vi.fn()
+const setNoteMock = vi.fn()
+const getEntryMock = vi.fn()
+// Set to make these fail.
+let failSeen = false
+let failStatus = false
 const SUMMARY = {
 	total: 3,
 	truncated: false,
@@ -61,6 +69,11 @@ vi.mock('../../api/forms.ts', () => ({
 		}
 		return summaryMock(...args)
 	},
+	markEntriesSeen: (...args: unknown[]) => (failSeen ? new Promise((_resolve, reject) => setTimeout(() => reject(new Error('x')), 0)) : seenMock(...args)),
+	setEntryStatus: (...args: unknown[]) => (failStatus ? new Promise((_resolve, reject) => setTimeout(() => reject(new Error('x')), 0)) : setStatusMock(...args)),
+	bulkSetEntryStatus: (...args: unknown[]) => bulkStatusMock(...args),
+	setEntryNote: (...args: unknown[]) => setNoteMock(...args),
+	getEntry: (...args: unknown[]) => getEntryMock(...args),
 	exportUrl: (id: number, options?: unknown) => '/export/' + id + '?' + JSON.stringify(options ?? {}),
 	bulkDeleteEntries: (...args: unknown[]) => {
 		if (bulkFailure) {
@@ -846,6 +859,224 @@ describe('EntriesView summary', () => {
 		expect(wrapper.text()).toContain('Could not load the summary.')
 		expect(wrapper.findAll('tbody tr.af-table__row')).toHaveLength(3)
 		failSummary = false
+		wrapper.unmount()
+	})
+})
+
+describe('EntriesView new responses, statuses and notes', () => {
+	const STATUSES = [
+		{ id: 'in_progress', label: 'In progress', color: 'blue' },
+		{ id: 'done', label: 'Done', color: 'green' },
+	]
+
+	function mountWith(props: Record<string, unknown> = {}) {
+		return mount(EntriesView, { props: { formId: 7, title: 'Inquiry', statuses: STATUSES, ...props }, attachTo: document.body })
+	}
+
+	beforeEach(() => {
+		window.localStorage.setItem('webforms.responsesView', 'table')
+		failEntries = false
+		failSeen = false
+		failStatus = false
+		// entry(n) was submitted at 1794700000 + n.
+		listEntriesMock.mockReset().mockResolvedValue(page([entry(3), entry(2), entry(1)]))
+		listDeliveriesMock.mockReset().mockResolvedValue(deliveries([]))
+		seenMock.mockReset().mockResolvedValue(1794700001)
+		setStatusMock.mockReset().mockImplementation(async (_form: number, id: number, status: string | null) => ({ ...entry(id), status }))
+		bulkStatusMock.mockReset().mockResolvedValue(2)
+		setNoteMock.mockReset().mockImplementation(async (_form: number, id: number, note: string) => ({ ...entry(id), note: note === '' ? null : note }))
+		getEntryMock.mockReset().mockResolvedValue({ entry: { ...entry(2), status: 'done', note: 'Called on Monday' }, version, previousId: 1, nextId: 3 })
+		document.body.innerHTML = ''
+	})
+
+	it('tells the server the list was looked at, once, and marks what arrived since the visit before', async () => {
+		const wrapper = mountWith()
+		await flushPromises()
+		expect(seenMock).toHaveBeenCalledTimes(1)
+		expect(seenMock).toHaveBeenCalledWith(7)
+		expect(wrapper.emitted('seen')).toHaveLength(1)
+		const rows = wrapper.findAll('tr.af-table__row')
+		expect(rows.map((row) => row.classes('af-table__row--new'))).toEqual([true, true, false])
+		expect(wrapper.text()).toContain('2 new since your last visit')
+
+		// Filtering and paging are not another look: the marks stay and the server is not told again.
+		await wrapper.find('.af-filters select').setValue('anonymous')
+		await flushPromises()
+		expect(seenMock).toHaveBeenCalledTimes(1)
+		expect(wrapper.findAll('tr.af-table__row--new')).toHaveLength(2)
+		wrapper.unmount()
+	})
+
+	it('marks everything when the list was never opened before, and nothing when the moment is not known', async () => {
+		seenMock.mockResolvedValue(null)
+		let wrapper = mountWith()
+		await flushPromises()
+		expect(wrapper.findAll('tr.af-table__row--new')).toHaveLength(3)
+		wrapper.unmount()
+
+		failSeen = true
+		wrapper = mountWith()
+		await flushPromises()
+		await new Promise((resolve) => setTimeout(resolve, 5))
+		await flushPromises()
+		expect(wrapper.findAll('tr.af-table__row')).toHaveLength(3)
+		expect(wrapper.findAll('tr.af-table__row--new')).toHaveLength(0)
+		expect(wrapper.emitted('seen')).toBeUndefined()
+		wrapper.unmount()
+	})
+
+	it('gives a response a status from its row, without opening the row', async () => {
+		const wrapper = mountWith()
+		await flushPromises()
+		const select = wrapper.find('select[aria-label="Status of response 3"]')
+		expect((select.element as HTMLSelectElement).value).toBe('')
+		await select.setValue('done')
+		await flushPromises()
+		expect(setStatusMock).toHaveBeenCalledWith(7, 3, 'done')
+		expect((wrapper.find('select[aria-label="Status of response 3"]').element as HTMLSelectElement).value).toBe('done')
+		expect(wrapper.find('tr.af-table__detail').exists()).toBe(false)
+
+		await wrapper.find('select[aria-label="Status of response 3"]').setValue('')
+		await flushPromises()
+		expect(setStatusMock).toHaveBeenLastCalledWith(7, 3, null)
+		wrapper.unmount()
+	})
+
+	it('says so when a status cannot be saved, and keeps the old one', async () => {
+		failStatus = true
+		const wrapper = mountWith()
+		await flushPromises()
+		await wrapper.find('select[aria-label="Status of response 3"]').setValue('done')
+		await new Promise((resolve) => setTimeout(resolve, 5))
+		await flushPromises()
+		expect(wrapper.text()).toContain('Could not change the status.')
+		expect((wrapper.find('select[aria-label="Status of response 3"]').element as HTMLSelectElement).value).toBe('')
+		wrapper.unmount()
+	})
+
+	it('shows the status on a card as a tag in its own colour', async () => {
+		window.localStorage.setItem('webforms.responsesView', 'cards')
+		listEntriesMock.mockResolvedValue(page([{ ...entry(1), status: 'done' }, entry(2)]))
+		const wrapper = mountWith()
+		await flushPromises()
+		const tags = wrapper.findAll('.af-tag')
+		expect(tags).toHaveLength(1)
+		expect(tags[0].text()).toBe('Done')
+		expect(tags[0].attributes('style')).toContain('#2d9d4f')
+		wrapper.unmount()
+	})
+
+	it('shows a status the administrator has deleted as none', async () => {
+		listEntriesMock.mockResolvedValue(page([{ ...entry(1), status: 'gone' }]))
+		const wrapper = mountWith()
+		await flushPromises()
+		expect((wrapper.find('select[aria-label="Status of response 1"]').element as HTMLSelectElement).value).toBe('')
+		wrapper.unmount()
+	})
+
+	it('has no status column, filter or bulk menu when the server has no statuses', async () => {
+		const wrapper = mountWith({ statuses: [] })
+		await flushPromises()
+		expect(wrapper.find('select[aria-label^="Status of response"]').exists()).toBe(false)
+		expect(wrapper.findAll('th').map((th) => th.text())).not.toContain('Status')
+		expect(wrapper.find('.af-filters').text()).not.toContain('Status')
+		wrapper.unmount()
+	})
+
+	it('filters by status, and by having none', async () => {
+		const wrapper = mountWith()
+		await flushPromises()
+		const filter = wrapper.findAll('.af-filters select').find((select) => select.findAll('option').some((option) => option.text() === 'No status'))!
+		await filter.setValue('done')
+		await flushPromises()
+		expect(listEntriesMock.mock.calls.at(-1)![3].statuses).toEqual(['done'])
+		await filter.setValue('none')
+		await flushPromises()
+		expect(listEntriesMock.mock.calls.at(-1)![3].statuses).toEqual(['none'])
+		await filter.setValue('')
+		await flushPromises()
+		expect(listEntriesMock.mock.calls.at(-1)![3].statuses).toEqual([])
+		wrapper.unmount()
+	})
+
+	it('gives the ticked responses a status together, and says how many changed', async () => {
+		const wrapper = mountWith()
+		await flushPromises()
+		await wrapper.find('input[aria-label="Select response 3"]').setValue(true)
+		await wrapper.find('input[aria-label="Select response 1"]').setValue(true)
+		await wrapper.find('select[aria-label="Set the status of the selected responses"]').setValue('done')
+		await flushPromises()
+		expect(bulkStatusMock).toHaveBeenCalledWith(7, { ids: [3, 1], status: 'done' })
+		expect(wrapper.text()).toContain('Set 2 responses to "Done".')
+		// The selection is gone and the list was read again.
+		expect(wrapper.find('.af-entries__bulk').exists()).toBe(false)
+		expect(listEntriesMock).toHaveBeenCalledTimes(2)
+		wrapper.unmount()
+	})
+
+	it('shows which responses have a note, and saves a note from the opened response', async () => {
+		listEntriesMock.mockResolvedValue(page([{ ...entry(2), note: 'Called on Monday' }, entry(1)]))
+		const wrapper = mountWith()
+		await flushPromises()
+		expect(wrapper.findAll('.af-table__noted')).toHaveLength(1)
+
+		await wrapper.findAll('tr.af-table__row')[1].trigger('click')
+		await flushPromises()
+		const note = wrapper.find('#af-note-1')
+		const save = wrapper.findAll('button').find((b) => b.text() === 'Save note')!
+		expect(save.attributes('disabled')).toBeDefined()
+		await note.setValue('  Wants a quote  ')
+		await wrapper.findAll('button').find((b) => b.text() === 'Save note')!.trigger('click')
+		await flushPromises()
+		expect(setNoteMock).toHaveBeenCalledWith(7, 1, '  Wants a quote  ')
+		expect(wrapper.findAll('.af-table__noted')).toHaveLength(2)
+		expect(wrapper.text()).toContain('Saved')
+		wrapper.unmount()
+	})
+
+	it('links each response to a page of its own', async () => {
+		const wrapper = mountWith()
+		await flushPromises()
+		expect(wrapper.find('a[aria-label="Open response 3 on its own page"]').attributes('href')).toBe('#/f/7/responses/3')
+		wrapper.unmount()
+	})
+
+	it('opening one response by its address is not a look at the list', async () => {
+		const wrapper = mountWith({ entryId: 2 })
+		await flushPromises()
+		expect(seenMock).not.toHaveBeenCalled()
+		expect(listEntriesMock).not.toHaveBeenCalled()
+		expect(getEntryMock).toHaveBeenCalledWith(7, 2)
+		expect(wrapper.text()).toContain('Response #2')
+
+		// Going back to the list is.
+		await wrapper.setProps({ entryId: null })
+		await flushPromises()
+		expect(seenMock).toHaveBeenCalledTimes(1)
+		expect(listEntriesMock).toHaveBeenCalledTimes(1)
+
+		// And opening a response from the list, then coming back, keeps the list and its marks as they were.
+		await wrapper.setProps({ entryId: 3 })
+		await flushPromises()
+		await wrapper.setProps({ entryId: null })
+		await flushPromises()
+		expect(seenMock).toHaveBeenCalledTimes(1)
+		expect(listEntriesMock).toHaveBeenCalledTimes(1)
+		expect(wrapper.findAll('tr.af-table__row--new')).toHaveLength(2)
+		wrapper.unmount()
+	})
+
+	it('a change made on the page of a response shows in the list afterwards', async () => {
+		const wrapper = mountWith()
+		await flushPromises()
+		await wrapper.setProps({ entryId: 2 })
+		await flushPromises()
+		await wrapper.find('select[aria-label="Status of response 2"]').setValue('in_progress')
+		await flushPromises()
+		expect(setStatusMock).toHaveBeenCalledWith(7, 2, 'in_progress')
+		await wrapper.setProps({ entryId: null })
+		await flushPromises()
+		expect((wrapper.find('select[aria-label="Status of response 2"]').element as HTMLSelectElement).value).toBe('in_progress')
 		wrapper.unmount()
 	})
 })

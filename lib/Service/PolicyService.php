@@ -13,6 +13,7 @@ use OCA\Webforms\Actions\MailPolicy;
 use OCA\Webforms\Settings\MailSettings;
 use OCA\Webforms\Settings\PolicyCheck;
 use OCA\Webforms\Settings\PolicySettings;
+use OCA\Webforms\Settings\StatusSettings;
 use OCP\Defaults;
 use OCP\IGroupManager;
 use OCP\IUserManager;
@@ -29,6 +30,7 @@ class PolicyService {
 		private readonly MailSettings $mail,
 		private readonly IUserManager $users,
 		private readonly Defaults $defaults,
+		private readonly StatusSettings $statuses,
 	) {
 	}
 
@@ -88,7 +90,7 @@ class PolicyService {
 	/**
 	 * What the builder needs to know, for the signed-in user.
 	 *
-	 * @return array{canCreate: bool, allowedActionTypes: list<string>, maxActions: int, mail: array<string, mixed>}
+	 * @return array{canCreate: bool, allowedActionTypes: list<string>, maxActions: int, mail: array<string, mixed>, statuses: list<array{id: string, label: string, color: string}>}
 	 */
 	public function forUser(string $userId): array {
 		return [
@@ -96,6 +98,8 @@ class PolicyService {
 			'allowedActionTypes' => $this->settings->allowedActionTypes(),
 			'maxActions' => $this->settings->maxActionsPerForm(),
 			'mail' => $this->mailForUser($this->mail->policy(), $userId),
+			// The statuses a response can be given (docs/SCHEMA.md section 20.2).
+			'statuses' => $this->statuses->all(),
 		];
 	}
 

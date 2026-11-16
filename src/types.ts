@@ -278,6 +278,8 @@ export interface OwnerForm {
 	archivedAt?: number | null
 	/** Null until the form has been published. A closed or archived form takes no responses whatever this says. */
 	availability?: FormAvailability | null
+	/** Responses that arrived since the owner last opened the list of responses. */
+	newCount?: number
 	createdAt: number
 	updatedAt: number
 	draft?: DraftDefinition
@@ -304,7 +306,27 @@ export interface EntryRecord {
 	userId: string | null
 	/** Unix seconds. */
 	submittedAt: number
+	/** The id of one of the administrator's statuses, or null for none (docs/SCHEMA.md section 20.2). */
+	status?: string | null
+	/** The owner's private note, or null. */
+	note?: string | null
 	data: Record<string, unknown>
+}
+
+/** A status a response can be given. The administrator keeps one list for the server. */
+export interface ResponseStatus {
+	id: string
+	label: string
+	color: string
+}
+
+/** One response with what its own page needs (docs/SCHEMA.md section 20.4). */
+export interface EntryDetail {
+	entry: EntryRecord
+	version: VersionDefinition
+	/** The response submitted just before this one, and the one just after, or null at either end. */
+	previousId: number | null
+	nextId: number | null
 }
 
 export interface EntriesPage {

@@ -25,12 +25,13 @@ final class CsvExporter {
 	private const BOM = "\xEF\xBB\xBF";
 
 	/**
-	 * @param list<array{id: int, versionId: int, userId: string|null, submittedAt: int, data: array<string, mixed>}> $entries oldest first
+	 * @param list<array{id: int, versionId: int, userId: string|null, submittedAt: int, data: array<string, mixed>, status?: string}> $entries oldest first
 	 * @param array<int, array<string, mixed>> $definitions form definitions keyed by version id
 	 * @param list<string>|null $columnIds only these questions, in form order. Null means every question.
+	 * @param bool $withStatus add a `Status` column from each entry's `status` (its label, or nothing)
 	 */
-	public static function build(array $entries, array $definitions, string $submittedHeader = 'Submitted (UTC)', ?array $columnIds = null): string {
-		$table = self::table($entries, $definitions, $submittedHeader, $columnIds);
+	public static function build(array $entries, array $definitions, string $submittedHeader = 'Submitted (UTC)', ?array $columnIds = null, bool $withStatus = false): string {
+		$table = self::table($entries, $definitions, $submittedHeader, $columnIds, $withStatus);
 
 		$lines = [implode(',', array_map(static fn (string $cell): string => self::quote(self::neutralize($cell)), $table['header']))];
 		foreach ($table['rows'] as $rowIndex => $row) {
@@ -48,25 +49,31 @@ final class CsvExporter {
 	 * The responses as a table, before it is written as CSV or a workbook: a header, and for each response
 	 * its cells as text (not made safe for any one format) with, alongside, the number a cell holds or null.
 	 *
-	 * @param list<array{id: int, versionId: int, userId: string|null, submittedAt: int, data: array<string, mixed>}> $entries oldest first
+	 * @param list<array{id: int, versionId: int, userId: string|null, submittedAt: int, data: array<string, mixed>, status?: string}> $entries oldest first
 	 * @param array<int, array<string, mixed>> $definitions
 	 * @param list<string>|null $columnIds
 	 * @return array{header: list<string>, rows: list<list<string>>, numbers: list<list<int|float|null>>}
 	 */
-	public static function table(array $entries, array $definitions, string $submittedHeader = 'Submitted (UTC)', ?array $columnIds = null): array {
+	public static function table(array $entries, array $definitions, string $submittedHeader = 'Submitted (UTC)', ?array $columnIds = null, bool $withStatus = false): array {
 		$columns = self::columns($definitions);
 		if ($columnIds !== null) {
 			$wanted = array_flip($columnIds);
 			$columns = array_values(array_filter($columns, static fn (array $column): bool => isset($wanted[$column['id']])));
 		}
 
-		$header = array_merge(['Response ID', $submittedHeader, 'Respondent'], array_column($columns, 'header'));
+		// The status is a column of a download only (docs/SCHEMA.md section 20.2), not of the Files action.
+		$fixed = $withStatus ? ['Response ID', $submittedHeader, 'Respondent', 'Status'] : ['Response ID', $submittedHeader, 'Respondent'];
+		$header = array_merge($fixed, array_column($columns, 'header'));
 		$rows = [];
 		$numbers = [];
 		foreach ($entries as $entry) {
 			$fields = is_array($definitions[$entry['versionId']]['fields'] ?? null) ? $definitions[$entry['versionId']]['fields'] : [];
 			$row = [(string)$entry['id'], gmdate('Y-m-d H:i:s', $entry['submittedAt']), $entry['userId'] ?? ''];
 			$numberRow = [$entry['id'], null, null];
+			if ($withStatus) {
+				$row[] = (string)($entry['status'] ?? '');
+				$numberRow[] = null;
+			}
 			foreach ($columns as $column) {
 				$value = $entry['data'][$column['id']] ?? null;
 				$field = $fields[$column['id']] ?? null;

@@ -56,6 +56,14 @@ export function bulkDeleteBody(request: BulkDeleteRequest): Record<string, unkno
 /** What a download covers, for the menu: the ticked responses, what the filter matches, or everything. */
 export type ExportScope = 'selected' | 'matching' | 'all'
 
+export type BulkStatusRequest = BulkDeleteRequest & { status: string | null }
+
+/** The JSON body for giving several responses a status, or none. */
+export function bulkStatusBody(request: BulkStatusRequest): Record<string, unknown> {
+	const { status, ...which } = request
+	return { ...bulkDeleteBody(which as BulkDeleteRequest), status }
+}
+
 export function exportScope(selectedCount: number, allMatching: boolean, filtered: boolean): ExportScope {
 	if (selectedCount > 0 && !allMatching) {
 		return 'selected'

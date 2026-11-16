@@ -15,6 +15,7 @@ use OCA\Webforms\Exception\NotFoundException;
 use OCA\Webforms\Forms\CsvExporter;
 use OCA\Webforms\Forms\EntryFilter;
 use OCA\Webforms\Forms\XlsxWriter;
+use OCA\Webforms\Settings\StatusSettings;
 
 /**
  * Exports a form's responses as CSV or an Excel workbook.
@@ -29,6 +30,7 @@ class EntryExportService {
 		private readonly FormService $forms,
 		private readonly EntryQueryService $query,
 		private readonly VersionMapper $versions,
+		private readonly StatusSettings $statuses,
 	) {
 	}
 
@@ -55,6 +57,7 @@ class EntryExportService {
 		// A spreadsheet reads better oldest first.
 		usort($entries, static fn (Entry $a, Entry $b): int => [$a->getSubmittedAt(), $a->getId()] <=> [$b->getSubmittedAt(), $b->getId()]);
 
+		$labels = $this->statuses->labels();
 		$rows = [];
 		$definitions = [];
 		foreach ($entries as $entry) {
@@ -64,12 +67,14 @@ class EntryExportService {
 				'userId' => $entry->getUserId(),
 				'submittedAt' => $entry->getSubmittedAt(),
 				'data' => $entry->getDataArray(),
+				// A status the administrator has since deleted reads as none.
+				'status' => $labels[(string)$entry->getStatus()] ?? '',
 			];
 			$definitions[$entry->getVersionId()] ??= $this->versions->find($entry->getVersionId())->getDefinitionArray();
 		}
 
 		if ($format === self::XLSX) {
-			$table = CsvExporter::table($rows, $definitions, 'Submitted (UTC)', $columnIds);
+			$table = CsvExporter::table($rows, $definitions, 'Submitted (UTC)', $columnIds, true);
 			return [
 				'filename' => self::filename($form->getTitle(), 'xlsx'),
 				'body' => XlsxWriter::build($table['header'], $table['rows'], $table['numbers']),
@@ -79,7 +84,7 @@ class EntryExportService {
 		}
 		return [
 			'filename' => self::filename($form->getTitle(), 'csv'),
-			'body' => CsvExporter::build($rows, $definitions, 'Submitted (UTC)', $columnIds),
+			'body' => CsvExporter::build($rows, $definitions, 'Submitted (UTC)', $columnIds, true),
 			'mime' => 'text/csv; charset=utf-8',
 			'truncated' => $truncated,
 		];

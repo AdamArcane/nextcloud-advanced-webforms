@@ -28,6 +28,12 @@ describe('filterParams', () => {
 		expect(isFilterActive(filter)).toBe(true)
 	})
 
+	it('sends the statuses as one list, where none means responses without a status', () => {
+		const filter = { ...EMPTY_FILTER, statuses: ['none', 'done'] }
+		expect(filterParams(filter)).toEqual({ status: 'none,done' })
+		expect(isFilterActive(filter)).toBe(true)
+	})
+
 	it('does not count the order, or blank text, as filtering', () => {
 		expect(isFilterActive({ ...EMPTY_FILTER, sort: 'oldest' })).toBe(false)
 		expect(isFilterActive({ ...EMPTY_FILTER, text: '   ' })).toBe(false)

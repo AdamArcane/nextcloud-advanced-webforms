@@ -37,6 +37,12 @@ final class EntryFilter {
 		public readonly string $respondent = self::RESPONDENT_ANY,
 		public readonly mixed $where = null,
 		public readonly bool $newestFirst = true,
+		/**
+		 * Only responses with one of these statuses, where `none` means without one. Null means any.
+		 *
+		 * @var list<string>|null
+		 */
+		public readonly ?array $statuses = null,
 	) {
 	}
 
@@ -45,9 +51,10 @@ final class EntryFilter {
 	 * @param string $to a date, `YYYY-MM-DD` in UTC (the whole day counts), or empty
 	 * @param string $where a JSON condition, or empty
 	 * @param string $sort `newest` or `oldest`
+	 * @param string $status comma separated status ids, `none` for responses without one, or empty for any
 	 * @throws \InvalidArgumentException
 	 */
-	public static function fromInput(string $text, string $from, string $to, string $respondent, string $where, string $sort): self {
+	public static function fromInput(string $text, string $from, string $to, string $respondent, string $where, string $sort, string $status = ''): self {
 		$text = trim($text);
 		if (mb_strlen($text) > self::MAX_TEXT) {
 			throw new \InvalidArgumentException('text_too_long');
@@ -75,7 +82,21 @@ final class EntryFilter {
 			}
 		}
 
-		return new self($text, $fromTime, $toTime, $respondent === '' ? self::RESPONDENT_ANY : $respondent, $condition, $sort !== 'oldest');
+		$statuses = null;
+		if (trim($status) !== '') {
+			$statuses = array_values(array_unique(explode(',', trim($status))));
+			if (count($statuses) > ResponseStatuses::MAX + 1) {
+				throw new \InvalidArgumentException('status_invalid');
+			}
+			foreach ($statuses as $one) {
+				// An id that is not in the administrator's list is not an error: it matches nothing.
+				if (preg_match(ResponseStatuses::ID_PATTERN, $one) !== 1) {
+					throw new \InvalidArgumentException('status_invalid');
+				}
+			}
+		}
+
+		return new self($text, $fromTime, $toTime, $respondent === '' ? self::RESPONDENT_ANY : $respondent, $condition, $sort !== 'oldest', $statuses);
 	}
 
 	/**
@@ -86,7 +107,7 @@ final class EntryFilter {
 	}
 
 	public function isActive(): bool {
-		return $this->needsScan() || $this->from !== null || $this->to !== null || $this->respondent !== self::RESPONDENT_ANY;
+		return $this->needsScan() || $this->from !== null || $this->to !== null || $this->respondent !== self::RESPONDENT_ANY || $this->statuses !== null;
 	}
 
 	/**

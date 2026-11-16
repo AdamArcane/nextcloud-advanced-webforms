@@ -48,15 +48,16 @@ section 18). Still open, roughly in order:
 ## Responses view
 
 Done: table with search and filters, selecting, bulk delete, CSV or Excel download that follows the
-filter, the selection and the chosen columns, and a summary above the table (SCHEMA.md sections 17 to
-17.2). Still open, roughly in
-order:
+filter, the selection and the chosen columns, a summary above the table (SCHEMA.md sections 17 to
+17.2), and marking what is new, statuses, a private note and a page for one response that can be
+printed (SCHEMA.md section 20). Still open, roughly in order:
 
 1. ODS export, and a zip of uploaded files.
 2. Clicking a bar in the summary to filter by that answer.
-3. Statuses (new, reviewed, done, spam), private notes and assignment. Needs a migration.
-4. A per-response page that can be printed or shared with a colleague.
-5. Sharing results with someone who cannot edit the form.
+3. Sharing results with someone who cannot edit the form.
+
+Not planned: assigning a response to someone. Forms are not a task tool, and a flow on "Response
+submitted" or "Response status changed" can create a task or a Deck card (SCHEMA.md section 20.5).
 
 ## Decision: actions, not pluggable storage
 
@@ -111,11 +112,9 @@ Gap review written against 0.3.x (2026-11-15), from README.md, docs/SCHEMA.md an
 - **URL prefill.** Done, with hidden fields and default values: the address fills fields by their id,
   unless the form switches it off (SCHEMA.md section 4.7). Still open: forwarding the host page's
   parameters into an embedded form, and making a prefilled field read only.
-- **Response management.**
-  - No search or filter UI, no charts or summary.
-  - Respondents cannot edit a response after submitting.
-  - No per-response PDF.
-  - No review states or assignment.
+- **Response management.** Done: search, filters, a summary, statuses, notes and a printable page for
+  one response (SCHEMA.md sections 17 and 20). Still open: respondents cannot edit a response after
+  submitting.
 - **Save and resume.** Drafts autosave for the owner, but respondents cannot resume a long form.
 - **Respondent experience.** Done: a progress indicator on forms with several pages (SCHEMA.md section 5.1). Still open: per-form language, and a picture inside a question (image blocks, SCHEMA.md section 4.9, are done).
 - **Sharing.** Public link, custom address, QR code and embedding (see Sharing above). No collaborator or co-editor sharing and no per-user form permissions.

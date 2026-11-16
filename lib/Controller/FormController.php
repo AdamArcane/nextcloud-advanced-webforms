@@ -209,9 +209,10 @@ class FormController extends Controller {
 		string $respondent = '',
 		string $where = '',
 		string $sort = '',
+		string $status = '',
 	): JSONResponse {
 		try {
-			$filter = EntryFilter::fromInput($q, $from, $to, $respondent, $where, $sort);
+			$filter = EntryFilter::fromInput($q, $from, $to, $respondent, $where, $sort, $status);
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => 'filter_invalid', 'reason' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
@@ -226,9 +227,9 @@ class FormController extends Controller {
 	 */
 	#[NoAdminRequired]
 	#[FrontpageRoute(verb: 'GET', url: '/api/v1/forms/{id}/entries/summary')]
-	public function entriesSummary(int $id, string $q = '', string $from = '', string $to = '', string $respondent = '', string $where = ''): JSONResponse {
+	public function entriesSummary(int $id, string $q = '', string $from = '', string $to = '', string $respondent = '', string $where = '', string $status = ''): JSONResponse {
 		try {
-			$filter = EntryFilter::fromInput($q, $from, $to, $respondent, $where, 'oldest');
+			$filter = EntryFilter::fromInput($q, $from, $to, $respondent, $where, 'oldest', $status);
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => 'filter_invalid', 'reason' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
@@ -236,7 +237,7 @@ class FormController extends Controller {
 	}
 
 	#[NoAdminRequired]
-	#[FrontpageRoute(verb: 'DELETE', url: '/api/v1/forms/{id}/entries/{entryId}')]
+	#[FrontpageRoute(verb: 'DELETE', url: '/api/v1/forms/{id}/entries/{entryId}', requirements: ['entryId' => '\d+'])]
 	public function destroyEntry(int $id, int $entryId): JSONResponse {
 		return $this->guard(function () use ($id, $entryId): JSONResponse {
 			$this->service->deleteEntry($this->userId(), $id, $entryId);
@@ -266,12 +267,13 @@ class FormController extends Controller {
 		string $sort = '',
 		string $ids = '',
 		string $columns = '',
+		string $status = '',
 	): DataDownloadResponse|JSONResponse {
 		if (!in_array($format, [EntryExportService::CSV, EntryExportService::XLSX], true)) {
 			return new JSONResponse(['error' => 'format_invalid'], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 		try {
-			$filter = EntryFilter::fromInput($q, $from, $to, $respondent, $where, $sort);
+			$filter = EntryFilter::fromInput($q, $from, $to, $respondent, $where, $sort, $status);
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => 'filter_invalid', 'reason' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
@@ -295,7 +297,7 @@ class FormController extends Controller {
 	 * `expected`, the number the person confirmed, and a different number deletes nothing (409).
 	 *
 	 * @param list<int>|null $ids
-	 * @param array<string, mixed> $filter the list parameters: q, from, to, respondent, where
+	 * @param array<string, mixed> $filter the list parameters: q, from, to, respondent, where, status
 	 */
 	#[NoAdminRequired]
 	#[FrontpageRoute(verb: 'POST', url: '/api/v1/forms/{id}/entries/bulk-delete')]
@@ -310,20 +312,99 @@ class FormController extends Controller {
 			return new JSONResponse(['error' => 'expected_required'], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 		try {
-			$entryFilter = EntryFilter::fromInput(
-				(string)($filter['q'] ?? ''),
-				(string)($filter['from'] ?? ''),
-				(string)($filter['to'] ?? ''),
-				(string)($filter['respondent'] ?? ''),
-				(string)($filter['where'] ?? ''),
-				'',
-			);
+			$entryFilter = self::bodyFilter($filter);
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => 'filter_invalid', 'reason' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 		try {
 			return $this->guard(fn (): JSONResponse => new JSONResponse([
 				'deleted' => $this->service->deleteEntries($this->userId(), $id, $ids === null ? null : array_values($ids), $entryFilter, $expected),
+			]));
+		} catch (CountChangedException $e) {
+			return new JSONResponse(['error' => 'count_changed', 'current' => $e->current], Http::STATUS_CONFLICT);
+		}
+	}
+
+	/**
+	 * The filter of a bulk request, which travels in the body with the names of the list parameters.
+	 *
+	 * @param array<string, mixed> $filter
+	 * @throws \InvalidArgumentException
+	 */
+	private static function bodyFilter(array $filter): EntryFilter {
+		$text = static fn (string $key): string => is_scalar($filter[$key] ?? null) ? (string)$filter[$key] : '';
+		return EntryFilter::fromInput($text('q'), $text('from'), $text('to'), $text('respondent'), $text('where'), '', $text('status'));
+	}
+
+	/**
+	 * One response, with the definition it answered and the responses before and after it
+	 * (docs/SCHEMA.md section 20.4).
+	 */
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/forms/{id}/entries/{entryId}', requirements: ['entryId' => '\d+'])]
+	public function showEntry(int $id, int $entryId): JSONResponse {
+		return $this->guard(fn (): JSONResponse => new JSONResponse($this->service->getEntry($this->userId(), $id, $entryId)));
+	}
+
+	/**
+	 * The owner is looking at the list of responses: what arrives from now on is new
+	 * (docs/SCHEMA.md section 20.1).
+	 */
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/forms/{id}/entries/seen')]
+	public function markEntriesSeen(int $id): JSONResponse {
+		return $this->guard(fn (): JSONResponse => new JSONResponse([
+			'previousSeenAt' => $this->service->markResponsesSeen($this->userId(), $id),
+		]));
+	}
+
+	/**
+	 * @param string|null $status the id of a status, or null for none
+	 */
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'PUT', url: '/api/v1/forms/{id}/entries/{entryId}/status', requirements: ['entryId' => '\d+'])]
+	public function setEntryStatus(int $id, int $entryId, ?string $status = null): JSONResponse {
+		return $this->guard(fn (): JSONResponse => new JSONResponse(
+			$this->service->setEntryStatus($this->userId(), $id, $entryId, $status === '' ? null : $status),
+		));
+	}
+
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'PUT', url: '/api/v1/forms/{id}/entries/{entryId}/note', requirements: ['entryId' => '\d+'])]
+	public function setEntryNote(int $id, int $entryId, string $note = ''): JSONResponse {
+		return $this->guard(fn (): JSONResponse => new JSONResponse(
+			$this->service->setEntryNote($this->userId(), $id, $entryId, $note),
+		));
+	}
+
+	/**
+	 * Give several responses a status: the ones in `ids`, or everything `filter` matches, with the rules
+	 * of the bulk delete.
+	 *
+	 * @param string|null $status the id of a status, or null for none
+	 * @param list<int>|null $ids
+	 * @param array<string, mixed> $filter the list parameters: q, from, to, respondent, where, status
+	 */
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/forms/{id}/entries/bulk-status')]
+	public function bulkSetEntryStatus(int $id, ?string $status = null, ?array $ids = null, array $filter = [], int $expected = -1): JSONResponse {
+		if ($ids !== null) {
+			foreach ($ids as $one) {
+				if (!is_int($one) || $one < 1) {
+					return new JSONResponse(['error' => 'ids_invalid'], Http::STATUS_UNPROCESSABLE_ENTITY);
+				}
+			}
+		} elseif ($expected < 0) {
+			return new JSONResponse(['error' => 'expected_required'], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+		try {
+			$entryFilter = self::bodyFilter($filter);
+		} catch (\InvalidArgumentException $e) {
+			return new JSONResponse(['error' => 'filter_invalid', 'reason' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
+		try {
+			return $this->guard(fn (): JSONResponse => new JSONResponse([
+				'changed' => $this->service->setEntriesStatus($this->userId(), $id, $status === '' ? null : $status, $ids === null ? null : array_values($ids), $entryFilter, $expected),
 			]));
 		} catch (CountChangedException $e) {
 			return new JSONResponse(['error' => 'count_changed', 'current' => $e->current], Http::STATUS_CONFLICT);

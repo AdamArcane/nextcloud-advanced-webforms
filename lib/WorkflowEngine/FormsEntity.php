@@ -11,6 +11,7 @@ namespace OCA\Webforms\WorkflowEngine;
 
 use OCA\Webforms\Event\EntryCreatedEvent;
 use OCA\Webforms\Event\EntryDeletedEvent;
+use OCA\Webforms\Event\EntryStatusChangedEvent;
 use OCA\Webforms\Event\EventPayload;
 use OCA\Webforms\Event\FormPublishedEvent;
 use OCA\Webforms\Event\FormsEvent;
@@ -60,6 +61,7 @@ class FormsEntity implements IEntity, IDisplayText, IUrl, IIcon, IContextPortati
 		return [
 			new GenericEntityEvent($this->l10n->t('Response submitted'), EntryCreatedEvent::class),
 			new GenericEntityEvent($this->l10n->t('Response deleted'), EntryDeletedEvent::class),
+			new GenericEntityEvent($this->l10n->t('Response status changed'), EntryStatusChangedEvent::class),
 			new GenericEntityEvent($this->l10n->t('Form published'), FormPublishedEvent::class),
 			new GenericEntityEvent($this->l10n->t('Form status changed'), FormStatusChangedEvent::class),
 		];
@@ -89,6 +91,8 @@ class FormsEntity implements IEntity, IDisplayText, IUrl, IIcon, IContextPortati
 				return $this->l10n->t('%1$s submitted %2$s', [$who, $title]);
 			case EventPayload::ENTRY_DELETED:
 				return $this->l10n->t('A response to %s was deleted', [$title]);
+			case EventPayload::ENTRY_STATUS_CHANGED:
+				return $this->l10n->t('The status of a response to %s changed', [$title]);
 			case EventPayload::FORM_PUBLISHED:
 				return $this->l10n->t('%s was published', [$title]);
 			case EventPayload::FORM_STATUS_CHANGED:
@@ -109,6 +113,9 @@ class FormsEntity implements IEntity, IDisplayText, IUrl, IIcon, IContextPortati
 		}
 		$base = $this->urls->linkToRouteAbsolute('webforms.page.index') . '#/f/' . $formId;
 		$event = $this->payload['event'] ?? null;
+		if ($event === EventPayload::ENTRY_STATUS_CHANGED && is_int($this->payload['entryId'] ?? null)) {
+			return $base . '/responses/' . $this->payload['entryId'];
+		}
 		return $event === EventPayload::ENTRY_CREATED || $event === EventPayload::ENTRY_DELETED ? $base . '/responses' : $base;
 	}
 

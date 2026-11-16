@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+import type { ResponseStatus } from '../types.ts'
+
 import axios from '@nextcloud/axios'
 import { toApiError, url } from './http.ts'
 
@@ -119,6 +121,34 @@ export async function fetchMailSettings(): Promise<MailAdminSettings> {
 export async function saveMailSettings(input: MailAdminSettings): Promise<MailAdminSettings> {
 	try {
 		return (await axios.put<MailAdminSettings>(url('/admin/mail'), input)).data
+	} catch (error) {
+		throw toApiError(error)
+	}
+}
+
+/** The list of response statuses and its limits (docs/SCHEMA.md section 20.2). */
+export interface StatusAdminSettings {
+	statuses: ResponseStatus[]
+	colors: string[]
+	max: number
+	maxLabel: number
+}
+
+export async function fetchStatuses(): Promise<StatusAdminSettings> {
+	try {
+		return (await axios.get<StatusAdminSettings>(url('/admin/statuses'))).data
+	} catch (error) {
+		throw toApiError(error)
+	}
+}
+
+/**
+ * Rejects with code `confirmation_required` and `data.affected` when a status that was taken out is
+ * still on responses, until `confirmDelete` is sent.
+ */
+export async function saveStatuses(statuses: ResponseStatus[], confirmDelete = false): Promise<StatusAdminSettings> {
+	try {
+		return (await axios.put<StatusAdminSettings>(url('/admin/statuses'), { statuses, confirmDelete })).data
 	} catch (error) {
 		throw toApiError(error)
 	}

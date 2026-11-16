@@ -7,6 +7,23 @@
 
 ## Unreleased
 
+- New responses. The forms list shows how many responses each form got since you last looked at its
+  responses, and the Responses view marks those as new until you leave it. Nothing has to be clicked:
+  the next visit only marks what arrived in between. See `docs/SCHEMA.md` section 20.1.
+
+- Statuses. Give a response a status such as "In progress", "Done" or "Spam" from its row, or give
+  several ticked responses one together, and filter the list by status. Downloads get a `Status`
+  column. Administrators keep the list of statuses for the whole server under Administration settings,
+  "Response statuses": names, colours and order. A new "Response status changed" event is there for
+  Flow and webhook listeners. See `docs/SCHEMA.md` section 20.2.
+
+- A private note on each response, for the form owner only. It is never sent anywhere and is not in
+  downloads. See `docs/SCHEMA.md` section 20.3.
+
+- A page for one response, with its own address: every question with its answer, the status, the note
+  and what was sent, with buttons to step to the earlier and later response and a print view that shows
+  the answers only. See `docs/SCHEMA.md` section 20.4.
+
 - Four new field types. "Rating" is a row of 3 to 10 stars. "Scale" is a row of numbers, from 0 or 1 up
   to 10, with a label at each end. "Consent" is a checkbox beside a text to agree to, which can link to
   your terms. "Date and time" is one answer for a day and a time. All four work in rules, defaults,
