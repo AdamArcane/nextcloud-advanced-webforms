@@ -11,6 +11,7 @@ import type { NormalizedValue } from './types.ts'
 const NUMBER_PATTERN = /^-?\d+(\.\d+)?$/
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 const TIME_PATTERN = /^\d{2}:\d{2}$/
+const DATETIME_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/
 
 /**
  * Turn a raw submitted value, or a rule's value, into its comparison form.
@@ -22,10 +23,13 @@ export function normalize(type: string, raw: unknown): NormalizedValue {
 		case 'textarea':
 		case 'email':
 		case 'url':
+		case 'hidden':
 			return normalizeText(raw)
 		case 'phone':
 			return normalizePhone(raw)
 		case 'number':
+		case 'rating':
+		case 'scale':
 			return normalizeNumber(raw)
 		case 'select':
 		case 'radio':
@@ -34,7 +38,10 @@ export function normalize(type: string, raw: unknown): NormalizedValue {
 		case 'file':
 			return normalizeList(raw)
 		case 'checkbox':
+		case 'consent':
 			return typeof raw === 'boolean' ? raw : null
+		case 'datetime':
+			return typeof raw === 'string' && DATETIME_PATTERN.test(raw) ? raw : null
 		case 'date':
 			return typeof raw === 'string' && DATE_PATTERN.test(raw) ? raw : null
 		case 'time':

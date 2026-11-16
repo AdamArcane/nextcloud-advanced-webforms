@@ -22,6 +22,10 @@ use OCP\AppFramework\Db\Entity;
  * @method void setData(string $data)
  * @method int getSubmittedAt()
  * @method void setSubmittedAt(int $submittedAt)
+ * @method string|null getStatus()
+ * @method void setStatus(?string $status)
+ * @method string|null getNote()
+ * @method void setNote(?string $note)
  */
 class Entry extends Entity {
 	protected $formId;
@@ -29,6 +33,10 @@ class Entry extends Entity {
 	protected $userId;
 	protected $data;
 	protected $submittedAt;
+	/** The id of one of the administrator's statuses, or null (docs/SCHEMA.md section 20.2). */
+	protected $status;
+	/** The owner's private note, or null. */
+	protected $note;
 
 	public function __construct() {
 		$this->addType('formId', 'integer');
@@ -36,6 +44,8 @@ class Entry extends Entity {
 		$this->addType('userId', 'string');
 		$this->addType('data', 'string');
 		$this->addType('submittedAt', 'integer');
+		$this->addType('status', 'string');
+		$this->addType('note', 'string');
 	}
 
 	/**

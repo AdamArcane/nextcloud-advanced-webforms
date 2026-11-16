@@ -5,6 +5,91 @@
 
 # Changelog
 
+## 0.3.5 - 2026-11-16
+
+- A summary before sending. Switch on "Show a summary before sending" under Settings and the form gets a
+  last step that lists what was entered, page by page, with an Edit button for each page, a count of the
+  optional questions skipped, and any required question still empty. You can name the step. A long summary
+  scrolls inside a box of its own, so the page stays short. On a phone each answer sits under its label. Works with one page too. See `docs/SCHEMA.md`
+  section 5.2.
+
+- Continue later. A form can keep a respondent's unsent answers in their own browser, so a long form
+  can be left and picked up again on the same device for up to 30 days. Switch it on per form under
+  Settings, "Let people continue later", and publish. Nothing is stored on the server, uploaded files
+  are not kept, a line under the buttons tells people they can come back later (or that saving did not
+  work), and a "Start over" button clears the kept answers. See `docs/SCHEMA.md` section 21.
+
+- New responses. The forms list shows how many responses each form got since you last looked at its
+  responses, and the Responses view marks those as new until you leave it. Nothing has to be clicked:
+  the next visit only marks what arrived in between. See `docs/SCHEMA.md` section 20.1.
+
+- Statuses. Give a response a status such as "In progress", "Done" or "Spam" from its row, or give
+  several ticked responses one together, and filter the list by status. Downloads get a `Status`
+  column. Administrators keep the list of statuses for the whole server under Administration settings,
+  "Response statuses": names, colours and order. A new "Response status changed" event is there for
+  Flow and webhook listeners. See `docs/SCHEMA.md` section 20.2.
+
+- A private note on each response, for the form owner only. It is never sent anywhere and is not in
+  downloads. See `docs/SCHEMA.md` section 20.3.
+
+- A page for one response, with its own address: every question with its answer, the status, the note
+  and what was sent, with buttons to step to the earlier and later response and a print view that shows
+  the answers only. See `docs/SCHEMA.md` section 20.4.
+
+- Four new field types. "Rating" is a row of 3 to 10 stars. "Scale" is a row of numbers, from 0 or 1 up
+  to 10, with a label at each end. "Consent" is a checkbox beside a text to agree to, which can link to
+  your terms. "Date and time" is one answer for a day and a time. All four work in rules, defaults,
+  filling from the link, exports, emails and the Tables action. See `docs/SCHEMA.md` section 4.8.
+
+- Image blocks. Add a picture to a form from your Files, with a "Choose from Files" button, or by the
+  address of a picture on another site. Set its description, largest width and alignment. A picture in
+  Files is read where it is, so replacing the file updates the form. See `docs/SCHEMA.md` section 4.9.
+
+- Page progress. A form with several pages shows respondents where they are: a bar or numbered steps,
+  with the step number ("Step 2 of 4"), the page's name or a percentage. It is on by default, as a bar
+  with the step number, and forms that are already published show it too. It takes the accent colour or
+  a colour of its own. Change it or switch it off
+  under Settings, Design. See `docs/SCHEMA.md` section 5.1.
+
+- Hidden values, default values and filling fields from the link. A new "Hidden value" field is never
+  shown to respondents and is sent with every response. Every field except an upload can have a default
+  value, and the form's link can fill any field by its field ID: `?utm_source=newsletter` fills the
+  field with ID `utm_source`. Each field shows its link parameter with a copy button, and a form setting
+  switches filling from the link off. Rules can react to a hidden value. See `docs/SCHEMA.md` section 4.7.
+
+- Response limit and opening dates. A form can take at most a number of responses, open at a set time
+  and close at a set time, each with its own message, and can show respondents how many places are
+  left. Set them under Settings, Sharing; they apply when the form is published. The forms list shows
+  Scheduled, Ended or Full, and the settings show the responses counted against the limit. See
+  `docs/SCHEMA.md` section 3.1.
+
+- A new action adds each response as a line to a CSV file in your Files, with the same columns as the
+  CSV download. An existing file keeps its own header row: answers go under the matching heading, and
+  new questions become columns at the end. See `docs/SCHEMA.md` section 19.
+
+- The Actions tab has one "Add an action" button at the top, with the kinds of action grouped by
+  whether they happen on the page or in the background, each with a short description.
+
+- Rename a form from the header of the builder: double-click its name (or press Enter or F2 on it),
+  type, and press Enter. Escape cancels.
+
+- Email actions can include every answer at once. "Add all answers" puts `{all_fields}` in the body,
+  which becomes a list of the questions the person answered with their labels. Such a mail is also sent
+  as HTML, with the answers in a table. See `docs/SCHEMA.md` section 7.2.
+
+- Email actions can set a reply-to address, picked the same way as the recipient: an email field,
+  your account, the signed-in respondent, or a typed address. A notification to you can then be answered
+  straight to the person who filled in the form.
+
+- Email actions can set a sender name. Only the name changes; the sender address stays the server's.
+
+- Administration settings, "Emails from forms": a default reply-to for emails that set none (the form
+  owner's account email or one fixed address), a default sender name, and a switch for whether form
+  owners may set their own. With the switch off, a form may still reply to the address a respondent
+  typed. See `docs/SCHEMA.md` section 16.2.
+
+- Design: choose where the submit button sits, left, center, right or full width.
+
 ## 0.3.4 - 2026-11-15
 
 - Picking a published form that has no unpublished changes now opens its responses instead of the

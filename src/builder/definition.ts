@@ -42,12 +42,18 @@ export const FIELD_TYPES: readonly FieldTypeInfo[] = [
 	{ type: 'radio', label: 'Single choice', group: 'choice' },
 	{ type: 'checkboxes', label: 'Multiple choice', group: 'choice' },
 	{ type: 'checkbox', label: 'Checkbox', group: 'choice' },
+	{ type: 'consent', label: 'Consent', group: 'choice' },
+	{ type: 'rating', label: 'Rating', group: 'choice' },
+	{ type: 'scale', label: 'Scale', group: 'choice' },
 	{ type: 'date', label: 'Date', group: 'datetime' },
 	{ type: 'time', label: 'Time', group: 'datetime' },
+	{ type: 'datetime', label: 'Date and time', group: 'datetime' },
 	{ type: 'file', label: 'File upload', group: 'advanced' },
+	{ type: 'hidden', label: 'Hidden value', group: 'advanced' },
 	{ type: 'heading', label: 'Heading', group: 'content', display: true },
 	{ type: 'paragraph', label: 'Paragraph', group: 'content', display: true },
 	{ type: 'divider', label: 'Divider', group: 'content', display: true },
+	{ type: 'image', label: 'Image', group: 'content', display: true },
 ]
 
 export function fieldTypeInfo(type: string): FieldTypeInfo | undefined {
@@ -104,6 +110,19 @@ export function defaultField(type: string, optionValue: () => string): FormField
 			return { type, text: 'Some text.' }
 		case 'divider':
 			return { type }
+		case 'image':
+			// No picture yet: the panel asks for one, and publishing waits for it.
+			return { type, src: '' }
+		case 'hidden':
+			// Never shown, so never required.
+			return { type, label }
+		case 'rating':
+			return { type, label, required: false, max: 5 }
+		case 'scale':
+			return { type, label, required: false, min: 1, max: 5 }
+		case 'consent':
+			// Agreeing is the point, so it starts as required.
+			return { type, label, required: true, text: 'I agree to the terms.' }
 		case 'file':
 			return { type, label, required: false, maxFiles: 1, maxSizeMb: 10, accept: ['images', 'documents'], audience: 'anyone', storage: 'files' }
 		case 'select':

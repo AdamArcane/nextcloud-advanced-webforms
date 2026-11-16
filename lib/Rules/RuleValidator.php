@@ -66,6 +66,9 @@ final class RuleValidator {
 					$targetPath = $path . '.targets[' . $targetIndex . ']';
 					if (!is_string($target) || !isset($fields[$target])) {
 						$errors[] = ['code' => 'rule_unknown_target', 'path' => $targetPath];
+					} elseif ($this->typeOf($fields[$target]) === FieldType::HIDDEN) {
+						// Never shown and never required, so there is nothing for a rule to change.
+						$errors[] = ['code' => 'rule_target_hidden_field', 'path' => $targetPath];
 					} elseif ($effect === 'require' && !FieldType::isInput($this->typeOf($fields[$target]))) {
 						$errors[] = ['code' => 'rule_require_on_display_field', 'path' => $targetPath];
 					}
@@ -203,15 +206,20 @@ final class RuleValidator {
 			case FieldType::EMAIL:
 			case FieldType::PHONE:
 			case FieldType::URL:
+			case FieldType::HIDDEN:
 				return ValueNormalizer::normalize($type, $value) !== null;
 			case FieldType::NUMBER:
+			case FieldType::RATING:
+			case FieldType::SCALE:
 				return is_int($value) || (is_float($value) && is_finite($value));
 			case FieldType::SELECT:
 			case FieldType::RADIO:
 			case FieldType::CHECKBOXES:
 				return is_string($value) && in_array($value, $this->optionValues($field), true);
 			case FieldType::CHECKBOX:
+			case FieldType::CONSENT:
 				return is_bool($value);
+			case FieldType::DATETIME:
 			case FieldType::DATE:
 			case FieldType::TIME:
 				return ValueNormalizer::normalize($type, $value) !== null;

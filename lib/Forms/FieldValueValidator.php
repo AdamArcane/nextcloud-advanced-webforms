@@ -36,7 +36,7 @@ final class FieldValueValidator {
 		$type = is_string($field['type'] ?? null) ? $field['type'] : '';
 
 		return match ($type) {
-			FieldType::TEXT => self::text($field, $raw, self::MAX_TEXT),
+			FieldType::TEXT, FieldType::HIDDEN => self::text($field, $raw, self::MAX_TEXT),
 			FieldType::TEXTAREA => self::text($field, $raw, self::MAX_TEXTAREA),
 			FieldType::EMAIL => self::email($raw),
 			FieldType::PHONE => self::phone($raw),
@@ -44,7 +44,10 @@ final class FieldValueValidator {
 			FieldType::NUMBER => self::number($field, $raw),
 			FieldType::SELECT, FieldType::RADIO => self::choice($field, $raw),
 			FieldType::CHECKBOXES => self::multi($field, $raw),
-			FieldType::CHECKBOX => is_bool($raw) || $raw === null ? [$raw, null] : [null, 'invalid_type'],
+			FieldType::RATING => self::whole($raw, 1, self::ratingMax($field)),
+			FieldType::SCALE => self::whole($raw, self::scaleMin($field), self::scaleMax($field)),
+			FieldType::DATETIME => self::dateTime($field, $raw),
+			FieldType::CHECKBOX, FieldType::CONSENT => is_bool($raw) || $raw === null ? [$raw, null] : [null, 'invalid_type'],
 			FieldType::DATE => self::date($field, $raw),
 			FieldType::TIME => self::time($field, $raw),
 			FieldType::FILE => self::files($field, $raw),
@@ -203,6 +206,31 @@ final class FieldValueValidator {
 		return [$whole ? (int)$number : $number, null];
 	}
 
+	/** The most stars a rating field offers: its `max`, 5 without one. */
+	public static function ratingMax(array $field): int {
+		return is_int($field['max'] ?? null) ? $field['max'] : 5;
+	}
+
+	/** Where a scale starts: 0 or 1, 1 without a `min`. */
+	public static function scaleMin(array $field): int {
+		return ($field['min'] ?? null) === 0 ? 0 : 1;
+	}
+
+	/** Where a scale ends: its `max`, 5 without one. */
+	public static function scaleMax(array $field): int {
+		return is_int($field['max'] ?? null) ? $field['max'] : 5;
+	}
+
+	/**
+	 * A whole number from $min to $max, the answer of a rating or a scale.
+	 *
+	 * @return array{0: int|null, 1: string|null}
+	 */
+	private static function whole(mixed $raw, int $min, int $max): array {
+		[$value, $error] = self::number(['min' => $min, 'max' => $max, 'step' => 1], $raw);
+		return [$value === null ? null : (int)$value, $error];
+	}
+
 	private static function numeric(mixed $value): ?float {
 		return is_int($value) || is_float($value) ? (float)$value : null;
 	}
@@ -309,6 +337,33 @@ final class FieldValueValidator {
 			return [null, 'time_too_late'];
 		}
 		return [$raw, null];
+	}
+
+	/**
+	 * @param array<string, mixed> $field
+	 * @return array{0: string|null, 1: string|null}
+	 */
+	private static function dateTime(array $field, mixed $raw): array {
+		if ($raw === null || $raw === '') {
+			return [null, null];
+		}
+		if (!self::isDateTime($raw)) {
+			return [null, 'invalid_date'];
+		}
+		// Fixed width, so text order is time order.
+		if (self::isDateTime($field['min'] ?? null) && $raw < $field['min']) {
+			return [null, 'date_too_early'];
+		}
+		if (self::isDateTime($field['max'] ?? null) && $raw > $field['max']) {
+			return [null, 'date_too_late'];
+		}
+		return [$raw, null];
+	}
+
+	/** A real date and a time of day as `YYYY-MM-DDTHH:MM`, with no time zone: the respondent's own clock. */
+	public static function isDateTime(mixed $value): bool {
+		return is_string($value) && strlen($value) === 16 && $value[10] === 'T'
+			&& self::isDate(substr($value, 0, 10)) && self::isTime(substr($value, 11));
 	}
 
 	/** A real calendar date as `YYYY-MM-DD`. */

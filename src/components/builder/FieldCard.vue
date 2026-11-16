@@ -10,7 +10,9 @@ import { t } from '@nextcloud/l10n'
 import { computed } from 'vue'
 import { describeError } from '../../builder/errors.ts'
 import { fieldTypeName } from '../../builder/fieldTypeNames.ts'
-import { fieldTypeIcon } from '../../icons.ts'
+import { fieldTypeIcon, icons } from '../../icons.ts'
+import { steps } from '../../rules/fieldTypes.ts'
+import { ownerImageUrl } from '../../images.ts'
 import Icon from '../common/Icon.vue'
 import MarkdownText from '../render/MarkdownText.ts'
 import '../render/typography.css'
@@ -30,7 +32,8 @@ const emit = defineEmits<{
 	select: []
 }>()
 
-const isDisplay = computed(() => ['heading', 'paragraph', 'divider'].includes(props.field.type))
+const isDisplay = computed(() => ['heading', 'paragraph', 'divider', 'image'].includes(props.field.type))
+const imageUrl = computed(() => (props.field.type === 'image' ? ownerImageUrl(props.field.src ?? '') : null))
 const required = computed(() => props.field.required === true)
 const hasOptions = computed(() => ['select', 'radio', 'checkboxes'].includes(props.field.type))
 const hiddenLabel = computed(() => props.labelPosition === 'hidden')
@@ -52,6 +55,17 @@ const areaStyle = computed(() => (props.field.type === 'textarea'
 	? { minHeight: `calc(${Math.min(20, Math.max(2, props.field.rows ?? 5))} * 1.5em + 16px)` }
 	: undefined))
 
+/** A text-like default, shown in the preview box the way the form will start. */
+const defaultText = computed(() => {
+	const value = props.field.defaultValue
+	if (typeof value === 'number') {
+		return String(value)
+	}
+	if (typeof value !== 'string' || value === '') {
+		return ''
+	}
+	return props.field.type === 'select' ? (props.field.options ?? []).find((option) => option.value === value)?.label ?? '' : value
+})
 const title = computed(() => props.field.label || props.field.text || typeLabel.value)
 </script>
 
@@ -86,6 +100,17 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 			<component :is="headingTag" v-else-if="field.type === 'heading'" class="af-heading" :style="alignStyle">
 				{{ field.text }}
 			</component>
+			<div v-else-if="field.type === 'image'" class="af-card__image" :style="alignStyle">
+				<img v-if="imageUrl"
+					:src="imageUrl"
+					:alt="field.alt ?? ''"
+					:style="{ maxWidth: (field.width ?? 100) + '%' }"
+					referrerpolicy="no-referrer">
+				<span v-else class="af-card__upload">
+					<Icon :path="fieldTypeIcon('image')" :size="18" />
+					{{ t('webforms', 'Choose a picture') }}
+				</span>
+			</div>
 			<MarkdownText v-else :source="field.text ?? ''" :style="alignStyle" />
 		</template>
 
@@ -95,6 +120,31 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 			</span>
 			<span class="af-card__control">
 				<span v-if="field.type === 'checkbox'" class="af-card__fake af-card__fake--box" aria-hidden="true" />
+				<span v-else-if="field.type === 'consent'" class="af-card__consent" aria-hidden="true">
+					<span class="af-card__fake af-card__fake--box" />
+					<MarkdownText :source="field.text ?? ''" />
+				</span>
+				<span v-else-if="field.type === 'rating'" class="af-card__stars" aria-hidden="true">
+					<Icon v-for="value in steps(field)" :key="value" :path="icons.star" :size="24" />
+				</span>
+				<span v-else-if="field.type === 'scale'" class="af-card__scale" aria-hidden="true">
+					<span class="af-card__steps">
+						<span v-for="value in steps(field)" :key="value" class="af-card__step">{{ value }}</span>
+					</span>
+					<span v-if="field.minLabel || field.maxLabel" class="af-card__ends">
+						<span>{{ field.minLabel }}</span>
+						<span>{{ field.maxLabel }}</span>
+					</span>
+				</span>
+				<span v-else-if="field.type === 'hidden'" class="af-card__upload af-card__upload--hidden">
+					<Icon :path="fieldTypeIcon('hidden')" :size="18" />
+					<span>
+						{{ t('webforms', 'Not shown to respondents.') }}
+						{{ typeof field.defaultValue === 'string' && field.defaultValue !== ''
+							? t('webforms', 'Default: {value}', { value: field.defaultValue })
+							: t('webforms', 'Filled from the link, or give it a default.') }}
+					</span>
+				</span>
 				<span v-else-if="field.type === 'file'" class="af-card__upload" aria-hidden="true">
 					<Icon :path="fieldTypeIcon('file')" :size="18" />
 					{{ (field.maxFiles ?? 1) > 1 ? t('webforms', 'Choose files') : t('webforms', 'Choose a file') }}
@@ -111,7 +161,8 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 					:style="areaStyle"
 					aria-hidden="true">
 					<span v-if="field.type === 'number' && field.prefix" class="af-card__affix">{{ field.prefix }}</span>
-					<span class="af-card__placeholder">{{ field.placeholder }}</span>
+					<span v-if="defaultText" class="af-card__default">{{ defaultText }}</span>
+					<span v-else class="af-card__placeholder">{{ field.placeholder }}</span>
 					<span v-if="field.type === 'number' && field.suffix" class="af-card__affix af-card__affix--end">{{ field.suffix }}</span>
 					<span v-if="field.type === 'select'" class="af-card__chevron" />
 				</span>
@@ -271,6 +322,58 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 	padding-top: calc(var(--default-grid-baseline) * 2);
 }
 
+.af-card__image img {
+	max-width: 100%;
+	height: auto;
+	vertical-align: middle;
+}
+
+.af-card__consent {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+}
+
+.af-card__consent :deep(p) {
+	margin: 0;
+}
+
+.af-card__stars {
+	display: flex;
+	gap: 2px;
+	color: var(--color-border-maxcontrast, var(--color-border-dark));
+}
+
+.af-card__scale {
+	display: block;
+}
+
+.af-card__steps {
+	display: flex;
+	gap: 4px;
+}
+
+.af-card__step {
+	display: flex;
+	flex: 1 1 0;
+	align-items: center;
+	justify-content: center;
+	max-width: 56px;
+	min-height: 30px;
+	border: 2px solid var(--color-border-maxcontrast, var(--color-border-dark));
+	border-radius: var(--border-radius-element, 8px);
+	color: var(--color-text-maxcontrast);
+	font-weight: 600;
+}
+
+.af-card__ends {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 4px;
+	color: var(--color-text-maxcontrast);
+	font-size: 0.9em;
+}
+
 .af-card__fake--box {
 	width: 20px;
 	min-height: 20px;
@@ -287,6 +390,16 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 	border: 2px dashed var(--color-border-maxcontrast);
 	border-radius: var(--border-radius-large);
 	color: var(--color-text-maxcontrast);
+}
+
+.af-card__upload--hidden {
+	justify-content: flex-start;
+	padding: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 3);
+	text-align: start;
+}
+
+.af-card__default {
+	color: var(--color-main-text);
 }
 
 .af-card__affix {

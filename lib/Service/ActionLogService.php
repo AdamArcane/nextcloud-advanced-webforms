@@ -129,6 +129,10 @@ class ActionLogService {
 				$host = parse_url($action['url'], PHP_URL_HOST);
 				return is_string($host) ? $host : null;
 			}
+			if (($action['type'] ?? null) === 'files' && is_string($action['path'] ?? null)) {
+				// The owner's own path, which only the owner sees here.
+				return $action['path'];
+			}
 			if (($action['type'] ?? null) === 'email') {
 				$to = $action['to'] ?? null;
 				if (is_string($to)) {

@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { bulkDeleteBody, exportQuery, exportScope } from './exporting.ts'
+import { bulkDeleteBody, bulkStatusBody, exportQuery, exportScope } from './exporting.ts'
 import { EMPTY_FILTER } from './filter.ts'
 
 describe('exportQuery', () => {
@@ -42,6 +42,18 @@ describe('bulkDeleteBody', () => {
 		const filter = { ...EMPTY_FILTER, text: 'ada', sort: 'oldest' as const }
 		expect(bulkDeleteBody({ filter, expected: 12 })).toEqual({ filter: { q: 'ada' }, expected: 12 })
 		expect(bulkDeleteBody({ filter: EMPTY_FILTER, expected: 0 })).toEqual({ filter: {}, expected: 0 })
+	})
+})
+
+describe('bulkStatusBody', () => {
+	it('sends the status with the ticked ids, and null for none', () => {
+		expect(bulkStatusBody({ ids: [1, 2], status: 'done' })).toEqual({ ids: [1, 2], status: 'done' })
+		expect(bulkStatusBody({ ids: [1], status: null })).toEqual({ ids: [1], status: null })
+	})
+
+	it('sends a filter with the confirmed count, including a filter on status', () => {
+		const filter = { ...EMPTY_FILTER, statuses: ['none'], sort: 'oldest' as const }
+		expect(bulkStatusBody({ filter, expected: 4, status: 'spam' })).toEqual({ filter: { status: 'none' }, expected: 4, status: 'spam' })
 	})
 })
 

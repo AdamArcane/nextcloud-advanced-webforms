@@ -11,6 +11,7 @@ namespace OCA\Webforms\Controller;
 
 use OCA\Webforms\AppInfo\Application;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\ContentSecurityPolicy;
 use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -32,6 +33,12 @@ class PageController extends Controller {
 	public function index(): TemplateResponse {
 		Util::addScript(Application::APP_ID, Application::APP_ID . '-main');
 		Util::addStyle(Application::APP_ID, Application::APP_ID . '-main');
-		return new TemplateResponse(Application::APP_ID, 'main');
+		$response = new TemplateResponse(Application::APP_ID, 'main');
+		// The builder shows image blocks while their address is being typed, so it cannot name the hosts
+		// ahead of time: pictures, and only pictures, may come from any https site here.
+		$policy = new ContentSecurityPolicy();
+		$policy->addAllowedImageDomain('https:');
+		$response->setContentSecurityPolicy($policy);
+		return $response;
 	}
 }

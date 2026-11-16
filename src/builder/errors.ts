@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-import type { DefinitionError } from '../types.ts'
+import type { DefinitionError, DraftDefinition } from '../types.ts'
 
 import { t } from '@nextcloud/l10n'
 
@@ -12,6 +12,10 @@ export function describeError(code: string): string {
 	switch (code) {
 		case 'field_label_invalid':
 			return t('webforms', 'Give this field a label.')
+		case 'field_image_invalid':
+			return t('webforms', 'Choose a picture from your Files (PNG, JPEG, GIF or WebP), or give an address that starts with https://.')
+		case 'field_image_missing':
+			return t('webforms', 'This picture is not in your Files, or it is larger than 10 MB.')
 		case 'field_text_invalid':
 			return t('webforms', 'Add some text.')
 		case 'options_invalid':
@@ -30,6 +34,8 @@ export function describeError(code: string): string {
 			return t('webforms', 'The help text is too long.')
 		case 'form_archived':
 			return t('webforms', 'This form is archived. Restore it first.')
+		case 'window_invalid':
+			return t('webforms', 'The closing time must be after the opening time.')
 		case 'title_invalid':
 			return t('webforms', 'The form needs a title.')
 		case 'too_many_fields':
@@ -56,6 +62,12 @@ export function describeError(code: string): string {
 			return t('webforms', 'A group of conditions is empty or nested too deeply.')
 		case 'action_bad_recipient':
 			return t('webforms', 'Choose who should receive this email.')
+		case 'action_mail_locked':
+			return t('webforms', 'The administrator does not allow forms to set their own reply-to address or sender name. Remove it to publish.')
+		case 'action_from_name_invalid':
+			return t('webforms', 'The sender name must be one line of at most 100 characters.')
+		case 'action_bad_reply_to':
+			return t('webforms', 'The reply-to address is not a valid email address or email field.')
 		case 'action_text_invalid':
 			return t('webforms', 'Fill in all the text for this action.')
 		case 'action_bad_url':
@@ -70,6 +82,10 @@ export function describeError(code: string): string {
 			return t('webforms', 'Pick the Tables table that should get the rows.')
 		case 'action_bad_table_map':
 			return t('webforms', 'Choose which answer goes in at least one column.')
+		case 'action_bad_file_path':
+			return t('webforms', 'Enter a file path in your Files that ends in .csv, like Webforms/Responses.csv.')
+		case 'files_not_writable':
+			return t('webforms', 'You cannot change that file or create it there. Choose a folder you can write to.')
 		case 'tables_unavailable':
 			return t('webforms', 'The Tables app is not available on this server.')
 		case 'tables_not_allowed':
@@ -90,6 +106,8 @@ export function describeError(code: string): string {
 			return t('webforms', 'The signing secret is not valid. Generate a new one.')
 		case 'too_many_actions':
 			return t('webforms', 'This form has too many actions.')
+		case 'rule_target_hidden_field':
+			return t('webforms', 'A hidden value is never shown, so a rule cannot show, hide or require it.')
 		case 'field_upload_invalid':
 			return t('webforms', 'One of the upload settings is not valid.')
 		case 'field_upload_folder_invalid':
@@ -129,4 +147,19 @@ export function groupErrors(errors: readonly DefinitionError[]): Map<string, Def
 		groups.set(key, [...(groups.get(key) ?? []), error])
 	}
 	return groups
+}
+
+/**
+ * The errors worth showing while a form is still being built. A block that was just added and has
+ * nothing in it yet (an image with no picture chosen) is not a mistake until publishing is tried.
+ */
+export function withoutUnstarted(errors: readonly DefinitionError[], definition: DraftDefinition | null): DefinitionError[] {
+	return errors.filter((error) => {
+		if (error.code !== 'field_image_invalid') {
+			return true
+		}
+		const id = errorFieldId(error)
+		const src = id ? definition?.fields[id]?.src : undefined
+		return typeof src === 'string' && src.trim() !== ''
+	})
 }

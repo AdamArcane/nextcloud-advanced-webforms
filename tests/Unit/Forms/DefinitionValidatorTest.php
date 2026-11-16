@@ -83,6 +83,53 @@ class DefinitionValidatorTest extends TestCase {
 		}));
 	}
 
+	public function testResponseLimitAndDates(): void {
+		$this->assertSame([], $this->codes(static function (array $d): array {
+			$d['settings'] += [
+				'maxResponses' => 50,
+				'showRemaining' => true,
+				'opensAt' => 1800000000,
+				'closesAt' => 1800003600,
+				'notOpenMessage' => 'Registration opens on Monday.',
+				'fullMessage' => 'All places are taken.',
+			];
+			return $d;
+		}));
+		foreach ([0, -1, 1000001, '50', 1.5, true] as $bad) {
+			$this->assertSame(['settings_invalid'], $this->codes(static function (array $d) use ($bad): array {
+				$d['settings']['maxResponses'] = $bad;
+				return $d;
+			}), var_export($bad, true));
+		}
+		foreach (['opensAt', 'closesAt'] as $key) {
+			foreach ([0, -5, '2030-01-01T10:00', 32503680001] as $bad) {
+				$this->assertSame(['settings_invalid'], $this->codes(static function (array $d) use ($key, $bad): array {
+					$d['settings'][$key] = $bad;
+					return $d;
+				}), $key . ' ' . var_export($bad, true));
+			}
+		}
+		$this->assertSame(['settings_invalid', 'settings_invalid', 'settings_invalid'], $this->codes(static function (array $d): array {
+			$d['settings']['showRemaining'] = 'yes';
+			$d['settings']['notOpenMessage'] = str_repeat('a', 501);
+			$d['settings']['fullMessage'] = 5;
+			return $d;
+		}));
+	}
+
+	public function testClosingMustComeAfterOpening(): void {
+		$this->assertSame(['window_invalid'], $this->codes(static function (array $d): array {
+			$d['settings']['opensAt'] = 1800000000;
+			$d['settings']['closesAt'] = 1800000000;
+			return $d;
+		}));
+		$this->assertSame(['window_invalid'], $this->codes(static function (array $d): array {
+			$d['settings']['opensAt'] = 1800000000;
+			$d['settings']['closesAt'] = 1799999999;
+			return $d;
+		}));
+	}
+
 	public function testHideTitleSetting(): void {
 		$this->assertSame([], $this->codes(static function (array $d): array {
 			$d['settings']['hideTitle'] = true;
@@ -373,6 +420,101 @@ class DefinitionValidatorTest extends TestCase {
 		}));
 	}
 
+	public function testFilesActionPath(): void {
+		$withPath = static fn (mixed $path): callable => static function (array $d) use ($path): array {
+			$d['actions'] = [['id' => 'act_sheet', 'type' => 'files', 'path' => $path]];
+			return $d;
+		};
+		$this->assertSame([], $this->codes($withPath('Webforms/Leads.csv')));
+		$this->assertSame(['action_bad_file_path'], $this->codes($withPath('Webforms/Leads.xlsx')));
+		$this->assertSame(['action_bad_file_path'], $this->codes($withPath('/Webforms/Leads.csv')));
+		$this->assertSame(['action_bad_file_path'], $this->codes($withPath('../Leads.csv')));
+		$this->assertSame(['action_bad_file_path'], $this->codes($withPath(12)));
+	}
+
+	public function testHiddenField(): void {
+		$add = static fn (array $field): callable => static function (array $d) use ($field): array {
+			$d['fields']['f_source'] = $field;
+			$d['pages'][0]['rows'][] = ['id' => 'r_source', 'cells' => [['id' => 'c_source', 'span' => 12, 'field' => 'f_source']]];
+			return $d;
+		};
+		$this->assertSame([], $this->codes($add(['type' => 'hidden', 'label' => 'Source', 'description' => 'From the newsletter link', 'defaultValue' => 'direct'])));
+		$this->assertSame(['unknown_property'], $this->codes($add(['type' => 'hidden', 'label' => 'Source', 'prefill' => 'source'])));
+		$this->assertSame(['field_label_invalid'], $this->codes($add(['type' => 'hidden'])));
+		$this->assertSame(['unknown_property', 'unknown_property', 'unknown_property'], $this->codes($add(['type' => 'hidden', 'label' => 'S', 'required' => true, 'placeholder' => 'x', 'hideLabel' => true])));
+		$this->assertSame(['field_default_invalid'], $this->codes($add(['type' => 'hidden', 'label' => 'S', 'defaultValue' => str_repeat('x', 2001)])));
+	}
+
+	public function testPrefillSetting(): void {
+		$set = static fn (mixed $value): callable => static function (array $d) use ($value): array {
+			$d['settings']['prefill'] = $value;
+			return $d;
+		};
+		$this->assertSame([], $this->codes($set(false)));
+		$this->assertSame([], $this->codes($set(true)));
+		$this->assertSame(['settings_invalid'], $this->codes($set('no')));
+	}
+
+	public function testSaveProgressSetting(): void {
+		$set = static fn (mixed $value): callable => static function (array $d) use ($value): array {
+			$d['settings']['saveProgress'] = $value;
+			return $d;
+		};
+		$this->assertSame([], $this->codes($set(true)));
+		$this->assertSame([], $this->codes($set(false)));
+		$this->assertSame(['settings_invalid'], $this->codes($set('device')));
+	}
+
+	public function testReviewStepSettings(): void {
+		$set = static fn (string $key, mixed $value): callable => static function (array $d) use ($key, $value): array {
+			$d['settings'][$key] = $value;
+			return $d;
+		};
+		$this->assertSame([], $this->codes($set('reviewStep', true)));
+		$this->assertSame([], $this->codes($set('reviewStep', false)));
+		$this->assertSame(['settings_invalid'], $this->codes($set('reviewStep', 'yes')));
+		$this->assertSame([], $this->codes($set('reviewTitle', 'Check it over')));
+		$this->assertSame([], $this->codes($set('reviewTitle', str_repeat('x', 64))));
+		$this->assertSame(['settings_invalid'], $this->codes($set('reviewTitle', str_repeat('x', 65))));
+		$this->assertSame(['settings_invalid'], $this->codes($set('reviewTitle', 5)));
+	}
+
+	public function testDefaultValuesPerType(): void {
+		$withDefault = static fn (array $field): callable => static function (array $d) use ($field): array {
+			$d['fields']['f_extra'] = $field;
+			$d['pages'][0]['rows'][] = ['id' => 'r_extra', 'cells' => [['id' => 'c_extra', 'span' => 12, 'field' => 'f_extra']]];
+			return $d;
+		};
+		$options = [['value' => 'aaa', 'label' => 'A'], ['value' => 'bbb', 'label' => 'B']];
+		foreach ([
+			['type' => 'text', 'label' => 'L', 'defaultValue' => 'Ada'],
+			['type' => 'number', 'label' => 'L', 'min' => 1, 'max' => 10, 'defaultValue' => 5],
+			['type' => 'select', 'label' => 'L', 'options' => $options, 'defaultValue' => 'bbb'],
+			['type' => 'checkboxes', 'label' => 'L', 'options' => $options, 'defaultValue' => ['aaa', 'bbb']],
+			['type' => 'checkbox', 'label' => 'L', 'defaultValue' => true],
+			['type' => 'date', 'label' => 'L', 'defaultValue' => '2026-12-01'],
+			['type' => 'time', 'label' => 'L', 'defaultValue' => '09:30'],
+		] as $field) {
+			$this->assertSame([], $this->codes($withDefault($field)), $field['type']);
+		}
+		foreach ([
+			['type' => 'number', 'label' => 'L', 'max' => 10, 'defaultValue' => 11],
+			['type' => 'select', 'label' => 'L', 'options' => $options, 'defaultValue' => 'ccc'],
+			['type' => 'date', 'label' => 'L', 'defaultValue' => '1/12/2026'],
+		] as $field) {
+			$this->assertSame(['field_default_invalid'], $this->codes($withDefault($field)), $field['type']);
+		}
+	}
+
+	public function testRulesCannotTargetAHiddenField(): void {
+		$this->assertContains('rule_target_hidden_field', $this->codes(static function (array $d): array {
+			$d['fields']['f_source'] = ['type' => 'hidden', 'label' => 'Source'];
+			$d['pages'][0]['rows'][] = ['id' => 'r_source', 'cells' => [['id' => 'c_source', 'span' => 12, 'field' => 'f_source']]];
+			$d['rules'][0]['targets'] = ['f_source'];
+			return $d;
+		}));
+	}
+
 	public function testEmailActionStaticRecipient(): void {
 		$this->assertSame([], $this->codes(static function (array $d): array {
 			$d['actions'][0]['to'] = 'owner@example.com';
@@ -393,6 +535,133 @@ class DefinitionValidatorTest extends TestCase {
 				return $d;
 			}));
 		}
+	}
+
+	public function testReplyToIsOptionalAndWrittenLikeTheRecipient(): void {
+		foreach (['desk@example.com', ['field' => 'f_email'], ['owner' => true], ['respondent' => true]] as $replyTo) {
+			$this->assertSame([], $this->codes(static function (array $d) use ($replyTo): array {
+				$d['actions'][0]['replyTo'] = $replyTo;
+				return $d;
+			}));
+		}
+		foreach (['', 'not an address', ['field' => 'f_name'], ['field' => 'f_missing'], ['owner' => false], ['user' => 'alice'], null, 5] as $replyTo) {
+			$this->assertSame(['action_bad_reply_to'], $this->codes(static function (array $d) use ($replyTo): array {
+				$d['actions'][0]['replyTo'] = $replyTo;
+				return $d;
+			}));
+		}
+	}
+
+	public function testSenderNameIsOneLineOfPlainText(): void {
+		$this->assertSame([], $this->codes(static function (array $d): array {
+			$d['actions'][0]['fromName'] = 'Acme Support';
+			return $d;
+		}));
+		foreach (['', '   ', "Acme\nBcc: x@example.com", str_repeat('a', 101), 5] as $name) {
+			$this->assertSame(['action_from_name_invalid'], $this->codes(static function (array $d) use ($name): array {
+				$d['actions'][0]['fromName'] = $name;
+				return $d;
+			}));
+		}
+	}
+
+	public function testAllFieldsIsAllowedInAnEmailBodyOnly(): void {
+		$this->assertSame([], $this->codes(static function (array $d): array {
+			$d['actions'][0]['body'] = "New response:\n{all_fields}";
+			return $d;
+		}));
+		$this->assertSame(['action_unknown_placeholder'], $this->codes(static function (array $d): array {
+			$d['actions'][0]['subject'] = 'New {all_fields}';
+			return $d;
+		}));
+	}
+
+	public function testSubmitButtonAlignment(): void {
+		foreach (['left', 'center', 'right', 'justify'] as $align) {
+			$this->assertSame([], $this->codes(static function (array $d) use ($align): array {
+				$d['settings']['design'] = ['submitAlign' => $align];
+				return $d;
+			}));
+		}
+		$this->assertSame(['settings_invalid'], $this->codes(static function (array $d): array {
+			$d['settings']['design'] = ['submitAlign' => 'middle'];
+			return $d;
+		}));
+	}
+
+	/**
+	 * @param array<string, mixed> $field
+	 * @return list<string>
+	 */
+	private function codesForField(array $field): array {
+		return $this->codes(static function (array $d) use ($field): array {
+			$d['fields']['f_new'] = $field + ['label' => 'New'];
+			$d['pages'][0]['rows'][] = ['id' => 'r_new', 'cells' => [['id' => 'c_new', 'span' => 12, 'field' => 'f_new']]];
+			return $d;
+		});
+	}
+
+	public function testRatingScaleConsentAndDateTime(): void {
+		$this->assertSame([], $this->codesForField(['type' => 'rating']));
+		$this->assertSame([], $this->codesForField(['type' => 'rating', 'max' => 10, 'defaultValue' => 7]));
+		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'rating', 'max' => 11]));
+		$this->assertSame(['field_default_invalid'], $this->codesForField(['type' => 'rating', 'defaultValue' => 6]));
+		$this->assertSame(['unknown_property'], $this->codesForField(['type' => 'rating', 'min' => 0]));
+
+		$this->assertSame([], $this->codesForField(['type' => 'scale', 'min' => 0, 'max' => 10, 'minLabel' => 'Not likely', 'maxLabel' => 'Very likely']));
+		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'scale', 'min' => 2]));
+		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'scale', 'max' => 1]));
+		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'scale', 'maxLabel' => str_repeat('x', 51)]));
+
+		$this->assertSame([], $this->codesForField(['type' => 'consent', 'text' => 'I agree to the [terms](https://example.com).', 'required' => true]));
+		$this->assertSame(['field_text_invalid'], $this->codesForField(['type' => 'consent']));
+		$this->assertSame(['field_text_invalid'], $this->codesForField(['type' => 'consent', 'text' => ' ']));
+
+		$this->assertSame([], $this->codesForField(['type' => 'datetime', 'min' => '2026-05-01T09:00', 'max' => '2026-05-31T17:00']));
+		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'datetime', 'min' => '2026-05-01']));
+		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'datetime', 'min' => '2026-06-01T09:00', 'max' => '2026-05-31T17:00']));
+	}
+
+	public function testImageBlock(): void {
+		$image = static fn (array $field): \Closure => static function (array $d) use ($field): array {
+			$d['fields']['f_img'] = ['type' => 'image'] + $field;
+			$d['pages'][0]['rows'][] = ['id' => 'r_img', 'cells' => [['id' => 'c_img', 'span' => 12, 'field' => 'f_img']]];
+			return $d;
+		};
+		$this->assertSame([], $this->codes($image(['src' => 'Pictures/logo.png', 'alt' => 'Our logo', 'width' => 50, 'align' => 'center'])));
+		$this->assertSame([], $this->codes($image(['src' => 'https://example.com/logo.png'])));
+		$this->assertSame(['field_image_invalid'], $this->codes($image([])));
+		$this->assertSame(['field_image_invalid'], $this->codes($image(['src' => 'http://example.com/logo.png'])));
+		$this->assertSame(['field_image_invalid'], $this->codes($image(['src' => '../logo.png'])));
+		$this->assertSame(['field_limit_invalid'], $this->codes($image(['src' => 'logo.png', 'width' => 33])));
+		$this->assertSame(['unknown_property'], $this->codes($image(['src' => 'logo.png', 'label' => 'x'])));
+	}
+
+	public function testPageProgress(): void {
+		foreach (['bar', 'steps', 'none'] as $style) {
+			foreach (['step', 'title', 'percent', 'none'] as $label) {
+				$this->assertSame([], $this->codes(static function (array $d) use ($style, $label): array {
+					$d['settings']['design'] = ['progress' => $style, 'progressLabel' => $label];
+					return $d;
+				}));
+			}
+		}
+		$this->assertSame(['settings_invalid'], $this->codes(static function (array $d): array {
+			$d['settings']['design'] = ['progress' => 'dots'];
+			return $d;
+		}));
+		$this->assertSame(['settings_invalid'], $this->codes(static function (array $d): array {
+			$d['settings']['design'] = ['progressLabel' => true];
+			return $d;
+		}));
+		$this->assertSame([], $this->codes(static function (array $d): array {
+			$d['settings']['design'] = ['progressColor' => '#00aa55'];
+			return $d;
+		}));
+		$this->assertSame(['settings_invalid'], $this->codes(static function (array $d): array {
+			$d['settings']['design'] = ['progressColor' => 'green'];
+			return $d;
+		}));
 	}
 
 	public function testPlaceholderMustReferenceInputField(): void {

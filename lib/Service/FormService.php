@@ -11,10 +11,13 @@ namespace OCA\Webforms\Service;
 
 use OCA\Webforms\Actions\Adapter\NextcloudSecrets;
 use OCA\Webforms\Actions\Ports\TablesFailure;
+use OCA\Webforms\Actions\CsvFile;
+use OCA\Webforms\Actions\Ports\ResponseFilesPort;
 use OCA\Webforms\Actions\Ports\TablesPort;
 use OCA\Webforms\Actions\TablesValue;
 use OCA\Webforms\Db\ActionLogMapper;
 use OCA\Webforms\Event\EntryDeletedEvent;
+use OCA\Webforms\Event\EntryStatusChangedEvent;
 use OCA\Webforms\Event\EventPayload;
 use OCA\Webforms\Event\EventPublisher;
 use OCA\Webforms\Event\FormPublishedEvent;
@@ -29,7 +32,9 @@ use OCA\Webforms\Db\FormMapper;
 use OCA\Webforms\Db\Version;
 use OCA\Webforms\Db\VersionMapper;
 use OCA\Webforms\Exception\NotFoundException;
+use OCA\Webforms\Forms\ImageSource;
 use OCA\Webforms\Forms\UploadPolicy;
+use OCA\Webforms\Uploads\Ports\OwnerImagePort;
 use OCA\Webforms\Rules\FieldType;
 use OCA\Webforms\Uploads\UploadRejected;
 use OCA\Webforms\Uploads\UploadService;
@@ -38,7 +43,9 @@ use OCA\Webforms\Forms\DefinitionValidator;
 use OCA\Webforms\Forms\FormPackage;
 use OCA\Webforms\Forms\JsonShape;
 use OCA\Webforms\Forms\RetiredIds;
+use OCA\Webforms\Forms\Availability;
 use OCA\Webforms\Forms\ShareSettings;
+use OCA\Webforms\Settings\StatusSettings;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Security\ISecureRandom;
 
@@ -54,6 +61,7 @@ class FormService {
 	public const MAX_BULK_IDS = 500;
 	/** Responses one filtered bulk delete may remove. */
 	public const MAX_BULK_MATCHES = 5000;
+	public const MAX_NOTE = 4000;
 
 	public function __construct(
 		private readonly FormMapper $forms,
@@ -69,6 +77,9 @@ class FormService {
 		private readonly TablesPort $tables,
 		private readonly PolicyService $policy,
 		private readonly EntryQueryService $query,
+		private readonly ResponseFilesPort $responseFiles,
+		private readonly StatusSettings $statuses,
+		private readonly OwnerImagePort $images,
 	) {
 	}
 
@@ -94,13 +105,13 @@ class FormService {
 			}
 		}
 		$versions = $this->versions->findByIds($versionIds);
+		$counts = $this->entries->countByForms(array_map(static fn (Form $form): int => $form->getId(), $forms));
+		$new = $forms === [] ? [] : $this->entries->countNewByOwner($userId);
 		$result = [];
 		foreach ($forms as $form) {
-			$data = $this->toArray($form);
-			$latestId = $form->getLatestVersionId();
-			$data['hasUnpublishedChanges'] = $latestId === null || !isset($versions[$latestId])
-				? true
-				: $this->differs($form, $versions[$latestId]);
+			$latest = $versions[$form->getLatestVersionId() ?? 0] ?? null;
+			$data = $this->describe($form, $latest, $counts[$form->getId()] ?? 0, $new[$form->getId()] ?? 0);
+			$data['hasUnpublishedChanges'] = $latest === null ? true : $this->differs($form, $latest);
 			$result[] = $data;
 		}
 		return $result;
@@ -253,7 +264,7 @@ class FormService {
 		$form->setUpdatedAt($this->time->getTime());
 		$form = $this->forms->update($form);
 
-		return ['form' => $form, 'errors' => array_merge($this->validator->validate($definition), $this->uploadPermissionErrors($form, $definition), $this->policy->actionErrors($definition))];
+		return ['form' => $form, 'errors' => array_merge($this->validator->validate($definition), $this->uploadPermissionErrors($form, $definition), $this->imageErrors($form, $definition), $this->responseFileErrors($form, $definition), $this->policy->actionErrors($definition))];
 	}
 
 	/**
@@ -268,7 +279,7 @@ class FormService {
 		$this->refuseIfArchived($form);
 		$draft = $form->getDraftDefinition();
 
-		$errors = array_merge($this->validator->validate($draft), $this->uploadPermissionErrors($form, $draft), $this->tablesErrors($form, $draft), $this->policy->actionErrors($draft));
+		$errors = array_merge($this->validator->validate($draft), $this->uploadPermissionErrors($form, $draft), $this->imageErrors($form, $draft), $this->responseFileErrors($form, $draft), $this->tablesErrors($form, $draft), $this->policy->actionErrors($draft));
 		if ($errors !== []) {
 			throw new ValidationException($errors);
 		}
@@ -443,13 +454,7 @@ class FormService {
 		$result = [];
 		$versionDefinitions = [];
 		foreach ($found['entries'] as $entry) {
-			$result[] = [
-				'id' => $entry->getId(),
-				'versionId' => $entry->getVersionId(),
-				'userId' => $entry->getUserId(),
-				'submittedAt' => $entry->getSubmittedAt(),
-				'data' => JsonShape::map($entry->getDataArray()),
-			];
+			$result[] = self::entryArray($entry);
 			if (!isset($versionDefinitions[$entry->getVersionId()])) {
 				$version = $this->versions->find($entry->getVersionId());
 				$versionDefinitions[$entry->getVersionId()] = JsonShape::definition($version->getDefinitionArray());
@@ -466,6 +471,171 @@ class FormService {
 			'entries' => $result,
 			'versions' => $versionDefinitions,
 		];
+	}
+
+	/**
+	 * A response as the owner's app reads it.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function entryArray(Entry $entry): array {
+		return [
+			'id' => $entry->getId(),
+			'versionId' => $entry->getVersionId(),
+			'userId' => $entry->getUserId(),
+			'submittedAt' => $entry->getSubmittedAt(),
+			'status' => $entry->getStatus(),
+			'note' => $entry->getNote(),
+			'data' => JsonShape::map($entry->getDataArray()),
+		];
+	}
+
+	/**
+	 * One response with the definition it answered and its neighbours by time, for a page of its own
+	 * (docs/SCHEMA.md section 20.4).
+	 *
+	 * @return array{entry: array<string, mixed>, version: array<mixed>|\stdClass, previousId: int|null, nextId: int|null}
+	 * @throws NotFoundException
+	 */
+	public function getEntry(string $userId, int $id, int $entryId): array {
+		$form = $this->get($userId, $id);
+		$entry = $this->entries->findInForm($form->getId(), $entryId);
+		$neighbours = $this->entries->neighbours($entry);
+		return [
+			'entry' => self::entryArray($entry),
+			'version' => JsonShape::definition($this->versions->find($entry->getVersionId())->getDefinitionArray()),
+			'previousId' => $neighbours['previous'],
+			'nextId' => $neighbours['next'],
+		];
+	}
+
+	/**
+	 * The owner opened the list of responses (docs/SCHEMA.md section 20.1): from now on only later
+	 * responses are new. Answers the moment before, so the list can still mark what was new on this visit.
+	 *
+	 * @throws NotFoundException
+	 */
+	public function markResponsesSeen(string $userId, int $id): ?int {
+		$form = $this->get($userId, $id);
+		$previous = $form->getResponsesSeenAt();
+		$form->setResponsesSeenAt($this->time->getTime());
+		$this->forms->update($form);
+		return $previous;
+	}
+
+	/**
+	 * Give a response one of the administrator's statuses, or none (docs/SCHEMA.md section 20.2).
+	 *
+	 * @return array<string, mixed> the response
+	 * @throws NotFoundException
+	 * @throws ValidationException
+	 */
+	public function setEntryStatus(string $userId, int $id, int $entryId, ?string $status): array {
+		$form = $this->get($userId, $id);
+		$this->requireStatus($status);
+		$entry = $this->entries->findInForm($form->getId(), $entryId);
+		$this->changeStatus($form, $entry, $status, $userId);
+		return self::entryArray($entry);
+	}
+
+	/**
+	 * Give several responses a status: the ones with these ids, or every response a filter matches, with
+	 * the rules of a bulk delete (docs/SCHEMA.md section 17.1).
+	 *
+	 * @param list<int>|null $ids
+	 * @return int how many changed
+	 * @throws NotFoundException
+	 * @throws ValidationException
+	 * @throws \OCA\Webforms\Exception\CountChangedException
+	 */
+	public function setEntriesStatus(string $userId, int $id, ?string $status, ?array $ids, EntryFilter $filter, int $expected): int {
+		$form = $this->get($userId, $id);
+		$this->requireStatus($status);
+		$changed = 0;
+		foreach ($this->selectEntries($form, $ids, $filter, $expected) as $entry) {
+			if ($this->changeStatus($form, $entry, $status, $userId)) {
+				$changed++;
+			}
+		}
+		return $changed;
+	}
+
+	/**
+	 * The owner's private note on a response (docs/SCHEMA.md section 20.3). Empty text removes it.
+	 *
+	 * @return array<string, mixed> the response
+	 * @throws NotFoundException
+	 * @throws ValidationException
+	 */
+	public function setEntryNote(string $userId, int $id, int $entryId, string $note): array {
+		$form = $this->get($userId, $id);
+		$note = trim(str_replace(["\r\n", "\r"], "\n", $note));
+		if (mb_strlen($note) > self::MAX_NOTE) {
+			throw new ValidationException([['code' => 'note_too_long', 'path' => 'note']]);
+		}
+		$entry = $this->entries->findInForm($form->getId(), $entryId);
+		$entry->setNote($note === '' ? null : $note);
+		$this->entries->update($entry);
+		return self::entryArray($entry);
+	}
+
+	/**
+	 * @throws ValidationException
+	 */
+	private function requireStatus(?string $status): void {
+		if ($status !== null && !$this->statuses->has($status)) {
+			throw new ValidationException([['code' => 'status_invalid', 'path' => 'status']]);
+		}
+	}
+
+	/**
+	 * @return bool false when the response already had that status, and then nothing happens
+	 */
+	private function changeStatus(Form $form, Entry $entry, ?string $status, string $changedBy): bool {
+		$previous = $entry->getStatus();
+		if ($previous === $status) {
+			return false;
+		}
+		$entry->setStatus($status);
+		$this->entries->update($entry);
+		$this->events->publish(static fn (): EntryStatusChangedEvent => new EntryStatusChangedEvent(EventPayload::entryStatusChanged(
+			$form->getId(),
+			$form->getTitle(),
+			$form->getOwnerId(),
+			$entry->getVersionId(),
+			$entry->getId(),
+			$status,
+			$previous,
+			$changedBy,
+		)));
+		return true;
+	}
+
+	/**
+	 * The responses a bulk change is about: the ones with these ids, or everything a filter matches when
+	 * that is still the number the person confirmed.
+	 *
+	 * @param list<int>|null $ids
+	 * @return list<Entry>
+	 * @throws ValidationException
+	 * @throws \OCA\Webforms\Exception\CountChangedException
+	 */
+	private function selectEntries(Form $form, ?array $ids, EntryFilter $filter, int $expected): array {
+		if ($ids !== null) {
+			if (count($ids) > self::MAX_BULK_IDS) {
+				throw new ValidationException([['code' => 'too_many_selected', 'path' => 'ids']]);
+			}
+			return $this->query->byIds($form->getId(), $ids);
+		}
+		$found = $this->query->all($form->getId(), $filter, self::MAX_BULK_MATCHES);
+		if ($found['truncated']) {
+			// Too many for one go: narrow the filter, or for a delete let retention do it.
+			throw new ValidationException([['code' => 'too_many_matches', 'path' => 'filter']]);
+		}
+		if (count($found['entries']) !== $expected) {
+			throw new \OCA\Webforms\Exception\CountChangedException(count($found['entries']));
+		}
+		return $found['entries'];
 	}
 
 	/**
@@ -511,23 +681,7 @@ class FormService {
 	 */
 	public function deleteEntries(string $userId, int $id, ?array $ids, EntryFilter $filter, int $expected): int {
 		$form = $this->get($userId, $id);
-		if ($ids !== null) {
-			if (count($ids) > self::MAX_BULK_IDS) {
-				throw new ValidationException([['code' => 'too_many_selected', 'path' => 'ids']]);
-			}
-			$entries = $this->query->byIds($form->getId(), $ids);
-		} else {
-			$found = $this->query->all($form->getId(), $filter, self::MAX_BULK_MATCHES);
-			if ($found['truncated']) {
-				// Too many to delete in one go: narrow the filter, or let retention do it.
-				throw new ValidationException([['code' => 'too_many_matches', 'path' => 'filter']]);
-			}
-			if (count($found['entries']) !== $expected) {
-				throw new \OCA\Webforms\Exception\CountChangedException(count($found['entries']));
-			}
-			$entries = $found['entries'];
-		}
-
+		$entries = $this->selectEntries($form, $ids, $filter, $expected);
 		foreach ($entries as $entry) {
 			$this->removeEntry($form, $entry, $userId);
 		}
@@ -594,6 +748,48 @@ class FormService {
 				$this->uploads->requireDestination($form->getOwnerId(), $title, $field, (string)$fieldId);
 			} catch (UploadRejected $e) {
 				$errors[] = ['code' => $e->reason, 'path' => 'fields.' . $fieldId];
+			}
+		}
+		return $errors;
+	}
+
+	/**
+	 * Image blocks whose picture is not in the owner's Files, or is too large to serve
+	 * (docs/SCHEMA.md section 4.9). A picture that goes missing later simply stops showing.
+	 *
+	 * @param array<string, mixed> $definition
+	 * @return list<array{code: string, path: string}>
+	 */
+	private function imageErrors(Form $form, array $definition): array {
+		$errors = [];
+		foreach (self::fieldsOf($definition) as $fieldId => $field) {
+			$src = ($field['type'] ?? null) === FieldType::IMAGE ? ($field['src'] ?? null) : null;
+			if (!is_string($src) || ImageSource::kind($src) !== ImageSource::FILES) {
+				continue;
+			}
+			if (!$this->images->exists($form->getOwnerId(), (string)ImageSource::filesPath($src))) {
+				$errors[] = ['code' => 'field_image_missing', 'path' => 'fields.' . $fieldId . '.src'];
+			}
+		}
+		return $errors;
+	}
+
+	/**
+	 * `files` actions whose CSV file the owner may not change or create (docs/SCHEMA.md section 19).
+	 * Checked when the draft is saved (as a warning), at publish, and again on every run.
+	 *
+	 * @param array<string, mixed> $definition
+	 * @return list<array{code: string, path: string}>
+	 */
+	private function responseFileErrors(Form $form, array $definition): array {
+		$errors = [];
+		foreach (is_array($definition['actions'] ?? null) ? $definition['actions'] : [] as $index => $action) {
+			if (!is_array($action) || ($action['type'] ?? null) !== 'files' || !is_string($action['path'] ?? null)) {
+				continue;
+			}
+			$path = CsvFile::cleanPath($action['path']);
+			if ($path !== null && !$this->responseFiles->canWrite($form->getOwnerId(), $path)) {
+				$errors[] = ['code' => 'files_not_writable', 'path' => 'actions[' . $index . '].path'];
 			}
 		}
 		return $errors;
@@ -677,7 +873,37 @@ class FormService {
 	 * @return array<string, mixed>
 	 */
 	public function toArray(Form $form, bool $withDraft = false): array {
-		$data = [
+		$latestId = $form->getLatestVersionId();
+		$latest = $latestId === null ? null : ($this->versions->findByIds([$latestId])[$latestId] ?? null);
+		$data = $this->describe($form, $latest, $this->entries->countByForm($form->getId()), $this->entries->countNew($form->getId(), $form->getResponsesSeenAt()));
+		if ($withDraft) {
+			$data['draft'] = JsonShape::definition($form->getDraftDefinition());
+			$data['hasUnpublishedChanges'] = $latest === null ? true : $this->differs($form, $latest);
+			// Ids that cannot be used again, so the builder can say so before the server has to refuse.
+			$data['retiredIds'] = $form->getRetiredIdList();
+		}
+		return $data;
+	}
+
+	/**
+	 * A form as the owner sees it. `availability` says whether the published form takes responses by
+	 * its own limit and dates and the server's cap (docs/SCHEMA.md section 3.1); it is null until the
+	 * form has been published. A closed or archived form takes none whatever it says.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function describe(Form $form, ?Version $latest, int $responses, int $newResponses): array {
+		$availability = null;
+		if ($latest !== null) {
+			$settings = $latest->getDefinitionArray()['settings'] ?? [];
+			$availability = Availability::of(
+				is_array($settings) ? $settings : [],
+				$this->time->getTime(),
+				$responses,
+				$this->policy->settings()->maxResponsesPerForm(),
+			);
+		}
+		return [
 			'id' => $form->getId(),
 			'title' => $form->getTitle(),
 			'description' => $form->getDescription(),
@@ -690,26 +916,11 @@ class FormService {
 			'archivedAt' => $form->getArchivedAt(),
 			'createdAt' => $form->getCreatedAt(),
 			'updatedAt' => $form->getUpdatedAt(),
+			'availability' => $availability,
+			// Responses that arrived since the owner last opened the list (docs/SCHEMA.md section 20.1).
+			'newCount' => $newResponses,
+			'responsesSeenAt' => $form->getResponsesSeenAt(),
 		];
-		if ($withDraft) {
-			$data['draft'] = JsonShape::definition($form->getDraftDefinition());
-			$data['hasUnpublishedChanges'] = $this->hasUnpublishedChanges($form);
-			// Ids that cannot be used again, so the builder can say so before the server has to refuse.
-			$data['retiredIds'] = $form->getRetiredIdList();
-		}
-		return $data;
-	}
-
-	/**
-	 * Whether the draft differs from the latest published version (always true
-	 * before the first publish).
-	 */
-	private function hasUnpublishedChanges(Form $form): bool {
-		$latestId = $form->getLatestVersionId();
-		if ($latestId === null) {
-			return true;
-		}
-		return $this->differs($form, $this->versions->find($latestId));
 	}
 
 	private function differs(Form $form, Version $latest): bool {

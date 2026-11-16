@@ -16,12 +16,12 @@ after-submit action (see the decision below). The work here makes that model com
 1. **Send existing responses to a destination (backfill).** Adding a Tables action after responses
    were collected leaves the old ones behind. A "send existing responses" button on the action replays
    them through the same queue, with the same retries and delivery log.
-2. **Administration settings.** Done: allowed action types, response retention, limits per form and who
-   can create forms (SCHEMA.md section 16). Still open: defaults for destinations, such as a default
-   Tables folder or sender address.
-3. **Files destination.** Append each response to a CSV file in the form owner's Files. Real
-   spreadsheet formats are harder, since Nextcloud has no native spreadsheet storage, and wait until
-   there is demand.
+2. **Administration settings.** Done: allowed action types, response retention, limits per form, who
+   can create forms, and defaults for email (reply-to, sender name, and whether forms may set their
+   own; SCHEMA.md sections 16 and 16.2). Still open: a default Tables folder.
+3. **Files destination.** Done: the `files` action appends each response to a CSV file in the owner's
+   Files (SCHEMA.md section 19). Real spreadsheet formats are harder, since Nextcloud has no native
+   spreadsheet storage, and wait until there is demand.
 4. **Remember the destination row.** The Tables action already receives the new row's id and drops it.
    Keeping it in the delivery log makes it possible to follow deletes (and later edits) of a response
    into Tables, which are not followed today. Decide per action whether deletes propagate.
@@ -48,15 +48,16 @@ section 18). Still open, roughly in order:
 ## Responses view
 
 Done: table with search and filters, selecting, bulk delete, CSV or Excel download that follows the
-filter, the selection and the chosen columns, and a summary above the table (SCHEMA.md sections 17 to
-17.2). Still open, roughly in
-order:
+filter, the selection and the chosen columns, a summary above the table (SCHEMA.md sections 17 to
+17.2), and marking what is new, statuses, a private note and a page for one response that can be
+printed (SCHEMA.md section 20). Still open, roughly in order:
 
 1. ODS export, and a zip of uploaded files.
 2. Clicking a bar in the summary to filter by that answer.
-3. Statuses (new, reviewed, done, spam), private notes and assignment. Needs a migration.
-4. A per-response page that can be printed or shared with a colleague.
-5. Sharing results with someone who cannot edit the form.
+3. Sharing results with someone who cannot edit the form.
+
+Not planned: assigning a response to someone. Forms are not a task tool, and a flow on "Response
+submitted" or "Response status changed" can create a task or a Deck card (SCHEMA.md section 20.5).
 
 ## Decision: actions, not pluggable storage
 
@@ -98,30 +99,36 @@ Gap review written against 0.3.x (2026-11-15), from README.md, docs/SCHEMA.md an
 - Theming and custom CSS. `design` only offers width, card, background and accent color.
 - Nextcloud Tables as an optional response storage backend. Today Tables is only an after-submit action,
   by decision (see the decision above).
-- Hidden fields, rating, matrix and signature fields (SCHEMA.md, deferred field types).
+- Matrix and signature fields (SCHEMA.md, deferred field types). Hidden, rating, scale, consent and
+  date and time fields are done.
 - App store listing, signing, screenshots and real translations.
 
 ### Gaps not tracked anywhere
 
-- **Response limits and scheduling.** No max-responses cap and no open or close date. Only a manual closed status.
+- **Response limits and scheduling.** Done: a limit on responses, opening and closing times, and a
+  message for each (SCHEMA.md section 3.1). They apply on publish. Still open: changing them on a live
+  form without publishing, and telling respondents when a form will open.
 - **Duplicate-submission control.** Anonymous duplicates are not controlled (SCHEMA.md open question 6).
-- **URL prefill.** Fields cannot be prefilled from query parameters. This goes with hidden fields.
-- **Response management.**
-  - No search or filter UI, no charts or summary.
-  - Respondents cannot edit a response after submitting.
-  - No per-response PDF.
-  - No review states or assignment.
-- **Save and resume.** Drafts autosave for the owner, but respondents cannot resume a long form.
-- **Respondent experience.** No progress indicator in multi-page forms, no per-form language, no field-level images.
+- **URL prefill.** Done, with hidden fields and default values: the address fills fields by their id,
+  unless the form switches it off (SCHEMA.md section 4.7). Still open: forwarding the host page's
+  parameters into an embedded form, and making a prefilled field read only.
+- **Response management.** Done: search, filters, a summary, statuses, notes and a printable page for
+  one response (SCHEMA.md sections 17 and 20). Still open: respondents cannot edit a response after
+  submitting.
+- **Save and resume.** Done for the same device: a form can keep unsent answers in the respondent's
+  browser (SCHEMA.md section 21). Left out by decision: a link to continue on another device, uploads,
+  and a count of people who started.
+- **Respondent experience.** Done: a progress indicator on forms with several pages (SCHEMA.md section 5.1). Also done: a review step that lists the answers before sending (SCHEMA.md section 5.2). Still open: per-form language, and a picture inside a question (image blocks, SCHEMA.md section 4.9, are done).
 - **Sharing.** Public link, custom address, QR code and embedding (see Sharing above). No collaborator or co-editor sharing and no per-user form permissions.
-- **Question types.** No scale or slider, color, consent checkbox, or date-range field.
+- **Question types.** Done: rating, scale, consent and date and time (SCHEMA.md section 4.8). Still open:
+  slider, color, date range, and name and address fields. Image blocks are done (SCHEMA.md section 4.9).
 - **Builder.** Touch dragging is not supported.
 - **Rules.** Show, hide and require only. No conditional values or calculated fields.
 - **Actions.** Submit message and redirect are resolved synchronously, so they cannot depend on a background action.
 
 ### Suggested first picks from the gap review
 
-1. Response limits and scheduling.
-2. URL prefill together with hidden fields.
+1. Response limits and scheduling (done).
+2. URL prefill together with hidden fields (done).
 
 Both are mostly schema and validator work and fit the existing architecture.

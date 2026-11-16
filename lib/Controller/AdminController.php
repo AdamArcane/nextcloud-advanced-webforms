@@ -10,11 +10,16 @@ declare(strict_types=1);
 namespace OCA\Webforms\Controller;
 
 use OCA\Webforms\AppInfo\Application;
+use OCA\Webforms\Db\EntryMapper;
 use OCA\Webforms\Forms\DefinitionValidator;
+use OCA\Webforms\Forms\ResponseStatuses;
 use OCA\Webforms\Security\Captcha\CaptchaProvider;
 use OCA\Webforms\Security\Captcha\CaptchaSettings;
 use OCA\Webforms\Service\RetentionService;
+use OCA\Webforms\Actions\MailPolicy;
+use OCA\Webforms\Settings\MailSettings;
 use OCA\Webforms\Settings\PolicySettings;
+use OCA\Webforms\Settings\StatusSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\FrontpageRoute;
@@ -33,9 +38,12 @@ class AdminController extends Controller {
 		IRequest $request,
 		private readonly CaptchaSettings $settings,
 		private readonly PolicySettings $policy,
+		private readonly MailSettings $mail,
 		private readonly RetentionService $retention,
 		private readonly IGroupManager $groups,
 		private readonly ITimeFactory $time,
+		private readonly StatusSettings $statuses,
+		private readonly EntryMapper $entries,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 	}
@@ -125,6 +133,42 @@ class AdminController extends Controller {
 		return new JSONResponse($this->currentPolicy());
 	}
 
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/admin/mail')]
+	public function getMail(): JSONResponse {
+		return new JSONResponse($this->currentMail());
+	}
+
+	/**
+	 * Save the settings for mail that forms send (docs/SCHEMA.md section 16.2).
+	 */
+	#[FrontpageRoute(verb: 'PUT', url: '/api/v1/admin/mail')]
+	public function setMail(string $replyToMode = MailPolicy::REPLY_NONE, string $replyToAddress = '', bool $allowOverride = true, string $fromName = ''): JSONResponse {
+		if (!in_array($replyToMode, MailPolicy::REPLY_MODES, true)) {
+			return new JSONResponse(['error' => 'invalid_reply_to_mode'], Http::STATUS_BAD_REQUEST);
+		}
+		if ($replyToMode === MailPolicy::REPLY_ADDRESS && !MailSettings::isAddress(trim($replyToAddress))) {
+			return new JSONResponse(['error' => 'invalid_reply_to_address'], Http::STATUS_BAD_REQUEST);
+		}
+		if (mb_strlen(trim($fromName)) > MailPolicy::MAX_NAME || preg_match('/[\x00-\x1F\x7F]/', $fromName) === 1) {
+			return new JSONResponse(['error' => 'invalid_from_name'], Http::STATUS_BAD_REQUEST);
+		}
+		$this->mail->save($replyToMode, $replyToAddress, $allowOverride, $fromName);
+		return new JSONResponse($this->currentMail());
+	}
+
+	/**
+	 * @return array{replyToMode: string, replyToAddress: string, allowOverride: bool, fromName: string}
+	 */
+	private function currentMail(): array {
+		$policy = $this->mail->policy();
+		return [
+			'replyToMode' => $policy->replyToMode,
+			'replyToAddress' => $policy->replyToAddress,
+			'allowOverride' => $policy->allowOverride,
+			'fromName' => $policy->fromName,
+		];
+	}
+
 	/**
 	 * How many existing responses are older than a number of days, so the page can say what turning
 	 * retention on would delete.
@@ -147,6 +191,49 @@ class AdminController extends Controller {
 			$found[] = ['id' => $group->getGID(), 'displayName' => $group->getDisplayName()];
 		}
 		return new JSONResponse(['groups' => $found]);
+	}
+
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/admin/statuses')]
+	public function getStatuses(): JSONResponse {
+		return new JSONResponse($this->currentStatuses());
+	}
+
+	/**
+	 * Save the list of response statuses (docs/SCHEMA.md section 20.2). A status that is no longer in the
+	 * list is taken off every response that has it, so that is refused with `confirmation_required` and
+	 * the number of responses affected until the request repeats with `confirmDelete`.
+	 *
+	 * @param list<array<string, mixed>> $statuses each with id, label and color
+	 */
+	#[FrontpageRoute(verb: 'PUT', url: '/api/v1/admin/statuses')]
+	public function setStatuses(array $statuses = [], bool $confirmDelete = false): JSONResponse {
+		try {
+			$list = ResponseStatuses::validate($statuses);
+		} catch (\InvalidArgumentException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
+		$removed = array_values(array_diff(array_column($this->statuses->all(), 'id'), array_column($list, 'id')));
+		if ($removed !== []) {
+			$affected = $this->entries->countWithStatus($removed);
+			if ($affected > 0 && !$confirmDelete) {
+				return new JSONResponse(['error' => 'confirmation_required', 'affected' => $affected], Http::STATUS_CONFLICT);
+			}
+		}
+		$this->statuses->save($list);
+		$this->entries->clearStatuses($removed);
+		return new JSONResponse($this->currentStatuses());
+	}
+
+	/**
+	 * @return array<string, mixed>
+	 */
+	private function currentStatuses(): array {
+		return [
+			'statuses' => $this->statuses->all(),
+			'colors' => ResponseStatuses::COLORS,
+			'max' => ResponseStatuses::MAX,
+			'maxLabel' => ResponseStatuses::MAX_LABEL,
+		];
 	}
 
 	/**

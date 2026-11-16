@@ -8,23 +8,26 @@ import type { DraftDefinition, FormDesign, FormSettings, OwnerForm } from '../..
 
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import { computed } from 'vue'
+import { availabilityNote, fromLocalInput, toLocalInput } from '../../availability.ts'
 import { DEFAULT_ACCENT, DEFAULT_BACKGROUND_COLOR, safeColor } from '../../design.ts'
 import SegmentedControl from './SegmentedControl.vue'
 import SharePanel from './SharePanel.vue'
 
-defineProps<{
+const props = defineProps<{
 	/** Which page of the settings to show. */
 	section: 'general' | 'design' | 'sharing'
 	definition: DraftDefinition
 	/** The public link, once the form has been published. */
 	shareUrl: string | null
 	archived?: boolean
-	/** The form itself, for the sharing options that are saved apart from the draft. */
+	/** The form as the server has it: the sharing options saved apart from the draft, and what the published form is doing now. */
 	form?: OwnerForm | null
 }>()
 
@@ -37,6 +40,24 @@ const emit = defineEmits<{
 	/** The sharing options were saved; this is the form as the server has it now. */
 	share: [form: OwnerForm]
 }>()
+
+const published = computed(() => (props.form ? availabilityNote(props.form) : null))
+const windowInvalid = computed(() => {
+	const { opensAt, closesAt } = props.definition.settings
+	return opensAt !== undefined && closesAt !== undefined && closesAt <= opensAt
+})
+
+/** A whole number from 1 to a million, or undefined (no limit) for anything else. */
+function limit(value: string | number): number | undefined {
+	const number = Number(value)
+	return String(value).trim() !== '' && Number.isInteger(number) && number >= 1 && number <= 1000000 ? number : undefined
+}
+
+function setLimit(value: string | number): void {
+	const maxResponses = limit(value)
+	// Without a limit there is nothing left to count down.
+	emit('settings', maxResponses === undefined ? { maxResponses, showRemaining: undefined } : { maxResponses })
+}
 
 /** Change one design option; `undefined` puts it back to the default, and an empty design is dropped. */
 function setDesign(current: FormDesign | undefined, patch: Partial<FormDesign>): void {
@@ -102,6 +123,36 @@ function str(value: string | number): string | undefined {
 				:label="t('webforms', 'Submit button text')"
 				:placeholder="t('webforms', 'Send')"
 				@update:model-value="(value: string | number) => emit('settings', { submitLabel: str(value) })" />
+			<NcCheckboxRadioSwitch type="switch"
+				:model-value="definition.settings.prefill !== false"
+				@update:model-value="(value: boolean) => emit('settings', { prefill: value ? undefined : false })">
+				{{ t('webforms', 'Let the link fill in fields') }}
+			</NcCheckboxRadioSwitch>
+			<p class="af-form-props__hint">
+				{{ t('webforms', 'Add ?field_id=value to the form link to fill a field when it opens, for example to track where people came from. Each field shows its parameter.') }}
+			</p>
+			<NcCheckboxRadioSwitch type="switch"
+				:model-value="definition.settings.saveProgress === true"
+				@update:model-value="(value: boolean) => emit('settings', { saveProgress: value ? true : undefined })">
+				{{ t('webforms', 'Let people continue later') }}
+			</NcCheckboxRadioSwitch>
+			<p class="af-form-props__hint">
+				{{ t('webforms', 'Answers are kept in the browser as they are typed, for up to 30 days, and come back when the form is opened again on the same device. A line under the buttons tells people so. Nothing reaches you until the form is sent. Uploaded files are not kept. Leave this off for forms that are filled in on shared computers.') }}
+			</p>
+			<NcCheckboxRadioSwitch type="switch"
+				:model-value="definition.settings.reviewStep === true"
+				@update:model-value="(value: boolean) => emit('settings', { reviewStep: value ? true : undefined })">
+				{{ t('webforms', 'Show a summary before sending') }}
+			</NcCheckboxRadioSwitch>
+			<NcTextField v-if="definition.settings.reviewStep === true"
+				:model-value="definition.settings.reviewTitle ?? ''"
+				:label="t('webforms', 'Summary heading')"
+				:placeholder="t('webforms', 'Review your answers')"
+				maxlength="64"
+				@update:model-value="(value: string | number) => emit('settings', { reviewTitle: str(value) })" />
+			<p class="af-form-props__hint">
+				{{ t('webforms', 'Adds a last step that lists what was entered, with a button to change each page, and the Send button moves there. A long summary scrolls inside its own box.') }}
+			</p>
 		</section>
 
 		<template v-if="section === 'design'">
@@ -179,8 +230,65 @@ function str(value: string | number): string | undefined {
 					@click="setDesign(definition.settings.design, { buttonColor: undefined })">
 					{{ t('webforms', 'Same as the accent colour') }}
 				</NcButton>
+			</section>
+
+			<section class="af-form-props__section">
+				<h3 class="af-form-props__heading">
+					{{ t('webforms', 'Submit button position') }}
+				</h3>
+				<SegmentedControl :model-value="definition.settings.design?.submitAlign ?? 'left'"
+					:group-label="t('webforms', 'Submit button position')"
+					:options="[
+						{ value: 'left', label: t('webforms', 'Left') },
+						{ value: 'center', label: t('webforms', 'Center') },
+						{ value: 'right', label: t('webforms', 'Right') },
+						{ value: 'justify', label: t('webforms', 'Full width') },
+					]"
+					@update:model-value="(value) => setDesign(definition.settings.design, { submitAlign: value === 'left' ? undefined : value as FormDesign['submitAlign'] })" />
 				<p class="af-form-props__hint">
-					{{ t('webforms', 'Use Preview to see the result.') }}
+					{{ t('webforms', 'On a form with several pages, Back and Next sit the same way. Use Preview to see the result.') }}
+				</p>
+			</section>
+
+			<section v-if="definition.pages.length > 1" class="af-form-props__section">
+				<h3 class="af-form-props__heading">
+					{{ t('webforms', 'Page progress') }}
+				</h3>
+				<SegmentedControl :model-value="definition.settings.design?.progress ?? 'bar'"
+					:group-label="t('webforms', 'Page progress')"
+					:options="[
+						{ value: 'bar', label: t('webforms', 'Bar') },
+						{ value: 'steps', label: t('webforms', 'Steps') },
+						{ value: 'none', label: t('webforms', 'None') },
+					]"
+					@update:model-value="(value) => setDesign(definition.settings.design, { progress: value === 'bar' ? undefined : value as FormDesign['progress'] })" />
+				<template v-if="definition.settings.design?.progress !== 'none'">
+					<label class="af-form-props__color">
+						<input type="color"
+							:value="safeColor(definition.settings.design?.progressColor) ?? safeColor(definition.settings.design?.accentColor) ?? DEFAULT_ACCENT"
+							@input="setDesign(definition.settings.design, { progressColor: ($event.target as HTMLInputElement).value })">
+						{{ t('webforms', 'Progress colour') }}
+					</label>
+					<NcButton v-if="definition.settings.design?.progressColor"
+						variant="tertiary"
+						@click="setDesign(definition.settings.design, { progressColor: undefined })">
+						{{ t('webforms', 'Same as the accent colour') }}
+					</NcButton>
+				</template>
+				<h3 class="af-form-props__heading">
+					{{ t('webforms', 'Progress text') }}
+				</h3>
+				<SegmentedControl :model-value="definition.settings.design?.progressLabel ?? 'step'"
+					:group-label="t('webforms', 'Progress text')"
+					:options="[
+						{ value: 'step', label: t('webforms', 'Step number') },
+						{ value: 'title', label: t('webforms', 'Page name') },
+						{ value: 'percent', label: t('webforms', 'Percent') },
+						{ value: 'none', label: t('webforms', 'None') },
+					]"
+					@update:model-value="(value) => setDesign(definition.settings.design, { progressLabel: value === 'step' ? undefined : value as FormDesign['progressLabel'] })" />
+				<p class="af-form-props__hint">
+					{{ t('webforms', 'Shown above the form, counting only the pages a respondent can reach. A page without a name shows its step number.') }}
 				</p>
 			</section>
 		</template>
@@ -228,6 +336,65 @@ function str(value: string | number): string | undefined {
 			<NcTextField :model-value="definition.settings.closedMessage ?? ''"
 				:label="t('webforms', 'Message when closed')"
 				@update:model-value="(value: string | number) => emit('settings', { closedMessage: str(value) })" />
+		</section>
+
+		<section v-if="section === 'sharing'" class="af-form-props__section">
+			<h3 class="af-form-props__heading">
+				{{ t('webforms', 'Response limit') }}
+			</h3>
+			<NcNoteCard v-if="published" type="info" class="af-form-props__now">
+				{{ published }}
+			</NcNoteCard>
+			<NcTextField :model-value="definition.settings.maxResponses === undefined ? '' : String(definition.settings.maxResponses)"
+				:label="t('webforms', 'Maximum number of responses')"
+				:placeholder="t('webforms', 'No limit')"
+				type="number"
+				min="1"
+				max="1000000"
+				step="1"
+				@update:model-value="setLimit" />
+			<NcCheckboxRadioSwitch type="switch"
+				:model-value="definition.settings.showRemaining === true"
+				:disabled="definition.settings.maxResponses === undefined"
+				@update:model-value="(value: boolean) => emit('settings', { showRemaining: value ? true : undefined })">
+				{{ t('webforms', 'Show respondents how many places are left') }}
+			</NcCheckboxRadioSwitch>
+			<NcTextField :model-value="definition.settings.fullMessage ?? ''"
+				:label="t('webforms', 'Message when full')"
+				:placeholder="t('webforms', 'This form has received the maximum number of responses.')"
+				@update:model-value="(value: string | number) => emit('settings', { fullMessage: str(value) })" />
+		</section>
+
+		<section v-if="section === 'sharing'" class="af-form-props__section">
+			<h3 class="af-form-props__heading">
+				{{ t('webforms', 'Opening and closing') }}
+			</h3>
+			<label class="af-form-props__date">
+				<span>{{ t('webforms', 'Opens') }}</span>
+				<input type="datetime-local"
+					:value="toLocalInput(definition.settings.opensAt)"
+					@change="emit('settings', { opensAt: fromLocalInput(($event.target as HTMLInputElement).value) })">
+			</label>
+			<label class="af-form-props__date">
+				<span>{{ t('webforms', 'Closes') }}</span>
+				<input type="datetime-local"
+					:value="toLocalInput(definition.settings.closesAt)"
+					:aria-invalid="windowInvalid ? 'true' : undefined"
+					@change="emit('settings', { closesAt: fromLocalInput(($event.target as HTMLInputElement).value) })">
+			</label>
+			<p v-if="windowInvalid" class="af-form-props__hint af-form-props__hint--error" role="alert">
+				{{ t('webforms', 'The closing time must be after the opening time.') }}
+			</p>
+			<p class="af-form-props__hint">
+				{{ t('webforms', 'Leave a time empty to have no opening or no closing time. Times are in your own time zone. Like the other settings here, the limit and the times apply once the form is published.') }}
+			</p>
+			<NcTextField :model-value="definition.settings.notOpenMessage ?? ''"
+				:label="t('webforms', 'Message before opening')"
+				:placeholder="t('webforms', 'This form is not open yet.')"
+				@update:model-value="(value: string | number) => emit('settings', { notOpenMessage: str(value) })" />
+			<p class="af-form-props__hint">
+				{{ t('webforms', 'After the closing time the form shows the message when closed.') }}
+			</p>
 		</section>
 
 		<section v-if="section === 'general'" class="af-form-props__section">
@@ -298,5 +465,25 @@ function str(value: string | number): string | undefined {
 	margin: 0;
 	color: var(--color-text-maxcontrast);
 	font-size: 13px;
+}
+
+.af-form-props__hint--error {
+	color: var(--color-text-error, var(--color-error));
+}
+
+.af-form-props__now {
+	margin: 0;
+}
+
+.af-form-props__date {
+	display: flex;
+	flex-direction: column;
+	gap: var(--default-grid-baseline);
+}
+
+.af-form-props__date input {
+	width: 100%;
+	max-width: 280px;
+	margin: 0;
 }
 </style>

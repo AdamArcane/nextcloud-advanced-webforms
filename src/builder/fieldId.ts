@@ -77,6 +77,9 @@ function renameInAction(action: FormAction, from: string, to: string): FormActio
 			if (typeof renamed.to === 'object' && 'field' in renamed.to && renamed.to.field === from) {
 				renamed.to = { field: to }
 			}
+			if (typeof renamed.replyTo === 'object' && 'field' in renamed.replyTo && renamed.replyTo.field === from) {
+				renamed.replyTo = { field: to }
+			}
 			break
 		case 'tables':
 			// The map is column id to source: the sources are what point at a field.
@@ -128,7 +131,7 @@ export function renameField(
 // ---- Ids that follow the label ------------------------------------------------
 
 /** Field types that carry a value and a label, so an id made from the label means something. */
-const NAMED_TYPES = new Set(['text', 'textarea', 'email', 'phone', 'url', 'number', 'select', 'radio', 'checkbox', 'checkboxes', 'date', 'time', 'file'])
+const NAMED_TYPES = new Set(['text', 'textarea', 'email', 'phone', 'url', 'number', 'select', 'radio', 'checkbox', 'checkboxes', 'date', 'time', 'datetime', 'rating', 'scale', 'consent', 'file', 'hidden'])
 
 const RANDOM_ID = /^f_[a-z0-9]{6}$/
 

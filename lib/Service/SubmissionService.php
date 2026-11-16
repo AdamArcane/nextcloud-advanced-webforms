@@ -21,9 +21,11 @@ use OCA\Webforms\Exception\FormClosedException;
 use OCA\Webforms\Exception\LoginRequiredException;
 use OCA\Webforms\Exception\NotFoundException;
 use OCA\Webforms\Exception\ValidationException;
+use OCA\Webforms\Forms\Availability;
 use OCA\Webforms\Forms\JsonShape;
 use OCA\Webforms\Forms\SubmissionValidator;
 use OCA\Webforms\Forms\UploadPolicy;
+use OCA\Webforms\Forms\ImageSource;
 use OCA\Webforms\Rules\FieldType;
 use OCA\Webforms\Security\Captcha\CaptchaService;
 use OCA\Webforms\Security\FillTimeToken;
@@ -45,6 +47,7 @@ use Psr\Log\LoggerInterface;
 class SubmissionService {
 	public const DEFAULT_CLOSED_MESSAGE = 'This form is no longer accepting responses.';
 	public const FULL_MESSAGE = 'This form has received the maximum number of responses.';
+	public const NOT_OPEN_MESSAGE = 'This form is not open yet.';
 
 	private readonly FillTimeToken $tokens;
 
@@ -79,7 +82,8 @@ class SubmissionService {
 	public function getPublic(string $token, ?string $userId, bool $embedded = false): array {
 		$form = $this->findForm($token, $embedded);
 		$userId = $embedded ? null : $userId;
-		$version = $this->openVersion($form, $userId);
+		$remaining = null;
+		$version = $this->openVersion($form, $userId, $remaining);
 		$definition = $version->getDefinitionArray();
 		unset($definition['actions']);
 		$captcha = $this->captcha->publicConfig($definition, $userId);
@@ -87,6 +91,14 @@ class SubmissionService {
 		foreach ($definition['fields'] as $fieldId => $field) {
 			if (is_array($field) && ($field['type'] ?? null) === FieldType::FILE) {
 				unset($definition['fields'][$fieldId]['folder'], $definition['fields'][$fieldId]['storage']);
+			}
+			// Neither is where a picture sits in the owner's Files: the page asks for it by field id.
+			if (is_array($field) && ($field['type'] ?? null) === FieldType::IMAGE && ImageSource::kind($field['src'] ?? null) === ImageSource::FILES) {
+				$definition['fields'][$fieldId]['src'] = ImageSource::FILES_MARKER;
+			}
+			// A hidden field's description is the owner's own note about it (docs/SCHEMA.md section 4.7).
+			if (is_array($field) && ($field['type'] ?? null) === FieldType::HIDDEN) {
+				unset($definition['fields'][$fieldId]['description']);
 			}
 		}
 
@@ -97,6 +109,7 @@ class SubmissionService {
 			'uploadLimit' => (int)\OCP\Util::uploadLimit(),
 			'fillToken' => $this->tokens->issue($form->getId(), $version->getId(), $this->time->getTime()),
 			'captcha' => $captcha,
+			'remaining' => $remaining,
 			'definition' => JsonShape::definition($definition),
 		];
 	}
@@ -288,17 +301,33 @@ class SubmissionService {
 	}
 
 	/**
-	 * @throws NotFoundException
-	 * @throws FormClosedException
-	 * @throws LoginRequiredException
-	 */
-	/**
 	 * The form behind a public address. An embedded request (docs/SCHEMA.md section 18.3) comes from a
 	 * frame on another website: it is only answered for a form that allows embedding, and its caller is
 	 * always treated as anonymous, because those endpoints do without the request token.
 	 *
 	 * @throws NotFoundException
 	 */
+	/**
+	 * The picture of an image block that comes from the owner's Files, for whoever may open the form
+	 * right now: the same checks as getPublic(), so a closed or unpublished form gives nothing away.
+	 *
+	 * @return array{ownerId: string, path: string}
+	 * @throws NotFoundException
+	 * @throws FormClosedException
+	 * @throws LoginRequiredException
+	 */
+	public function imageSource(string $token, ?string $userId, string $fieldId, bool $embedded = false): array {
+		$form = $this->findForm($token, $embedded);
+		$version = $this->openVersion($form, $embedded ? null : $userId);
+		$field = $version->getDefinitionArray()['fields'][$fieldId] ?? null;
+		$src = is_array($field) && ($field['type'] ?? null) === FieldType::IMAGE ? ($field['src'] ?? null) : null;
+		$path = is_string($src) && ImageSource::kind($src) === ImageSource::FILES ? ImageSource::filesPath($src) : null;
+		if ($path === null) {
+			throw new NotFoundException();
+		}
+		return ['ownerId' => $form->getOwnerId(), 'path' => $path];
+	}
+
 	private function findForm(string $token, bool $embedded): Form {
 		$form = $this->forms->findByToken($token);
 		if ($embedded && !$form->isEmbeddable()) {
@@ -307,7 +336,16 @@ class SubmissionService {
 		return $form;
 	}
 
-	private function openVersion(Form $form, ?string $userId): \OCA\Webforms\Db\Version {
+	/**
+	 * The version respondents get, or the reason they get none: closed by the owner, outside the form's
+	 * dates, or full (docs/SCHEMA.md sections 3.1 and 16).
+	 *
+	 * @param int|null $remaining set to how many more responses the form takes, when it is set to show that
+	 * @throws NotFoundException
+	 * @throws FormClosedException
+	 * @throws LoginRequiredException
+	 */
+	private function openVersion(Form $form, ?string $userId, ?int &$remaining = null): \OCA\Webforms\Db\Version {
 		if ($form->getStatus() === Form::STATUS_UNPUBLISHED || $form->getLatestVersionId() === null) {
 			throw new NotFoundException();
 		}
@@ -316,17 +354,36 @@ class SubmissionService {
 		$settings = is_array($settings) ? $settings : [];
 
 		if ($form->getStatus() === Form::STATUS_CLOSED || $form->isArchived()) {
-			$message = $settings['closedMessage'] ?? self::DEFAULT_CLOSED_MESSAGE;
-			throw new FormClosedException(is_string($message) ? $message : self::DEFAULT_CLOSED_MESSAGE);
+			throw new FormClosedException(self::message($settings, 'closedMessage', self::DEFAULT_CLOSED_MESSAGE));
 		}
-		// The server's cap on responses per form (docs/SCHEMA.md section 16).
-		$cap = $this->policy->settings()->maxResponsesPerForm();
-		if ($cap > 0 && $this->entries->countByForm($form->getId()) >= $cap) {
-			throw new FormClosedException(self::FULL_MESSAGE);
+
+		$policyCap = $this->policy->settings()->maxResponsesPerForm();
+		// Counting is only needed when something limits the number.
+		$limited = $policyCap > 0 || Availability::ownCap($settings) > 0;
+		$availability = Availability::of($settings, $this->time->getTime(), $limited ? $this->entries->countByForm($form->getId()) : 0, $policyCap);
+		switch ($availability['state']) {
+			case Availability::ENDED:
+				throw new FormClosedException(self::message($settings, 'closedMessage', self::DEFAULT_CLOSED_MESSAGE));
+			case Availability::SCHEDULED:
+				throw new FormClosedException(self::message($settings, 'notOpenMessage', self::NOT_OPEN_MESSAGE), FormClosedException::NOT_OPEN);
+			case Availability::FULL:
+				throw new FormClosedException(self::message($settings, 'fullMessage', self::FULL_MESSAGE), FormClosedException::FULL);
 		}
+
 		if (($settings['requireLogin'] ?? false) === true && $userId === null) {
 			throw new LoginRequiredException();
 		}
+		if (($settings['showRemaining'] ?? false) === true && Availability::ownCap($settings) > 0) {
+			$remaining = $availability['cap'] - $availability['responses'];
+		}
 		return $version;
+	}
+
+	/**
+	 * @param array<string, mixed> $settings
+	 */
+	private static function message(array $settings, string $key, string $default): string {
+		$message = $settings[$key] ?? null;
+		return is_string($message) && trim($message) !== '' ? $message : $default;
 	}
 }

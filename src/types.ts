@@ -29,7 +29,10 @@ export type FormField = {
 	maxLength?: number
 	/** Rows shown by a textarea (2 to 20). */
 	rows?: number
-	/** A number for `number` fields; `YYYY-MM-DD` for `date`; `HH:MM` for `time`. */
+	/**
+	 * A number for `number` fields; `YYYY-MM-DD` for `date`; `HH:MM` for `time`; `YYYY-MM-DDTHH:MM` for
+	 * `datetime`. A `rating` has only `max` (3 to 10 stars), a `scale` runs from `min` (0 or 1) to `max`.
+	 */
 	min?: number | string
 	max?: number | string
 	/** Text shown before or after a number input, such as a currency sign or a unit. */
@@ -40,11 +43,20 @@ export type FormField = {
 	/** Line style of a divider. Default solid. */
 	style?: 'solid' | 'dashed' | 'dotted'
 	step?: number
+	/** What the two ends of a `scale` mean, such as "Not likely" and "Very likely". */
+	minLabel?: string
+	maxLabel?: string
 	options?: FieldOption[]
 	minSelected?: number
 	maxSelected?: number
 	text?: string
 	level?: number
+	/** An image block: an `https://` address or a path in the owner's Files (docs/SCHEMA.md 4.9). */
+	src?: string
+	/** What the picture shows, for people who cannot see it. Empty for decoration. */
+	alt?: string
+	/** The most room an image takes, as a percentage of its cell: 25, 50, 75 or 100 (default). */
+	width?: number
 	/** Text alignment of a heading or paragraph. Default `start`. */
 	align?: 'start' | 'center' | 'end'
 	/** Upload fields (docs/SCHEMA.md 4.6). */
@@ -81,6 +93,14 @@ export interface FormDesign {
 	accentColor?: string
 	/** `#rrggbb` for the final submit button only. Defaults to the accent colour. */
 	buttonColor?: string
+	/** Where the buttons under the form sit. `justify` makes them fill the row. Default `left`. */
+	submitAlign?: 'left' | 'center' | 'right' | 'justify'
+	/** The progress indicator above a form with several pages. Default `bar`. */
+	progress?: 'bar' | 'steps' | 'none'
+	/** The line of text with the indicator: step number, page name, or percent. Default `step`. */
+	progressLabel?: 'step' | 'title' | 'percent' | 'none'
+	/** `#rrggbb` for the progress bar or steps. Defaults to the accent colour. */
+	progressColor?: string
 }
 
 export interface FormSettings {
@@ -93,9 +113,29 @@ export interface FormSettings {
 	hideRequiredIndicator?: boolean
 	/** Leave the title out of the public page. It stays there for screen readers. Default false. */
 	hideTitle?: boolean
+	/** False stops the address from filling fields by their id (docs/SCHEMA.md 4.7). Default true. */
+	prefill?: boolean
+	/** Keep a respondent's unsent answers in their own browser (docs/SCHEMA.md 21). Default false. */
+	saveProgress?: boolean
+	/** Add a step after the last page that lists the answers before sending (docs/SCHEMA.md 5.2). Default false. */
+	reviewStep?: boolean
+	/** The heading of that step. Default "Review your answers". */
+	reviewTitle?: string
 	/** Ask anonymous respondents to pass the server's spam check. Default true; false turns it off for this form. */
 	captcha?: boolean
 	closedMessage?: string
+	/** The form takes at most this many responses. Left out for no limit. */
+	maxResponses?: number
+	/** Tell respondents how many more responses the form takes. Only with `maxResponses`. */
+	showRemaining?: boolean
+	/** Unix seconds. The form takes responses from this moment. */
+	opensAt?: number
+	/** Unix seconds. The form takes responses until this moment. */
+	closesAt?: number
+	/** Shown before `opensAt`. */
+	notOpenMessage?: string
+	/** Shown when the form has `maxResponses` responses. */
+	fullMessage?: string
 }
 
 /** The public view of a definition: `actions` is never sent to respondents. */
@@ -120,6 +160,8 @@ export interface PublicForm {
 	uploadLimit?: number
 	/** The spam check to show, or null when this respondent does not need one. */
 	captcha?: CaptchaConfig | null
+	/** How many more responses the form takes, when it is set to show that. */
+	remaining?: number | null
 }
 
 export interface CaptchaConfig {
@@ -138,7 +180,7 @@ export interface FieldError {
 	code: string
 }
 
-export type ActionType = 'message' | 'redirect' | 'email' | 'webhook' | 'tables'
+export type ActionType = 'message' | 'redirect' | 'email' | 'webhook' | 'tables' | 'files'
 
 interface ActionBase {
 	/** Stable id, unique in the form. */
@@ -157,13 +199,20 @@ export interface RedirectAction extends ActionBase {
 	url: string
 }
 
+/** Where an email address comes from: fixed, an email field, the owner's account or the signed-in respondent's. */
+export type EmailAddressSource = string | { field: string } | { owner: true } | { respondent: true }
+
 export interface EmailAction extends ActionBase {
 	type: 'email'
 	/**
 	 * A fixed address, the answer to an email field, the form owner's account email, or the
 	 * signed-in respondent's account email. The last two are looked up when the email is sent.
 	 */
-	to: string | { field: string } | { owner: true } | { respondent: true }
+	to: EmailAddressSource
+	/** Where replies go, written like `to`. Left out, replies go to the server's sender address. */
+	replyTo?: EmailAddressSource
+	/** The name the mail is sent under. Left out, the server's default. The sender address never changes. */
+	fromName?: string
 	subject: string
 	body: string
 }
@@ -183,7 +232,13 @@ export interface TablesAction extends ActionBase {
 	map: Record<string, string>
 }
 
-export type FormAction = MessageAction | RedirectAction | EmailAction | WebhookAction | TablesAction
+export interface FilesAction extends ActionBase {
+	type: 'files'
+	/** A `.csv` file in the owner's Files, relative to their home, that gets a line per response (docs/SCHEMA.md section 19). */
+	path: string
+}
+
+export type FormAction = MessageAction | RedirectAction | EmailAction | WebhookAction | TablesAction | FilesAction
 
 /** The owner's editable definition (docs/SCHEMA.md section 3), including `actions`. */
 export interface DraftDefinition {
@@ -201,6 +256,17 @@ export const FORM_STATUS_UNPUBLISHED = 0
 export const FORM_STATUS_PUBLISHED = 1
 export const FORM_STATUS_CLOSED = 2
 
+/** Whether a published form takes responses, by its limit and dates (docs/SCHEMA.md section 3.1). */
+export interface FormAvailability {
+	state: 'open' | 'scheduled' | 'ended' | 'full'
+	/** Unix seconds, null when not set. */
+	opensAt: number | null
+	closesAt: number | null
+	/** The lower of the form's and the server's limit, 0 for none. */
+	cap: number
+	responses: number
+}
+
 /** A form as the owner API returns it. `draft` is only present on single-form calls. */
 export interface OwnerForm {
 	id: number
@@ -216,6 +282,10 @@ export interface OwnerForm {
 	latestVersionId: number | null
 	/** When the form was archived (unix time), null if it is not. */
 	archivedAt?: number | null
+	/** Null until the form has been published. A closed or archived form takes no responses whatever this says. */
+	availability?: FormAvailability | null
+	/** Responses that arrived since the owner last opened the list of responses. */
+	newCount?: number
 	createdAt: number
 	updatedAt: number
 	draft?: DraftDefinition
@@ -242,7 +312,27 @@ export interface EntryRecord {
 	userId: string | null
 	/** Unix seconds. */
 	submittedAt: number
+	/** The id of one of the administrator's statuses, or null for none (docs/SCHEMA.md section 20.2). */
+	status?: string | null
+	/** The owner's private note, or null. */
+	note?: string | null
 	data: Record<string, unknown>
+}
+
+/** A status a response can be given. The administrator keeps one list for the server. */
+export interface ResponseStatus {
+	id: string
+	label: string
+	color: string
+}
+
+/** One response with what its own page needs (docs/SCHEMA.md section 20.4). */
+export interface EntryDetail {
+	entry: EntryRecord
+	version: VersionDefinition
+	/** The response submitted just before this one, and the one just after, or null at either end. */
+	previousId: number | null
+	nextId: number | null
 }
 
 export interface EntriesPage {

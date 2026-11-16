@@ -129,6 +129,15 @@ releases migrate stored definitions.
 when false. It is a form setting only; which check runs, and its keys, are server-wide and set
 by an administrator (section 10.1).
 
+`settings.prefill` (boolean, default true) lets the address the public form is opened with fill its
+fields by field id (section 4.7). False switches that off for the form.
+
+`settings.reviewStep` (boolean) and `settings.reviewTitle` (text) add a step that lists the answers
+before sending (section 5.2).
+
+`settings.saveProgress` (boolean, default false) keeps a respondent's unsent answers in their own
+browser so they can continue later on the same device (section 21).
+
 `settings.hideTitle` (boolean, default false) leaves the form title off the public page and the
 builder preview. The title is still the page's heading for assistive technology, and the
 description is unaffected.
@@ -142,7 +151,60 @@ still validated.
 `standard`, `wide`), `card` (boolean), `background` (`default`, `plain`,
 `color`), `backgroundColor`, `accentColor` and `buttonColor` (the submit button only; defaults to
 `accentColor`) (`#rrggbb` only, so a value can
-never carry CSS).
+never carry CSS), and `submitAlign` (`left`, `center`, `right` or `justify`; default `left`), where
+the buttons under the form sit. `justify` makes them share the full width. Back and Next on a form
+with several pages follow it too. `progress`, `progressLabel` and `progressColor` set the progress indicator of a form
+with several pages (section 5.1).
+
+### 3.1 Response limit and opening dates (DECISION)
+
+A form can stop taking responses by itself: after a number of responses, before an opening time, and
+after a closing time. All of it is optional and lives in `settings`, so it is versioned with the rest
+of the definition, travels with export and import, and takes effect when the form is published. To
+extend a deadline or raise the limit on a live form, change it and publish again.
+
+| Key | Value | Meaning |
+| --- | --- | --- |
+| `maxResponses` | integer, 1 to 1 000 000 | the form takes at most this many responses |
+| `showRemaining` | boolean, default false | tell respondents how many more responses the form takes. Only with `maxResponses` |
+| `opensAt` | unix seconds | the form takes responses from this moment |
+| `closesAt` | unix seconds, later than `opensAt` (`window_invalid`) | the form takes responses until this moment |
+| `notOpenMessage` | string, up to 500 | shown before `opensAt`. Default "This form is not open yet." |
+| `fullMessage` | string, up to 500 | shown at the limit. Default "This form has received the maximum number of responses." |
+
+Times are unix seconds, so they mean the same moment everywhere. The builder shows and takes them in
+the owner's own time zone. A time in the past is allowed: a `closesAt` that has passed simply
+publishes a form that has ended.
+
+A published form is in one of four states, worked out by `Availability` on every request. The first
+that applies wins:
+
+1. `ended`: `closesAt` has come. Answered like a closed form, with `closedMessage`.
+2. `scheduled`: `opensAt` has not come yet. Answered with `notOpenMessage`.
+3. `full`: the form has as many responses as its limit. Answered with `fullMessage`.
+4. `open`.
+
+The limit that counts is the lower of `maxResponses` and the server's cap (section 16). Every response
+the form has counts, whichever version it was sent to, and deleting a response frees a place. As with
+the server's cap, responses sent at the same instant can pass the limit by one.
+
+The public page, the submit and the upload routes all answer `410` with
+`{"error": "closed", "reason": ..., "message": ...}` when the form does not take responses. `reason` is
+`closed` (closed by the owner, archived, or ended), `not_open` or `full`, and the page picks its
+heading by it. Someone who opened the form before it closed or filled up gets the same answer when they
+submit, and keeps what they typed.
+
+A closed or archived form stays closed whatever its dates say: the owner's own status always wins, and
+nothing here ever opens or closes a form by changing its status.
+
+With `showRemaining` and `maxResponses`, the public form carries `remaining` (how many more responses
+it takes, by the limit that counts) and the page shows it under the description. Otherwise `remaining`
+is null.
+
+The owner API adds `availability` to every form: `{state, opensAt, closesAt, cap, responses}` for the
+published version, or null before the first publish. `cap` is the limit that counts, 0 for none. The
+forms list shows Scheduled, Ended or Full in place of Published, and the settings show the state with
+the responses counted against the limit.
 
 ## 4. Fields
 
@@ -194,7 +256,12 @@ Input types (produce a value):
 | `checkbox` | boolean | single yes/no, `required` means must be true |
 | `date` | string | `YYYY-MM-DD`, optional `min` and `max` (same format, inclusive) |
 | `time` | string | `HH:MM` 24 hour, optional `min` and `max` (same format, inclusive) |
+| `datetime` | string | `YYYY-MM-DDTHH:MM`, one day and time, optional `min` and `max` (same format, inclusive), see 4.8 |
+| `rating` | number | stars: a whole number from 1 to `max` (3 to 10, default 5), see 4.8 |
+| `scale` | number | a whole number from `min` (0 or 1, default 1) to `max` (2 to 10, default 5), optional `minLabel` and `maxLabel` (up to 50 characters), see 4.8 |
+| `consent` | boolean | a checkbox beside `text` (limited markdown, see 4.5), `required` means must be true, see 4.8 |
 | `file` | list of files | uploaded files, see 4.6 |
+| `hidden` | string | never shown to respondents, see 4.7 |
 
 Display types (no value, cannot be rule sources, can be rule targets):
 
@@ -203,8 +270,9 @@ Display types (no value, cannot be rule sources, can be rule targets):
 | `heading` | `text`, `level` (1 to 6, default 2, rendered as `h1` to `h6`), `align` |
 | `paragraph` | `text` (limited markdown, see 4.5), `align` |
 | `divider` | `style` (`solid` default, `dashed`, `dotted`) |
+| `image` | `src`, `alt`, `width` (25, 50, 75 or 100), `align`, see 4.9 |
 
-Deferred: hidden fields, rating, matrix, signature.
+Deferred: matrix, signature.
 
 Common properties for input fields: `label` (required), `description`,
 `required` (default false), `defaultValue`, `labelPosition`, `hideLabel` (default false).
@@ -252,8 +320,8 @@ Renderer contract:
 - `inline` is a request, not a guarantee. When the field's own box is narrow
   (about 380 px) the label moves above the input, so a quarter-width field or a
   phone never gets a cramped two-column row.
-- `inline` always renders as `above` for `textarea`, `radio`, `checkboxes`, and
-  `checkbox`. Their label either belongs to a group or is part of the control,
+- `inline` always renders as `above` for `textarea`, `radio`, `checkboxes`,
+  `checkbox`, `rating`, `scale` and `consent`. Their label either belongs to a group or is part of the control,
   and a side label reads badly next to a tall or multi-line control.
 - `hidden` applies to every input type. For `checkbox` the text beside the box is
   the label, so it is hidden visually and still read by screen readers.
@@ -356,6 +424,123 @@ locking) apply. `folder` and `storage` are never sent to respondents.
 as attachments. Emails and CSV show file names only; webhook payloads carry `name`, `size` and `mime`
 for each file, never where it is stored.
 
+### 4.7 Hidden fields, default values and filling from the address (DECISION)
+
+A `hidden` field carries a value the respondent never sees, such as where they came from or an id from
+another system. Its properties are `label` (required: it names the value in responses, exports and
+emails), `description` (a note for the owner, never shown) and `defaultValue`. `required`,
+`placeholder`, `labelPosition` and `hideLabel` are `unknown_property`.
+
+- **Value.** Text, trimmed, at most 2000 characters like a short text answer. Empty means no answer.
+- **On the page.** It sits in the layout like any field, so the builder can show and move it, but the
+  public form leaves its cell out and takes no room for it. A row or page with nothing else in it is
+  left out too.
+- **Rules.** It can be a rule source, with the operators of a text field. It cannot be a rule target
+  (section 6.5), so it is always sent.
+- **Everywhere else** it is a text answer: the Responses view, CSV and Excel downloads, `{field_id}` and
+  `{all_fields}` in emails, webhooks, Tables (a text column) and the CSV file action.
+- **Not a secret, not a proof.** The value is in the page and in the address, and a respondent can change
+  it before sending. Never use it to decide something a respondent must not be able to fake.
+
+**Default values.** Every input field except `file` may have a `defaultValue`, the answer it starts
+with: text for the text types and `hidden`, a number for `number`, an option value for `select` and
+`radio`, a list of option values for `checkboxes`, `true` or `false` for `checkbox` and `consent`, a
+number the field offers for `rating` and `scale`, `YYYY-MM-DD` for a date, `HH:MM` for a time and
+`YYYY-MM-DDTHH:MM` for a date and time. It must be a value the field itself accepts (`field_default_invalid`). A
+respondent can change the default of a field that is shown.
+
+**Filling fields from the address.** When the public form opens, every input field except `file` can
+be filled from the address by its field id: `/f/<token>?utm_source=newsletter` starts the field with id
+`utm_source` as `newsletter`. Nothing needs to be set up per field; to get a readable parameter, give
+the field a readable id (section 4.1). `settings.prefill: false` switches this off for the whole form,
+and then the address fills nothing.
+
+- A value from the address replaces the field's `defaultValue`. A field with neither starts empty.
+- Changing a field id changes the parameter that fills it, as it changes what webhooks and exports see,
+  so links that use the old id stop filling the field.
+- How the text in the address becomes a value: text, email, phone, web address, long text and hidden
+  take it as it is; a number must be a number; a date `YYYY-MM-DD` and a time `HH:MM`; a dropdown or
+  single choice takes an option's value or its label (ignoring case); multiple choice takes several,
+  either by repeating the parameter or separated by commas, and leaves out any it does not know; a
+  checkbox is checked by `1`, `true`, `yes` or `on` and left unchecked by `0`, `false`, `no` or `off`.
+- A value the field would not accept (wrong type, not an option, outside the field's limits) is ignored
+  and the field keeps its default. So is a parameter that is not a field id of the form. Nothing is
+  reported to the respondent.
+- A prefilled field that is shown can still be changed by the respondent.
+- It happens in the browser, when the form opens. The server checks what is submitted as for any
+  answer, so prefill adds nothing a respondent could not already send.
+- An embedded form reads the address of its frame, so put the parameters on the `src` of the frame
+  (`/f/<token>/embed?utm_source=partner`). The builder preview does not fill anything from the address.
+- Because any field can be filled, a default, including a hidden field's, is only a starting value:
+  `?<id>=...` replaces it unless the form switches filling off.
+
+### 4.8 Date and time, rating, scale and consent (DECISION)
+
+Four input types that store one plain value each, so rules, exports, placeholders and the Tables
+action treat them like the types they resemble.
+
+- **`datetime`.** One answer for a day and a time, stored as `YYYY-MM-DDTHH:MM` with no time zone: it
+  is the respondent's own clock, like `date` and `time`. The day must exist and the time is 24 hour.
+  `min` and `max` are in the same format and inclusive; an answer outside them is `date_too_early` or
+  `date_too_late`. Because the format has a fixed width, text order is time order, which is how rules
+  and limits compare it. Where people read it (responses, CSV, email, Tables) the `T` is shown as a
+  space. A Tables date-and-time column takes it as it is.
+- **`rating`.** A row of stars. The answer is a whole number from 1 to `max`; `max` is 3 to 10 and 5
+  when left out. There is no zero: no stars is no answer. In a new table it becomes a stars column when
+  `max` is 5 or less (Tables draws five stars) and a number column otherwise.
+- **`scale`.** A row of numbers from `min` to `max` with an optional label at each end, for questions
+  like "How likely are you to recommend us?". `min` is 0 or 1 (default 1), `max` is 2 to 10 (default 5).
+  Zero is an answer here, not an empty one.
+- **Picking.** For both, picking the number already chosen takes the answer back, so an optional
+  question can be left unanswered again. They are radio buttons underneath, so the arrow keys move
+  between them, and each is announced with the field's label.
+- **Numbers.** `rating` and `scale` answers are stored as JSON numbers, are summarised with an average
+  like `number`, and take the same rule operators. An answer outside the range is `below_min` or
+  `above_max`, one that is not whole is `not_step`.
+- **`consent`.** A checkbox beside a text the respondent agrees to. `text` is required, up to 2000
+  characters, in the paragraph's markdown (4.5), so it can link to terms or a privacy notice. `label`
+  names the answer in responses and exports ("Terms") and is shown above the checkbox unless hidden.
+  The answer is `true` or `false` like `checkbox`, and `required` means it must be ticked. The wording
+  that was agreed to is the `text` of the version the response answered: versions are immutable and
+  every response stores its version id, so it can always be shown later.
+- **Filling from the address** (4.7): a number the field offers for `rating` and `scale`, `yes` or
+  `no` for `consent`, and a date and time with a `T` or a space for `datetime`.
+
+### 4.9 Image blocks (DECISION)
+
+An `image` is a display type: it shows a picture, holds no value, and can be the target of a rule.
+`src` is one piece of text that is read in one of two ways.
+
+- **An address on another site.** It must start with `https://`, name a host, and carry no user name,
+  password, white space or quotes. The respondent's browser loads it straight from that site, so that
+  site sees each visit and decides whether the picture stays. The public page's content security
+  policy names the hosts of the published form's pictures, and nothing else, for pictures only.
+- **A path in the owner's Files**, anything that does not start with a scheme: `Pictures/logo.png`,
+  below the owner's home folder. Its parts are plain names (no `.` or `..`), and it must end in
+  `.png`, `.jpg`, `.jpeg`, `.gif` or `.webp`. SVG is refused: it can carry script and would be served
+  from this site's own address. The builder's "Choose from Files" button fills the path in.
+- Anything else is `field_image_invalid`. A draft may hold an image with no picture yet; publishing
+  waits for one.
+
+How a picture in Files reaches respondents:
+
+- The path is the owner's business. The definition sent to the public page carries `@files` in its
+  place, and the page asks for the picture by form and field:
+  `GET /api/v1/public/<token>/image/<fieldId>` (and the same under `embed` for a framed form).
+- That route answers only for a form the caller could open right now, with the same checks as loading
+  the form, and only for an image block of the published version. It reads the file as the owner,
+  so it reaches only what the owner can reach, and serves it with the type its extension names and
+  `nosniff`. Pictures over 10 MB are not served.
+- The file is read where it is, not copied. Replace it and the form shows the new picture; move or
+  delete it and the block shows nothing. Saving a draft warns, and publishing refuses, when the file
+  is not there (`field_image_missing`).
+- In the builder the owner sees their own file through `GET /api/v1/image?path=...`, which takes
+  the same paths and serves the same types, for the signed-in user only.
+
+Other properties: `alt` (up to 255 characters, what the picture shows; empty marks it as decoration),
+`width` (the most room it takes in its cell, as a percentage: 25, 50, 75 or 100, default 100; a
+picture is never stretched past its own size), and `align` as for a paragraph.
+
 ## 5. Layout: pages > rows > cells (DECISION)
 
 - `pages`: ordered, 1 to 20. Each page is shown as one step; respondents move
@@ -379,6 +564,70 @@ Responsive behavior (renderer contract):
   remaining cells in the row keep their own spans (the row does not stretch the
   survivors; this avoids layout shifting every time an answer changes).
 - A row whose cells are all hidden is removed entirely.
+
+### 5.1 Page progress (DECISION)
+
+A form with more than one page shows where the respondent is, above the fields. Three optional keys in
+`settings.design` set how:
+
+| Key | Values | Default | Meaning |
+| --- | --- | --- | --- |
+| `progress` | `bar`, `steps`, `none` | `bar` | A bar that fills, a row of numbered steps, or no indicator. |
+| `progressLabel` | `step`, `title`, `percent`, `none` | `step` | The line of text with it: "Step 2 of 4", the page's `title`, "50%", or no text. |
+| `progressColor` | `#rrggbb` | `accentColor` | The colour of the bar or the steps. |
+
+- **On by default.** A form that sets neither key gets the bar with the step number, so forms published
+  before this existed show it too. Setting both to `none` shows nothing.
+- **What is counted.** Pages, not answers. The total is the pages a respondent can reach right now:
+  a page whose fields are all hidden by rules is not counted, so the total can change as answers change.
+  A form that is down to one reachable page shows no progress.
+- **How full.** The step over the total: the first of four pages is 25% and the last page is 100%.
+- **Page name.** With `title`, a page that has no title shows its step number instead.
+- **Steps.** Numbered and not clickable: Back and Next are the only way to move, because Next checks
+  the required fields. In a narrow container the numbers are left out and the steps are plain dots.
+- **Colour.** The indicator uses `progressColor`, or the form's `accentColor` without one. The text keeps
+  the theme's own colour, so it stays readable in light and dark, and the numbers in filled steps are
+  black or white, whichever reads better on the colour.
+- **Assistive technology.** The bar is a `progressbar` whose value text is the step ("Step 2 of 4")
+  whatever the label shows, and the current step in the row is marked `aria-current="step"`. After Next
+  and Back the label takes focus, so the new page is announced and the keyboard carries on from its top.
+- This is display only. The server takes no part in it and nothing about it is stored with a response.
+
+### 5.2 Review step (DECISION)
+
+`settings.reviewStep` (boolean, default false) adds one more step after the last page that lists what
+was entered before the form is sent, in the builder as "Show a summary before sending".
+`settings.reviewTitle` (text, at most 64 characters) is its heading, "Review your answers" when empty. Like
+every setting they apply when the form is published.
+
+The step is made by the renderer. It is not a page of the form: it has no rows, cannot be edited in the
+layout and changes nothing the server sees or stores. It works on a form with one page too, where it
+only repeats that page before sending.
+
+- **Where.** It is the last step, so the progress indicator counts it (5.1), and with the label set to the page name it shows the
+  review's heading. The Send button and the spam check (10.1) are on it. Back
+  leads to the last page.
+- **What is listed.** The input fields that are shown right now, in layout order, grouped by page, each
+  as its label and answer. It is what will be sent: a field hidden by a rule is not there, and neither
+  are hidden fields, display blocks and empty optional fields. A field with no label shows its id.
+- **How answers read.** As in the Responses view (section 17): option labels, "Yes" and "No", lists
+  joined with commas, and the names of the files added to an upload field.
+- **Optional questions left empty** are not listed, only counted ("3 optional questions skipped"), so
+  the summary stays short.
+- **Required questions left empty** are listed in red, as "Required, not answered yet", with a button
+  that opens their page. They can only be reached when kept answers (section 21) opened the form on
+  the review, since each page checks its own required fields before Next.
+- **Changing an answer.** With more than one page (or a page that has a name), each page's group has an Edit button. It
+  opens that page, and Next from there returns to the review instead of walking through the pages in
+  between. Back leaves that shortcut.
+- **Size.** The list sits in a box of its own, at most 28rem or 60% of the window height, whichever is
+  less, that scrolls. The box can be reached and scrolled with the keyboard. An answer shows two lines at
+  most, and the whole answer is its tooltip and is read out in full by assistive technology. The height is
+  fixed, not a setting.
+- **With continue later.** The kept page can be the review, and a form published without the step opens
+  on its last page instead.
+- **Left out on purpose:** a printable version (use the browser's print on the form), and listing
+  empty optional answers.
 
 ## 6. Rules
 
@@ -435,9 +684,9 @@ Comparison semantics (**DECISION**, must be identical in PHP and TypeScript):
 - Free text (`text`, `textarea`, `email`, `url`): trimmed, case-insensitive.
 - `phone`: compared on digits and a leading `+` only, so spacing and punctuation
   do not matter.
-- `number`: numeric. A non-numeric stored value counts as empty.
-- `date` and `time`: lexical comparison on the normalized string formats above.
-- `checkbox`: compares as boolean (`eq` with `true` or `false`).
+- `number`, `rating`, `scale`: numeric. A non-numeric stored value counts as empty.
+- `date`, `time` and `datetime`: lexical comparison on the normalized string formats above.
+- `checkbox`, `consent`: compares as boolean (`eq` with `true` or `false`).
 - Empty means: missing, `null`, empty string after trim, or empty array.
 - A comparison against an empty value is false, except `empty`, `neq`,
   `not_contains`, `not_in`, and `contains_none`, which are true. `contains_all`
@@ -452,13 +701,13 @@ Normalization before comparing (applied to the submitted value and to the rule's
   then lowercased with full Unicode lowercasing.
 - `phone`: digits plus a leading `+` are kept, everything else is dropped. No
   digits means empty.
-- `number`: a JSON number, or a string like `12` or `-3.5`. Anything else
+- `number`, `rating`, `scale`: a JSON number, or a string like `12` or `-3.5`. Anything else
   (including exponent forms like `1e3`) counts as empty.
 - `select`, `radio`: a non-empty string, compared exactly. Any other type counts
   as empty.
 - `checkboxes`: a list of strings. Any other type counts as empty.
-- `checkbox`: a boolean. Any other type counts as empty.
-- `date`, `time`: strings in the formats from section 4.2, anything else counts
+- `checkbox`, `consent`: a boolean. Any other type counts as empty.
+- `date`, `time`, `datetime`: strings in the formats from section 4.2, anything else counts
   as empty.
 
 Operators allowed per field type (a rule using any other operator is rejected
@@ -467,15 +716,15 @@ on save, and evaluates to false if it ever reaches the engine):
 | field type | operators |
 | --- | --- |
 | `text`, `textarea`, `email`, `phone`, `url` | `eq`, `neq`, `contains`, `not_contains`, `in`, `not_in`, `empty`, `not_empty` |
-| `number` | `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `not_in`, `empty`, `not_empty` |
+| `number`, `rating`, `scale` | `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `not_in`, `empty`, `not_empty` |
 | `select`, `radio` | `eq`, `neq`, `in`, `not_in`, `empty`, `not_empty` |
 | `checkboxes` | `contains`, `not_contains`, `empty`, `not_empty` |
-| `checkbox` | `eq`, `neq` |
-| `date`, `time` | `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `empty`, `not_empty` |
+| `checkbox`, `consent` | `eq`, `neq` |
+| `date`, `time`, `datetime` | `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `empty`, `not_empty` |
 
 Rule values must fit the source field: for `select`, `radio`, and `checkboxes`
-they must be existing option values, for `number` a number, for `checkbox` a
-boolean, for `date` and `time` a valid string. `in` and `not_in` take a
+they must be existing option values, for `number`, `rating` and `scale` a number, for `checkbox` and
+`consent` a boolean, for `date`, `time` and `datetime` a valid string. `in` and `not_in` take a
 non-empty list of such values. `empty` and `not_empty` take no value. `all` and
 `any` groups must not be empty.
 
@@ -502,7 +751,8 @@ each field's visibility is final before it is used as a source.
 ### 6.5 Source and target restrictions
 
 - Sources must be input fields (they need a value).
-- Targets may be any field.
+- Targets may be any field except a `hidden` field (`rule_target_hidden_field`): it is never shown, so
+  there is nothing to show or hide, and it is never required.
 - Referencing a nonexistent field ID is a validation error on save.
 - The save-time checks (references, operator and value validity, nesting depth,
   dependency cycles) are done by the rule validator, `lib/Rules/RuleValidator.php`.
@@ -535,7 +785,24 @@ condition group (same format as rules) evaluated against the submitted
       respondent was signed in with (skipped as `not_signed_in` for an
       anonymous response, or `no_account_email`).
     The last two store no address in the form, so they follow account changes.
+  - `replyTo` (optional) is where a reply to the mail goes, written exactly like `to`: a static
+    address, `{ "field": "<id>" }`, `{ "owner": true }` or `{ "respondent": true }`
+    (`action_bad_reply_to` otherwise). The usual use is a notification to the owner that replies to
+    the address the respondent typed. Unlike `to` it is never a reason not to send: when it resolves
+    to nothing, or to something that is not one plain address, the mail goes out without a reply-to.
+    It is not counted against the hourly cap, because it does not decide who receives mail.
+  - `fromName` (optional) is the name the mail is sent under: one line of at most 100 characters
+    (`action_from_name_invalid`). Only the name changes. The sender address is always the server's
+    own, which is what its SPF and DKIM records vouch for.
+  - An administrator can set defaults for both, and switch off a form's own choice (section 16.2).
   - `subject`, `body`: plain text with `{field_id}` placeholders.
+  - In `body` only, `{all_fields}` stands for every question the respondent answered, in the order the
+    form shows them, as `Label: answer` lines (an answer of several lines is indented under its label).
+    Unanswered and hidden questions are left out, and a question without a label is listed by its id.
+    A mail whose body uses it is also sent as HTML, with the answers as a table of labels and answers
+    and everything a person typed escaped. A mail without it stays plain text only. Anywhere else
+    `{all_fields}` is an unknown placeholder, and a field that really has the id `all_fields` keeps
+    its own meaning.
   - Sent through Nextcloud's configured mailer.
   - Recipient from respondent input is only allowed from an `email` field and is
     always rate limited per form, because it is an abuse vector (spam relay).
@@ -573,6 +840,8 @@ condition group (same format as rules) evaluated against the submitted
 - `redirect`: URL the respondent is sent to. Set by the form owner, https only,
   placeholders are not allowed in scheme or host, and substituted values are
   URL-encoded. First matching `message` or `redirect` wins (they share one slot).
+- `tables`: adds a row to a Nextcloud Tables table (section 15).
+- `files`: adds a line to a CSV file in the owner's Files (section 19).
 
 ### 7.3 Webhook payload
 
@@ -655,6 +924,7 @@ Initial proposal, one row per entry:
 | `submitted_at` | UTC timestamp |
 | `user_id` | nullable, set only for logged-in respondents |
 | `data` | JSON text, keyed by field ID, only visible fields |
+| `status`, `note` | nullable, the owner's status and private note (section 20) |
 
 Entry access goes through one class (`EntryMapper`) so the storage can be
 swapped. Tables is not a storage backend: it is an after-submit action (section 15), and the built-in
@@ -699,8 +969,9 @@ retention limit.
 
 The server never trusts the client's idea of visibility.
 
-1. Load the form and the submitted version. Reject if the form is closed or
-   requires login and the user is not logged in.
+1. Load the form and the submitted version. Reject if the form is closed, not
+   open yet, ended or full (section 3.1), or requires login and the user is not
+   logged in.
 2. Public endpoint protections (before parsing the body): body size limit,
    rate limit per IP, honeypot field must be empty, signed minimum-fill-time
    token must be present and old enough.
@@ -837,6 +1108,7 @@ name is what an administrator registers. They live in `OCA\Webforms\Event\`.
 | --- | --- | --- |
 | `EntryCreatedEvent` | `entry.created` | a response is stored |
 | `EntryDeletedEvent` | `entry.deleted` | the owner deletes a response |
+| `EntryStatusChangedEvent` | `entry.status_changed` | the owner gives a response another status (section 20.2) |
 | `FormPublishedEvent` | `form.published` | a form is published, including a republish with no changes |
 | `FormStatusChangedEvent` | `form.status_changed` | a form is unpublished, reopened or closed |
 
@@ -864,8 +1136,9 @@ Rules:
 
 ### 14.1 Flow trigger
 
-`OCA\Webforms\WorkflowEngine\FormsEntity` registers the four events with the Nextcloud workflow engine
-(Flow) as an entity called "Webforms", so "Response submitted", "Response deleted", "Form published"
+`OCA\Webforms\WorkflowEngine\FormsEntity` registers the events with the Nextcloud workflow engine
+(Flow) as an entity called "Webforms", so "Response submitted", "Response deleted", "Response status
+changed", "Form published"
 and "Form status changed" can be chosen as the "When" of a flow. The event name the engine listens
 for is the event class name. An administrator's flow sees every form. A user's own flow only runs for
 forms that user owns. Webforms offers triggers only. The actions (what a flow does) come from other
@@ -938,7 +1211,7 @@ of allowed actions allows none, the safe side.
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
-| Allowed actions | all of `message`, `redirect`, `email`, `webhook`, `tables` | which action types forms may use |
+| Allowed actions | all of `message`, `redirect`, `email`, `webhook`, `tables`, `files` | which action types forms may use |
 | Retention | 0 (off) | delete responses older than this many days, 1 to 3650 |
 | Responses per form | 0 (no limit) | a form accepts at most this many, up to 1 000 000 |
 | Actions per form | 10 | lower than the structural maximum of 10 only, 1 to 10 |
@@ -952,14 +1225,15 @@ of allowed actions allows none, the safe side.
 - **Actions per form.** More actions than the policy allows is `policy_too_many_actions` at publish.
 - **Responses per form.** When a form has this many responses its public page and submit answer
   `410 closed` with the message "This form has received the maximum number of responses." Responses sent
-  at the same instant can pass the limit by one.
+  at the same instant can pass the limit by one. A form can set a lower limit of its own, and its own
+  message (section 3.1); the lower of the two limits counts.
 - **Who can create forms.** Creating and importing a form need membership of a creator group or the
   administrator role (`create_not_allowed`). Forms that exist stay editable by their owners, and a
   group that is later deleted simply matches nobody.
 - **Retention.** `RetentionJob` runs hourly and deletes the oldest due responses, at most 1000 per run so
   a first run on a big server does not hold a background job, with the same clean-up as an owner
   deleting a response: uploaded files and delivery log rows go too. Copies already sent by email,
-  webhook or to Tables are not touched. No `entry.deleted` event is sent for these deletions.
+  webhook, to Tables or to a CSV file are not touched. No `entry.deleted` event is sent for these deletions.
   Because this deletes data, saving a retention that is newly on or shorter than before is refused with
   `409 confirmation_required` and `due` (how many responses are affected) until the request repeats with
   `confirmDelete: true`. The page shows the same count before saving.
@@ -981,6 +1255,38 @@ so they are removed with the account, and they change nothing about forms or oth
   does the address `#/f/<id>` when it is typed or shared: only the links in the form list change.
 - Endpoints (any signed-in user, own preferences only): `GET` and `PUT /api/v1/preferences` with
   `openPublishedOnResponses` (boolean).
+
+### 16.2 Emails from forms
+
+An administrator sets defaults for the mail that forms send, under Administration settings, "Emails
+from forms". They are app config, read through `MailSettings`, and never configured means the behaviour
+without them. They are applied when a mail is sent, not copied into forms, so a change takes effect at
+once on forms that are already live.
+
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| Where replies go | the server's sender address | the reply-to for an email action that sets none: nothing, the form owner's account email, or one fixed address |
+| Sender name | Nextcloud's own | the name mail is sent under |
+| Form owners may set their own | yes | whether an action's `replyTo` and `fromName` count |
+
+- **Order.** Reply-to is the action's own `replyTo` if it is allowed and resolves to an address, else
+  the default, else none. Sender name is the action's own `fromName` if allowed, else the default, else
+  Nextcloud's. A default reply-to equal to the recipient is left out.
+- **Locked.** With "form owners may set their own" off, an action's `fromName` and `replyTo` are
+  ignored when sending, with one exception: a `replyTo` of `{ "field": "<id>" }` still counts, because
+  replying to the person who filled in the form is what a notification is for and it names nobody the
+  form owner chose. On a draft and at publish such an action is reported as `action_mail_locked` (path
+  `actions[n].replyTo` or `.fromName`), a warning on a draft and a refusal at publish. Forms that are
+  already live keep sending. Nothing is deleted from a definition, so switching it back on restores
+  the form's own choice.
+- **Damaged values** fall back to the default: an unknown mode or a fixed address that is not one plain
+  address means no reply-to, and only an explicit off locks.
+- Endpoints (administrators only): `GET` and `PUT /api/v1/admin/mail` (`replyToMode` of `none`, `owner`
+  or `address`, `replyToAddress`, `allowOverride`, `fromName`). `GET /api/v1/settings` gives every
+  signed-in user the same four values under `mail`, with `defaultReplyTo` and `defaultFromName`: the
+  real address and name that apply to that user's forms when an action sets none (their own account
+  email, the fixed address, or the server's sender address; the default name or Nextcloud's own). The
+  builder shows them in the empty boxes and hides what is locked.
 
 ## 17. Finding responses
 
@@ -1135,3 +1441,216 @@ leading `*.` for subdomains (`embed_origins_invalid` otherwise). An empty list a
   browser does not allow that, the frame itself goes there.
 - **Not done yet.** A server-wide switch for administrators to forbid embedding, and a form rendered
   as plain HTML with no script (ROADMAP.md).
+
+## 19. Files action (DECISION)
+
+An action of type `files` adds a line to a CSV file in the form owner's Nextcloud Files for each
+matching response:
+
+```json
+{ "id": "act_sheet", "type": "files", "path": "Webforms/Contact responses.csv" }
+```
+
+- `path` is the file, relative to the owner's home: names joined by `/`, no `.` or `..` parts, no
+  control characters or backslashes, at most 8 parts and 255 bytes, ending in `.csv`
+  (`action_bad_file_path` otherwise). The builder suggests `Webforms/<form title> responses.csv`.
+- It runs like email, webhook and Tables (section 7.4): queued after the response is stored, retried
+  with backoff, shown in the delivery log with the path as its target, and never able to fail a
+  submission.
+- **Columns and values** are those of the CSV export (section 9.1) for the version the response was
+  submitted against: `Response ID`, `Submitted (UTC)`, `Respondent`, then one column per input field in
+  layout order, headed by its label (`Label (field_id)` when two fields share one). Values read the
+  same way, and text that a spreadsheet would run as a formula gets a leading apostrophe.
+- **A new file** is created with a byte order mark, the header row and the response, with CRLF line
+  endings and RFC 4180 quoting. Folders on the way are created.
+- **An existing file** keeps its own header row. Columns are matched to it by their heading, so the
+  owner may reorder columns or add their own. A heading the file does not have yet (a new field, or a
+  renamed label) is added to the end of the header row; rows already in the file simply have no value
+  there. Columns the form no longer fills stay and get an empty cell. A file that is empty (or only a
+  byte order mark) gets a new header row. A file without a final line break gets one first.
+- **Permissions.** The file is written as the owner, so Nextcloud's own rules (quota, locking,
+  versions, antivirus) apply. At publish the owner must be able to change the file, or create it in
+  the nearest folder that exists (`files_not_writable`); the same is checked again on every run.
+- **Failures.** No permission (`files_not_writable`), a folder where the file should be or a file where
+  a folder should be (`files_not_a_file`), and a file over 20 MB (`files_too_large`, start a new file)
+  are not retried. The file being in use (`files_busy`), a full quota (`files_storage_full`) and other
+  storage errors (`files_error`) are.
+- Two deliveries never write the same file at once: each holds a lock on it while it reads and
+  writes, and one that finds it locked is retried.
+- Like Tables, the file is a copy: deleting a response or the form does not remove its line, and
+  retention (section 16) does not touch the file.
+
+## 20. New responses, statuses and a note (DECISION)
+
+Three small things an owner can do with responses: see which ones arrived since the last look, give a
+response a status, and keep a note on it. It is deliberately not a workflow. Nothing is assigned to
+anyone and nothing has to be moved through steps. None of it is part of the form definition, it takes
+effect at once, and it is never shown or sent to the respondent.
+
+### 20.1 New responses
+
+A response is **new** when it arrived after the owner last opened the form's list of responses. It is
+not a status and nobody sets it: it follows from one moment kept per form.
+
+- `advforms_forms` gets `responses_seen_at` (Unix seconds, nullable). A response is new when its
+  `submitted_at` is later. Empty means the list was never opened, so every response is new.
+- Opening the Responses view calls `POST /api/v1/forms/{id}/entries/seen`. It sets the moment to now and
+  answers `{ "previousSeenAt": ... }`, the moment before this visit. The view marks the responses that
+  are later than that as new, and keeps marking them until the owner leaves the view, so they do not
+  lose the mark while being read. Paging, filtering and sorting do not move the moment.
+- The next visit starts clean: only what arrived in between is new.
+- `GET /api/v1/forms` gives each form `newCount`, how many responses are later than its moment, and the
+  forms list shows it beside the form. It is one count on the existing `form_id, submitted_at` index.
+- Forms that already exist start with the moment empty. After the update each of them shows all its
+  responses as new, once, until the owner opens its list.
+- Opening the builder, a download, the summary or a single response does not count as looking at the
+  list.
+
+### 20.2 Statuses
+
+A response has one status or none. A status is a label for the owner's own sorting.
+
+**The list is the administrator's.** Under Administration settings, "Response statuses", the
+administrator keeps one list of statuses for the whole server, and every form uses it. It is app config
+like the settings of section 16.
+
+- A status has an `id` (like a field ID: `^[a-z][a-z0-9_]{2,31}$`, made from the name when it is
+  created and never changed, and never `none`), a `label` (1 to 40 characters) and a `color` (one of
+  `gray`, `red`, `orange`, `yellow`, `green`, `teal`, `blue`, `purple`). At most 20 statuses, shown in
+  the order the administrator puts them in.
+- A fresh server starts with `in_progress` ("In progress"), `done` ("Done") and `spam` ("Spam"). They
+  are ordinary statuses: the administrator can rename, reorder or delete them. Their labels are
+  translated only until the list is first changed.
+- Renaming a status changes it everywhere, because responses store the `id`.
+- Deleting a status clears it from every response that has it, on all forms. Because that changes
+  responses, saving a list that leaves out a status some responses have is refused with
+  `409 confirmation_required` and `affected` (how many responses) until the request repeats with
+  `confirmDelete: true`.
+- Endpoints (administrators only): `GET` and `PUT /api/v1/admin/statuses`. The `PUT` takes
+  `{ "statuses": [{id, label, color}, ...], "confirmDelete": false }` and replaces the whole list. A bad
+  list is `400` with `status_invalid`, `status_id_invalid`, `status_id_duplicate`, `status_label_invalid`,
+  `status_color_invalid` or `too_many_statuses`.
+- A damaged list reads as empty, and responses then show no status until it is repaired. Stored ids
+  are not touched.
+
+**On a response.** `advforms_entries` gets `status` (string, 32, nullable) with an index on
+`form_id, status`, so filtering by status is answered by the database and never needs the scan of
+section 17. A response arrives with none.
+
+- `PUT /api/v1/forms/{id}/entries/{entryId}/status` with `{ "status": "done" }`, or `null` to clear it.
+  An id that is not in the list is `422` with the error code `status_invalid`.
+- `POST /api/v1/forms/{id}/entries/bulk-status` takes `{ "status": ..., "ids": [...] }` (at most 500) or
+  `{ "status": ..., "filter": {...}, "expected": N }`, with the same rules as the bulk delete of section
+  17.1: `409 count_changed` when the filter no longer matches the number the person confirmed, and
+  `422 too_many_matches` above 5 000. It answers how many changed.
+- `GET /api/v1/forms/{id}/entries` takes `status`, a comma separated list of ids, where `none` means
+  responses without one. Each response in the answer has `status` and `note`. The summary, the
+  download and the bulk delete filter take the same parameter.
+- The owner's app reads the list from `GET /api/v1/settings` (`statuses`). With an empty list it shows
+  no status column, filter or menu. A response that still carries the id of a deleted status shows
+  none.
+- The table shows the status as a coloured label in a column of its own, changed from a menu on the
+  row, and ticked rows can be given a status together.
+- A status changes nothing else. A response marked "Spam" is still in the list, the summary and the
+  count for the response limit, and what its actions already did stays done. Filter it out to hide it.
+
+**In a download.** The CSV and Excel files get a fourth fixed column, `Status`, after `Respondent`,
+holding the label. The Files action (section 19) and the Tables action (section 15) do not: they run
+when a response arrives, when it has no status, and they are copies that are not followed afterwards.
+
+**Event.** One more event in the pattern of section 14: `EntryStatusChangedEvent`,
+`entry.status_changed`, with the common keys plus `versionId`, `entryId`, `status`, `previousStatus`
+(each an id or `null`) and `changedBy`. No answers. Setting the status a response already has fires
+nothing, a bulk change fires one event per response that changed, and a status deleted by the
+administrator fires none. It is registered with Flow as "Response status changed" (section 14.1).
+
+### 20.3 A note
+
+A response can carry one note: plain text, at most 4 000 characters, line breaks kept. It is a column
+on `advforms_entries` (`note`, text, nullable).
+
+- `PUT /api/v1/forms/{id}/entries/{entryId}/note` with `{ "note": "..." }`. Empty text removes it, and
+  more than 4 000 characters is `422` with the error code `note_too_long`.
+- The table shows a mark on a response that has a note, and the note is read and edited on the
+  response's card and page.
+- **Private.** The note is never in an email, a webhook body, an event payload, a Tables row, the Files
+  action or a download, and no public route can read it. Free text search (section 17) does not look in
+  it.
+- It goes when the response is deleted.
+
+### 20.4 A page for one response
+
+`#/f/<id>/responses/<entryId>` in the owner's app shows one response by itself. It is an address, so it
+can be bookmarked and reached with the back button. It only opens for the form's owner.
+
+- `GET /api/v1/forms/{id}/entries/{entryId}` answers `entry` (the response as in the list), `version`
+  (the definition of its own version), and `previousId` and `nextId`, the neighbours by when they were submitted, so the
+  page can step through responses without going back to the table.
+- The page shows every question of that version in layout order with its answer, read like the emails
+  do (option labels, yes or no, file names as download links). A question the response did not answer
+  is shown as unanswered instead of left out, so the page reads like the form.
+- Beside the answers: the status, the note, when it was submitted and by whom, and the deliveries of
+  this response from the delivery log (section 9.2).
+- **Print.** The page has a print style: the answers, the form's title, the response id and the date.
+  Navigation, the status, the note and deliveries are not printed. This is the browser's own print,
+  which can save a PDF. The app generates no PDF (a non-goal, section 1).
+- The table and the cards link each response to its page. A response of another form, or one that was
+  deleted, is `404`.
+
+### 20.5 Left out on purpose
+
+- **Assignment.** Forms are not a task tool. Handing a response to someone is what Tasks and Deck are
+  for, and a flow on "Response submitted" or "Response status changed" can create one there.
+- Statuses per form or per user. One list for the server keeps it simple.
+- Hiding responses of a status by default, or leaving them out of the response limit.
+- Several notes, authors, mentions and notifications.
+
+## 21. Continuing later (DECISION)
+
+A respondent can leave a long form and carry on later, on the same device. `settings.saveProgress`
+(boolean, default false) turns it on for a form, in the builder as "Let people continue later". Like
+every setting it applies when the form is published.
+
+It is done entirely in the respondent's browser. The server stores nothing, has no route for it and
+does not know that anyone has started.
+
+- **What is kept.** The answer to every input field except uploads and hidden fields, and the page
+  the respondent is on. Empty answers are left out. A hidden field is never kept: it always comes from
+  the address or its default (section 4.7).
+- **Where.** The browser's local storage, under `webforms:progress:<token>`, one record per form. It is
+  written shortly after an answer changes and again when the page is left.
+- **A line that says so.** Under the buttons the form says that answers are saved in this browser and can
+  be picked up again on this device. Once the browser has taken a save it adds the time ("Saved in this
+  browser at 6:41 PM"). If the browser refuses, or the record is too large, it says in red that the answers
+  could not be saved and to send the form before closing the page, so the promise is never false. There is
+  no save button: saving happens as answers change.
+- **Coming back.** When the form opens and a record exists, its answers are put back and the form
+  opens on the page that was kept. A note above the form says from when they are and that they are
+  kept in this browser only, with a **Start over** button that throws the record away and puts the
+  form back as it opens. A kept answer comes before a value from the address and before a default.
+- **For how long.** 30 days after the last change. An older record is ignored. Sending the form
+  removes the record.
+- **A form that was published again.** The record is still used. Field ids never change meaning
+  (section 4.1), so each answer goes back to its field if the field still exists and still takes it
+  (an option that is still offered, the right kind of value). The others are left out, and the note
+  says that some answers no longer fit.
+- **Nothing is trusted.** Putting answers back only checks their shape. Sending the form runs the
+  usual checks (section 10), so a record adds nothing a respondent could not type.
+- **A form that closed, filled up or ended** shows its usual message. Kept answers hold no place.
+- **Embedded forms** (section 18.3) keep their answers in the frame's own storage, which browsers keep
+  apart for each website the form is embedded in.
+- **When storage is refused** (a private window, blocked site data) the form works as it does without
+  the setting.
+- **Never in the builder preview.**
+
+### 21.1 Left out on purpose
+
+- **A link to continue on another device,** and with it any copy of unsent answers on the server.
+  Decided 2026-11-16: device only.
+- **Uploads.** A file waits on the server for 25 hours at most (section 4.6), so it could not be
+  promised to still be there. Files are added again before sending.
+- **A count of people who started,** since the server is told nothing. It would need its own counter
+  and could not tell "still filling in" from "gave up".
+
+The answers sit readable in the browser for up to 30 days, for anyone who uses that browser profile.
+Leave the setting off for forms that are filled in on shared computers.

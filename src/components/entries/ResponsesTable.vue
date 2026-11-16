@@ -6,7 +6,7 @@
 <script setup lang="ts">
 import type { ResponseColumn } from '../../entries/columns.ts'
 import type { EntrySort } from '../../entries/filter.ts'
-import type { EntryRecord, VersionDefinition } from '../../types.ts'
+import type { EntryRecord, ResponseStatus, VersionDefinition } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
@@ -14,7 +14,9 @@ import { cellText } from '../../entries/columns.ts'
 import { formatTime } from '../../entries/format.ts'
 import { icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
+import { isNewResponse } from '../../entries/statuses.ts'
 import ResponseCard from './ResponseCard.vue'
+import StatusSelect from './StatusSelect.vue'
 
 const props = defineProps<{
 	formId: number
@@ -25,6 +27,12 @@ const props = defineProps<{
 	sort: EntrySort
 	/** The ids of the responses that are ticked. */
 	selected: ReadonlySet<number>
+	/** The statuses a response can be given. None hides the column. */
+	statuses?: readonly ResponseStatus[]
+	/** When the owner last looked at this list before this visit: later responses are marked new. */
+	seenAt?: number | null
+	/** The response whose status is being saved, if any. */
+	busyId?: number | null
 }>()
 
 const emit = defineEmits<{
@@ -35,7 +43,13 @@ const emit = defineEmits<{
 	select: [id: number, on: boolean]
 	/** Tick or untick every response on the page. */
 	selectPage: [on: boolean]
+	/** The owner picked a status for a response, or none. */
+	status: [id: number, status: string | null]
+	/** A response changed on the server (its note). */
+	updated: [entry: EntryRecord]
 }>()
+
+const hasStatuses = computed(() => (props.statuses?.length ?? 0) > 0)
 
 const EMPTY: VersionDefinition = { fields: {}, pages: [] }
 
@@ -90,6 +104,9 @@ onBeforeUnmount(() => observer?.disconnect())
 					<th scope="col">
 						{{ t('webforms', 'Sent by') }}
 					</th>
+					<th v-if="hasStatuses" scope="col">
+						{{ t('webforms', 'Status') }}
+					</th>
 					<th v-for="column in columns" :key="column.id" scope="col">
 						{{ column.label }}
 					</th>
@@ -98,7 +115,7 @@ onBeforeUnmount(() => observer?.disconnect())
 			<tbody>
 				<template v-for="entry in entries" :key="entry.id">
 					<tr class="af-table__row"
-						:class="{ 'af-table__row--open': expandedId === entry.id, 'af-table__row--selected': selected.has(entry.id) }"
+						:class="{ 'af-table__row--open': expandedId === entry.id, 'af-table__row--selected': selected.has(entry.id), 'af-table__row--new': isNewResponse(entry, seenAt) }"
 						tabindex="0"
 						:aria-expanded="expandedId === entry.id"
 						@click="emit('toggle', entry.id)"
@@ -110,24 +127,42 @@ onBeforeUnmount(() => observer?.disconnect())
 								:aria-label="t('webforms', 'Select response {id}', { id: entry.id })"
 								@change="emit('select', entry.id, ($event.target as HTMLInputElement).checked)">
 						</td>
-						<td class="af-table__id">
-							{{ entry.id }}
+						<td class="af-table__id" @click.stop>
+							<a :href="'#/f/' + formId + '/responses/' + entry.id"
+								:title="t('webforms', 'Open response {id} on its own page', { id: entry.id })"
+								:aria-label="t('webforms', 'Open response {id} on its own page', { id: entry.id })">{{ entry.id }}</a>
 						</td>
 						<td class="af-table__when">
+							<span v-if="isNewResponse(entry, seenAt)" class="af-table__new">{{ t('webforms', 'New') }}</span>
 							{{ formatTime(entry.submittedAt) }}
+							<span v-if="entry.note" class="af-table__noted" :title="t('webforms', 'Has a note')">
+								<Icon :path="icons.note" :size="16" />
+							</span>
 						</td>
 						<td>{{ entry.userId ?? t('webforms', 'Anonymous') }}</td>
+						<td v-if="hasStatuses" class="af-table__status" @click.stop>
+							<StatusSelect :statuses="statuses ?? []"
+								:model-value="entry.status"
+								:label="t('webforms', 'Status of response {id}', { id: entry.id })"
+								:disabled="busyId === entry.id"
+								@update:model-value="(value) => emit('status', entry.id, value)" />
+						</td>
 						<td v-for="column in columns" :key="column.id" :title="cellText(versions[String(entry.versionId)] ?? EMPTY, entry.data, column.id)">
 							{{ cellText(versions[String(entry.versionId)] ?? EMPTY, entry.data, column.id) }}
 						</td>
 					</tr>
 					<tr v-if="expandedId === entry.id" :id="'af-response-' + entry.id" class="af-table__detail">
-						<td :colspan="4 + columns.length">
+						<td :colspan="4 + (hasStatuses ? 1 : 0) + columns.length">
 							<div class="af-table__panel" :style="panelWidth > 0 ? { width: panelWidth + 'px' } : undefined">
 								<ResponseCard :form-id="formId"
 									:entry="entry"
 									:definition="versions[String(entry.versionId)] ?? EMPTY"
 									expanded
+									:statuses="statuses"
+									:is-new="isNewResponse(entry, seenAt)"
+									:busy="busyId === entry.id"
+									@status="(value) => emit('status', entry.id, value)"
+									@updated="(saved) => emit('updated', saved)"
 									@toggle="emit('toggle', entry.id)"
 									@delete="emit('delete', entry.id)"
 									@changed="emit('changed')" />
@@ -194,6 +229,38 @@ onBeforeUnmount(() => observer?.disconnect())
 
 .af-table__when {
 	white-space: nowrap;
+}
+
+.af-table__id a {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.af-table__new {
+	margin-inline-end: 6px;
+	padding: 0 8px;
+	border-radius: var(--border-radius-pill, 999px);
+	background: var(--color-primary-element);
+	color: var(--color-primary-element-text);
+	font-size: 12px;
+	font-weight: bold;
+	line-height: 20px;
+}
+
+.af-table__row--new .af-table__when {
+	font-weight: bold;
+}
+
+.af-table__noted {
+	display: inline-flex;
+	margin-inline-start: 4px;
+	color: var(--color-text-maxcontrast);
+	vertical-align: middle;
+}
+
+.af-table .af-table__status {
+	padding-block: var(--default-grid-baseline);
+	cursor: default;
 }
 
 .af-table__sort {

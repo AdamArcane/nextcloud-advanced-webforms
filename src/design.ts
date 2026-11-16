@@ -66,3 +66,26 @@ export function pageBackground(design: FormDesign | undefined): string | null {
 			return null
 	}
 }
+
+/** Where the buttons under the form sit, as the server validated it. Anything else is the default, left. */
+export function submitAlign(design: FormDesign | undefined): 'left' | 'center' | 'right' | 'justify' {
+	const value = design?.submitAlign
+	return value === 'center' || value === 'right' || value === 'justify' ? value : 'left'
+}
+
+/** The accent variables for the progress indicator when it has a colour of its own; otherwise it inherits the accent. */
+export function progressColorStyle(design: FormDesign | undefined): Record<string, string> {
+	return colorVars(safeColor(design?.progressColor))
+}
+
+/** The progress indicator of a form with several pages (docs/SCHEMA.md 5.1). Anything unknown is the default, a bar. */
+export function progressStyle(design: FormDesign | undefined): 'bar' | 'steps' | 'none' {
+	const value = design?.progress
+	return value === 'steps' || value === 'none' ? value : 'bar'
+}
+
+/** The text shown with the progress indicator. Anything unknown is the default, the step number. */
+export function progressLabel(design: FormDesign | undefined): 'step' | 'title' | 'percent' | 'none' {
+	const value = design?.progressLabel
+	return value === 'title' || value === 'percent' || value === 'none' ? value : 'step'
+}

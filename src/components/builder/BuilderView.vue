@@ -24,7 +24,7 @@ import { fetchUserPolicy, OPEN_POLICY } from '../../api/settings.ts'
 import type { UserPolicy } from '../../api/settings.ts'
 import { deleteForm, getForm, publicFormUrl, publishForm, saveDraft, setFormArchived } from '../../api/forms.ts'
 import { addField, addPage, dropField, duplicateField, dropRow, resizeField, type DropTarget, moveFieldToPage, locateField, movePage, removePage, setPageTitle, moveField, removeField, setSpan, updateField } from '../../builder/definition.ts'
-import { describeError, groupErrors } from '../../builder/errors.ts'
+import { describeError, groupErrors, withoutUnstarted } from '../../builder/errors.ts'
 import { followLabel, renameField } from '../../builder/fieldId.ts'
 import type { Rule } from '../../rules/types.ts'
 import { FORM_STATUS_PUBLISHED } from '../../types.ts'
@@ -216,7 +216,9 @@ async function publish(): Promise<void> {
 
 // ---- Editing -------------------------------------------------------------
 
-const errorGroups = computed(() => groupErrors(errors.value))
+// An empty new block is only reported once publishing has been tried.
+const shownErrors = computed(() => (publishFailed.value ? errors.value : withoutUnstarted(errors.value, draft.value)))
+const errorGroups = computed(() => groupErrors(shownErrors.value))
 const formErrors = computed(() => errorGroups.value.get('') ?? [])
 const selectedField = computed(() => (selectedId.value && draft.value ? draft.value.fields[selectedId.value] : undefined))
 // Keyed by the layout cell, which stays put when the field's id changes as its label is typed.
@@ -447,7 +449,9 @@ async function onDeleteConfirmed(): Promise<void> {
 			<FormBar :form-id="formId"
 				:active="view"
 				:title="draft.title"
-				sidebar-toggle>
+				sidebar-toggle
+				renamable
+				@rename="onTitle">
 				<template #meta>
 					<!-- An icon says it at a glance; the words stay for screen readers and as a tooltip. -->
 					<span class="af-bar__status" :class="'af-bar__status--' + saveState" role="status" :title="saveLabel">
@@ -542,10 +546,11 @@ async function onDeleteConfirmed(): Promise<void> {
 					<ActionsPanel v-if="settingsTab === 'actions'"
 						:definition="draft"
 						:form-id="formId"
-						:errors="errors"
+						:errors="shownErrors"
 						:show-errors="publishFailed"
 						:allowed-types="policy.allowedActionTypes"
 						:max-actions="policy.maxActions"
+						:mail="policy.mail"
 						@change="edit" />
 					<FormProperties v-else
 						:section="settingsTab"
@@ -564,7 +569,7 @@ async function onDeleteConfirmed(): Promise<void> {
 			<BuilderCanvas v-else
 				:definition="draft"
 				:selected-id="selectedId"
-				:errors="errors"
+				:errors="shownErrors"
 				:mobile="mobile"
 				@select="select"
 				@add="onAdd"
@@ -636,7 +641,7 @@ async function onDeleteConfirmed(): Promise<void> {
 				:key="selectedKey"
 				:definition="draft"
 				:field-id="selectedId"
-				:errors="errors"
+				:errors="shownErrors"
 				@rules="onRules"
 				@select="select" />
 			<NcEmptyContent v-else

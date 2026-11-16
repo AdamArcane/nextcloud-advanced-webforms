@@ -64,6 +64,21 @@ final class EventPayloadTest extends TestCase {
 		], $payload);
 	}
 
+	public function testEntryStatusChangedCarriesIdsAndNoAnswers(): void {
+		$payload = EventPayload::entryStatusChanged(12, 'Contact', 'ada', 3, 457, 'done', null, 'ada');
+		$this->assertSame([
+			'event' => 'entry.status_changed',
+			'formId' => 12,
+			'versionId' => 3,
+			'entryId' => 457,
+			'status' => 'done',
+			'previousStatus' => null,
+			'changedBy' => 'ada',
+			'formTitle' => 'Contact',
+			'ownerId' => 'ada',
+		], $payload);
+	}
+
 	public function testFormPublished(): void {
 		$payload = EventPayload::formPublished(12, 'Contact', 'ada', 9, 3, true, 'tok123');
 		$this->assertSame('form.published', $payload['event']);

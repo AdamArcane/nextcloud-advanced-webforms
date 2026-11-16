@@ -14,7 +14,32 @@ import { defaultLeaf, sourceFields } from './rules.ts'
 /** The server allows this many actions (DefinitionValidator::MAX_ACTIONS). */
 export const MAX_ACTIONS = 10
 
-export const ACTION_TYPES: readonly ActionType[] = ['message', 'redirect', 'email', 'webhook', 'tables']
+export const ACTION_TYPES: readonly ActionType[] = ['message', 'redirect', 'email', 'webhook', 'tables', 'files']
+
+/**
+ * Where a new Files action writes, `Webforms/<form title> responses.csv`, with the title made safe as a
+ * file name (no slashes, control characters or backslashes, not too long).
+ */
+export function defaultResponsePath(title: string): string {
+	// eslint-disable-next-line no-control-regex
+	const name = title.replace(/[\u0000-\u001f\u007f/\\]+/g, ' ').replace(/\s+/g, ' ').trim().replace(/^\.+/, '').slice(0, 80).trim()
+	return 'Webforms/' + (name === '' ? 'Form' : name) + ' responses.csv'
+}
+
+/**
+ * A path as the server accepts it (CsvFile::cleanPath): plain names joined by `/`, ending in `.csv`.
+ * Leading and trailing slashes are dropped. Null when it cannot be used.
+ */
+export function cleanResponsePath(path: string): string | null {
+	const trimmed = path.replace(/^[\s/]+|[\s/]+$/g, '')
+	const parts = trimmed.split('/')
+	// eslint-disable-next-line no-control-regex
+	if (trimmed === '' || new TextEncoder().encode(trimmed).length > 255 || parts.length > 8 || parts.some((part) => part === '' || part === '.' || part === '..' || part !== part.trim() || /[\u0000-\u001f\u007f\\]/.test(part))) {
+		return null
+	}
+	const name = parts[parts.length - 1]
+	return name.length > 4 && name.toLowerCase().endsWith('.csv') ? trimmed : null
+}
 
 /** Message and redirect share one slot: the first that matches is the one shown. */
 export function usesResponseSlot(action: FormAction): boolean {
@@ -56,6 +81,9 @@ export function addAction(definition: DraftDefinition, type: ActionType): { defi
 		}
 		case 'tables':
 			action = { id, type, tableId: 0, map: {} }
+			break
+		case 'files':
+			action = { id, type, path: defaultResponsePath(definition.title) }
 			break
 		default:
 			action = { id, type: 'webhook', url: 'https://' }
@@ -129,10 +157,25 @@ export function errorActionIndex(path: string): number | null {
 	return match ? Number(match[1]) : null
 }
 
-/** Placeholders in a text that name a field the form no longer has. */
-export function unknownPlaceholders(text: string, definition: DraftDefinition): string[] {
+/** In an email body, `{all_fields}` stands for every answer the respondent gave (docs/SCHEMA.md section 7.2). */
+export const ALL_FIELDS = 'all_fields'
+
+/** `text` with the list of all answers added on a line of its own at the end. */
+export function withAllFields(text: string): string {
+	const trimmed = text.replace(/\s+$/, '')
+	return (trimmed === '' ? '' : trimmed + '\n\n') + '{' + ALL_FIELDS + '}'
+}
+
+/**
+ * Placeholders in a text that name a field the form no longer has. `allFields` says the text is an
+ * email body, where `{all_fields}` is not a field but still means something.
+ */
+export function unknownPlaceholders(text: string, definition: DraftDefinition, allFields: boolean = false): string[] {
 	const unknown: string[] = []
 	for (const match of text.matchAll(/\{([^{}]*)\}/g)) {
+		if (allFields && match[1] === ALL_FIELDS) {
+			continue
+		}
 		if (!(match[1] in definition.fields) && !unknown.includes(match[1])) {
 			unknown.push(match[1])
 		}

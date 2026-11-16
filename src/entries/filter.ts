@@ -19,8 +19,13 @@ export interface EntryFilterState {
 	respondent: Respondent
 	/** A condition on the answers, written like a rule. */
 	where: AllCondition | AnyCondition | null
+	/** Only responses with one of these statuses, where `none` means without one. Empty means any. */
+	statuses: string[]
 	sort: EntrySort
 }
+
+/** In `statuses`: responses that have no status. */
+export const NO_STATUS = 'none'
 
 export const EMPTY_FILTER: EntryFilterState = {
 	text: '',
@@ -28,12 +33,13 @@ export const EMPTY_FILTER: EntryFilterState = {
 	to: '',
 	respondent: 'any',
 	where: null,
+	statuses: [],
 	sort: 'newest',
 }
 
 /** Whether anything narrows the list. The order alone does not. */
 export function isFilterActive(filter: EntryFilterState): boolean {
-	return filter.text.trim() !== '' || filter.from !== '' || filter.to !== '' || filter.respondent !== 'any' || filter.where !== null
+	return filter.text.trim() !== '' || filter.from !== '' || filter.to !== '' || filter.respondent !== 'any' || filter.where !== null || filter.statuses.length > 0
 }
 
 /** The query parameters for the server, leaving out whatever is at its default. */
@@ -53,6 +59,9 @@ export function filterParams(filter: EntryFilterState): Record<string, string> {
 	}
 	if (filter.where !== null) {
 		params.where = JSON.stringify(filter.where)
+	}
+	if (filter.statuses.length > 0) {
+		params.status = filter.statuses.join(',')
 	}
 	if (filter.sort !== 'newest') {
 		params.sort = filter.sort

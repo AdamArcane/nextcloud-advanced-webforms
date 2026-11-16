@@ -4,7 +4,7 @@
 -->
 
 <script setup lang="ts">
-import type { Delivery, EntryRecord, VersionDefinition } from '../../types.ts'
+import type { Delivery, EntryRecord, ResponseStatus, VersionDefinition } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -14,14 +14,24 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { computed, ref, watch } from 'vue'
 import { listDeliveries, retryDelivery } from '../../api/forms.ts'
 import { answerLines, entryFileUrl, formatTime, previewLines } from '../../entries/format.ts'
+import { findStatus } from '../../entries/statuses.ts'
 import { formatSize } from '../../uploads.ts'
 import DeliveryRow from './DeliveryRow.vue'
+import NoteEditor from './NoteEditor.vue'
+import StatusSelect from './StatusSelect.vue'
+import StatusTag from './StatusTag.vue'
 
 const props = defineProps<{
 	formId: number
 	entry: EntryRecord
 	definition: VersionDefinition
 	expanded: boolean
+	/** The statuses a response can be given. None hides the status. */
+	statuses?: readonly ResponseStatus[]
+	/** It arrived since the owner last looked at the list. */
+	isNew?: boolean
+	/** A status is being saved. */
+	busy?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -29,7 +39,13 @@ const emit = defineEmits<{
 	delete: []
 	/** A delivery was retried, so the totals elsewhere are out of date. */
 	changed: []
+	/** The owner picked a status, or none. The parent saves it. */
+	status: [status: string | null]
+	/** The response changed on the server (its note), and this is how it reads now. */
+	updated: [entry: EntryRecord]
 }>()
+
+const status = computed(() => findStatus(props.statuses ?? [], props.entry.status))
 
 const lines = computed(() => answerLines(props.definition, props.entry.data))
 const preview = computed(() => previewLines(props.definition, props.entry.data))
@@ -76,8 +92,14 @@ async function retry(delivery: Delivery): Promise<void> {
 			class="af-response__head"
 			:aria-expanded="expanded"
 			@click="emit('toggle')">
+			<span v-if="isNew" class="af-response__new">{{ t('webforms', 'New') }}</span>
 			<span class="af-response__when">{{ formatTime(entry.submittedAt) }}</span>
 			<span v-if="entry.userId" class="af-response__who">{{ entry.userId }}</span>
+			<StatusTag v-if="status" :status="status" />
+			<span v-if="entry.note" class="af-response__noted" :title="t('webforms', 'Has a note')">
+				<Icon :path="icons.note" :size="16" />
+				<span class="af-response__sr">{{ t('webforms', 'Has a note') }}</span>
+			</span>
 			<span class="af-response__preview">
 				<template v-if="preview.length > 0">
 					<span v-for="line in preview" :key="line.id" class="af-response__bit"><strong>{{ line.label }}:</strong> {{ line.value }}</span>
@@ -89,21 +111,25 @@ async function retry(delivery: Delivery): Promise<void> {
 
 		<div v-if="expanded" class="af-response__body">
 			<dl class="af-response__answers">
-				<template v-for="line in lines" :key="line.id">
+				<div v-for="line in lines" :key="line.id" class="af-response__row">
 					<dt>{{ line.label }}</dt>
-					<dd :class="{ 'af-response__none': !line.answered }">
-						<ul v-if="line.files.length > 0" class="af-response__files">
-							<li v-for="(file, index) in line.files" :key="index">
-								<a :href="entryFileUrl(formId, entry.id, line.id, index)" download>{{ file.name }}</a>
-								<span class="af-response__size">{{ formatSize(file.size) }}</span>
-							</li>
-						</ul>
-						<template v-else>
-							{{ line.answered ? line.value : '—' }}
-						</template>
-					</dd>
-				</template>
+					<dd :class="{ 'af-response__none': !line.answered }"><ul v-if="line.files.length > 0" class="af-response__files"><li v-for="(file, index) in line.files" :key="index"><a :href="entryFileUrl(formId, entry.id, line.id, index)" download>{{ file.name }}</a><span class="af-response__size">{{ formatSize(file.size) }}</span></li></ul><template v-else>{{ line.answered ? line.value : '—' }}</template></dd>
+				</div>
 			</dl>
+
+			<div class="af-response__meta">
+				<StatusSelect v-if="statuses && statuses.length > 0"
+					:statuses="statuses"
+					:model-value="entry.status"
+					:label="t('webforms', 'Status of response {id}', { id: entry.id })"
+					:disabled="busy"
+					@update:model-value="(value) => emit('status', value)" />
+				<a class="af-response__open" :href="'#/f/' + formId + '/responses/' + entry.id">
+					{{ t('webforms', 'Open on its own page') }}
+				</a>
+			</div>
+
+			<NoteEditor :form-id="formId" :entry="entry" @saved="(saved) => emit('updated', saved)" />
 
 			<section class="af-response__deliveries">
 				<h4 class="af-response__heading">
@@ -153,7 +179,7 @@ async function retry(delivery: Delivery): Promise<void> {
 	position: relative;
 	width: 100%;
 	box-sizing: border-box;
-	padding: calc(var(--default-grid-baseline) * 3) calc(var(--default-grid-baseline) * 9) calc(var(--default-grid-baseline) * 3) calc(var(--default-grid-baseline) * 4);
+	padding: calc(var(--default-grid-baseline) * 3) calc(var(--default-grid-baseline) * 9) calc(var(--default-grid-baseline) * 3) calc(var(--default-grid-baseline) * 3);
 	border: 0;
 	border-radius: var(--border-radius-large);
 	background: transparent;
@@ -175,6 +201,44 @@ async function retry(delivery: Delivery): Promise<void> {
 .af-response__when {
 	font-weight: bold;
 	white-space: nowrap;
+}
+
+.af-response__new {
+	padding: 0 8px;
+	border-radius: var(--border-radius-pill, 999px);
+	background: var(--color-primary-element);
+	color: var(--color-primary-element-text);
+	font-size: 12px;
+	font-weight: bold;
+	line-height: 20px;
+}
+
+.af-response__noted {
+	display: inline-flex;
+	align-self: center;
+	color: var(--color-text-maxcontrast);
+}
+
+.af-response__sr {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+.af-response__meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: calc(var(--default-grid-baseline) * 2);
+}
+
+.af-response__open {
+	color: var(--color-primary-element);
+	text-decoration: underline;
 }
 
 .af-response__who {
@@ -225,10 +289,26 @@ async function retry(delivery: Delivery): Promise<void> {
 }
 
 .af-response__answers {
+	display: flex;
+	flex-direction: column;
+	gap: calc(var(--default-grid-baseline) * 3);
+	margin: 0;
+	padding: 0;
+}
+
+.af-response__row {
 	display: grid;
 	grid-template-columns: minmax(7rem, 30%) minmax(0, 1fr);
-	gap: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 4);
+	gap: var(--default-grid-baseline) calc(var(--default-grid-baseline) * 4);
+}
+
+/* Reset what the page around the app may set on definition lists, so a label always starts at the left. */
+.af-response__answers dt,
+.af-response__answers dd {
 	margin: 0;
+	padding: 0;
+	text-align: start;
+	line-height: 1.4;
 }
 
 .af-response__answers dt {
@@ -249,7 +329,6 @@ async function retry(delivery: Delivery): Promise<void> {
 }
 
 .af-response__answers dd {
-	margin: 0;
 	white-space: pre-wrap;
 	overflow-wrap: anywhere;
 }
@@ -259,13 +338,38 @@ async function retry(delivery: Delivery): Promise<void> {
 }
 
 @media (max-width: 600px) {
-	.af-response__answers {
-		grid-template-columns: 1fr;
-		gap: 0;
+	.af-response__body {
+		padding: 0 calc(var(--default-grid-baseline) * 3) calc(var(--default-grid-baseline) * 3);
 	}
 
-	.af-response__answers dd {
-		margin-bottom: calc(var(--default-grid-baseline) * 2);
+	/* The status menu takes the full width, and the link to the page sits under it. */
+	.af-response__meta {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.af-response__meta :deep(.af-status),
+	.af-response__meta :deep(.af-status__select) {
+		width: 100%;
+		max-width: none;
+	}
+
+	.af-response__footer {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.af-response__row {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 2px;
+	}
+
+	.af-response__answers {
+		gap: calc(var(--default-grid-baseline) * 3);
+	}
+
+	.af-response__answers dt {
+		font-size: 13px;
 	}
 }
 

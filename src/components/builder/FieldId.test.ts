@@ -180,3 +180,37 @@ describe('renaming through the builder', () => {
 		wrapper.unmount()
 	})
 })
+
+describe('Fill from the link', () => {
+	const param = (wrapper: ReturnType<typeof mount>) => wrapper.find('.af-props__param').text()
+
+	it('shows the parameter for the field ID, and follows the ID as it is typed', async () => {
+		const { def, a } = two()
+		const wrapper = mountProps(def, a)
+		expect(param(wrapper)).toBe('?' + a + '=value')
+
+		await idField(wrapper, a).setValue('utm_source')
+		expect(param(wrapper)).toBe('?utm_source=value')
+		expect(wrapper.text()).toContain('It works once you change the ID.')
+
+		// An ID that cannot be used leaves the current one on show.
+		await wrapper.findAll('input').find((input) => (input.element as HTMLInputElement).value === 'utm_source')!.setValue('X')
+		expect(param(wrapper)).toBe('?' + a + '=value')
+	})
+
+	it('follows a new ID from outside, such as one that follows the label', async () => {
+		const { def, a } = two()
+		const wrapper = mountProps(def, a)
+		const renamed = { ...def, fields: { f_new_name: def.fields[a] } }
+		await wrapper.setProps({ definition: renamed, fieldId: 'f_new_name' })
+		expect(param(wrapper)).toBe('?f_new_name=value')
+	})
+
+	it('says when the form switches it off, and has nothing for uploads', () => {
+		const { def, a } = two()
+		const off = { ...def, settings: { ...def.settings, prefill: false } }
+		expect(mountProps(off, a).text()).toContain('Switched off for this form')
+		const upload = addField(def, 'file', { kind: 'row', index: 2 })
+		expect(mountProps(upload.definition, upload.fieldId).text()).not.toContain('Fill from the link')
+	})
+})

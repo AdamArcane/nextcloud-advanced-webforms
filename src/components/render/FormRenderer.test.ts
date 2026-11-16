@@ -191,6 +191,92 @@ describe('FormRenderer', () => {
 
 })
 
+describe('FormRenderer with a rating, a scale and a consent', () => {
+	const rated: PublicForm = {
+		...form,
+		definition: {
+			...form.definition,
+			fields: {
+				f_stars: { type: 'rating', label: 'Stars', required: true },
+				f_nps: { type: 'scale', label: 'Recommend', min: 0, max: 10, minLabel: 'Not likely', maxLabel: 'Very likely' },
+				f_terms: { type: 'consent', label: 'Terms', required: true, text: 'I agree to the [terms](https://example.com/terms).' },
+				f_when: { type: 'datetime', label: 'When' },
+			},
+			rules: [],
+			pages: [{ id: 'p_1', title: null, rows: ['f_stars', 'f_nps', 'f_terms', 'f_when'].map((field, index) => ({ id: 'r_' + index, cells: [{ id: 'c_' + index, span: 12, field }] })) }],
+		},
+	}
+
+	it('draws them and sends what was picked', async () => {
+		submitMock.mockResolvedValue({ message: null, redirect: null })
+		const wrapper = mount(FormRenderer, { props: { form: rated }, attachTo: document.body })
+		expect(wrapper.findAll('[data-field=f_stars] input[type=radio]')).toHaveLength(5)
+		expect(wrapper.findAll('[data-field=f_nps] input[type=radio]')).toHaveLength(11)
+		expect(wrapper.find('[data-field=f_nps]').text()).toContain('Very likely')
+		expect(wrapper.find('[data-field=f_terms] a').attributes('href')).toBe('https://example.com/terms')
+		expect(wrapper.find('#af-f_when').attributes('type')).toBe('datetime-local')
+
+		// Both required answers are missing.
+		await wrapper.find('form').trigger('submit')
+		expect(submitMock).not.toHaveBeenCalled()
+		expect(wrapper.findAll('.af-error')).toHaveLength(2)
+
+		await wrapper.findAll('[data-field=f_stars] input')[3].trigger('click')
+		expect(wrapper.findAll('[data-field=f_stars] .af-rating__star--on')).toHaveLength(4)
+		await wrapper.findAll('[data-field=f_nps] input')[0].trigger('click')
+		await wrapper.find('#af-f_terms').setValue(true)
+		await wrapper.find('#af-f_when').setValue('2026-05-01T09:30')
+		await wrapper.find('form').trigger('submit')
+		await flushPromises()
+		expect(submitMock.mock.calls[0][1].values).toEqual({ f_stars: '4', f_nps: '0', f_terms: true, f_when: '2026-05-01T09:30' })
+	})
+
+	it('takes a pick back when it is picked again', async () => {
+		const wrapper = mount(FormRenderer, { props: { form: rated, preview: true }, attachTo: document.body })
+		const third = wrapper.findAll('[data-field=f_stars] input')[2]
+		await third.trigger('click')
+		expect(wrapper.findAll('.af-rating__star--on')).toHaveLength(3)
+		await third.trigger('click')
+		expect(wrapper.findAll('.af-rating__star--on')).toHaveLength(0)
+	})
+})
+
+describe('FormRenderer with image blocks', () => {
+	const pictured = (preview: boolean) => mount(FormRenderer, {
+		props: {
+			preview,
+			form: {
+				...form,
+				definition: {
+					...form.definition,
+					fields: {
+						f_remote: { type: 'image', src: 'https://example.com/logo.png', alt: 'Logo', width: 50 },
+						f_local: { type: 'image', src: preview ? 'Pictures/team photo.png' : '@files' },
+						f_bad: { type: 'image', src: 'javascript:alert(1)' },
+					},
+					rules: [],
+					pages: [{ id: 'p_1', title: null, rows: ['f_remote', 'f_local', 'f_bad'].map((field, index) => ({ id: 'r_' + index, cells: [{ id: 'c_' + index, span: 12, field }] })) }],
+				},
+			},
+		},
+		attachTo: document.body,
+	})
+
+	it('loads a remote picture from its address and one in Files through the form', () => {
+		const images = pictured(false).findAll('img')
+		expect(images).toHaveLength(2)
+		expect(images[0].attributes('src')).toBe('https://example.com/logo.png')
+		expect(images[0].attributes('alt')).toBe('Logo')
+		expect(images[0].attributes('style')).toContain('50%')
+		expect(images[1].attributes('src')).toContain('/public/tok/image/f_local?v=4')
+	})
+
+	it('shows the owner their own file in the preview', () => {
+		const images = pictured(true).findAll('img')
+		expect(images[1].attributes('src')).toContain('/image?path=Pictures%2Fteam%20photo.png')
+	})
+})
+
 describe('FormRenderer with several pages', () => {
 	const paged: PublicForm = {
 		...form,
@@ -227,6 +313,43 @@ describe('FormRenderer with several pages', () => {
 		await flushPromises()
 		expect(submitMock).toHaveBeenCalledTimes(1)
 		expect(submitMock.mock.calls[0][1].values).toEqual({ f_name: 'Ann', f_mail: '' })
+	})
+
+	it('shows a progress bar with the step number by default', async () => {
+		const wrapper = mount(FormRenderer, { props: { form: paged, preview: true }, attachTo: document.body })
+		expect(wrapper.find('.af-progress__label').text()).toBe('Step 1 of 2')
+		expect(wrapper.find('[role=progressbar]').attributes('aria-valuenow')).toBe('50')
+		await wrapper.find('form').trigger('submit')
+		expect(wrapper.find('.af-progress__label').text()).toBe('Step 2 of 2')
+		expect(wrapper.find('[role=progressbar]').attributes('aria-valuenow')).toBe('100')
+		expect(document.activeElement).toBe(wrapper.find('.af-progress__label').element)
+	})
+
+	it('follows the design: steps, page name, percent or nothing', async () => {
+		const withDesign = (design: NonNullable<PublicForm['definition']['settings']>['design']) => mount(FormRenderer, {
+			props: { form: { ...paged, definition: { ...paged.definition, settings: { design } } }, preview: true },
+			attachTo: document.body,
+		})
+		const named = withDesign({ progress: 'steps', progressLabel: 'title' })
+		expect(named.find('[role=progressbar]').exists()).toBe(false)
+		expect(named.findAll('.af-progress__step')).toHaveLength(2)
+		expect(named.find('[aria-current=step]').text()).toBe('1')
+		expect(named.find('.af-progress__label').text()).toBe('About you')
+		// The second page has no name, so it falls back to its step number.
+		await named.find('form').trigger('submit')
+		expect(named.find('.af-progress__label').text()).toBe('Step 2 of 2')
+		expect(named.find('[aria-current=step]').text()).toBe('2')
+
+		expect(withDesign({ progressColor: '#00aa55' }).find('.af-progress').attributes('style')).toContain('#00aa55')
+		expect(withDesign({ progressLabel: 'percent' }).find('.af-progress__label').text()).toBe('50%')
+		const bare = withDesign({ progressLabel: 'none' })
+		expect(bare.find('.af-progress__label').exists()).toBe(false)
+		expect(bare.find('[role=progressbar]').exists()).toBe(true)
+		expect(withDesign({ progress: 'none', progressLabel: 'none' }).find('.af-progress').exists()).toBe(false)
+	})
+
+	it('shows no progress on a form with one page', () => {
+		expect(render().find('.af-progress').exists()).toBe(false)
 	})
 
 	it('lets the preview page through but never submits', async () => {

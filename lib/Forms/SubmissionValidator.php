@@ -62,8 +62,8 @@ final class SubmissionValidator {
 				continue;
 			}
 
-			// A required checkbox must be ticked; for other types, empty is missing.
-			$missing = $value === null || ($type === FieldType::CHECKBOX && $value === false);
+			// A required checkbox or consent must be ticked; for other types, empty is missing.
+			$missing = $value === null || (FieldType::isBoolean($type) && $value === false);
 			if ($missing && isset($required[$id])) {
 				$errors[] = ['field' => $id, 'code' => 'required'];
 				continue;

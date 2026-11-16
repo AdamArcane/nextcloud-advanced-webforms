@@ -9,6 +9,9 @@ declare(strict_types=1);
 
 namespace OCA\Webforms\Forms;
 
+use OCA\Webforms\Actions\CsvFile;
+use OCA\Webforms\Actions\MailPolicy;
+use OCA\Webforms\Actions\Template;
 use OCA\Webforms\Actions\TablesValue;
 use OCA\Webforms\Rules\FieldType;
 use OCA\Webforms\Rules\RuleValidator;
@@ -31,9 +34,9 @@ final class DefinitionValidator {
 	public const SPANS = [3, 4, 6, 8, 9, 12];
 	public const LABEL_POSITIONS = ['above', 'inline', 'hidden'];
 	public const MAX_TABLES_COLUMNS = 100;
-	public const ACTION_TYPES = ['email', 'webhook', 'message', 'redirect', 'tables'];
+	public const ACTION_TYPES = ['email', 'webhook', 'message', 'redirect', 'tables', 'files'];
 
-	private const SETTINGS_KEYS = ['submitLabel', 'labelPosition', 'requireLogin', 'allowMultipleSubmissions', 'hideRequiredIndicator', 'hideTitle', 'captcha', 'closedMessage', 'design'];
+	private const SETTINGS_KEYS = ['submitLabel', 'labelPosition', 'requireLogin', 'allowMultipleSubmissions', 'hideRequiredIndicator', 'hideTitle', 'captcha', 'closedMessage', 'maxResponses', 'showRemaining', 'opensAt', 'closesAt', 'notOpenMessage', 'fullMessage', 'prefill', 'saveProgress', 'reviewStep', 'reviewTitle', 'design'];
 	private const MAX_PAGES = 20;
 	private const TOP_KEYS = ['schemaVersion', 'title', 'description', 'settings', 'fields', 'pages', 'rules', 'actions'];
 	private const COMMON_INPUT_KEYS = ['type', 'label', 'description', 'required', 'defaultValue', 'labelPosition', 'hideLabel'];
@@ -121,13 +124,25 @@ final class DefinitionValidator {
 				if (!in_array($value, self::LABEL_POSITIONS, true)) {
 					$this->err('settings_invalid', $path);
 				}
-			} elseif (in_array($key, ['requireLogin', 'allowMultipleSubmissions', 'hideRequiredIndicator', 'hideTitle', 'captcha'], true)) {
+			} elseif (in_array($key, ['requireLogin', 'allowMultipleSubmissions', 'hideRequiredIndicator', 'hideTitle', 'captcha', 'showRemaining', 'prefill', 'saveProgress', 'reviewStep'], true)) {
 				if (!is_bool($value)) {
 					$this->err('settings_invalid', $path);
 				}
-			} elseif (!is_string($value) || mb_strlen($value) > ($key === 'submitLabel' ? 64 : 500)) {
+			} elseif ($key === 'maxResponses') {
+				if (!is_int($value) || $value < 1 || $value > Availability::MAX_RESPONSES) {
+					$this->err('settings_invalid', $path);
+				}
+			} elseif ($key === 'opensAt' || $key === 'closesAt') {
+				if (!is_int($value) || $value < 1 || $value > Availability::MAX_TIME) {
+					$this->err('settings_invalid', $path);
+				}
+			} elseif (!is_string($value) || mb_strlen($value) > (in_array($key, ['submitLabel', 'reviewTitle'], true) ? 64 : 500)) {
 				$this->err('settings_invalid', $path);
 			}
+		}
+		// A form that closes before it opens would never take a response.
+		if (is_int($settings['opensAt'] ?? null) && is_int($settings['closesAt'] ?? null) && $settings['closesAt'] <= $settings['opensAt']) {
+			$this->err('window_invalid', 'settings.closesAt');
 		}
 	}
 
@@ -141,7 +156,10 @@ final class DefinitionValidator {
 				'width' => in_array($value, ['narrow', 'standard', 'wide'], true),
 				'card' => is_bool($value),
 				'background' => in_array($value, ['default', 'plain', 'color'], true),
-				'backgroundColor', 'accentColor', 'buttonColor' => is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1,
+				'backgroundColor', 'accentColor', 'buttonColor', 'progressColor' => is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1,
+				'submitAlign' => in_array($value, ['left', 'center', 'right', 'justify'], true),
+				'progress' => in_array($value, ['bar', 'steps', 'none'], true),
+				'progressLabel' => in_array($value, ['step', 'title', 'percent', 'none'], true),
 				default => null,
 			};
 			if ($valid === null) {
@@ -193,7 +211,10 @@ final class DefinitionValidator {
 	 * @param array<string, mixed> $field
 	 */
 	private function inputField(array $field, string $type, string $path): void {
-		$allowed = self::COMMON_INPUT_KEYS;
+		$allowed = $type === FieldType::HIDDEN
+			// Never shown, so nothing about how it looks, and never required.
+			? ['type', 'label', 'description', 'defaultValue']
+			: self::COMMON_INPUT_KEYS;
 		if (in_array($type, self::PLACEHOLDER_TYPES, true)) {
 			$allowed[] = 'placeholder';
 		}
@@ -201,7 +222,10 @@ final class DefinitionValidator {
 			FieldType::TEXT => ['minLength', 'maxLength'],
 			FieldType::TEXTAREA => ['minLength', 'maxLength', 'rows'],
 			FieldType::NUMBER => ['min', 'max', 'step', 'prefix', 'suffix'],
-			FieldType::DATE, FieldType::TIME => ['min', 'max'],
+			FieldType::DATE, FieldType::TIME, FieldType::DATETIME => ['min', 'max'],
+			FieldType::RATING => ['max'],
+			FieldType::SCALE => ['min', 'max', 'minLabel', 'maxLabel'],
+			FieldType::CONSENT => ['text'],
 			FieldType::SELECT => ['options'],
 			FieldType::RADIO => ['options', 'columns'],
 			FieldType::CHECKBOXES => ['options', 'minSelected', 'maxSelected', 'columns'],
@@ -220,6 +244,7 @@ final class DefinitionValidator {
 		if (!is_string($label) || trim($label) === '' || mb_strlen($label) > 255) {
 			$this->err('field_label_invalid', $path . '.label');
 		}
+
 		$this->optionalString($field, 'description', 1000, 'field_description_invalid', $path . '.');
 		$this->optionalString($field, 'placeholder', 255, 'field_placeholder_invalid', $path . '.');
 		if (array_key_exists('labelPosition', $field) && !in_array($field['labelPosition'], self::LABEL_POSITIONS, true)) {
@@ -247,8 +272,28 @@ final class DefinitionValidator {
 				$this->err('field_limit_invalid', $path . '.rows');
 			}
 		}
-		if ($type === FieldType::DATE || $type === FieldType::TIME) {
+		if ($type === FieldType::DATE || $type === FieldType::TIME || $type === FieldType::DATETIME) {
 			$this->dateTimeLimits($field, $type, $path);
+		}
+		if ($type === FieldType::RATING && array_key_exists('max', $field) && (!is_int($field['max']) || $field['max'] < 3 || $field['max'] > 10)) {
+			$this->err('field_limit_invalid', $path . '.max');
+		}
+		if ($type === FieldType::SCALE) {
+			if (array_key_exists('min', $field) && $field['min'] !== 0 && $field['min'] !== 1) {
+				$this->err('field_limit_invalid', $path . '.min');
+			}
+			if (array_key_exists('max', $field) && (!is_int($field['max']) || $field['max'] < 2 || $field['max'] > 10)) {
+				$this->err('field_limit_invalid', $path . '.max');
+			}
+			$this->optionalString($field, 'minLabel', 50, 'field_limit_invalid', $path . '.');
+			$this->optionalString($field, 'maxLabel', 50, 'field_limit_invalid', $path . '.');
+		}
+		if ($type === FieldType::CONSENT) {
+			// What the respondent agrees to, in the paragraph's markdown.
+			$text = $field['text'] ?? null;
+			if (!is_string($text) || trim($text) === '' || mb_strlen($text) > 2000) {
+				$this->err('field_text_invalid', $path . '.text');
+			}
 		}
 		if (($type === FieldType::RADIO || $type === FieldType::CHECKBOXES)
 			&& array_key_exists('columns', $field) && (!is_int($field['columns']) || $field['columns'] < 1 || $field['columns'] > 4)) {
@@ -337,7 +382,11 @@ final class DefinitionValidator {
 	 * @param array<string, mixed> $field
 	 */
 	private function dateTimeLimits(array $field, string $type, string $path): void {
-		$valid = $type === FieldType::DATE ? FieldValueValidator::isDate(...) : FieldValueValidator::isTime(...);
+		$valid = match ($type) {
+			FieldType::DATE => FieldValueValidator::isDate(...),
+			FieldType::DATETIME => FieldValueValidator::isDateTime(...),
+			default => FieldValueValidator::isTime(...),
+		};
 		foreach (['min', 'max'] as $key) {
 			if (array_key_exists($key, $field) && !$valid($field[$key])) {
 				$this->err('field_limit_invalid', $path . '.' . $key);
@@ -398,6 +447,7 @@ final class DefinitionValidator {
 			FieldType::HEADING => ['type', 'text', 'level', 'align'],
 			FieldType::PARAGRAPH => ['type', 'text', 'align'],
 			FieldType::DIVIDER => ['type', 'style'],
+			FieldType::IMAGE => ['type', 'src', 'alt', 'width', 'align'],
 			default => ['type'],
 		};
 		foreach (array_keys($field) as $key) {
@@ -408,6 +458,19 @@ final class DefinitionValidator {
 		if ($type === FieldType::DIVIDER) {
 			if (array_key_exists('style', $field) && !in_array($field['style'], ['solid', 'dashed', 'dotted'], true)) {
 				$this->err('field_limit_invalid', $path . '.style');
+			}
+			return;
+		}
+		if ($type === FieldType::IMAGE) {
+			if (ImageSource::kind($field['src'] ?? null) === null) {
+				$this->err('field_image_invalid', $path . '.src');
+			}
+			$this->optionalString($field, 'alt', 255, 'field_limit_invalid', $path . '.');
+			if (array_key_exists('width', $field) && !in_array($field['width'], [25, 50, 75, 100], true)) {
+				$this->err('field_limit_invalid', $path . '.width');
+			}
+			if (array_key_exists('align', $field) && !in_array($field['align'], ['start', 'center', 'end'], true)) {
+				$this->err('field_limit_invalid', $path . '.align');
 			}
 			return;
 		}
@@ -557,7 +620,7 @@ final class DefinitionValidator {
 			$allowed = ['id', 'type', 'when'];
 			switch ($action['type']) {
 				case 'email':
-					$allowed = array_merge($allowed, ['to', 'subject', 'body']);
+					$allowed = array_merge($allowed, ['to', 'replyTo', 'fromName', 'subject', 'body']);
 					$this->emailAction($action, $fields, $path);
 					break;
 				case 'webhook':
@@ -567,6 +630,12 @@ final class DefinitionValidator {
 				case 'tables':
 					$allowed = array_merge($allowed, ['tableId', 'map']);
 					$this->tablesAction($action, $fields, $path);
+					break;
+				case 'files':
+					$allowed[] = 'path';
+					if (!is_string($action['path'] ?? null) || CsvFile::cleanPath($action['path']) !== $action['path']) {
+						$this->err('action_bad_file_path', $path . '.path');
+					}
 					break;
 				case 'message':
 					$allowed[] = 'text';
@@ -590,26 +659,46 @@ final class DefinitionValidator {
 	 * @param array<string, array<string, mixed>> $fields
 	 */
 	private function emailAction(array $action, array $fields, string $path): void {
-		$to = $action['to'] ?? null;
-		if (is_string($to)) {
-			if (filter_var($to, FILTER_VALIDATE_EMAIL) === false || strlen($to) > FieldValueValidator::MAX_EMAIL) {
-				$this->err('action_bad_recipient', $path . '.to');
+		$this->emailAddressSource($action['to'] ?? null, $fields, $path . '.to', 'action_bad_recipient');
+		if (array_key_exists('replyTo', $action)) {
+			// Optional, and written the same way as the recipient (section 7.2).
+			$this->emailAddressSource($action['replyTo'], $fields, $path . '.replyTo', 'action_bad_reply_to');
+		}
+		if (array_key_exists('fromName', $action)) {
+			// The name mail is sent under. One line of plain text: it becomes part of a mail header.
+			$name = $action['fromName'];
+			if (!is_string($name) || trim($name) === '' || mb_strlen($name) > MailPolicy::MAX_NAME || preg_match('/[\x00-\x1F\x7F]/', $name) === 1) {
+				$this->err('action_from_name_invalid', $path . '.fromName');
 			}
-		} elseif (is_array($to) && (array_keys($to) === ['owner'] || array_keys($to) === ['respondent'])) {
-			// "The form owner" and "the signed-in respondent": resolved to their account email when sent.
-			if (reset($to) !== true) {
-				$this->err('action_bad_recipient', $path . '.to');
-			}
-		} elseif (is_array($to) && array_keys($to) === ['field']) {
-			$source = is_string($to['field']) ? ($fields[$to['field']] ?? null) : null;
-			if ($source === null || ($source['type'] ?? null) !== FieldType::EMAIL) {
-				$this->err('action_bad_recipient', $path . '.to.field');
-			}
-		} else {
-			$this->err('action_bad_recipient', $path . '.to');
 		}
 		$this->textProp($action, 'subject', 255, $fields, $path);
-		$this->textProp($action, 'body', 5000, $fields, $path);
+		$this->textProp($action, 'body', 5000, $fields, $path, true);
+	}
+
+	/**
+	 * Where an email address comes from: a fixed address, an email field, the form owner's account or
+	 * the signed-in respondent's account.
+	 *
+	 * @param array<string, array<string, mixed>> $fields
+	 */
+	private function emailAddressSource(mixed $source, array $fields, string $path, string $code): void {
+		if (is_string($source)) {
+			if (filter_var($source, FILTER_VALIDATE_EMAIL) === false || strlen($source) > FieldValueValidator::MAX_EMAIL) {
+				$this->err($code, $path);
+			}
+		} elseif (is_array($source) && (array_keys($source) === ['owner'] || array_keys($source) === ['respondent'])) {
+			// "The form owner" and "the signed-in respondent": resolved to their account email when sent.
+			if (reset($source) !== true) {
+				$this->err($code, $path);
+			}
+		} elseif (is_array($source) && array_keys($source) === ['field']) {
+			$field = is_string($source['field']) ? ($fields[$source['field']] ?? null) : null;
+			if ($field === null || ($field['type'] ?? null) !== FieldType::EMAIL) {
+				$this->err($code, $path . '.field');
+			}
+		} else {
+			$this->err($code, $path);
+		}
 	}
 
 	/**
@@ -672,24 +761,28 @@ final class DefinitionValidator {
 	 * @param array<string, mixed> $action
 	 * @param array<string, array<string, mixed>> $fields
 	 */
-	private function textProp(array $action, string $key, int $max, array $fields, string $path): void {
+	private function textProp(array $action, string $key, int $max, array $fields, string $path, bool $allFields = false): void {
 		$value = $action[$key] ?? null;
 		if (!is_string($value) || trim($value) === '' || mb_strlen($value) > $max) {
 			$this->err('action_text_invalid', $path . '.' . $key);
 			return;
 		}
-		$this->checkPlaceholders($value, $fields, $path . '.' . $key);
+		$this->checkPlaceholders($value, $fields, $path . '.' . $key, $allFields);
 	}
 
 	/**
 	 * @param array<string, array<string, mixed>> $fields
 	 */
-	private function checkPlaceholders(string $text, array $fields, string $path): void {
+	private function checkPlaceholders(string $text, array $fields, string $path, bool $allFields = false): void {
 		if (preg_match_all('/\{([^{}]*)\}/', $text, $matches) === false) {
 			return;
 		}
 		foreach ($matches[1] as $name) {
 			$field = $fields[$name] ?? null;
+			if ($field === null && $allFields && $name === Template::ALL_FIELDS) {
+				// Every answer at once, in an email body (section 7.2).
+				continue;
+			}
 			if ($field === null || !isset(FieldType::OPERATORS[(string)($field['type'] ?? '')])) {
 				$this->err('action_unknown_placeholder', $path);
 				return;

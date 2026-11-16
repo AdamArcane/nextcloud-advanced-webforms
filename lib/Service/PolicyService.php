@@ -9,9 +9,15 @@ declare(strict_types=1);
 
 namespace OCA\Webforms\Service;
 
+use OCA\Webforms\Actions\MailPolicy;
+use OCA\Webforms\Settings\MailSettings;
 use OCA\Webforms\Settings\PolicyCheck;
 use OCA\Webforms\Settings\PolicySettings;
+use OCA\Webforms\Settings\StatusSettings;
+use OCP\Defaults;
 use OCP\IGroupManager;
+use OCP\IUserManager;
+use OCP\Util;
 
 /**
  * Applies the administrator's policy (docs/SCHEMA.md section 16) where forms are created, published,
@@ -21,7 +27,16 @@ class PolicyService {
 	public function __construct(
 		private readonly PolicySettings $settings,
 		private readonly IGroupManager $groups,
+		private readonly MailSettings $mail,
+		private readonly IUserManager $users,
+		private readonly Defaults $defaults,
+		private readonly StatusSettings $statuses,
 	) {
+	}
+
+	/** The administrator's settings for mail that forms send (docs/SCHEMA.md section 16.2). */
+	public function mail(): MailPolicy {
+		return $this->mail->policy();
 	}
 
 	public function settings(): PolicySettings {
@@ -52,7 +67,10 @@ class PolicyService {
 	 * @return list<array{code: string, path: string}>
 	 */
 	public function actionErrors(array $definition): array {
-		return PolicyCheck::actionErrors($definition, $this->settings->allowedActionTypes(), $this->settings->maxActionsPerForm());
+		return array_merge(
+			PolicyCheck::actionErrors($definition, $this->settings->allowedActionTypes(), $this->settings->maxActionsPerForm()),
+			PolicyCheck::mailErrors($definition, $this->mail->policy()),
+		);
 	}
 
 	public function isActionTypeAllowed(string $type): bool {
@@ -72,13 +90,41 @@ class PolicyService {
 	/**
 	 * What the builder needs to know, for the signed-in user.
 	 *
-	 * @return array{canCreate: bool, allowedActionTypes: list<string>, maxActions: int}
+	 * @return array{canCreate: bool, allowedActionTypes: list<string>, maxActions: int, mail: array<string, mixed>, statuses: list<array{id: string, label: string, color: string}>}
 	 */
 	public function forUser(string $userId): array {
 		return [
 			'canCreate' => $this->canCreate($userId),
 			'allowedActionTypes' => $this->settings->allowedActionTypes(),
 			'maxActions' => $this->settings->maxActionsPerForm(),
+			'mail' => $this->mailForUser($this->mail->policy(), $userId),
+			// The statuses a response can be given (docs/SCHEMA.md section 20.2).
+			'statuses' => $this->statuses->all(),
+		];
+	}
+
+	/**
+	 * What a form owner may know about the mail settings: whether their own choice counts, and what
+	 * applies when they make none, as the real address and name, so the builder can show them in the
+	 * empty boxes. `defaultReplyTo` is what a reply would reach for a form this user owns.
+	 *
+	 * @return array{allowOverride: bool, replyToMode: string, replyToAddress: string, fromName: string, defaultReplyTo: string, defaultFromName: string}
+	 */
+	private function mailForUser(MailPolicy $mail, string $userId): array {
+		// Without a reply-to a reply goes to the address the mail was sent from.
+		$sender = Util::getDefaultEmailAddress('no-reply');
+		$replyTo = match ($mail->replyToMode) {
+			MailPolicy::REPLY_OWNER => trim((string)$this->users->get($userId)?->getEMailAddress()),
+			MailPolicy::REPLY_ADDRESS => $mail->replyToAddress,
+			default => '',
+		};
+		return [
+			'allowOverride' => $mail->allowOverride,
+			'replyToMode' => $mail->replyToMode,
+			'replyToAddress' => $mail->replyToAddress,
+			'fromName' => $mail->fromName,
+			'defaultReplyTo' => $replyTo !== '' ? $replyTo : $sender,
+			'defaultFromName' => $mail->fromName !== '' ? $mail->fromName : $this->defaults->getName(),
 		];
 	}
 }

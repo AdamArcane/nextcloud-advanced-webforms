@@ -37,6 +37,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setLatestVersionId(?int $latestVersionId)
  * @method int|null getArchivedAt()
  * @method void setArchivedAt(?int $archivedAt)
+ * @method int|null getResponsesSeenAt()
+ * @method void setResponsesSeenAt(?int $responsesSeenAt)
  * @method int getCreatedAt()
  * @method void setCreatedAt(int $createdAt)
  * @method int getUpdatedAt()
@@ -59,6 +61,8 @@ class Form extends Entity {
 	protected $embedOrigins;
 	protected $latestVersionId;
 	protected $archivedAt;
+	/** When the owner last opened the list of responses. Later responses are new (docs/SCHEMA.md section 20.1). */
+	protected $responsesSeenAt;
 	protected $createdAt;
 	protected $updatedAt;
 
@@ -75,6 +79,7 @@ class Form extends Entity {
 		$this->addType('embedOrigins', 'string');
 		$this->addType('latestVersionId', 'integer');
 		$this->addType('archivedAt', 'integer');
+		$this->addType('responsesSeenAt', 'integer');
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');
 	}

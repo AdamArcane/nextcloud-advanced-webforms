@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+import type { ResponseStatus } from '../types.ts'
+
 import axios from '@nextcloud/axios'
 import { toApiError, url } from './http.ts'
 
@@ -91,6 +93,62 @@ export async function fetchRetentionPreview(days: number): Promise<number> {
 export async function searchGroups(search: string): Promise<PolicyGroup[]> {
 	try {
 		return (await axios.get<{ groups: PolicyGroup[] }>(url('/admin/groups'), { params: { search } })).data.groups
+	} catch (error) {
+		throw toApiError(error)
+	}
+}
+
+/** The settings for mail that forms send (docs/SCHEMA.md section 16.2). */
+export interface MailAdminSettings {
+	/** The default reply-to when an email action sets none: nothing, the form owner's account email, or `replyToAddress`. */
+	replyToMode: 'none' | 'owner' | 'address'
+	replyToAddress: string
+	/** Whether form owners may set a reply-to and sender name of their own. */
+	allowOverride: boolean
+	/** The name mail is sent under. Empty keeps Nextcloud's own. */
+	fromName: string
+}
+
+export async function fetchMailSettings(): Promise<MailAdminSettings> {
+	try {
+		return (await axios.get<MailAdminSettings>(url('/admin/mail'))).data
+	} catch (error) {
+		throw toApiError(error)
+	}
+}
+
+/** Rejects with code `invalid_reply_to_address` or `invalid_from_name` when a value is refused. */
+export async function saveMailSettings(input: MailAdminSettings): Promise<MailAdminSettings> {
+	try {
+		return (await axios.put<MailAdminSettings>(url('/admin/mail'), input)).data
+	} catch (error) {
+		throw toApiError(error)
+	}
+}
+
+/** The list of response statuses and its limits (docs/SCHEMA.md section 20.2). */
+export interface StatusAdminSettings {
+	statuses: ResponseStatus[]
+	colors: string[]
+	max: number
+	maxLabel: number
+}
+
+export async function fetchStatuses(): Promise<StatusAdminSettings> {
+	try {
+		return (await axios.get<StatusAdminSettings>(url('/admin/statuses'))).data
+	} catch (error) {
+		throw toApiError(error)
+	}
+}
+
+/**
+ * Rejects with code `confirmation_required` and `data.affected` when a status that was taken out is
+ * still on responses, until `confirmDelete` is sent.
+ */
+export async function saveStatuses(statuses: ResponseStatus[], confirmDelete = false): Promise<StatusAdminSettings> {
+	try {
+		return (await axios.put<StatusAdminSettings>(url('/admin/statuses'), { statuses, confirmDelete })).data
 	} catch (error) {
 		throw toApiError(error)
 	}

@@ -10,7 +10,10 @@ declare(strict_types=1);
 namespace OCA\Webforms\Controller;
 
 use OCA\Webforms\AppInfo\Application;
+use OCA\Webforms\Db\Form;
 use OCA\Webforms\Db\FormMapper;
+use OCA\Webforms\Db\VersionMapper;
+use OCA\Webforms\Forms\ImageSource;
 use OCA\Webforms\Exception\NotFoundException;
 use OCA\Webforms\Security\Captcha\CaptchaProvider;
 use OCA\Webforms\Security\Captcha\CaptchaSettings;
@@ -36,6 +39,7 @@ class PublicPageController extends Controller {
 		IRequest $request,
 		private readonly CaptchaSettings $captcha,
 		private readonly FormMapper $forms,
+		private readonly VersionMapper $versions,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 	}
@@ -50,7 +54,8 @@ class PublicPageController extends Controller {
 		$response = new PublicTemplateResponse(Application::APP_ID, 'public', ['token' => $token, 'embed' => false]);
 		$response->setFooterVisible(false);
 		$policy = new ContentSecurityPolicy();
-		if ($this->allowCaptchaProvider($policy)) {
+		$captcha = $this->allowCaptchaProvider($policy);
+		if ($this->allowRemoteImages($policy, $token) || $captcha) {
 			$response->setContentSecurityPolicy($policy);
 		}
 		return $response;
@@ -72,6 +77,7 @@ class PublicPageController extends Controller {
 		$response = new TemplateResponse(Application::APP_ID, 'public', ['token' => $token, 'embed' => true], TemplateResponse::RENDER_AS_BASE);
 		$policy = new ContentSecurityPolicy();
 		$this->allowCaptchaProvider($policy);
+		$this->allowRemoteImages($policy, $token);
 		foreach ($this->frameAncestors($token) as $ancestor) {
 			$policy->addAllowedFrameAncestorDomain($ancestor);
 		}
@@ -93,6 +99,27 @@ class PublicPageController extends Controller {
 		}
 		$origins = $form->getEmbedOriginList();
 		return $origins === [] ? ['*'] : $origins;
+	}
+
+	/**
+	 * Image blocks may show a picture from another site (docs/SCHEMA.md section 4.9). Only the hosts the
+	 * published form names are opened up, and only for pictures. An address that leads to no published
+	 * form opens nothing.
+	 */
+	private function allowRemoteImages(ContentSecurityPolicy $policy, string $token): bool {
+		try {
+			$form = $this->forms->findByToken($token);
+			if ($form->getStatus() === Form::STATUS_UNPUBLISHED || $form->getLatestVersionId() === null) {
+				return false;
+			}
+			$hosts = ImageSource::remoteHosts($this->versions->find($form->getLatestVersionId())->getDefinitionArray());
+		} catch (\Throwable) {
+			return false;
+		}
+		foreach ($hosts as $host) {
+			$policy->addAllowedImageDomain('https://' . $host);
+		}
+		return $hosts !== [];
 	}
 
 	/** Turnstile and hCaptcha load a script and a frame from their own domains. Nothing else is opened up. */

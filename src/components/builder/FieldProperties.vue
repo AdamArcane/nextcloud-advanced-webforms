@@ -19,10 +19,13 @@ import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { computed, ref, watch } from 'vue'
 import { allowedSpans, canMove, locateField, MAX_FIELDS, SPANS } from '../../builder/definition.ts'
 import { describeError } from '../../builder/errors.ts'
+import { IMAGE_MIMES, isFilesImage, isRemoteImage } from '../../images.ts'
+import { isTemporalType, steps, temporalInputType } from '../../rules/fieldTypes.ts'
 import { fieldIdProblem } from '../../builder/fieldId.ts'
 import { DEFAULT_ACCEPT, DEFAULT_MAX_FILES, DEFAULT_MAX_SIZE_MB, UPLOAD_GROUPS } from '../../uploads.ts'
 import { renderedLabelPosition, requestedLabelPosition, supportsInline } from '../../layout/labelPosition.ts'
 import AddFieldMenu from './AddFieldMenu.vue'
+import DefaultValueEditor from './DefaultValueEditor.vue'
 import OptionsEditor from './OptionsEditor.vue'
 import SegmentedControl from './SegmentedControl.vue'
 
@@ -50,10 +53,28 @@ const emit = defineEmits<{
 const field = computed(() => props.definition.fields[props.fieldId])
 const type = computed(() => field.value?.type ?? '')
 
-const isDisplay = computed(() => ['heading', 'paragraph', 'divider'].includes(type.value))
+const isDisplay = computed(() => ['heading', 'paragraph', 'divider', 'image'].includes(type.value))
 const hasPlaceholder = computed(() => ['text', 'textarea', 'email', 'url', 'number', 'phone', 'select'].includes(type.value))
 const hasOptions = computed(() => ['select', 'radio', 'checkboxes'].includes(type.value))
-const hasLabel = computed(() => !isDisplay.value)
+const isConsent = computed(() => type.value === 'consent')
+const consentText = computed(() => field.value?.text ?? '')
+const consentHelp = t('webforms', 'Shown beside the checkbox. Basic markdown works, so you can link to your terms: [terms](https://example.com/terms).')
+const isHidden = computed(() => type.value === 'hidden')
+const hasLabel = computed(() => !isDisplay.value && !isHidden.value)
+/** Every input field except uploads has a default and can be filled from the link (docs/SCHEMA.md 4.7). */
+const canPrefill = computed(() => !isDisplay.value && type.value !== 'file')
+const prefillOff = computed(() => props.definition.settings.prefill === false)
+const copied = ref(false)
+
+async function copyParameter(): Promise<void> {
+	try {
+		await navigator.clipboard.writeText(linkParameter.value)
+		copied.value = true
+		setTimeout(() => { copied.value = false }, 2000)
+	} catch {
+		copied.value = false
+	}
+}
 
 // The segment shown: what this field sets itself, or "Form" when it follows the form-wide default.
 const labelChoice = computed(() => {
@@ -141,6 +162,11 @@ const idMessage = computed(() => {
 	}
 })
 
+// The ID being typed once it is a valid new ID, so the link shown always matches the box above it.
+const linkId = computed(() => (idProblem.value === null ? idDraft.value : props.fieldId))
+const linkPending = computed(() => idProblem.value === null)
+const linkParameter = computed(() => '?' + linkId.value + '=')
+
 function applyId(): void {
 	if (idProblem.value === null) {
 		emit('rename', idDraft.value)
@@ -171,6 +197,14 @@ function number(key: keyof FormField, value: string | number): void {
 	const str = String(value).trim()
 	const parsed = Number(str)
 	emit('update', { [key]: str === '' || Number.isNaN(parsed) ? undefined : parsed } as Partial<FormField>)
+}
+
+/** Change where a rating or a scale starts or ends. A default outside the new range would not publish, so it goes. */
+function setPickRange(patch: { min?: number, max?: number }): void {
+	const next = { ...field.value, ...patch }
+	const value = next.defaultValue
+	const keep = typeof value === 'number' && steps(next).includes(value)
+	emit('update', keep || value === undefined ? patch : { ...patch, defaultValue: undefined })
 }
 
 function setRows(value: string | number): void {
@@ -213,6 +247,39 @@ function setUploadNumber(key: 'maxFiles' | 'maxSizeMb', value: string | number, 
 }
 
 /** The picker only shows what you can see in your own Files, and the server checks that you can write there. */
+const imageIsRemote = computed(() => isRemoteImage(field.value?.src ?? ''))
+// Kept out of the template: an address in an attribute there upsets the type checker.
+const imageHelp = t('webforms', 'A picture in your Files, or the address of one on another site, starting with https://.')
+const imagePlaceholder = 'Pictures/logo.png'
+
+/** Pick a picture in Files; its path below the home folder becomes the block's source. */
+async function pickImage() {
+	let chosen: string | null = null
+	const current = field.value?.src ?? ''
+	const picker = getFilePickerBuilder(t('webforms', 'Choose a picture'))
+		.setMultiSelect(false)
+		.setMimeTypeFilter([...IMAGE_MIMES])
+		.startAt(isFilesImage(current) && current.includes('/') ? '/' + current.slice(0, current.lastIndexOf('/')) : '/')
+		.setButtonFactory((nodes) => [{
+			label: nodes.length > 0 ? t('webforms', 'Choose {name}', { name: nodes[0].basename }) : t('webforms', 'Choose'),
+			variant: 'primary',
+			disabled: nodes.length === 0,
+			callback: (picked) => {
+				chosen = picked[0]?.path ?? null
+			},
+		}])
+		.build()
+	try {
+		await picker.pickNodes()
+	} catch {
+		return
+	}
+	const path = (chosen ?? '').replace(/^\/+/, '')
+	if (path !== '') {
+		emit('update', { src: path })
+	}
+}
+
 async function pickFolder() {
 	let chosen: string | null = null
 	const start = '/' + (field.value?.folder ?? '')
@@ -270,10 +337,17 @@ const moves: { move: Move, label: string, icon: string }[] = [
 					:model-value="field.placeholder ?? ''"
 					:label="type === 'select' ? t('webforms', 'Prompt') : t('webforms', 'Placeholder')"
 					@update:model-value="(value: string | number) => text('placeholder', value)" />
+				<NcTextArea v-if="isConsent"
+					:model-value="consentText"
+					:label="t('webforms', 'Text to agree to')"
+					:helper-text="consentHelp"
+					rows="3"
+					@update:model-value="(value: string) => emit('update', { text: value })" />
+				<DefaultValueEditor v-if="canPrefill" :field-id="fieldId" :field="field" @change="(value) => emit('update', { defaultValue: value })" />
 				<NcCheckboxRadioSwitch type="switch"
 					:model-value="field.required === true"
 					@update:model-value="(value: boolean) => emit('update', { required: value })">
-					{{ type === 'checkbox' ? t('webforms', 'Must be ticked') : t('webforms', 'Required') }}
+					{{ type === 'checkbox' || type === 'consent' ? t('webforms', 'Must be ticked') : t('webforms', 'Required') }}
 				</NcCheckboxRadioSwitch>
 				<div class="af-props__group">
 					<span class="af-props__caption">{{ t('webforms', 'Label position') }}</span>
@@ -285,6 +359,24 @@ const moves: { move: Move, label: string, icon: string }[] = [
 						{{ labelHint }}
 					</p>
 				</div>
+			</template>
+
+			<template v-else-if="isHidden">
+				<NcTextField :model-value="field.label ?? ''"
+					:label="t('webforms', 'Label')"
+					:helper-text="t('webforms', 'Names the value in responses, downloads and emails. Respondents never see it.')"
+					@update:model-value="(value: string | number) => emit('update', { label: String(value) })" />
+				<DefaultValueEditor :field-id="fieldId" :field="field" @change="(value) => emit('update', { defaultValue: value })" />
+				<p class="af-props__hint">
+					{{ t('webforms', 'Sent when the link does not fill it. Leave empty to send nothing.') }}
+				</p>
+				<NcTextField :model-value="field.description ?? ''"
+					:label="t('webforms', 'Note')"
+					:helper-text="t('webforms', 'Only for you, for example what fills this value.')"
+					@update:model-value="(value: string | number) => text('description', value)" />
+				<NcNoteCard type="info">
+					{{ t('webforms', 'A respondent can see and change this value in the link or the page. Do not use it for anything that must not be faked.') }}
+				</NcNoteCard>
 			</template>
 
 			<template v-else-if="type === 'heading'">
@@ -322,6 +414,42 @@ const moves: { move: Move, label: string, icon: string }[] = [
 					<span class="af-props__caption">{{ t('webforms', 'Alignment') }}</span>
 					<SegmentedControl :model-value="field.align ?? 'start'"
 						:group-label="t('webforms', 'Text alignment')"
+						:options="alignOptions"
+						icon-only
+						@update:model-value="(value) => setAlign(String(value))" />
+				</div>
+			</template>
+
+			<template v-else-if="type === 'image'">
+				<NcTextField :model-value="field.src ?? ''"
+					:label="t('webforms', 'Picture')"
+					:helper-text="imageHelp"
+					:placeholder="imagePlaceholder"
+					@update:model-value="(value: string | number) => emit('update', { src: String(value).trim() })" />
+				<NcButton variant="secondary" @click="pickImage">
+					<template #icon>
+						<Icon :path="icons.storageFiles" />
+					</template>
+					{{ t('webforms', 'Choose from Files') }}
+				</NcButton>
+				<NcNoteCard v-if="imageIsRemote" type="info">
+					{{ t('webforms', 'This picture loads from another site each time the form opens, so that site sees your respondents come and go, and the picture is gone if the site removes it.') }}
+				</NcNoteCard>
+				<NcTextField :model-value="field.alt ?? ''"
+					:label="t('webforms', 'Description for screen readers')"
+					:helper-text="t('webforms', 'What the picture shows. Leave empty if it is only decoration.')"
+					@update:model-value="(value: string | number) => text('alt', String(value).slice(0, 255))" />
+				<div class="af-props__group">
+					<span class="af-props__caption">{{ t('webforms', 'Largest width') }}</span>
+					<SegmentedControl :model-value="field.width ?? 100"
+						:group-label="t('webforms', 'Largest width')"
+						:options="[25, 50, 75, 100].map((percent) => ({ value: percent, label: percent + '%' }))"
+						@update:model-value="(value) => emit('update', { width: Number(value) < 100 ? Number(value) : undefined })" />
+				</div>
+				<div class="af-props__group">
+					<span class="af-props__caption">{{ t('webforms', 'Alignment') }}</span>
+					<SegmentedControl :model-value="field.align ?? 'start'"
+						:group-label="t('webforms', 'Alignment')"
 						:options="alignOptions"
 						icon-only
 						@update:model-value="(value) => setAlign(String(value))" />
@@ -417,7 +545,7 @@ const moves: { move: Move, label: string, icon: string }[] = [
 			</p>
 		</section>
 
-		<section v-if="['text', 'textarea', 'number', 'date', 'time'].includes(type) || hasOptions" class="af-props__section">
+		<section v-if="['text', 'textarea', 'number', 'date', 'time', 'datetime', 'rating', 'scale'].includes(type) || hasOptions" class="af-props__section">
 			<h3 class="af-props__heading">
 				{{ hasOptions ? t('webforms', 'Options') : t('webforms', 'Limits') }}
 			</h3>
@@ -441,19 +569,52 @@ const moves: { move: Move, label: string, icon: string }[] = [
 				max="20"
 				:label="t('webforms', 'Visible lines (2 to 20)')"
 				@update:model-value="(value: string | number) => setRows(value)" />
-			<template v-if="type === 'date' || type === 'time'">
+			<template v-if="type === 'rating'">
 				<div class="af-props__group">
-					<label class="af-props__caption" for="af-props-min">{{ type === 'date' ? t('webforms', 'Earliest date') : t('webforms', 'Earliest time') }}</label>
+					<span class="af-props__caption">{{ t('webforms', 'Stars') }}</span>
+					<SegmentedControl :model-value="typeof field.max === 'number' ? field.max : 5"
+						:group-label="t('webforms', 'Stars')"
+						:options="[3, 4, 5, 6, 7, 8, 9, 10].map((count) => ({ value: count, label: String(count) }))"
+						@update:model-value="(value) => setPickRange({ max: Number(value) })" />
+				</div>
+			</template>
+			<template v-if="type === 'scale'">
+				<div class="af-props__group">
+					<span class="af-props__caption">{{ t('webforms', 'Starts at') }}</span>
+					<SegmentedControl :model-value="field.min === 0 ? 0 : 1"
+						:group-label="t('webforms', 'Starts at')"
+						:options="[{ value: 0, label: '0' }, { value: 1, label: '1' }]"
+						@update:model-value="(value) => setPickRange({ min: Number(value) })" />
+				</div>
+				<div class="af-props__group">
+					<span class="af-props__caption">{{ t('webforms', 'Ends at') }}</span>
+					<SegmentedControl :model-value="typeof field.max === 'number' ? field.max : 5"
+						:group-label="t('webforms', 'Ends at')"
+						:options="[2, 3, 4, 5, 6, 7, 8, 9, 10].map((count) => ({ value: count, label: String(count) }))"
+						@update:model-value="(value) => setPickRange({ max: Number(value) })" />
+				</div>
+				<NcTextField :model-value="field.minLabel ?? ''"
+					:label="t('webforms', 'Label at the start')"
+					:placeholder="t('webforms', 'Not likely')"
+					@update:model-value="(value: string | number) => text('minLabel', String(value).slice(0, 50))" />
+				<NcTextField :model-value="field.maxLabel ?? ''"
+					:label="t('webforms', 'Label at the end')"
+					:placeholder="t('webforms', 'Very likely')"
+					@update:model-value="(value: string | number) => text('maxLabel', String(value).slice(0, 50))" />
+			</template>
+			<template v-if="isTemporalType(type)">
+				<div class="af-props__group">
+					<label class="af-props__caption" for="af-props-min">{{ type === 'time' ? t('webforms', 'Earliest time') : t('webforms', 'Earliest date') }}</label>
 					<input id="af-props-min"
-						:type="type"
+						:type="temporalInputType(type)"
 						:value="typeof field.min === 'string' ? field.min : ''"
 						:max="typeof field.max === 'string' ? field.max : undefined"
 						@change="text('min', ($event.target as HTMLInputElement).value)">
 				</div>
 				<div class="af-props__group">
-					<label class="af-props__caption" for="af-props-max">{{ type === 'date' ? t('webforms', 'Latest date') : t('webforms', 'Latest time') }}</label>
+					<label class="af-props__caption" for="af-props-max">{{ type === 'time' ? t('webforms', 'Latest time') : t('webforms', 'Latest date') }}</label>
 					<input id="af-props-max"
-						:type="type"
+						:type="temporalInputType(type)"
 						:value="typeof field.max === 'string' ? field.max : ''"
 						:min="typeof field.min === 'string' ? field.min : undefined"
 						@change="text('max', ($event.target as HTMLInputElement).value)">
@@ -552,11 +713,40 @@ const moves: { move: Move, label: string, icon: string }[] = [
 				@update:model-value="(value: string | number) => { idDraft = String(value) }"
 				@keydown.enter.prevent="applyId" />
 			<NcNoteCard v-if="published && idProblem === null" type="info">
-				{{ t('webforms', 'This form is published. After you publish again, webhooks and exports use the new ID. Responses already received keep the old one.') }}
+				{{ t('webforms', 'This form is published. After you publish again, webhooks, exports and links that fill this field use the new ID. Responses already received keep the old one.') }}
 			</NcNoteCard>
 			<NcButton variant="secondary" :disabled="idProblem !== null" @click="applyId">
 				{{ t('webforms', 'Change ID') }}
 			</NcButton>
+
+			<div v-if="canPrefill" class="af-props__group">
+				<span class="af-props__caption">{{ t('webforms', 'Fill from the link') }}</span>
+				<p v-if="prefillOff" class="af-props__hint">
+					{{ t('webforms', 'Switched off for this form under Settings, General.') }}
+				</p>
+				<template v-else>
+					<div class="af-props__link">
+						<code class="af-props__param">{{ linkParameter }}{{ t('webforms', 'value') }}</code>
+						<NcButton variant="tertiary" @click="copyParameter">
+							{{ copied ? t('webforms', 'Copied') : t('webforms', 'Copy') }}
+						</NcButton>
+					</div>
+					<p class="af-props__hint">
+						{{ linkPending
+							? t('webforms', 'This is the parameter with the new ID. It works once you change the ID.')
+							: t('webforms', 'Add this to the form link to fill the field when it opens. It is the field ID above.') }}
+					</p>
+					<p v-if="type === 'checkboxes'" class="af-props__hint">
+						{{ t('webforms', 'Choices are matched by their label or value. Separate several with commas.') }}
+					</p>
+					<p v-else-if="type === 'checkbox' || type === 'consent'" class="af-props__hint">
+						{{ t('webforms', 'Use yes or no.') }}
+					</p>
+					<p v-else-if="hasOptions" class="af-props__hint">
+						{{ t('webforms', 'The choice is matched by its label or value.') }}
+					</p>
+				</template>
+			</div>
 		</section>
 
 		<section class="af-props__section af-props__actions">
@@ -600,6 +790,19 @@ const moves: { move: Move, label: string, icon: string }[] = [
 	color: var(--color-text-maxcontrast);
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
+}
+
+.af-props__link {
+	display: flex;
+	align-items: center;
+	gap: var(--default-grid-baseline);
+}
+
+.af-props__param {
+	overflow-wrap: anywhere;
+	padding: 2px 6px;
+	border-radius: var(--border-radius-small);
+	background: var(--color-background-dark);
 }
 
 .af-props__group {

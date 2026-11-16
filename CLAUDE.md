@@ -77,6 +77,31 @@ responses, delivery log, CSV export), actions pipeline (email, webhook, message,
 retries), builder (fields, logic, actions, settings, multi-page, design tab, drag and drop
 with live preview, row moves, resize handles, text alignment, hide required indicator).
 
+Files action (docs/SCHEMA.md section 19): appends each response to a CSV file in the owner's Files,
+with the export's columns, matched to an existing file's header by heading. Creating the file,
+appending and adding a column to an existing header were tried on the dev instance.
+Lock keys for `ILockingProvider` must stay under 64 characters (hash them): the database provider
+cuts longer keys and then never releases them.
+
+Hidden fields, defaults and prefill (docs/SCHEMA.md section 4.7): a `hidden` field type, a default
+value control for every input field, and the link filling fields by field id unless `settings.prefill`
+is false. Prefill is read in the browser only (`src/prefill.ts`); the server validates submitted values
+as usual. Tried on the dev instance.
+
+Review step (docs/SCHEMA.md section 5.2): `settings.reviewStep` and `reviewTitle` add a virtual last step in
+`FormRenderer.vue` (index `pages.length`, no page in the definition), built by `src/review.ts`. Not yet tried
+on the dev instance or looked at in a real browser (the scroll box shadow and the two line clamp).
+
+Continuing later (docs/SCHEMA.md section 21): `settings.saveProgress` keeps unsent answers in the
+respondent's browser only (`src/progress.ts`, local storage, 30 days). No server side at all, by
+decision: no link for another device, no uploads, no count. Not yet tried on the dev instance.
+
+New responses, statuses and a note (docs/SCHEMA.md section 20): `responses_seen_at` on the form marks
+what is new (not a status), responses carry `status` (an id from the administrator's list in app
+config, `StatusSettings`) and `note`, and `#/f/<id>/responses/<entryId>` is a page for one response,
+shown inside `EntriesView` so the list keeps its state. No assignment, by decision. Not yet tried on
+the dev instance: the migration, the routes and the print view.
+
 Sharing (docs/SCHEMA.md section 18): custom address, QR code, and embedding in a frame through the
 `embed` routes, which skip the request token and are always anonymous. Loading and submitting were
 tried in a real frame on another site; uploads and the redirect action in a frame were not.

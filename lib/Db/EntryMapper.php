@@ -12,6 +12,7 @@ namespace OCA\Webforms\Db;
 use OCA\Webforms\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCA\Webforms\Forms\EntryFilter;
+use OCA\Webforms\Forms\ResponseStatuses;
 use OCP\AppFramework\Db\QBMapper;
 use OCP\DB\Exception;
 use OCP\DB\QueryBuilder\IQueryBuilder;
@@ -129,6 +130,17 @@ class EntryMapper extends QBMapper {
 		} elseif ($filter->respondent === EntryFilter::RESPONDENT_ANONYMOUS) {
 			$qb->andWhere($qb->expr()->isNull('user_id'));
 		}
+		if ($filter->statuses !== null) {
+			$ids = array_values(array_filter($filter->statuses, static fn (string $id): bool => $id !== ResponseStatuses::NONE));
+			$any = [];
+			if ($ids !== []) {
+				$any[] = $qb->expr()->in('status', $qb->createNamedParameter($ids, IQueryBuilder::PARAM_STR_ARRAY));
+			}
+			if (count($ids) !== count($filter->statuses)) {
+				$any[] = $qb->expr()->isNull('status');
+			}
+			$qb->andWhere($qb->expr()->orX(...$any));
+		}
 	}
 
 	/**
@@ -142,6 +154,145 @@ class EntryMapper extends QBMapper {
 		$total = (int)$result->fetchOne();
 		$result->closeCursor();
 		return $total;
+	}
+
+	/**
+	 * How many responses each of these forms has. A form without responses is left out.
+	 *
+	 * @param list<int> $formIds
+	 * @return array<int, int> form id to count
+	 * @throws Exception
+	 */
+	public function countByForms(array $formIds): array {
+		$counts = [];
+		foreach (array_chunk(array_values(array_unique($formIds)), 500) as $chunk) {
+			$qb = $this->db->getQueryBuilder();
+			$qb->select('form_id')
+				->addSelect($qb->func()->count('*', 'total'))
+				->from($this->getTableName())
+				->where($qb->expr()->in('form_id', $qb->createNamedParameter($chunk, IQueryBuilder::PARAM_INT_ARRAY)))
+				->groupBy('form_id');
+			$result = $qb->executeQuery();
+			while (($row = $result->fetch()) !== false) {
+				$counts[(int)$row['form_id']] = (int)$row['total'];
+			}
+			$result->closeCursor();
+		}
+		return $counts;
+	}
+
+	/**
+	 * How many responses of one form arrived after a moment (docs/SCHEMA.md section 20.1). Null means the
+	 * owner never looked, so all of them.
+	 *
+	 * @throws Exception
+	 */
+	public function countNew(int $formId, ?int $seenAt): int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select($qb->func()->count('*', 'total'))->from($this->getTableName())
+			->where($qb->expr()->eq('form_id', $qb->createNamedParameter($formId, IQueryBuilder::PARAM_INT)));
+		if ($seenAt !== null) {
+			$qb->andWhere($qb->expr()->gt('submitted_at', $qb->createNamedParameter($seenAt, IQueryBuilder::PARAM_INT)));
+		}
+		$result = $qb->executeQuery();
+		$total = (int)$result->fetchOne();
+		$result->closeCursor();
+		return $total;
+	}
+
+	/**
+	 * For each of an owner's forms, how many responses arrived after the owner last looked at its list.
+	 * A form with none is left out. One query for the whole forms list.
+	 *
+	 * @return array<int, int> form id to count
+	 * @throws Exception
+	 */
+	public function countNewByOwner(string $ownerId): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('e.form_id')
+			->addSelect($qb->func()->count('*', 'total'))
+			->from($this->getTableName(), 'e')
+			->innerJoin('e', 'advforms_forms', 'f', $qb->expr()->eq('f.id', 'e.form_id'))
+			->where($qb->expr()->eq('f.owner_id', $qb->createNamedParameter($ownerId)))
+			->andWhere($qb->expr()->orX(
+				$qb->expr()->isNull('f.responses_seen_at'),
+				$qb->expr()->gt('e.submitted_at', 'f.responses_seen_at'),
+			))
+			->groupBy('e.form_id');
+		$counts = [];
+		$result = $qb->executeQuery();
+		while (($row = $result->fetch()) !== false) {
+			$counts[(int)$row['form_id']] = (int)$row['total'];
+		}
+		$result->closeCursor();
+		return $counts;
+	}
+
+	/**
+	 * The response submitted just before this one in the same form, and the one just after, for stepping
+	 * through them. Responses of the same second are ordered by id.
+	 *
+	 * @return array{previous: int|null, next: int|null}
+	 * @throws Exception
+	 */
+	public function neighbours(Entry $entry): array {
+		$found = [];
+		foreach (['previous' => ['lt', 'DESC'], 'next' => ['gt', 'ASC']] as $side => [$compare, $direction]) {
+			$qb = $this->db->getQueryBuilder();
+			$time = $qb->createNamedParameter($entry->getSubmittedAt(), IQueryBuilder::PARAM_INT);
+			$qb->select('id')->from($this->getTableName())
+				->where($qb->expr()->eq('form_id', $qb->createNamedParameter($entry->getFormId(), IQueryBuilder::PARAM_INT)))
+				->andWhere($qb->expr()->orX(
+					$qb->expr()->$compare('submitted_at', $time),
+					$qb->expr()->andX(
+						$qb->expr()->eq('submitted_at', $time),
+						$qb->expr()->$compare('id', $qb->createNamedParameter($entry->getId(), IQueryBuilder::PARAM_INT)),
+					),
+				))
+				->orderBy('submitted_at', $direction)->addOrderBy('id', $direction)
+				->setMaxResults(1);
+			$result = $qb->executeQuery();
+			$id = $result->fetchOne();
+			$result->closeCursor();
+			$found[$side] = $id === false ? null : (int)$id;
+		}
+		return $found;
+	}
+
+	/**
+	 * How many responses on the whole server have one of these statuses.
+	 *
+	 * @param list<string> $statusIds
+	 * @throws Exception
+	 */
+	public function countWithStatus(array $statusIds): int {
+		if ($statusIds === []) {
+			return 0;
+		}
+		$qb = $this->db->getQueryBuilder();
+		$qb->select($qb->func()->count('*', 'total'))->from($this->getTableName())
+			->where($qb->expr()->in('status', $qb->createNamedParameter($statusIds, IQueryBuilder::PARAM_STR_ARRAY)));
+		$result = $qb->executeQuery();
+		$total = (int)$result->fetchOne();
+		$result->closeCursor();
+		return $total;
+	}
+
+	/**
+	 * Take these statuses off every response that has one of them, when the administrator deletes them.
+	 *
+	 * @param list<string> $statusIds
+	 * @throws Exception
+	 */
+	public function clearStatuses(array $statusIds): void {
+		if ($statusIds === []) {
+			return;
+		}
+		$qb = $this->db->getQueryBuilder();
+		$qb->update($this->getTableName())
+			->set('status', $qb->createNamedParameter(null, IQueryBuilder::PARAM_NULL))
+			->where($qb->expr()->in('status', $qb->createNamedParameter($statusIds, IQueryBuilder::PARAM_STR_ARRAY)));
+		$qb->executeStatement();
 	}
 
 	/**

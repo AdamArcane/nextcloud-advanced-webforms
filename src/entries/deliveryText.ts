@@ -20,6 +20,8 @@ export function typeLabel(type: string): string {
 	switch (type) {
 		case 'email': return t('webforms', 'Email')
 		case 'webhook': return t('webforms', 'Webhook')
+		case 'tables': return t('webforms', 'Tables')
+		case 'files': return t('webforms', 'CSV file')
 		default: return type || t('webforms', 'Action')
 	}
 }
@@ -40,6 +42,12 @@ export function describeDeliveryError(error: string | null): string {
 		case 'rate_limited': return t('webforms', 'Too many emails to respondents were sent for this form in the last hour.')
 		case 'secret_missing': return t('webforms', 'The webhook has no signing secret. Generate a new one in the Actions tab.')
 		case 'bad_url': return t('webforms', 'The webhook address is not valid.')
+		case 'files_not_writable': return t('webforms', 'You can no longer change the CSV file or create it in that folder.')
+		case 'files_not_a_file': return t('webforms', 'Something other than a file is in the way of the CSV file path.')
+		case 'files_too_large': return t('webforms', 'The CSV file is larger than 20 MB. Choose a new file in the action.')
+		case 'files_busy': return t('webforms', 'The CSV file was in use. It will be tried again.')
+		case 'files_storage_full': return t('webforms', 'Your Files storage is full.')
+		case 'files_bad_action': return t('webforms', 'The CSV file path is not valid.')
 		case 'bad_recipient': return t('webforms', 'The email has no valid recipient set.')
 		case 'action_missing': return t('webforms', 'This action was removed from the form.')
 		case 'entry_deleted': return t('webforms', 'The response was deleted before this could be sent.')

@@ -9,6 +9,8 @@ import { describe, expect, it } from 'vitest'
 import {
 	ACTION_TYPES,
 	addAction,
+	cleanResponsePath,
+	defaultResponsePath,
 	defaultWhen,
 	emailFields,
 	errorActionIndex,
@@ -20,6 +22,7 @@ import {
 	unknownPlaceholders,
 	unreachableResponseActions,
 	updateAction,
+	withAllFields,
 	withPlaceholder,
 } from './actions.ts'
 import { addField, emptyDefinition } from './definition.ts'
@@ -172,5 +175,43 @@ describe('readablePlaceholders', () => {
 		const text = `Hi {${name}}`
 		readablePlaceholders(text, def)
 		expect(text).toBe(`Hi {${name}}`)
+	})
+})
+
+describe('all answers in an email body', () => {
+	it('adds the list on a line of its own', () => {
+		expect(withAllFields('')).toBe('{all_fields}')
+		expect(withAllFields('New response:\n')).toBe('New response:\n\n{all_fields}')
+	})
+
+	it('is not a broken placeholder in a body, and is one anywhere else', () => {
+		const definition = emptyDefinition('T')
+		expect(unknownPlaceholders('{all_fields} {f_gone}', definition, true)).toEqual(['f_gone'])
+		expect(unknownPlaceholders('{all_fields}', definition)).toEqual(['all_fields'])
+	})
+})
+
+describe('response file paths', () => {
+	it('suggests a file named after the form', () => {
+		expect(defaultResponsePath('Contact us')).toBe('Webforms/Contact us responses.csv')
+		expect(defaultResponsePath('a/b\\c')).toBe('Webforms/a b c responses.csv')
+		expect(defaultResponsePath('  ')).toBe('Webforms/Form responses.csv')
+		expect(cleanResponsePath(defaultResponsePath('..'))).not.toBeNull()
+	})
+
+	it('a new files action starts with that path', () => {
+		const { def } = form()
+		const result = addAction(def, 'files')
+		expect(result.definition.actions[0]).toMatchObject({ type: 'files', path: 'Webforms/T responses.csv' })
+	})
+
+	it('accepts what the server accepts', () => {
+		expect(cleanResponsePath('/Webforms/Leads.csv/')).toBe('Webforms/Leads.csv')
+		expect(cleanResponsePath('leads.CSV')).toBe('leads.CSV')
+		expect(cleanResponsePath('Leads.txt')).toBeNull()
+		expect(cleanResponsePath('.csv')).toBeNull()
+		expect(cleanResponsePath('a/../b.csv')).toBeNull()
+		expect(cleanResponsePath('a//b.csv')).toBeNull()
+		expect(cleanResponsePath('')).toBeNull()
 	})
 })
