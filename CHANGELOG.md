@@ -5,7 +5,7 @@
 
 # Changelog
 
-## Unreleased
+## 0.3.5 - 2026-11-16
 
 - A summary before sending. Switch on "Show a summary before sending" under Settings and the form gets a
   last step that lists what was entered, page by page, with an Edit button for each page, a count of the
