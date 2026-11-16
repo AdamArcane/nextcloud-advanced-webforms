@@ -7,6 +7,19 @@
 
 ## Unreleased
 
+- Response limit and opening dates. A form can take at most a number of responses, open at a set time
+  and close at a set time, each with its own message, and can show respondents how many places are
+  left. Set them under Settings, Sharing; they apply when the form is published. The forms list shows
+  Scheduled, Ended or Full, and the settings show the responses counted against the limit. See
+  `docs/SCHEMA.md` section 3.1.
+
+- A new action adds each response as a line to a CSV file in your Files, with the same columns as the
+  CSV download. An existing file keeps its own header row: answers go under the matching heading, and
+  new questions become columns at the end. See `docs/SCHEMA.md` section 19.
+
+- The Actions tab has one "Add an action" button at the top, with the kinds of action grouped by
+  whether they happen on the page or in the background, each with a short description.
+
 - Rename a form from the header of the builder: double-click its name (or press Enter or F2 on it),
   type, and press Enter. Escape cancels.
 

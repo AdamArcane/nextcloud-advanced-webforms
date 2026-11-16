@@ -43,7 +43,7 @@ msgstr ""
 msgid "{n} selected responses"
 msgstr ""
 
-#: src/App.vue:217
+#: src/App.vue:211
 msgid "{title} (unpublished changes)"
 msgstr ""
 
@@ -51,19 +51,19 @@ msgstr ""
 msgid "$"
 msgstr ""
 
-#: src/builder/errors.ts:53
+#: src/builder/errors.ts:55
 msgid "A condition needs a valid value to compare against."
 msgstr ""
 
-#: src/builder/errors.ts:49
+#: src/builder/errors.ts:51
 msgid "A condition reads a field that has no answer."
 msgstr ""
 
-#: src/builder/errors.ts:51
+#: src/builder/errors.ts:53
 msgid "A condition uses a comparison this field does not support."
 msgstr ""
 
-#: src/builder/errors.ts:47
+#: src/builder/errors.ts:49
 msgid "A condition uses a field that no longer exists."
 msgstr ""
 
@@ -71,7 +71,7 @@ msgstr ""
 msgid "A default that is the same as the recipient is left out, since replies would only come back to where the email went."
 msgstr ""
 
-#: src/components/builder/ActionsPanel.vue:155
+#: src/components/builder/ActionsPanel.vue:111
 msgid "A form can have up to {max} actions."
 msgstr ""
 
@@ -83,7 +83,7 @@ msgstr ""
 msgid "A group lets you mix 'all' and 'any' conditions"
 msgstr ""
 
-#: src/builder/errors.ts:56
+#: src/builder/errors.ts:58
 msgid "A group of conditions is empty or nested too deeply."
 msgstr ""
 
@@ -95,7 +95,7 @@ msgstr ""
 msgid "A list replaces the options above. It is copied into this field, so you can still edit it."
 msgstr ""
 
-#: src/builder/errors.ts:86
+#: src/builder/errors.ts:92
 msgid "A mapped column no longer exists in the table."
 msgstr ""
 
@@ -111,7 +111,7 @@ msgstr ""
 msgid "A published field used this ID before it was deleted, so it cannot be used again."
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:447
+#: src/components/builder/ActionCard.vue:455
 msgid "A secret is set"
 msgstr ""
 
@@ -136,7 +136,7 @@ msgid "A web address, checked to be one"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:67
-#: src/components/builder/FormProperties.vue:82
+#: src/components/builder/FormProperties.vue:103
 msgid "Above"
 msgstr ""
 
@@ -144,7 +144,7 @@ msgstr ""
 msgid "above the field"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:152
+#: src/components/builder/FormProperties.vue:173
 msgid "Accent colour"
 msgstr ""
 
@@ -152,7 +152,7 @@ msgstr ""
 msgid "Accepted types"
 msgstr ""
 
-#: src/entries/deliveryText.ts:23
+#: src/entries/deliveryText.ts:25
 msgid "Action"
 msgstr ""
 
@@ -169,15 +169,19 @@ msgstr ""
 msgid "Add a field here"
 msgstr ""
 
+#: src/builder/labels.ts:48
+msgid "Add a line to a CSV file"
+msgstr ""
+
 #: src/builder/labels.ts:47
 msgid "Add a row to Tables"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:412
+#: src/components/builder/ActionCard.vue:415
 msgid "Add all answers"
 msgstr ""
 
-#: src/components/builder/ActionsPanel.vue:136
+#: src/components/builder/AddActionMenu.vue:95
 msgid "Add an action"
 msgstr ""
 
@@ -215,7 +219,7 @@ msgstr ""
 msgid "Add rule"
 msgstr ""
 
-#: src/builder/errors.ts:90
+#: src/builder/errors.ts:96
 msgid "Add some questions to the form first, there is nothing to store yet."
 msgstr ""
 
@@ -231,11 +235,11 @@ msgstr ""
 msgid "Add your first field. You can put several fields side by side later."
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:318
+#: src/components/builder/ActionCard.vue:321
 msgid "Address"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:414
+#: src/components/builder/ActionCard.vue:417
 msgid "Adds an answer to the end of the body. \"All answers\" adds {placeholder}, which becomes a list of every question the person answered, with its label."
 msgstr ""
 
@@ -246,6 +250,10 @@ msgstr ""
 
 #: src/PersonalApp.vue:39
 msgid "Advanced Webforms"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:324
+msgid "After the closing time the form shows the message when closed."
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:306
@@ -266,7 +274,7 @@ msgstr ""
 msgid "All {n} responses"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:233
+#: src/components/builder/FormProperties.vue:254
 msgid "Allow more than one response per person"
 msgstr ""
 
@@ -290,15 +298,15 @@ msgstr ""
 msgid "Always above the field."
 msgstr ""
 
-#: src/components/builder/ActionsPanel.vue:152
+#: src/components/builder/ActionsPanel.vue:108
 msgid "An administrator has switched off every kind of action on this server."
 msgstr ""
 
-#: src/builder/errors.ts:88
+#: src/builder/errors.ts:94
 msgid "An answer does not fit its column. Choose a different answer or column."
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:300
+#: src/components/builder/ActionCard.vue:303
 msgid "An earlier message or redirect always applies, so this one is never shown. Give the earlier one a condition, or move this one up."
 msgstr ""
 
@@ -360,16 +368,16 @@ msgstr ""
 msgid "Applies when you pick a published form that has no unpublished changes. Drafts, closed forms and forms with unpublished changes open in the editor."
 msgstr ""
 
-#: src/App.vue:242
-#: src/components/builder/FormProperties.vue:250
+#: src/App.vue:236
+#: src/components/builder/FormProperties.vue:330
 msgid "Archive"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:261
+#: src/components/builder/FormProperties.vue:341
 msgid "Archive form"
 msgstr ""
 
-#: src/App.vue:249
+#: src/App.vue:243
 #: src/components/builder/BuilderView.vue:462
 msgid "Archived"
 msgstr ""
@@ -406,7 +414,7 @@ msgstr ""
 msgid "Back"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:146
+#: src/components/builder/FormProperties.vue:167
 msgid "Background colour"
 msgstr ""
 
@@ -415,7 +423,7 @@ msgid "Basic markdown works: bold, italic, lists and links."
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:70
-#: src/components/builder/FormProperties.vue:83
+#: src/components/builder/FormProperties.vue:104
 msgid "Beside"
 msgstr ""
 
@@ -423,11 +431,11 @@ msgstr ""
 msgid "beside the field"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:404
+#: src/components/builder/ActionCard.vue:407
 msgid "Body"
 msgstr ""
 
-#: src/App.vue:334
+#: src/App.vue:328
 msgid "Build forms with conditional fields and flexible layouts. Responses stay on your server."
 msgstr ""
 
@@ -443,11 +451,11 @@ msgstr ""
 msgid "busiest month: {n}"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:158
+#: src/components/builder/FormProperties.vue:179
 msgid "Buttons and highlights"
 msgstr ""
 
-#: src/builder/labels.ts:48
+#: src/builder/labels.ts:49
 msgid "Call a webhook"
 msgstr ""
 
@@ -474,7 +482,7 @@ msgid "Cards"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:114
-#: src/components/builder/FormProperties.vue:192
+#: src/components/builder/FormProperties.vue:213
 msgid "Center"
 msgstr ""
 
@@ -507,6 +515,7 @@ msgid "Choices"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:225
+#: src/components/builder/FilesActionBody.vue:47
 msgid "Choose {name}"
 msgstr ""
 
@@ -515,11 +524,15 @@ msgstr ""
 msgid "Choose a file"
 msgstr ""
 
+#: src/components/builder/FilesActionBody.vue:41
+msgid "Choose a folder for the CSV file"
+msgstr ""
+
 #: src/components/builder/FieldProperties.vue:219
 msgid "Choose a folder for the uploaded files"
 msgstr ""
 
-#: src/App.vue:343
+#: src/App.vue:337
 msgid "Choose a form from the list to edit it, or create a new one."
 msgstr ""
 
@@ -545,6 +558,7 @@ msgid "Choose files"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:409
+#: src/components/builder/FilesActionBody.vue:77
 msgid "Choose folder"
 msgstr ""
 
@@ -553,22 +567,23 @@ msgid "Choose one of the available options."
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:225
+#: src/components/builder/FilesActionBody.vue:47
 msgid "Choose this folder"
 msgstr ""
 
-#: src/components/builder/ActionsPanel.vue:105
-msgid "Choose what happens after someone sends the form. Emails and webhooks are sent in the background, so a slow mail server never holds up the respondent."
+#: src/components/builder/ActionsPanel.vue:102
+msgid "Choose what happens after someone sends the form. Background actions run after the response is saved, so a slow mail server or website never holds up the respondent."
 msgstr ""
 
-#: src/builder/errors.ts:78
+#: src/builder/errors.ts:80
 msgid "Choose which answer goes in at least one column."
 msgstr ""
 
-#: src/builder/errors.ts:104
+#: src/builder/errors.ts:110
 msgid "Choose which kinds of files this field accepts."
 msgstr ""
 
-#: src/builder/errors.ts:58
+#: src/builder/errors.ts:60
 msgid "Choose who should receive this email."
 msgstr ""
 
@@ -581,15 +596,19 @@ msgstr ""
 msgid "Clear selection"
 msgstr ""
 
-#: src/App.vue:191
+#: src/availability.ts:43
 msgid "Closed"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:307
+msgid "Closes"
 msgstr ""
 
 #: src/AdminApp.vue:43
 msgid "Cloudflare Turnstile"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:139
+#: src/components/builder/FormProperties.vue:160
 msgid "Colour"
 msgstr ""
 
@@ -603,7 +622,7 @@ msgstr ""
 msgid "Comparison"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:284
+#: src/components/builder/ActionCard.vue:287
 #: src/components/builder/FieldCard.vue:72
 msgid "Conditional"
 msgstr ""
@@ -625,20 +644,20 @@ msgstr ""
 msgid "Copy link"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:437
+#: src/components/builder/ActionCard.vue:445
 msgid "Copy this secret now. It will not be shown again."
 msgstr ""
 
-#: src/App.vue:306
+#: src/App.vue:300
 #: src/components/builder/BuilderView.vue:519
 msgid "Could not change the archive state. Try again."
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:444
+#: src/components/builder/ActionCard.vue:452
 msgid "Could not create a secret. Try again."
 msgstr ""
 
-#: src/App.vue:312
+#: src/App.vue:306
 msgid "Could not create the form."
 msgstr ""
 
@@ -654,7 +673,7 @@ msgstr ""
 msgid "Could not delete the responses."
 msgstr ""
 
-#: src/App.vue:156
+#: src/App.vue:157
 msgid "Could not import the form."
 msgstr ""
 
@@ -687,7 +706,7 @@ msgstr ""
 msgid "Could not load the table columns."
 msgstr ""
 
-#: src/App.vue:300
+#: src/App.vue:294
 msgid "Could not load your forms."
 msgstr ""
 
@@ -723,7 +742,7 @@ msgstr ""
 msgid "Create table"
 msgstr ""
 
-#: src/App.vue:333
+#: src/App.vue:327
 msgid "Create your first form"
 msgstr ""
 
@@ -737,6 +756,14 @@ msgstr ""
 
 #: src/components/entries/EntriesView.vue:474
 msgid "CSV (.csv)"
+msgstr ""
+
+#: src/entries/deliveryText.ts:24
+msgid "CSV file"
+msgstr ""
+
+#: src/components/builder/FilesActionBody.vue:70
+msgid "CSV file in your Files"
 msgstr ""
 
 #: src/components/builder/OptionsEditor.vue:44
@@ -789,7 +816,7 @@ msgstr ""
 msgid "Delete {n} responses?"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:492
+#: src/components/builder/ActionCard.vue:500
 msgid "Delete action"
 msgstr ""
 
@@ -800,7 +827,7 @@ msgid "Delete field"
 msgstr ""
 
 #: src/components/builder/BuilderView.vue:600
-#: src/components/builder/FormProperties.vue:270
+#: src/components/builder/FormProperties.vue:350
 msgid "Delete form"
 msgstr ""
 
@@ -854,7 +881,7 @@ msgstr ""
 msgid "Deliveries ({n} failed)"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:65
+#: src/components/builder/FormProperties.vue:86
 msgid "Description"
 msgstr ""
 
@@ -903,7 +930,7 @@ msgstr ""
 msgid "Download SVG"
 msgstr ""
 
-#: src/App.vue:192
+#: src/availability.ts:46
 #: src/components/builder/BuilderView.vue:466
 msgid "Draft"
 msgstr ""
@@ -931,16 +958,20 @@ msgstr ""
 msgid "dwg, stl"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:88
+#: src/components/builder/FormProperties.vue:109
 msgid "Each field can override this. Beside labels stay above long text and choice fields."
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:434
+#: src/components/builder/ActionCard.vue:442
 msgid "Each request is signed so the receiver can check it came from this form. The signature is in the X-Webforms-Signature header."
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:412
 msgid "Each response gets its own subfolder here. You can only pick folders you can write to, and this is checked again every time someone submits."
+msgstr ""
+
+#: src/components/builder/FilesActionBody.vue:81
+msgid "Each response is added as a line, with the same columns as the CSV download. The file is created when the first response arrives. If it already exists, its own header row is kept: answers go under the matching heading, and new questions are added as columns at the end."
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:446
@@ -968,7 +999,7 @@ msgstr ""
 msgid "Email settings saved"
 msgstr ""
 
-#: src/builder/labels.ts:56
+#: src/builder/labels.ts:57
 msgid "Email you, or the respondent, a copy of the answers."
 msgstr ""
 
@@ -1000,7 +1031,20 @@ msgstr ""
 msgid "Enable validation"
 msgstr ""
 
-#: src/builder/errors.ts:68
+#: src/availability.ts:50
+msgid "Ended"
+msgstr ""
+
+#: src/availability.ts:73
+msgid "Ended: closed {time}."
+msgstr ""
+
+#: src/builder/errors.ts:82
+#: src/components/builder/FilesActionBody.vue:26
+msgid "Enter a file path in your Files that ends in .csv, like Webforms/Responses.csv."
+msgstr ""
+
+#: src/builder/errors.ts:70
 msgid "Enter a full address starting with https://."
 msgstr ""
 
@@ -1052,12 +1096,12 @@ msgstr ""
 msgid "Excel (.xlsx)"
 msgstr ""
 
-#: src/App.vue:227
-#: src/App.vue:275
+#: src/App.vue:221
+#: src/App.vue:269
 msgid "Export draft"
 msgstr ""
 
-#: src/App.vue:236
+#: src/App.vue:230
 msgid "Export published version"
 msgstr ""
 
@@ -1100,7 +1144,7 @@ msgstr ""
 msgid "Files stay in the app and are downloaded from the Responses view."
 msgstr ""
 
-#: src/builder/errors.ts:66
+#: src/builder/errors.ts:68
 msgid "Fill in all the text for this action."
 msgstr ""
 
@@ -1140,21 +1184,29 @@ msgstr ""
 msgid "Form"
 msgstr ""
 
-#: src/PublicApp.vue:105
+#: src/PublicApp.vue:116
 msgid "Form closed"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:247
+#: src/components/builder/ActionCard.vue:250
 msgid "Form field · the answer given"
+msgstr ""
+
+#: src/PublicApp.vue:112
+msgid "Form full"
 msgstr ""
 
 #: src/components/FormBar.vue:69
 msgid "Form name"
 msgstr ""
 
-#: src/PublicApp.vue:101
+#: src/PublicApp.vue:104
 #: src/components/builder/BuilderView.vue:439
 msgid "Form not found"
+msgstr ""
+
+#: src/PublicApp.vue:108
+msgid "Form not open yet"
 msgstr ""
 
 #: src/components/entries/DeliveryRow.vue:33
@@ -1173,11 +1225,11 @@ msgstr ""
 msgid "Form view"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:113
+#: src/components/builder/FormProperties.vue:134
 msgid "Form width"
 msgstr ""
 
-#: src/App.vue:199
+#: src/App.vue:193
 msgid "Forms"
 msgstr ""
 
@@ -1201,23 +1253,28 @@ msgstr ""
 msgid "From 1 to {max}. Forms with more than this cannot be published."
 msgstr ""
 
+#: src/availability.ts:51
 #: src/components/builder/FieldProperties.vue:150
 msgid "Full"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:194
+#: src/components/builder/FormProperties.vue:215
 msgid "Full width"
+msgstr ""
+
+#: src/availability.ts:75
+msgid "Full: it takes no more responses."
 msgstr ""
 
 #: src/components/builder/BuilderView.vue:539
 msgid "General"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:449
+#: src/components/builder/ActionCard.vue:457
 msgid "Generate a new secret"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:449
+#: src/components/builder/ActionCard.vue:457
 msgid "Generate a secret"
 msgstr ""
 
@@ -1267,7 +1324,7 @@ msgid "hidden"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:75
-#: src/components/builder/FormProperties.vue:84
+#: src/components/builder/FormProperties.vue:105
 msgid "Hidden"
 msgstr ""
 
@@ -1275,7 +1332,7 @@ msgstr ""
 msgid "Hide"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:93
+#: src/components/builder/FormProperties.vue:114
 msgid "Hide the required indicator (*)"
 msgstr ""
 
@@ -1291,19 +1348,19 @@ msgstr ""
 msgid "How to show responses"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:440
+#: src/components/builder/ActionCard.vue:448
 msgid "I have copied it"
 msgstr ""
 
-#: src/components/builder/ActionsPanel.vue:158
-msgid "If several messages or redirects match, the first one is shown. Emails and webhooks all run."
+#: src/components/builder/ActionsPanel.vue:114
+msgid "If several messages or redirects match, the first one is shown. Everything in the background runs."
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:184
 msgid "Images"
 msgstr ""
 
-#: src/App.vue:281
+#: src/App.vue:275
 msgid "Import form"
 msgstr ""
 
@@ -1317,6 +1374,10 @@ msgstr ""
 
 #: src/entries/format.ts:102
 msgid "in about a minute"
+msgstr ""
+
+#: src/components/builder/AddActionMenu.vue:73
+msgid "In the background"
 msgstr ""
 
 #: src/builder/labels.ts:17
@@ -1399,6 +1460,10 @@ msgstr ""
 msgid "It may have been deleted, or you may not have access to it."
 msgstr ""
 
+#: src/builder/labels.ts:59
+msgid "Keep a spreadsheet of every response in your Files."
+msgstr ""
+
 #: src/components/admin/PolicyAdmin.vue:163
 msgid "Keep responses"
 msgstr ""
@@ -1428,11 +1493,11 @@ msgstr ""
 msgid "Label position"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:80
+#: src/components/builder/FormProperties.vue:101
 msgid "Label position for the whole form"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:77
+#: src/components/builder/FormProperties.vue:98
 msgid "Labels"
 msgstr ""
 
@@ -1453,8 +1518,12 @@ msgid "Latest time"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:506
-#: src/components/builder/FormProperties.vue:110
+#: src/components/builder/FormProperties.vue:131
 msgid "Layout"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:317
+msgid "Leave a time empty to have no opening or no closing time. Times are in your own time zone. Like the other settings here, the limit and the times apply once the form is published."
 msgstr ""
 
 #: src/components/builder/TablesActionBody.vue:235
@@ -1462,7 +1531,7 @@ msgid "Leave empty"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:113
-#: src/components/builder/FormProperties.vue:191
+#: src/components/builder/FormProperties.vue:212
 msgid "Left"
 msgstr ""
 
@@ -1496,7 +1565,7 @@ msgstr ""
 msgid "Loading…"
 msgstr ""
 
-#: src/PublicApp.vue:123
+#: src/PublicApp.vue:134
 msgid "Log in"
 msgstr ""
 
@@ -1504,8 +1573,8 @@ msgstr ""
 msgid "Logic"
 msgstr ""
 
-#: src/PublicApp.vue:109
 #: src/PublicApp.vue:120
+#: src/PublicApp.vue:131
 msgid "Login required"
 msgstr ""
 
@@ -1541,16 +1610,28 @@ msgstr ""
 msgid "Maximum length"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:156
+#: src/components/builder/FormProperties.vue:277
+msgid "Maximum number of responses"
+msgstr ""
+
+#: src/components/builder/ActionCard.vue:159
 msgid "Me (the form owner)"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:309
+#: src/components/builder/ActionCard.vue:312
 msgid "Message"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:244
+#: src/components/builder/FormProperties.vue:320
+msgid "Message before opening"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:265
 msgid "Message when closed"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:291
+msgid "Message when full"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:481
@@ -1582,11 +1663,11 @@ msgstr ""
 msgid "Most responses a form accepts"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:483
+#: src/components/builder/ActionCard.vue:491
 msgid "Move action down"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:478
+#: src/components/builder/ActionCard.vue:486
 msgid "Move action up"
 msgstr ""
 
@@ -1646,11 +1727,11 @@ msgstr ""
 msgid "Must be ticked"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:319
+#: src/components/builder/ActionCard.vue:322
 msgid "Must start with https://. Answers can be added after the address, for example ?name=…"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:428
+#: src/components/builder/ActionCard.vue:436
 msgid "Must start with https://. Nextcloud blocks addresses on private networks unless an administrator allows them."
 msgstr ""
 
@@ -1658,16 +1739,16 @@ msgstr ""
 msgid "Name emails are sent under"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:115
+#: src/components/builder/FormProperties.vue:136
 msgid "Narrow"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:285
+#: src/components/builder/ActionCard.vue:288
 msgid "Never used"
 msgstr ""
 
-#: src/App.vue:201
-#: src/App.vue:337
+#: src/App.vue:195
+#: src/App.vue:331
 msgid "New form"
 msgstr ""
 
@@ -1679,7 +1760,7 @@ msgstr ""
 msgid "next try {when}"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:137
+#: src/components/builder/FormProperties.vue:158
 msgid "Nextcloud"
 msgstr ""
 
@@ -1692,7 +1773,7 @@ msgstr ""
 msgid "No"
 msgstr ""
 
-#: src/components/builder/ActionsPanel.vue:131
+#: src/components/builder/ActionsPanel.vue:141
 msgid "No actions yet. Respondents will see a default thank-you."
 msgstr ""
 
@@ -1715,6 +1796,10 @@ msgstr ""
 
 #: src/components/builder/AddFieldMenu.vue:107
 msgid "No field type matches that."
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:278
+msgid "No limit"
 msgstr ""
 
 #: src/components/builder/TablesActionBody.vue:245
@@ -1778,8 +1863,12 @@ msgstr ""
 msgid "Number"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:198
+#: src/components/builder/FormProperties.vue:219
 msgid "On a form with several pages, Back and Next sit the same way. Use Preview to see the result."
+msgstr ""
+
+#: src/components/builder/AddActionMenu.vue:68
+msgid "On the page"
 msgstr ""
 
 #: src/components/admin/MailAdmin.vue:91
@@ -1802,15 +1891,15 @@ msgstr ""
 msgid "One of the limits is not valid."
 msgstr ""
 
-#: src/builder/errors.ts:100
+#: src/builder/errors.ts:106
 msgid "One of the upload settings is not valid."
 msgstr ""
 
-#: src/builder/errors.ts:43
+#: src/builder/errors.ts:45
 msgid "Only input fields can be required."
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:228
+#: src/components/builder/FormProperties.vue:249
 msgid "Only logged-in users can respond"
 msgstr ""
 
@@ -1834,11 +1923,11 @@ msgstr ""
 msgid "Only the name. The sender address stays the one set in Nextcloud's email server settings."
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:175
+#: src/components/builder/FormProperties.vue:196
 msgid "Only the submit button"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:464
+#: src/components/builder/ActionCard.vue:472
 msgid "Only when the answers match"
 msgstr ""
 
@@ -1851,8 +1940,24 @@ msgstr ""
 msgid "Open published forms on their responses"
 msgstr ""
 
-#: src/PublicApp.vue:115
+#: src/PublicApp.vue:126
 msgid "Open the form"
+msgstr ""
+
+#: src/availability.ts:77
+msgid "Open until {time}."
+msgstr ""
+
+#: src/availability.ts:79
+msgid "Open."
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:298
+msgid "Opening and closing"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:301
+msgid "Opens"
 msgstr ""
 
 #: src/components/builder/OptionsEditor.vue:36
@@ -1890,8 +1995,8 @@ msgstr ""
 msgid "Page {n}"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:132
-#: src/components/builder/FormProperties.vue:135
+#: src/components/builder/FormProperties.vue:153
+#: src/components/builder/FormProperties.vue:156
 msgid "Page background"
 msgstr ""
 
@@ -1923,7 +2028,7 @@ msgstr ""
 msgid "Pick a day"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:83
+#: src/components/builder/ActionCard.vue:84
 #: src/components/builder/TablesActionBody.vue:165
 msgid "Pick a table"
 msgstr ""
@@ -1932,7 +2037,7 @@ msgstr ""
 msgid "Pick a time"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:328
+#: src/components/builder/ActionCard.vue:331
 msgid "Pick an email field or type an address"
 msgstr ""
 
@@ -1952,11 +2057,11 @@ msgstr ""
 msgid "Pick one, all options visible"
 msgstr ""
 
-#: src/builder/errors.ts:76
+#: src/builder/errors.ts:78
 msgid "Pick the Tables table that should get the rows."
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:359
+#: src/components/builder/ActionCard.vue:362
 msgid "Pick who receives it, or type an address and press Enter."
 msgstr ""
 
@@ -1964,7 +2069,7 @@ msgstr ""
 msgid "Placeholder"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:138
+#: src/components/builder/FormProperties.vue:159
 msgid "Plain"
 msgstr ""
 
@@ -2002,7 +2107,7 @@ msgstr ""
 msgid "Programs, scripts and web pages are never accepted."
 msgstr ""
 
-#: src/builder/errors.ts:106
+#: src/builder/errors.ts:112
 msgid "Programs, scripts and web pages can never be uploaded."
 msgstr ""
 
@@ -2014,8 +2119,8 @@ msgstr ""
 msgid "Prompt"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:209
-#: src/components/builder/FormProperties.vue:213
+#: src/components/builder/FormProperties.vue:230
+#: src/components/builder/FormProperties.vue:234
 #: src/components/builder/SharePanel.vue:171
 msgid "Public link"
 msgstr ""
@@ -2024,7 +2129,7 @@ msgstr ""
 msgid "Publish"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:217
+#: src/components/builder/FormProperties.vue:238
 #: src/components/builder/SharePanel.vue:186
 msgid "Publish the form to get a link you can share."
 msgstr ""
@@ -2033,7 +2138,7 @@ msgstr ""
 msgid "Publish the form to get the code."
 msgstr ""
 
-#: src/App.vue:190
+#: src/availability.ts:52
 #: src/components/builder/BuilderView.vue:464
 msgid "Published"
 msgstr ""
@@ -2046,7 +2151,7 @@ msgstr ""
 msgid "Put in its own row"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:255
+#: src/components/builder/FormProperties.vue:335
 msgid "Put the form away without deleting it. It stops taking responses and moves to the Archived list, and you keep its responses."
 msgstr ""
 
@@ -2092,7 +2197,7 @@ msgstr ""
 msgid "Remove option"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:398
+#: src/components/builder/ActionCard.vue:401
 msgid "Remove sender name"
 msgstr ""
 
@@ -2100,7 +2205,7 @@ msgstr ""
 msgid "Rename page"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:364
+#: src/components/builder/ActionCard.vue:367
 msgid "Reply to (optional)"
 msgstr ""
 
@@ -2129,6 +2234,10 @@ msgstr ""
 msgid "Response #{id}"
 msgstr ""
 
+#: src/components/builder/FormProperties.vue:271
+msgid "Response limit"
+msgstr ""
+
 #: src/builder/tablesMap.ts:82
 msgid "Response number"
 msgstr ""
@@ -2148,7 +2257,7 @@ msgid "Responses are kept until their owner deletes them."
 msgstr ""
 
 #: src/components/admin/PolicyAdmin.vue:176
-msgid "Responses older than this are deleted for good, with their uploaded files and delivery log. Copies already sent by email, webhook or to Tables are not touched."
+msgid "Responses older than this are deleted for good, with their uploaded files and delivery log. Copies already sent by email, webhook, to Tables or to a CSV file are not touched."
 msgstr ""
 
 #: src/components/entries/ResponseSummary.vue:106
@@ -2167,12 +2276,12 @@ msgstr ""
 msgid "Responses per month"
 msgstr ""
 
-#: src/App.vue:267
+#: src/App.vue:261
 msgid "Restore"
 msgstr ""
 
 #: src/components/builder/BuilderView.vue:515
-#: src/components/builder/FormProperties.vue:261
+#: src/components/builder/FormProperties.vue:341
 msgid "Restore form"
 msgstr ""
 
@@ -2181,7 +2290,7 @@ msgid "Review"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:115
-#: src/components/builder/FormProperties.vue:193
+#: src/components/builder/FormProperties.vue:214
 msgid "Right"
 msgstr ""
 
@@ -2193,7 +2302,7 @@ msgstr ""
 msgid "Rules that use this field will be updated or removed. Responses already received keep their answers."
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:180
+#: src/components/builder/FormProperties.vue:201
 msgid "Same as the accent colour"
 msgstr ""
 
@@ -2207,7 +2316,7 @@ msgstr ""
 msgid "Save address"
 msgstr ""
 
-#: src/builder/labels.ts:57
+#: src/builder/labels.ts:58
 msgid "Save each response as a row in a Nextcloud Tables table."
 msgstr ""
 
@@ -2225,6 +2334,14 @@ msgstr ""
 
 #: src/components/builder/BuilderView.vue:165
 msgid "Saving…"
+msgstr ""
+
+#: src/availability.ts:49
+msgid "Scheduled"
+msgstr ""
+
+#: src/availability.ts:71
+msgid "Scheduled: opens {time}."
 msgstr ""
 
 #: src/components/builder/AddFieldMenu.vue:87
@@ -2260,7 +2377,7 @@ msgstr ""
 msgid "Select a field on the canvas to set up its rules."
 msgstr ""
 
-#: src/App.vue:342
+#: src/App.vue:336
 msgid "Select a form"
 msgstr ""
 
@@ -2292,7 +2409,7 @@ msgstr ""
 msgid "Selected responses"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:103
+#: src/components/builder/FormProperties.vue:124
 #: src/components/render/FormRenderer.vue:104
 msgid "Send"
 msgstr ""
@@ -2301,15 +2418,15 @@ msgstr ""
 msgid "Send an email"
 msgstr ""
 
-#: src/builder/labels.ts:58
+#: src/builder/labels.ts:60
 msgid "Send the answers to another system, such as n8n or Zapier."
 msgstr ""
 
-#: src/builder/labels.ts:55
+#: src/builder/labels.ts:56
 msgid "Send the respondent to another page after they send the form."
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:327
+#: src/components/builder/ActionCard.vue:330
 msgid "Send to"
 msgstr ""
 
@@ -2317,7 +2434,7 @@ msgstr ""
 msgid "Sender name"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:391
+#: src/components/builder/ActionCard.vue:394
 msgid "Sender name (optional)"
 msgstr ""
 
@@ -2331,15 +2448,15 @@ msgstr ""
 msgid "Sent by"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:350
+#: src/components/builder/ActionCard.vue:353
 msgid "Sent to the address the respondent typed. To limit abuse, at most 30 such emails are sent per hour for this form."
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:353
+#: src/components/builder/ActionCard.vue:356
 msgid "Sent to the email address on your Nextcloud account. If you change it, forms follow automatically."
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:356
+#: src/components/builder/ActionCard.vue:359
 msgid "Sent to the Nextcloud account the respondent is signed in with. Use it on forms that require login; otherwise anonymous responses are skipped."
 msgstr ""
 
@@ -2347,11 +2464,11 @@ msgstr ""
 msgid "Sent with webhooks and used in exports. It follows the label until you change it yourself. Rules, actions and layout follow if you change it."
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:215
+#: src/components/builder/ActionCard.vue:218
 msgid "Server default"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:212
+#: src/components/builder/ActionCard.vue:215
 msgid "Server sender address"
 msgstr ""
 
@@ -2397,11 +2514,15 @@ msgstr ""
 msgid "Show more"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:123
+#: src/components/builder/FormProperties.vue:288
+msgid "Show respondents how many places are left"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:144
 msgid "Show the form on a card"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:71
+#: src/components/builder/FormProperties.vue:92
 msgid "Show the title on the form page"
 msgstr ""
 
@@ -2413,7 +2534,7 @@ msgstr ""
 msgid "Showing {shown} of {total}"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:283
+#: src/components/builder/ActionCard.vue:286
 msgid "Shown to respondent"
 msgstr ""
 
@@ -2441,7 +2562,7 @@ msgstr ""
 msgid "Signed-in users"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:432
+#: src/components/builder/ActionCard.vue:440
 msgid "Signing secret"
 msgstr ""
 
@@ -2475,6 +2596,10 @@ msgid "Some mapped columns no longer exist or no longer fit their answer. Choose
 msgstr ""
 
 #: src/entries/deliveryText.ts:46
+msgid "Something other than a file is in the way of the CSV file path."
+msgstr ""
+
+#: src/entries/deliveryText.ts:54
 msgid "Something unexpected went wrong. Check the Nextcloud log."
 msgstr ""
 
@@ -2483,7 +2608,7 @@ msgstr ""
 msgid "Something went wrong. Please try again."
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:238
+#: src/components/builder/FormProperties.vue:259
 msgid "Spam check for people who are not logged in"
 msgstr ""
 
@@ -2491,7 +2616,7 @@ msgstr ""
 msgid "Spam protection"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:116
+#: src/components/builder/FormProperties.vue:137
 msgid "Standard"
 msgstr ""
 
@@ -2511,20 +2636,20 @@ msgstr ""
 msgid "Stop applying to this field"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:401
+#: src/components/builder/ActionCard.vue:404
 msgid "Subject"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:169
+#: src/components/builder/FormProperties.vue:190
 msgid "Submit button colour"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:186
-#: src/components/builder/FormProperties.vue:189
+#: src/components/builder/FormProperties.vue:207
+#: src/components/builder/FormProperties.vue:210
 msgid "Submit button position"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:102
+#: src/components/builder/FormProperties.vue:123
 msgid "Submit button text"
 msgstr ""
 
@@ -2540,7 +2665,7 @@ msgstr ""
 msgid "Submitted, oldest first. Show newest first."
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:99
+#: src/components/builder/FormProperties.vue:120
 msgid "Submitting"
 msgstr ""
 
@@ -2559,6 +2684,10 @@ msgstr ""
 
 #: src/components/builder/TablesActionBody.vue:186
 msgid "Table name"
+msgstr ""
+
+#: src/entries/deliveryText.ts:23
+msgid "Tables"
 msgstr ""
 
 #: src/components/builder/PreviewDialog.vue:60
@@ -2584,7 +2713,7 @@ msgstr ""
 msgid "Text before the number"
 msgstr ""
 
-#: src/builder/labels.ts:54
+#: src/builder/labels.ts:55
 msgid "Thank the respondent on the page after they send the form."
 msgstr ""
 
@@ -2600,11 +2729,11 @@ msgstr ""
 msgid "That is too many responses to delete at once. Narrow the filter, or select fewer."
 msgstr ""
 
-#: src/entries/deliveryText.ts:38
+#: src/entries/deliveryText.ts:40
 msgid "That Nextcloud account has no email address set."
 msgstr ""
 
-#: src/builder/errors.ts:84
+#: src/builder/errors.ts:90
 msgid "That table no longer exists."
 msgstr ""
 
@@ -2612,19 +2741,19 @@ msgstr ""
 msgid "That was very quick. Please check your answers and send again."
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:241
+#: src/components/builder/FormProperties.vue:262
 msgid "The administrator chooses the kind of check. Logged-in users never see it."
 msgstr ""
 
-#: src/builder/errors.ts:60
+#: src/builder/errors.ts:62
 msgid "The administrator does not allow forms to set their own reply-to address or sender name. Remove it to publish."
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:386
+#: src/components/builder/ActionCard.vue:389
 msgid "The administrator only lets forms reply to an email field."
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:395
+#: src/components/builder/ActionCard.vue:398
 msgid "The administrator sets the sender name. Clear this to publish."
 msgstr ""
 
@@ -2632,8 +2761,25 @@ msgstr ""
 msgid "The answers and the record of what was sent are deleted. This cannot be undone."
 msgstr ""
 
+#: src/builder/errors.ts:34
+#: src/components/builder/FormProperties.vue:314
+msgid "The closing time must be after the opening time."
+msgstr ""
+
 #: src/components/builder/SharePanel.vue:239
 msgid "The code holds the link above. It is made in your browser."
+msgstr ""
+
+#: src/entries/deliveryText.ts:47
+msgid "The CSV file is larger than 20 MB. Choose a new file in the action."
+msgstr ""
+
+#: src/entries/deliveryText.ts:50
+msgid "The CSV file path is not valid."
+msgstr ""
+
+#: src/entries/deliveryText.ts:48
+msgid "The CSV file was in use. It will be tried again."
 msgstr ""
 
 #: src/builder/errors.ts:26
@@ -2644,11 +2790,11 @@ msgstr ""
 msgid "The defaults above are always used. A form may still reply to the address a respondent typed in an email field. Forms that already set their own keep sending, with their own choice ignored, and cannot be published again until it is removed."
 msgstr ""
 
-#: src/App.vue:218
+#: src/App.vue:212
 msgid "The draft has changes that are not published yet"
 msgstr ""
 
-#: src/entries/deliveryText.ts:43
+#: src/entries/deliveryText.ts:51
 msgid "The email has no valid recipient set."
 msgstr ""
 
@@ -2668,11 +2814,15 @@ msgstr ""
 msgid "The file could not be saved. Please try again later or contact the form owner."
 msgstr ""
 
+#: src/components/builder/FilesActionBody.vue:84
+msgid "The file is written as you, so you must be able to change it. Deleting a response does not remove its line."
+msgstr ""
+
 #: src/components/builder/BuilderView.vue:597
 msgid "The form and all of its responses will be deleted. This cannot be undone."
 msgstr ""
 
-#: src/PublicApp.vue:128
+#: src/PublicApp.vue:139
 msgid "The form could not be loaded. Please try again later."
 msgstr ""
 
@@ -2680,7 +2830,7 @@ msgstr ""
 msgid "The form could not be published."
 msgstr ""
 
-#: src/builder/errors.ts:34
+#: src/builder/errors.ts:36
 msgid "The form needs a title."
 msgstr ""
 
@@ -2692,7 +2842,7 @@ msgstr ""
 msgid "The help text is too long."
 msgstr ""
 
-#: src/entries/deliveryText.ts:57
+#: src/entries/deliveryText.ts:65
 msgid "The mail server refused it:{detail}"
 msgstr ""
 
@@ -2704,31 +2854,31 @@ msgstr ""
 msgid "The placeholder is too long."
 msgstr ""
 
-#: src/entries/deliveryText.ts:51
+#: src/entries/deliveryText.ts:59
 msgid "The receiver answered with HTTP {status}."
 msgstr ""
 
-#: src/builder/errors.ts:64
+#: src/builder/errors.ts:66
 msgid "The reply-to address is not a valid email address or email field."
 msgstr ""
 
-#: src/entries/deliveryText.ts:54
+#: src/entries/deliveryText.ts:62
 msgid "The request could not be made:{detail}"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:77
+#: src/components/builder/ActionCard.vue:78
 msgid "the respondent"
 msgstr ""
 
-#: src/entries/deliveryText.ts:37
+#: src/entries/deliveryText.ts:39
 msgid "The respondent did not give a usable email address."
 msgstr ""
 
-#: src/entries/deliveryText.ts:39
+#: src/entries/deliveryText.ts:41
 msgid "The respondent was not signed in, so there is no account to email."
 msgstr ""
 
-#: src/entries/deliveryText.ts:45
+#: src/entries/deliveryText.ts:53
 msgid "The response was deleted before this could be sent."
 msgstr ""
 
@@ -2736,7 +2886,7 @@ msgstr ""
 msgid "The selected responses are deleted, with their answers, uploaded files and the record of what was sent. This cannot be undone."
 msgstr ""
 
-#: src/builder/errors.ts:62
+#: src/builder/errors.ts:64
 msgid "The sender name must be one line of at most 100 characters."
 msgstr ""
 
@@ -2748,15 +2898,15 @@ msgstr ""
 msgid "The sharing options could not be saved. Please try again."
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:75
+#: src/components/builder/ActionCard.vue:76
 msgid "the signed-in respondent"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:157
+#: src/components/builder/ActionCard.vue:160
 msgid "The signed-in respondent"
 msgstr ""
 
-#: src/builder/errors.ts:96
+#: src/builder/errors.ts:102
 msgid "The signing secret is not valid. Generate a new one."
 msgstr ""
 
@@ -2768,7 +2918,7 @@ msgstr ""
 msgid "The spam check was not passed. Please try again."
 msgstr ""
 
-#: src/builder/errors.ts:80
+#: src/builder/errors.ts:86
 msgid "The Tables app is not available on this server."
 msgstr ""
 
@@ -2776,7 +2926,7 @@ msgstr ""
 msgid "The Tables app is not installed or not enabled on this server, so this action cannot run. Ask an administrator to enable it."
 msgstr ""
 
-#: src/builder/errors.ts:94
+#: src/builder/errors.ts:100
 msgid "The text uses a field that does not exist."
 msgstr ""
 
@@ -2784,19 +2934,19 @@ msgstr ""
 msgid "The upload did not work. Please try again."
 msgstr ""
 
-#: src/builder/errors.ts:102
+#: src/builder/errors.ts:108
 msgid "The upload folder is not valid. Use a folder path like Documents/Applications."
 msgstr ""
 
-#: src/entries/deliveryText.ts:42
+#: src/entries/deliveryText.ts:44
 msgid "The webhook address is not valid."
 msgstr ""
 
-#: src/entries/deliveryText.ts:41
+#: src/entries/deliveryText.ts:43
 msgid "The webhook has no signing secret. Generate a new one in the Actions tab."
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:246
+#: src/components/builder/ActionCard.vue:249
 msgid "Their account email"
 msgstr ""
 
@@ -2804,7 +2954,7 @@ msgstr ""
 msgid "These groups no longer exist: {names}"
 msgstr ""
 
-#: src/entries/deliveryText.ts:44
+#: src/entries/deliveryText.ts:52
 msgid "This action was removed from the form."
 msgstr ""
 
@@ -2824,7 +2974,7 @@ msgstr ""
 msgid "This field has conditional logic"
 msgstr ""
 
-#: src/builder/errors.ts:38
+#: src/builder/errors.ts:40
 msgid "This field id was used by a deleted field."
 msgstr ""
 
@@ -2852,7 +3002,7 @@ msgstr ""
 msgid "This file is empty."
 msgstr ""
 
-#: src/builder/errors.ts:112
+#: src/builder/errors.ts:118
 msgid "This file is not an Advanced Webforms export."
 msgstr ""
 
@@ -2864,7 +3014,7 @@ msgstr ""
 msgid "This file name is not valid."
 msgstr ""
 
-#: src/builder/errors.ts:114
+#: src/builder/errors.ts:120
 msgid "This file was made by a newer version of Advanced Webforms. Update the app to import it."
 msgstr ""
 
@@ -2876,19 +3026,24 @@ msgstr ""
 msgid "This form has no questions to filter on."
 msgstr ""
 
-#: src/builder/errors.ts:116
+#: src/builder/errors.ts:122
 msgid "This form has not been published yet."
+msgstr ""
+
+#: src/PublicApp.vue:113
+#: src/components/builder/FormProperties.vue:292
+msgid "This form has received the maximum number of responses."
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:565
 msgid "This form has the most fields it can have."
 msgstr ""
 
-#: src/builder/errors.ts:98
+#: src/builder/errors.ts:104
 msgid "This form has too many actions."
 msgstr ""
 
-#: src/builder/errors.ts:36
+#: src/builder/errors.ts:38
 msgid "This form has too many fields."
 msgstr ""
 
@@ -2896,7 +3051,7 @@ msgstr ""
 msgid "This form is archived. It is not taking responses."
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:254
+#: src/components/builder/FormProperties.vue:334
 msgid "This form is archived. Its link says the form is closed and it takes no responses. Restoring it brings it back as it was."
 msgstr ""
 
@@ -2904,20 +3059,25 @@ msgstr ""
 msgid "This form is archived. Restore it first."
 msgstr ""
 
-#: src/PublicApp.vue:106
+#: src/PublicApp.vue:117
 #: src/components/render/FormRenderer.vue:273
 msgid "This form is no longer accepting responses."
+msgstr ""
+
+#: src/PublicApp.vue:109
+#: src/components/builder/FormProperties.vue:321
+msgid "This form is not open yet."
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:555
 msgid "This form is published. After you publish again, webhooks and exports use the new ID. Responses already received keep the old one."
 msgstr ""
 
-#: src/builder/errors.ts:118
+#: src/builder/errors.ts:124
 msgid "This form is too large."
 msgstr ""
 
-#: src/PublicApp.vue:110
+#: src/PublicApp.vue:121
 msgid "This form needs a login, so it cannot be filled in here."
 msgstr ""
 
@@ -2925,19 +3085,19 @@ msgstr ""
 msgid "This form requires a login. An embedded form is always anonymous, so visitors will be asked to open the form on its own page."
 msgstr ""
 
-#: src/builder/errors.ts:120
+#: src/builder/errors.ts:126
 msgid "This is not valid ({code})."
 msgstr ""
 
-#: src/entries/deliveryText.ts:47
+#: src/entries/deliveryText.ts:55
 msgid "This kind of action is not supported."
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:297
+#: src/components/builder/ActionCard.vue:300
 msgid "This kind of action is switched off on this server, so it will not run and the form cannot be published with it. Remove it."
 msgstr ""
 
-#: src/builder/errors.ts:70
+#: src/builder/errors.ts:72
 msgid "This kind of action is switched off on this server. Remove it or ask an administrator."
 msgstr ""
 
@@ -2945,7 +3105,7 @@ msgstr ""
 msgid "This kind of file is not accepted."
 msgstr ""
 
-#: src/PublicApp.vue:102
+#: src/PublicApp.vue:105
 msgid "This link does not lead to an open form."
 msgstr ""
 
@@ -2973,11 +3133,11 @@ msgstr ""
 msgid "This page was open for too long. Please send again."
 msgstr ""
 
-#: src/builder/errors.ts:41
+#: src/builder/errors.ts:43
 msgid "This rule does not point at a field."
 msgstr ""
 
-#: src/builder/errors.ts:72
+#: src/builder/errors.ts:74
 msgid "This server allows fewer actions on a form. Remove some."
 msgstr ""
 
@@ -3014,7 +3174,7 @@ msgstr ""
 msgid "Time"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:62
+#: src/components/builder/FormProperties.vue:83
 msgid "Title"
 msgstr ""
 
@@ -3022,7 +3182,7 @@ msgstr ""
 msgid "To"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:97
+#: src/components/builder/ActionCard.vue:99
 msgid "To {to}: {subject}"
 msgstr ""
 
@@ -3030,7 +3190,7 @@ msgstr ""
 msgid "Too many attempts. Please wait a moment and try again."
 msgstr ""
 
-#: src/entries/deliveryText.ts:40
+#: src/entries/deliveryText.ts:42
 msgid "Too many emails to respondents were sent for this form in the last hour."
 msgstr ""
 
@@ -3050,13 +3210,13 @@ msgstr ""
 msgid "Try a different search, or clear the filters."
 msgstr ""
 
-#: src/App.vue:302
+#: src/App.vue:296
 #: src/components/entries/DeliveryRow.vue:76
 #: src/components/entries/EntriesView.vue:516
 msgid "Try again"
 msgstr ""
 
-#: src/builder/errors.ts:45
+#: src/builder/errors.ts:47
 msgid "Two fields depend on each other. Change one of the conditions."
 msgstr ""
 
@@ -3078,7 +3238,7 @@ msgstr ""
 msgid "Untitled field"
 msgstr ""
 
-#: src/App.vue:112
+#: src/App.vue:113
 msgid "Untitled form"
 msgstr ""
 
@@ -3114,11 +3274,11 @@ msgstr ""
 msgid "Use a list"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:163
+#: src/components/builder/FormProperties.vue:184
 msgid "Use the Nextcloud colour"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:248
+#: src/components/builder/ActionCard.vue:251
 msgid "Use this address"
 msgstr ""
 
@@ -3126,7 +3286,7 @@ msgstr ""
 msgid "Used when an email action sets no reply-to address of its own."
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:303
+#: src/components/builder/ActionCard.vue:306
 msgid "Uses answers that no longer exist: {names}"
 msgstr ""
 
@@ -3157,11 +3317,15 @@ msgstr ""
 msgid "Webforms/<form title>"
 msgstr ""
 
+#: src/components/builder/FilesActionBody.vue:71
+msgid "Webforms/Responses.csv"
+msgstr ""
+
 #: src/entries/deliveryText.ts:22
 msgid "Webhook"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:427
+#: src/components/builder/ActionCard.vue:435
 msgid "Webhook address"
 msgstr ""
 
@@ -3202,7 +3366,7 @@ msgstr ""
 msgid "Who can create forms"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:223
+#: src/components/builder/FormProperties.vue:244
 msgid "Who can respond"
 msgstr ""
 
@@ -3215,7 +3379,7 @@ msgstr ""
 msgid "Who submitted it (their account)"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:117
+#: src/components/builder/FormProperties.vue:138
 msgid "Wide"
 msgstr ""
 
@@ -3223,7 +3387,7 @@ msgstr ""
 msgid "Width"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:126
+#: src/components/builder/FormProperties.vue:147
 msgid "Width only applies on larger screens. On phones the form fills the screen and fields sit one under another."
 msgstr ""
 
@@ -3235,7 +3399,7 @@ msgstr ""
 msgid "With several \"show\" rules the field appears when any of them matches. A \"hide\" rule always wins."
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:453
+#: src/components/builder/ActionCard.vue:461
 msgid "Without a secret the request is sent unsigned."
 msgstr ""
 
@@ -3252,7 +3416,7 @@ msgstr ""
 msgid "Yes or no"
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:72
+#: src/components/builder/ActionCard.vue:73
 msgid "you"
 msgstr ""
 
@@ -3260,31 +3424,39 @@ msgstr ""
 msgid "You added too many files."
 msgstr ""
 
-#: src/builder/errors.ts:82
+#: src/builder/errors.ts:88
 msgid "You are not allowed to add rows to that table."
 msgstr ""
 
-#: src/builder/errors.ts:74
+#: src/builder/errors.ts:76
 msgid "You are not allowed to create forms on this server. Ask an administrator."
 msgstr ""
 
-#: src/builder/errors.ts:110
+#: src/builder/errors.ts:116
 msgid "You are not allowed to let anyone upload into your files. Limit this field to signed-in users, or keep the files in the app."
 msgstr ""
 
-#: src/builder/errors.ts:92
+#: src/builder/errors.ts:98
 msgid "You are not allowed to use that table."
+msgstr ""
+
+#: src/entries/deliveryText.ts:45
+msgid "You can no longer change the CSV file or create it in that folder."
 msgstr ""
 
 #: src/components/builder/TablesActionBody.vue:175
 msgid "You cannot add rows to the table this action points at (it may have been deleted or unshared). Pick another table."
 msgstr ""
 
-#: src/App.vue:309
+#: src/builder/errors.ts:84
+msgid "You cannot change that file or create it there. Choose a folder you can write to."
+msgstr ""
+
+#: src/App.vue:303
 msgid "You cannot create forms on this server. Ask an administrator to add you to a group that can."
 msgstr ""
 
-#: src/builder/errors.ts:108
+#: src/builder/errors.ts:114
 msgid "You cannot save files to this folder. Choose a folder you can write to."
 msgstr ""
 
@@ -3296,7 +3468,7 @@ msgstr ""
 msgid "You have no Tables tables you can add rows to. Create one in the Tables app first."
 msgstr ""
 
-#: src/PublicApp.vue:121
+#: src/PublicApp.vue:132
 msgid "You need to log in to fill in this form."
 msgstr ""
 
@@ -3304,7 +3476,7 @@ msgstr ""
 msgid "You need to sign in to upload files here."
 msgstr ""
 
-#: src/components/builder/ActionCard.vue:245
+#: src/components/builder/ActionCard.vue:248
 msgid "Your account email"
 msgstr ""
 
@@ -3314,6 +3486,10 @@ msgstr ""
 
 #: src/components/builder/FieldProperties.vue:399
 msgid "Your Files"
+msgstr ""
+
+#: src/entries/deliveryText.ts:49
+msgid "Your Files storage is full."
 msgstr ""
 
 #: src/components/builder/BuilderView.vue:507

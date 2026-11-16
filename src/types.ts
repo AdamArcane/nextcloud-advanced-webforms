@@ -98,6 +98,18 @@ export interface FormSettings {
 	/** Ask anonymous respondents to pass the server's spam check. Default true; false turns it off for this form. */
 	captcha?: boolean
 	closedMessage?: string
+	/** The form takes at most this many responses. Left out for no limit. */
+	maxResponses?: number
+	/** Tell respondents how many more responses the form takes. Only with `maxResponses`. */
+	showRemaining?: boolean
+	/** Unix seconds. The form takes responses from this moment. */
+	opensAt?: number
+	/** Unix seconds. The form takes responses until this moment. */
+	closesAt?: number
+	/** Shown before `opensAt`. */
+	notOpenMessage?: string
+	/** Shown when the form has `maxResponses` responses. */
+	fullMessage?: string
 }
 
 /** The public view of a definition: `actions` is never sent to respondents. */
@@ -122,6 +134,8 @@ export interface PublicForm {
 	uploadLimit?: number
 	/** The spam check to show, or null when this respondent does not need one. */
 	captcha?: CaptchaConfig | null
+	/** How many more responses the form takes, when it is set to show that. */
+	remaining?: number | null
 }
 
 export interface CaptchaConfig {
@@ -216,6 +230,17 @@ export const FORM_STATUS_UNPUBLISHED = 0
 export const FORM_STATUS_PUBLISHED = 1
 export const FORM_STATUS_CLOSED = 2
 
+/** Whether a published form takes responses, by its limit and dates (docs/SCHEMA.md section 3.1). */
+export interface FormAvailability {
+	state: 'open' | 'scheduled' | 'ended' | 'full'
+	/** Unix seconds, null when not set. */
+	opensAt: number | null
+	closesAt: number | null
+	/** The lower of the form's and the server's limit, 0 for none. */
+	cap: number
+	responses: number
+}
+
 /** A form as the owner API returns it. `draft` is only present on single-form calls. */
 export interface OwnerForm {
 	id: number
@@ -231,6 +256,8 @@ export interface OwnerForm {
 	latestVersionId: number | null
 	/** When the form was archived (unix time), null if it is not. */
 	archivedAt?: number | null
+	/** Null until the form has been published. A closed or archived form takes no responses whatever this says. */
+	availability?: FormAvailability | null
 	createdAt: number
 	updatedAt: number
 	draft?: DraftDefinition

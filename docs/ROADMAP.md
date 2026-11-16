@@ -103,7 +103,9 @@ Gap review written against 0.3.x (2026-11-15), from README.md, docs/SCHEMA.md an
 
 ### Gaps not tracked anywhere
 
-- **Response limits and scheduling.** No max-responses cap and no open or close date. Only a manual closed status.
+- **Response limits and scheduling.** Done: a limit on responses, opening and closing times, and a
+  message for each (SCHEMA.md section 3.1). They apply on publish. Still open: changing them on a live
+  form without publishing, and telling respondents when a form will open.
 - **Duplicate-submission control.** Anonymous duplicates are not controlled (SCHEMA.md open question 6).
 - **URL prefill.** Fields cannot be prefilled from query parameters. This goes with hidden fields.
 - **Response management.**
@@ -121,7 +123,7 @@ Gap review written against 0.3.x (2026-11-15), from README.md, docs/SCHEMA.md an
 
 ### Suggested first picks from the gap review
 
-1. Response limits and scheduling.
+1. Response limits and scheduling (done).
 2. URL prefill together with hidden fields.
 
 Both are mostly schema and validator work and fit the existing architecture.

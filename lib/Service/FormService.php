@@ -40,6 +40,7 @@ use OCA\Webforms\Forms\DefinitionValidator;
 use OCA\Webforms\Forms\FormPackage;
 use OCA\Webforms\Forms\JsonShape;
 use OCA\Webforms\Forms\RetiredIds;
+use OCA\Webforms\Forms\Availability;
 use OCA\Webforms\Forms\ShareSettings;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Security\ISecureRandom;
@@ -97,13 +98,12 @@ class FormService {
 			}
 		}
 		$versions = $this->versions->findByIds($versionIds);
+		$counts = $this->entries->countByForms(array_map(static fn (Form $form): int => $form->getId(), $forms));
 		$result = [];
 		foreach ($forms as $form) {
-			$data = $this->toArray($form);
-			$latestId = $form->getLatestVersionId();
-			$data['hasUnpublishedChanges'] = $latestId === null || !isset($versions[$latestId])
-				? true
-				: $this->differs($form, $versions[$latestId]);
+			$latest = $versions[$form->getLatestVersionId() ?? 0] ?? null;
+			$data = $this->describe($form, $latest, $counts[$form->getId()] ?? 0);
+			$data['hasUnpublishedChanges'] = $latest === null ? true : $this->differs($form, $latest);
 			$result[] = $data;
 		}
 		return $result;
@@ -701,7 +701,37 @@ class FormService {
 	 * @return array<string, mixed>
 	 */
 	public function toArray(Form $form, bool $withDraft = false): array {
-		$data = [
+		$latestId = $form->getLatestVersionId();
+		$latest = $latestId === null ? null : ($this->versions->findByIds([$latestId])[$latestId] ?? null);
+		$data = $this->describe($form, $latest, $this->entries->countByForm($form->getId()));
+		if ($withDraft) {
+			$data['draft'] = JsonShape::definition($form->getDraftDefinition());
+			$data['hasUnpublishedChanges'] = $latest === null ? true : $this->differs($form, $latest);
+			// Ids that cannot be used again, so the builder can say so before the server has to refuse.
+			$data['retiredIds'] = $form->getRetiredIdList();
+		}
+		return $data;
+	}
+
+	/**
+	 * A form as the owner sees it. `availability` says whether the published form takes responses by
+	 * its own limit and dates and the server's cap (docs/SCHEMA.md section 3.1); it is null until the
+	 * form has been published. A closed or archived form takes none whatever it says.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function describe(Form $form, ?Version $latest, int $responses): array {
+		$availability = null;
+		if ($latest !== null) {
+			$settings = $latest->getDefinitionArray()['settings'] ?? [];
+			$availability = Availability::of(
+				is_array($settings) ? $settings : [],
+				$this->time->getTime(),
+				$responses,
+				$this->policy->settings()->maxResponsesPerForm(),
+			);
+		}
+		return [
 			'id' => $form->getId(),
 			'title' => $form->getTitle(),
 			'description' => $form->getDescription(),
@@ -714,26 +744,8 @@ class FormService {
 			'archivedAt' => $form->getArchivedAt(),
 			'createdAt' => $form->getCreatedAt(),
 			'updatedAt' => $form->getUpdatedAt(),
+			'availability' => $availability,
 		];
-		if ($withDraft) {
-			$data['draft'] = JsonShape::definition($form->getDraftDefinition());
-			$data['hasUnpublishedChanges'] = $this->hasUnpublishedChanges($form);
-			// Ids that cannot be used again, so the builder can say so before the server has to refuse.
-			$data['retiredIds'] = $form->getRetiredIdList();
-		}
-		return $data;
-	}
-
-	/**
-	 * Whether the draft differs from the latest published version (always true
-	 * before the first publish).
-	 */
-	private function hasUnpublishedChanges(Form $form): bool {
-		$latestId = $form->getLatestVersionId();
-		if ($latestId === null) {
-			return true;
-		}
-		return $this->differs($form, $this->versions->find($latestId));
 	}
 
 	private function differs(Form $form, Version $latest): bool {

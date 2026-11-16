@@ -27,6 +27,19 @@ function form(settings: Record<string, unknown>): PublicForm {
 	}
 }
 
+describe('FormPage places left', () => {
+	it('says how many places are left when the server sends a number', () => {
+		const wrapper = mount(FormPage, { props: { form: { ...form({}), remaining: 3 } } })
+		expect(wrapper.find('.af-page__remaining').text()).toBe('3 places left')
+		expect(mount(FormPage, { props: { form: { ...form({}), remaining: 1 } } }).find('.af-page__remaining').text()).toBe('1 place left')
+	})
+
+	it('says nothing otherwise', () => {
+		expect(mount(FormPage, { props: { form: form({}) } }).find('.af-page__remaining').exists()).toBe(false)
+		expect(mount(FormPage, { props: { form: { ...form({}), remaining: null } } }).find('.af-page__remaining').exists()).toBe(false)
+	})
+})
+
 describe('FormPage title', () => {
 	it('shows the title by default', () => {
 		const title = mount(FormPage, { props: { form: form({}) } }).find('h1')

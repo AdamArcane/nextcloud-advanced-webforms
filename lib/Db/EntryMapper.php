@@ -145,6 +145,31 @@ class EntryMapper extends QBMapper {
 	}
 
 	/**
+	 * How many responses each of these forms has. A form without responses is left out.
+	 *
+	 * @param list<int> $formIds
+	 * @return array<int, int> form id to count
+	 * @throws Exception
+	 */
+	public function countByForms(array $formIds): array {
+		$counts = [];
+		foreach (array_chunk(array_values(array_unique($formIds)), 500) as $chunk) {
+			$qb = $this->db->getQueryBuilder();
+			$qb->select('form_id')
+				->addSelect($qb->func()->count('*', 'total'))
+				->from($this->getTableName())
+				->where($qb->expr()->in('form_id', $qb->createNamedParameter($chunk, IQueryBuilder::PARAM_INT_ARRAY)))
+				->groupBy('form_id');
+			$result = $qb->executeQuery();
+			while (($row = $result->fetch()) !== false) {
+				$counts[(int)$row['form_id']] = (int)$row['total'];
+			}
+			$result->closeCursor();
+		}
+		return $counts;
+	}
+
+	/**
 	 * @throws Exception
 	 */
 	public function countByFormAndUser(int $formId, string $userId): int {
