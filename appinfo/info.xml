@@ -8,17 +8,20 @@
 	<id>webforms</id>
 	<name>Advanced Webforms</name>
 	<summary>Forms with conditional logic, grid layouts, and after-submit actions</summary>
-	<description><![CDATA[**Forms with the features larger form builders have, self-hosted.**
+	<description><![CDATA[**A form builder with the features larger form tools have, on your own server.**
 
-- **Rules engine:** show, hide, or require fields based on earlier answers, with nested AND/OR conditions.
-- **Grid layout:** put several fields on one row, responsive on small screens.
-- **After-submit actions:** confirmation email, webhook, confirmation message, or redirect, each with optional conditions.
-- **Your data stays on your server.**
+- **Builder:** drag and drop fields onto a 12-column grid with a live preview. Text, email, phone, number, date, time, select, radio, checkboxes, rating, scale, consent, hidden fields, file uploads, headings, paragraphs and images.
+- **Rules engine:** show, hide, or require fields based on earlier answers, with nested AND/OR conditions. Checked again on the server.
+- **Multi-page forms:** progress indicator, an optional summary step before sending, and optional "continue later" that keeps unsent answers in the respondent's own browser.
+- **After-submit actions:** confirmation message, redirect, email, signed webhook, a row in Nextcloud Tables, or a line in a CSV file in your Files. Each can have conditions and is retried in the background.
+- **Responses:** browse, filter by status, add a note, see the delivery log, and download a CSV. New responses are marked for you.
+- **Sharing:** public link, custom address, QR code and embedding in a frame, with spam protection that keeps your visitors' data on your server.
+- **Flow integration** and server-wide administration settings.
 
-This app is in early development.
+Forms and responses stay on your server. Requires Nextcloud 35.
 	]]></description>
 
-	<version>0.3.5</version>
+	<version>0.3.6</version>
 	<licence>AGPL-3.0-or-later</licence>
 
 	<author>Adam Arcane</author>
@@ -32,6 +35,13 @@ This app is in early development.
 	<website>https://github.com/AdamArcane/nextcloud-advanced-webforms</website>
 	<bugs>https://github.com/AdamArcane/nextcloud-advanced-webforms/issues</bugs>
 	<repository type="git">https://github.com/AdamArcane/nextcloud-advanced-webforms</repository>
+
+	<screenshot>https://raw.githubusercontent.com/AdamArcane/nextcloud-advanced-webforms/main/docs/screenshots/01-builder.jpg</screenshot>
+	<screenshot>https://raw.githubusercontent.com/AdamArcane/nextcloud-advanced-webforms/main/docs/screenshots/02-logic.jpg</screenshot>
+	<screenshot>https://raw.githubusercontent.com/AdamArcane/nextcloud-advanced-webforms/main/docs/screenshots/03-form.jpg</screenshot>
+	<screenshot>https://raw.githubusercontent.com/AdamArcane/nextcloud-advanced-webforms/main/docs/screenshots/04-form-page-two.jpg</screenshot>
+	<screenshot>https://raw.githubusercontent.com/AdamArcane/nextcloud-advanced-webforms/main/docs/screenshots/05-review.jpg</screenshot>
+	<screenshot>https://raw.githubusercontent.com/AdamArcane/nextcloud-advanced-webforms/main/docs/screenshots/06-responses.jpg</screenshot>
 
 	<dependencies>
 		<php min-version="8.3" />

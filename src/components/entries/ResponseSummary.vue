@@ -333,8 +333,26 @@ function isBars(field: SummaryField): field is Exclude<SummaryField, { kind: 'nu
 	margin: 0;
 }
 
+.af-stats__tile {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 2px;
+	min-width: 0;
+}
+
 .af-stats__tile--lead {
 	grid-column: 1 / -1;
+}
+
+.af-stats dt,
+.af-stats dd {
+	display: block;
+	float: none;
+	width: auto;
+	margin: 0;
+	padding: 0;
+	text-align: start;
 }
 
 .af-stats dt {
@@ -343,7 +361,6 @@ function isBars(field: SummaryField): field is Exclude<SummaryField, { kind: 'nu
 }
 
 .af-stats dd {
-	margin: 0;
 	font-size: 18px;
 	font-variant-numeric: tabular-nums;
 }
