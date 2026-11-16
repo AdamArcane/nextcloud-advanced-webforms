@@ -132,6 +132,9 @@ by an administrator (section 10.1).
 `settings.prefill` (boolean, default true) lets the address the public form is opened with fill its
 fields by field id (section 4.7). False switches that off for the form.
 
+`settings.reviewStep` (boolean) and `settings.reviewTitle` (text) add a step that lists the answers
+before sending (section 5.2).
+
 `settings.saveProgress` (boolean, default false) keeps a respondent's unsent answers in their own
 browser so they can continue later on the same device (section 21).
 
@@ -589,6 +592,42 @@ A form with more than one page shows where the respondent is, above the fields. 
   whatever the label shows, and the current step in the row is marked `aria-current="step"`. After Next
   and Back the label takes focus, so the new page is announced and the keyboard carries on from its top.
 - This is display only. The server takes no part in it and nothing about it is stored with a response.
+
+### 5.2 Review step (DECISION)
+
+`settings.reviewStep` (boolean, default false) adds one more step after the last page that lists what
+was entered before the form is sent, in the builder as "Show a summary before sending".
+`settings.reviewTitle` (text, at most 64 characters) is its heading, "Review your answers" when empty. Like
+every setting they apply when the form is published.
+
+The step is made by the renderer. It is not a page of the form: it has no rows, cannot be edited in the
+layout and changes nothing the server sees or stores. It works on a form with one page too, where it
+only repeats that page before sending.
+
+- **Where.** It is the last step, so the progress indicator counts it (5.1), and with the label set to the page name it shows the
+  review's heading. The Send button and the spam check (10.1) are on it. Back
+  leads to the last page.
+- **What is listed.** The input fields that are shown right now, in layout order, grouped by page, each
+  as its label and answer. It is what will be sent: a field hidden by a rule is not there, and neither
+  are hidden fields, display blocks and empty optional fields. A field with no label shows its id.
+- **How answers read.** As in the Responses view (section 17): option labels, "Yes" and "No", lists
+  joined with commas, and the names of the files added to an upload field.
+- **Optional questions left empty** are not listed, only counted ("3 optional questions skipped"), so
+  the summary stays short.
+- **Required questions left empty** are listed in red, as "Required, not answered yet", with a button
+  that opens their page. They can only be reached when kept answers (section 21) opened the form on
+  the review, since each page checks its own required fields before Next.
+- **Changing an answer.** With more than one page (or a page that has a name), each page's group has an Edit button. It
+  opens that page, and Next from there returns to the review instead of walking through the pages in
+  between. Back leaves that shortcut.
+- **Size.** The list sits in a box of its own, at most 28rem or 60% of the window height, whichever is
+  less, that scrolls. The box can be reached and scrolled with the keyboard. An answer shows two lines at
+  most, and the whole answer is its tooltip and is read out in full by assistive technology. The height is
+  fixed, not a setting.
+- **With continue later.** The kept page can be the review, and a form published without the step opens
+  on its last page instead.
+- **Left out on purpose:** a printable version (use the browser's print on the form), and listing
+  empty optional answers.
 
 ## 6. Rules
 

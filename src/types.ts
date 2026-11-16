@@ -117,6 +117,10 @@ export interface FormSettings {
 	prefill?: boolean
 	/** Keep a respondent's unsent answers in their own browser (docs/SCHEMA.md 21). Default false. */
 	saveProgress?: boolean
+	/** Add a step after the last page that lists the answers before sending (docs/SCHEMA.md 5.2). Default false. */
+	reviewStep?: boolean
+	/** The heading of that step. Default "Review your answers". */
+	reviewTitle?: string
 	/** Ask anonymous respondents to pass the server's spam check. Default true; false turns it off for this form. */
 	captcha?: boolean
 	closedMessage?: string

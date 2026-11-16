@@ -465,6 +465,20 @@ class DefinitionValidatorTest extends TestCase {
 		$this->assertSame(['settings_invalid'], $this->codes($set('device')));
 	}
 
+	public function testReviewStepSettings(): void {
+		$set = static fn (string $key, mixed $value): callable => static function (array $d) use ($key, $value): array {
+			$d['settings'][$key] = $value;
+			return $d;
+		};
+		$this->assertSame([], $this->codes($set('reviewStep', true)));
+		$this->assertSame([], $this->codes($set('reviewStep', false)));
+		$this->assertSame(['settings_invalid'], $this->codes($set('reviewStep', 'yes')));
+		$this->assertSame([], $this->codes($set('reviewTitle', 'Check it over')));
+		$this->assertSame([], $this->codes($set('reviewTitle', str_repeat('x', 64))));
+		$this->assertSame(['settings_invalid'], $this->codes($set('reviewTitle', str_repeat('x', 65))));
+		$this->assertSame(['settings_invalid'], $this->codes($set('reviewTitle', 5)));
+	}
+
 	public function testDefaultValuesPerType(): void {
 		$withDefault = static fn (array $field): callable => static function (array $d) use ($field): array {
 			$d['fields']['f_extra'] = $field;

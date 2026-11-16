@@ -7,6 +7,12 @@
 
 ## Unreleased
 
+- A summary before sending. Switch on "Show a summary before sending" under Settings and the form gets a
+  last step that lists what was entered, page by page, with an Edit button for each page, a count of the
+  optional questions skipped, and any required question still empty. You can name the step. A long summary
+  scrolls inside a box of its own, so the page stays short. Works with one page too. See `docs/SCHEMA.md`
+  section 5.2.
+
 - Continue later. A form can keep a respondent's unsent answers in their own browser, so a long form
   can be left and picked up again on the same device for up to 30 days. Switch it on per form under
   Settings, "Let people continue later", and publish. Nothing is stored on the server, uploaded files

@@ -6,7 +6,7 @@
 <script setup lang="ts">
 import type { FormField, PublicForm } from '../../types.ts'
 
-import { t } from '@nextcloud/l10n'
+import { n, t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
@@ -17,11 +17,12 @@ import { leaveTo } from '../../embedded.ts'
 import { ownerImageUrl, publicImageUrl } from '../../images.ts'
 import { visiblePages } from '../../layout/visibleLayout.ts'
 import { evaluateRules } from '../../rules/engine.ts'
-import { isBooleanType, isInputType } from '../../rules/fieldTypes.ts'
+import { isInputType } from '../../rules/fieldTypes.ts'
 import CaptchaField from './CaptchaField.vue'
 import FieldInput from './FieldInput.vue'
 import { prefillValue } from '../../prefill.ts'
 import { clearProgress, isKept, packProgress, readProgress, restoreProgress, writeProgress } from '../../progress.ts'
+import { buildReview, isUnanswered } from '../../review.ts'
 import { messageFor } from './messages.ts'
 import { createUploadState } from './uploadState.ts'
 
@@ -115,19 +116,41 @@ const pages = computed(() => visiblePages(definition.value.pages, shown.value))
 const submitStyle = computed(() => submitButtonStyle(definition.value.settings?.design))
 const actionsAlign = computed(() => submitAlign(definition.value.settings?.design))
 const pageIndex = ref(restored?.page ?? 0)
+// The review step (docs/SCHEMA.md 5.2) is one more step after the last page, made by the renderer.
+const hasReview = computed(() => definition.value.settings?.reviewStep === true)
+const stepCount = computed(() => pages.value.length + (hasReview.value ? 1 : 0))
 // Hiding fields can remove pages, so never point past the end.
-const currentIndex = computed(() => Math.min(pageIndex.value, Math.max(0, pages.value.length - 1)))
+const currentIndex = computed(() => Math.min(pageIndex.value, Math.max(0, stepCount.value - 1)))
+const onReview = computed(() => hasReview.value && currentIndex.value === pages.value.length)
 const currentPage = computed(() => pages.value[currentIndex.value])
 const rows = computed(() => currentPage.value?.rows ?? [])
 const isFirst = computed(() => currentIndex.value === 0)
-const isLast = computed(() => currentIndex.value >= pages.value.length - 1)
+const isLast = computed(() => currentIndex.value >= stepCount.value - 1)
+const reviewTitle = computed(() => definition.value.settings?.reviewTitle?.trim() || t('webforms', 'Review your answers'))
+const reviewHeading = ref<HTMLElement | null>(null)
+/** Set when a page is opened from the review to change an answer: Next then goes back to the review. */
+const editingFromReview = ref(false)
+const review = computed(() => (onReview.value
+	? buildReview(pages.value, fields.value, values, required.value, (id) => uploads.items(id).filter((item) => item.status === 'done').map((item) => item.name))
+	: null))
+
+function pageName(group: { pageIndex: number, title: string | null }): string {
+	return group.title ?? t('webforms', 'Page {number}', { number: group.pageIndex + 1 })
+}
+
+async function editPage(index: number) {
+	clearErrors()
+	editingFromReview.value = true
+	pageIndex.value = index
+	await scrollToTop()
+}
 
 // Progress through the pages (docs/SCHEMA.md 5.1). It counts the pages that can be reached right now,
 // so the total follows the rules, and a form with one page shows nothing.
 const progressText = ref<HTMLElement | null>(null)
 const progressColor = computed(() => progressColorStyle(definition.value.settings?.design))
 const progress = computed(() => {
-	const total = pages.value.length
+	const total = stepCount.value
 	const style = progressStyle(definition.value.settings?.design)
 	const label = progressLabel(definition.value.settings?.design)
 	if (total < 2 || (style === 'none' && label === 'none')) {
@@ -143,7 +166,7 @@ const progress = computed(() => {
 		text = t('webforms', '{percent}%', { percent })
 	} else if (label === 'title') {
 		// A page without a name falls back to its step number.
-		text = currentPage.value?.title?.trim() || stepText
+		text = onReview.value ? reviewTitle.value : currentPage.value?.title?.trim() || stepText
 	}
 	return { style, step, total, percent, stepText, text }
 })
@@ -222,16 +245,6 @@ function startOver() {
 
 const submitLabel = computed(() => definition.value.settings?.submitLabel || t('webforms', 'Send'))
 
-function isEmpty(field: FormField, value: unknown): boolean {
-	if (isBooleanType(field.type)) {
-		return value !== true
-	}
-	if (Array.isArray(value)) {
-		return value.length === 0
-	}
-	return typeof value !== 'string' || value.trim() === ''
-}
-
 function clearErrors() {
 	for (const key of Object.keys(fieldErrors)) {
 		delete fieldErrors[key]
@@ -252,7 +265,7 @@ function checkRequired(ids: Iterable<string>): boolean {
 	let ok = true
 	for (const id of ids) {
 		const field = fields.value[id]
-		if (visible.value.has(id) && isInputType(field.type) && required.value.has(id) && isEmpty(field, values[id])) {
+		if (visible.value.has(id) && isInputType(field.type) && required.value.has(id) && isUnanswered(field, values[id])) {
 			fieldErrors[id] = messageFor('required')
 			ok = false
 		}
@@ -274,12 +287,15 @@ async function goNext() {
 		await focusFirstError()
 		return
 	}
-	pageIndex.value = currentIndex.value + 1
+	// After changing an answer from the review, go back to it rather than through the pages in between.
+	pageIndex.value = editingFromReview.value ? pages.value.length : currentIndex.value + 1
+	editingFromReview.value = false
 	await scrollToTop()
 }
 
 async function goBack() {
 	clearErrors()
+	editingFromReview.value = false
 	pageIndex.value = Math.max(0, currentIndex.value - 1)
 	await scrollToTop()
 }
@@ -288,7 +304,7 @@ async function scrollToTop() {
 	await nextTick()
 	document.querySelector<HTMLElement>('.af-form')?.scrollIntoView?.({ block: 'start' })
 	// Screen readers announce the new page, and the keyboard carries on from the top of it.
-	progressText.value?.focus({ preventScroll: true })
+	;(onReview.value ? reviewHeading.value : progressText.value)?.focus({ preventScroll: true })
 }
 
 async function onSubmit() {
@@ -446,6 +462,51 @@ async function showError(error: unknown) {
 			</ol>
 		</div>
 
+		<section v-if="review" class="af-review" aria-labelledby="af-review-title">
+			<h2 id="af-review-title" ref="reviewHeading" class="af-review__title" tabindex="-1">
+				{{ reviewTitle }}
+			</h2>
+			<!-- A box of its own, so a long form's summary does not make the page long. -->
+			<div class="af-review__box" role="region" tabindex="0" aria-labelledby="af-review-title">
+				<p v-if="review.groups.length === 0" class="af-review__empty">
+					{{ t('webforms', 'Nothing has been filled in yet.') }}
+				</p>
+				<section v-for="group in review.groups" :key="group.pageIndex" class="af-review__group">
+					<div v-if="pages.length > 1 || group.title" class="af-review__head">
+						<h3 class="af-review__page">
+							{{ pageName(group) }}
+						</h3>
+						<NcButton variant="tertiary"
+							:aria-label="t('webforms', 'Edit {page}', { page: pageName(group) })"
+							@click="editPage(group.pageIndex)">
+							{{ t('webforms', 'Edit') }}
+						</NcButton>
+					</div>
+					<dl class="af-review__list">
+						<div v-for="item in group.items" :key="item.id" class="af-review__item" :class="{ 'af-review__item--missing': item.missing }">
+							<dt>{{ item.label }}</dt>
+							<dd :title="item.missing ? undefined : item.text">
+								<template v-if="item.missing">
+									{{ t('webforms', 'Required, not answered yet') }}
+									<NcButton variant="tertiary"
+										class="af-review__fix"
+										@click="editPage(group.pageIndex)">
+										{{ t('webforms', 'Answer') }}
+									</NcButton>
+								</template>
+								<template v-else>
+									{{ item.text }}
+								</template>
+							</dd>
+						</div>
+					</dl>
+				</section>
+			</div>
+			<p v-if="review.skipped > 0" class="af-review__skipped">
+				{{ n('webforms', '{count} optional question skipped.', '{count} optional questions skipped.', review.skipped, { count: review.skipped }) }}
+			</p>
+		</section>
+
 		<div v-for="row in rows" :key="row.id" class="af-row">
 			<div v-for="cell in row.cells"
 				:key="cell.id"
@@ -522,6 +583,98 @@ async function showError(error: unknown) {
 @container (max-width: 600px) {
 	.af-cell {
 		grid-column: 1 / -1;
+	}
+}
+
+.af-review__title {
+	margin: 0 0 12px;
+	font-size: 1.25em;
+}
+
+.af-review__title:focus {
+	outline: none;
+}
+
+/* Capped height with its own scrolling. The background trick shows a shadow only on the side that has more. */
+.af-review__box {
+	max-height: min(28rem, 60dvh);
+	overflow-y: auto;
+	padding: 4px 12px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large);
+	background:
+		linear-gradient(var(--color-main-background) 30%, transparent) top / 100% 24px no-repeat local,
+		linear-gradient(transparent, var(--color-main-background) 70%) bottom / 100% 24px no-repeat local,
+		radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, 0.18), transparent) top / 100% 8px no-repeat scroll,
+		radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.18), transparent) bottom / 100% 8px no-repeat scroll,
+		var(--color-main-background);
+}
+
+.af-review__group + .af-review__group {
+	margin-top: 8px;
+	border-top: 1px solid var(--color-border);
+}
+
+.af-review__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding-top: 4px;
+}
+
+.af-review__page {
+	margin: 0;
+	font-size: 1em;
+	color: var(--color-text-maxcontrast);
+}
+
+.af-review__list {
+	margin: 0;
+}
+
+.af-review__item {
+	display: grid;
+	grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+	gap: 12px;
+	padding: 6px 0;
+}
+
+.af-review__item dt {
+	color: var(--color-text-maxcontrast);
+	overflow-wrap: anywhere;
+}
+
+/* Two lines of an answer at most; the whole answer is in the tooltip and read out in full. */
+.af-review__item dd {
+	margin: 0;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	overflow: hidden;
+	overflow-wrap: anywhere;
+	white-space: pre-line;
+}
+
+.af-review__item--missing dd {
+	color: var(--color-error-text);
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px;
+}
+
+.af-review__skipped,
+.af-review__empty {
+	margin: 8px 0 0;
+	color: var(--color-text-maxcontrast);
+}
+
+@container (max-width: 600px) {
+	.af-review__item {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0;
 	}
 }
 

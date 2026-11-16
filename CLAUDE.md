@@ -88,6 +88,10 @@ value control for every input field, and the link filling fields by field id unl
 is false. Prefill is read in the browser only (`src/prefill.ts`); the server validates submitted values
 as usual. Tried on the dev instance.
 
+Review step (docs/SCHEMA.md section 5.2): `settings.reviewStep` and `reviewTitle` add a virtual last step in
+`FormRenderer.vue` (index `pages.length`, no page in the definition), built by `src/review.ts`. Not yet tried
+on the dev instance or looked at in a real browser (the scroll box shadow and the two line clamp).
+
 Continuing later (docs/SCHEMA.md section 21): `settings.saveProgress` keeps unsent answers in the
 respondent's browser only (`src/progress.ts`, local storage, 30 days). No server side at all, by
 decision: no link for another device, no uploads, no count. Not yet tried on the dev instance.
