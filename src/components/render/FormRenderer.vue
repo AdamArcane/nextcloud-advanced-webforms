@@ -184,6 +184,9 @@ function imageSrc(fieldId: string): string | null {
 // leaving the page writes at once.
 let keepTimer: ReturnType<typeof setTimeout> | null = null
 let keeping = keepsProgress
+// What the line under the buttons says: nothing kept yet, kept (and when), or the browser said no.
+const saveState = ref<'idle' | 'saved' | 'failed'>('idle')
+const savedAt = ref(0)
 
 function keepNow() {
 	if (keepTimer !== null) {
@@ -194,8 +197,11 @@ function keepNow() {
 		return
 	}
 	const record = packProgress(fields.value, values, currentIndex.value, props.form.versionId, Date.now())
-	if (record !== null) {
-		writeProgress(props.form.token, record)
+	if (record !== null && writeProgress(props.form.token, record)) {
+		saveState.value = 'saved'
+		savedAt.value = Date.now()
+	} else {
+		saveState.value = 'failed'
 	}
 }
 
@@ -219,6 +225,18 @@ if (keepsProgress) {
 		keepNow()
 	})
 }
+
+/** Tells people that they can leave and come back, and says so plainly when that is not true. */
+const saveLine = computed(() => {
+	if (saveState.value === 'failed') {
+		return t('webforms', 'Your answers could not be saved in this browser. Send the form before you close this page.')
+	}
+	if (saveState.value === 'saved') {
+		const time = new Date(savedAt.value).toLocaleTimeString(undefined, { timeStyle: 'short' })
+		return t('webforms', 'Saved in this browser at {time}. You can close this page and come back to it on this device.', { time })
+	}
+	return t('webforms', 'Your answers are saved in this browser as you go, so you can close this page and come back to it on this device.')
+})
 
 const restoredText = computed(() => {
 	if (!restoredNotice.value) {
@@ -482,10 +500,10 @@ async function showError(error: unknown) {
 							{{ t('webforms', 'Edit') }}
 						</NcButton>
 					</div>
-					<dl class="af-review__list">
-						<div v-for="item in group.items" :key="item.id" class="af-review__item" :class="{ 'af-review__item--missing': item.missing }">
-							<dt>{{ item.label }}</dt>
-							<dd :title="item.missing ? undefined : item.text">
+					<ul class="af-review__list">
+						<li v-for="item in group.items" :key="item.id" class="af-review__item" :class="{ 'af-review__item--missing': item.missing }">
+							<span class="af-review__label">{{ item.label }}</span>
+							<span class="af-review__answer" :title="item.missing ? undefined : item.text">
 								<template v-if="item.missing">
 									{{ t('webforms', 'Required, not answered yet') }}
 									<NcButton variant="tertiary"
@@ -497,9 +515,9 @@ async function showError(error: unknown) {
 								<template v-else>
 									{{ item.text }}
 								</template>
-							</dd>
-						</div>
-					</dl>
+							</span>
+						</li>
+					</ul>
 				</section>
 			</div>
 			<p v-if="review.skipped > 0" class="af-review__skipped">
@@ -557,6 +575,10 @@ async function showError(error: unknown) {
 				{{ submitLabel }}
 			</NcButton>
 		</div>
+
+		<p v-if="keepsProgress" class="af-saveline" :class="{ 'af-saveline--failed': saveState === 'failed' }">
+			{{ saveLine }}
+		</p>
 	</form>
 </template>
 
@@ -600,6 +622,7 @@ async function showError(error: unknown) {
 	max-height: min(28rem, 60dvh);
 	overflow-y: auto;
 	padding: 4px 12px;
+	box-sizing: border-box;
 	border: 1px solid var(--color-border);
 	border-radius: var(--border-radius-large);
 	background:
@@ -629,25 +652,42 @@ async function showError(error: unknown) {
 	color: var(--color-text-maxcontrast);
 }
 
+/* Plain elements with every size set here, so nothing from the page's own styles changes the layout.
+   One column by default (a phone): the label above its answer. Side by side only when there is room. */
 .af-review__list {
+	list-style: none;
 	margin: 0;
+	padding: 0;
 }
 
 .af-review__item {
-	display: grid;
-	grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
-	gap: 12px;
-	padding: 6px 0;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 2px;
+	margin: 0;
+	padding: 8px 0;
+	min-height: 0;
+	line-height: 1.4;
 }
 
-.af-review__item dt {
+.af-review__label {
+	display: block;
+	margin: 0;
+	padding: 0;
+	min-height: 0;
+	text-align: start;
+	font-size: 0.9em;
 	color: var(--color-text-maxcontrast);
 	overflow-wrap: anywhere;
 }
 
 /* Two lines of an answer at most; the whole answer is in the tooltip and read out in full. */
-.af-review__item dd {
+.af-review__answer {
 	margin: 0;
+	padding: 0;
+	min-height: 0;
+	text-align: start;
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
 	-webkit-line-clamp: 2;
@@ -657,7 +697,7 @@ async function showError(error: unknown) {
 	white-space: pre-line;
 }
 
-.af-review__item--missing dd {
+.af-review__item--missing .af-review__answer {
 	color: var(--color-error-text);
 	display: flex;
 	flex-wrap: wrap;
@@ -671,11 +711,26 @@ async function showError(error: unknown) {
 	color: var(--color-text-maxcontrast);
 }
 
-@container (max-width: 600px) {
+@container (min-width: 601px) {
 	.af-review__item {
-		grid-template-columns: minmax(0, 1fr);
-		gap: 0;
+		display: grid;
+		grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+		gap: 12px;
 	}
+
+	.af-review__label {
+		font-size: 1em;
+	}
+}
+
+.af-saveline {
+	margin: 12px 0 0;
+	font-size: 0.9em;
+	color: var(--color-text-maxcontrast);
+}
+
+.af-saveline--failed {
+	color: var(--color-error-text);
 }
 
 .af-restored p {

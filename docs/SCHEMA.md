@@ -1619,6 +1619,11 @@ does not know that anyone has started.
   the address or its default (section 4.7).
 - **Where.** The browser's local storage, under `webforms:progress:<token>`, one record per form. It is
   written shortly after an answer changes and again when the page is left.
+- **A line that says so.** Under the buttons the form says that answers are saved in this browser and can
+  be picked up again on this device. Once the browser has taken a save it adds the time ("Saved in this
+  browser at 6:41 PM"). If the browser refuses, or the record is too large, it says in red that the answers
+  could not be saved and to send the form before closing the page, so the promise is never false. There is
+  no save button: saving happens as answers change.
 - **Coming back.** When the form opens and a record exists, its answers are put back and the form
   opens on the page that was kept. A note above the form says from when they are and that they are
   kept in this browser only, with a **Start over** button that throws the record away and puts the

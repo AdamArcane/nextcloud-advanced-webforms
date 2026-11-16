@@ -84,6 +84,38 @@ describe('FormRenderer keeping unsent answers', () => {
 		wrapper.unmount()
 	})
 
+	it('tells people they can come back, and when it was saved', async () => {
+		const wrapper = open()
+		expect(wrapper.find('.af-saveline').text()).toContain('come back to it on this device')
+		expect(wrapper.find('.af-saveline').text()).not.toContain('Saved in this browser at')
+		await wrapper.find('#af-f_name').setValue('Ada')
+		vi.advanceTimersByTime(500)
+		await wrapper.vm.$nextTick()
+		expect(wrapper.find('.af-saveline').text()).toContain('Saved in this browser at')
+		wrapper.unmount()
+	})
+
+	it('says plainly when the browser will not keep the answers', async () => {
+		const real = Object.getOwnPropertyDescriptor(window, 'localStorage') as PropertyDescriptor
+		Object.defineProperty(window, 'localStorage', {
+			configurable: true,
+			value: { getItem: () => null, removeItem: () => undefined, setItem: () => { throw new Error('blocked') } },
+		})
+		const wrapper = open()
+		await wrapper.find('#af-f_name').setValue('Ada')
+		vi.advanceTimersByTime(500)
+		await wrapper.vm.$nextTick()
+		expect(wrapper.find('.af-saveline').text()).toContain('could not be saved')
+		expect(wrapper.find('.af-saveline--failed').exists()).toBe(true)
+		wrapper.unmount()
+		Object.defineProperty(window, 'localStorage', real)
+	})
+
+	it('shows no such line unless the form asks for it, or in the preview', () => {
+		expect(open({ settings: {} }).find('.af-saveline').exists()).toBe(false)
+		expect(open({ preview: true }).find('.af-saveline').exists()).toBe(false)
+	})
+
 	it('brings them back, before the address and the defaults, on the page they were on', async () => {
 		keep({ f_name: 'Ada', f_plan: 'pro', f_about: 'Hello' }, 1)
 		const wrapper = open({ query: '?f_name=Grace' })

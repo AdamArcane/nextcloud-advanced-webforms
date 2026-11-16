@@ -137,7 +137,7 @@ function str(value: string | number): string | undefined {
 				{{ t('webforms', 'Let people continue later') }}
 			</NcCheckboxRadioSwitch>
 			<p class="af-form-props__hint">
-				{{ t('webforms', 'Answers are kept in the browser as they are typed, for up to 30 days, and come back when the form is opened again on the same device. Nothing reaches you until the form is sent. Uploaded files are not kept. Leave this off for forms that are filled in on shared computers.') }}
+				{{ t('webforms', 'Answers are kept in the browser as they are typed, for up to 30 days, and come back when the form is opened again on the same device. A line under the buttons tells people so. Nothing reaches you until the form is sent. Uploaded files are not kept. Leave this off for forms that are filled in on shared computers.') }}
 			</p>
 			<NcCheckboxRadioSwitch type="switch"
 				:model-value="definition.settings.reviewStep === true"

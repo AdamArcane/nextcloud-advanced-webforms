@@ -142,11 +142,14 @@ export function readProgress(token: string): string | null {
 	}
 }
 
-export function writeProgress(token: string, record: string): void {
+/** Whether the browser took the record. */
+export function writeProgress(token: string, record: string): boolean {
 	try {
 		window.localStorage.setItem(key(token), record)
+		return true
 	} catch {
 		// Not kept this time.
+		return false
 	}
 }
 
