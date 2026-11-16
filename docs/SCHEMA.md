@@ -1361,3 +1361,133 @@ matching response:
   writes, and one that finds it locked is retried.
 - Like Tables, the file is a copy: deleting a response or the form does not remove its line, and
   retention (section 16) does not touch the file.
+
+## 20. Response workflow (PROPOSAL)
+
+Not built yet. This section is the design to agree on before the code. Once it is built the heading
+becomes a decision and the open points at the end are removed.
+
+What an owner does with a response after it arrives: mark how far it has got, write notes about it, and
+open it on a page of its own. None of this is part of the form definition. It belongs to the response,
+takes effect at once, and is never shown or sent to the respondent.
+
+### 20.1 Status
+
+Every response has one status.
+
+| Status | Stored as | Meaning |
+| --- | --- | --- |
+| `new` | 0 | nobody has dealt with it yet |
+| `reviewed` | 1 | seen, and still to be done or kept |
+| `done` | 2 | finished |
+| `spam` | 3 | unwanted |
+
+- A response is stored as `new`. The list is fixed: owners cannot add statuses of their own.
+- The status is a column on `advforms_entries` (`status`, small integer, not null, default 0) with an
+  index on `form_id, status`, so filtering and counting by status are answered by the database and never
+  need the scan of section 17.
+- **Responses that already exist** become `reviewed` when the migration runs. They arrived before
+  anyone could mark them, and counting them all as new would light up every form at once.
+- **Opening** a `new` response on its own page (20.3) makes it `reviewed`. Seeing it in the table or a
+  card does not. "Mark as new" puts it back.
+- **Spam** is kept, not deleted, so a mistake can be undone. A spam response is left out of the list
+  unless the filter asks for it, out of the summary (section 17.2) and out of a download unless the
+  filter asks for it. Marking it does not take back what the actions already did: an email that was
+  sent stays sent and a Tables row stays. Retention (section 16) deletes spam like any other response.
+- `PUT /api/v1/forms/{id}/entries/{entryId}/status` with `{ "status": "done" }` answers the response.
+  An unknown status is `422 status_invalid`.
+- `POST /api/v1/forms/{id}/entries/bulk-status` takes `{ "status": "...", "ids": [...] }` (at most 500)
+  or `{ "status": "...", "filter": {...}, "expected": N }`, with the same rules as the bulk delete of
+  section 17.1: `409 count_changed` when the filter no longer matches the number the person confirmed,
+  and `422 too_many_matches` above 5 000. It answers how many changed.
+
+**In the list.** `GET /api/v1/forms/{id}/entries` gains:
+
+| Parameter | Meaning |
+| --- | --- |
+| `status` | comma separated statuses. Without it: every status except `spam` |
+
+Each response in the answer has `status` and `noteCount`. The answer also has `counts`, how many
+responses the form has in each status, not narrowed by the filter, for the tabs above the table. The
+same `status` parameter is taken by the summary, the download and the bulk delete filter.
+
+**In the forms list.** `GET /api/v1/forms` gives each form `newCount`, and the list shows it beside the
+form, so an owner sees where something is waiting without opening each form.
+
+**In a download.** The CSV and Excel files get a fourth fixed column, `Status`, after `Respondent`. The
+Files action (section 19) and the Tables action (section 15) do not: they run when a response arrives,
+when it is always `new`, and they are copies that are not followed afterwards.
+
+### 20.2 Notes
+
+Notes are the owner's own remarks on a response: what was agreed on the phone, why it was marked done.
+
+- A response can have several notes, shown oldest first with who wrote each and when. A note is plain
+  text, 1 to 4 000 characters, and line breaks are kept. No markdown and no mentions.
+- They live in their own table, `advforms_entry_notes`: `id`, `form_id`, `entry_id`, `user_id` (the
+  author), `body`, `created_at`, `updated_at`, with an index on `entry_id`. A table and not a column,
+  so that several people can write on one response once results can be shared.
+- A response takes at most 100 notes (`422 too_many_notes`).
+- **Private.** Notes are never in an email, a webhook body, an event payload, a Tables row, the Files
+  action or a download, and no public route can read them. Free text search (section 17) does not look
+  in them in this step.
+- Deleting a response deletes its notes, like its deliveries. Deleting a form deletes them all. When an
+  account is deleted its forms go, and their notes with them.
+- Routes, all for the form's owner:
+  - `GET /api/v1/forms/{id}/entries/{entryId}/notes`
+  - `POST /api/v1/forms/{id}/entries/{entryId}/notes` with `{ "body": "..." }`, answers `201` and the note
+  - `PUT /api/v1/forms/{id}/entries/{entryId}/notes/{noteId}` with `{ "body": "..." }`
+  - `DELETE /api/v1/forms/{id}/entries/{entryId}/notes/{noteId}`
+
+  A note has `id`, `userId`, `displayName`, `body`, `createdAt` and `updatedAt`. Writing is limited to
+  60 per minute per user.
+
+### 20.3 A page for one response
+
+`#/f/<id>/responses/<entryId>` in the owner's app shows one response by itself. It is an address, so it
+can be bookmarked, reached with the back button and pasted to oneself. It only opens for someone who
+may see the form's responses, which today is the owner.
+
+- `GET /api/v1/forms/{id}/entries/{entryId}` answers the response (as in the list, with `status`), the
+  definition of its own version, its notes, and `previousId` and `nextId`, the neighbours by when they
+  were submitted, so the page can step through responses without going back to the table.
+- The page shows every question of that version in layout order with its answer, read like the emails
+  do (option labels, yes or no, file names as download links). A question the response did not answer
+  is shown as unanswered instead of left out, so the page reads like the form.
+- Beside the answers: the status with a control to change it, the notes with a box to add one, when it
+  was submitted and by whom, and the deliveries of this response from the delivery log (section 9.2).
+- **Print.** The page has a print style: the answers, the form's title, the response id and the date.
+  Navigation, the status control, notes and deliveries are not printed. This is the browser's own
+  print, which can save a PDF. The app generates no PDF (a non-goal, section 1).
+- The table and the cards link each response to its page. A response of another form, or one that was
+  deleted, is `404`.
+
+### 20.4 Events
+
+One more event, in the pattern of section 14:
+
+| Class | `event` | Fired when |
+| --- | --- | --- |
+| `EntryStatusChangedEvent` | `entry.status_changed` | a response's status changes |
+
+The payload has the common keys plus `versionId`, `entryId`, `status`, `previousStatus` and
+`changedBy`. No answers and no notes. Setting the status it already has fires nothing. A bulk change
+fires one event for each response that changed. It is registered with Flow as "Response status
+changed" (section 14.1). Notes fire no events.
+
+### 20.5 Not in this step
+
+- **Assignment.** A form has one owner and nobody else can open its responses, so there is no one to
+  assign a response to. It comes with sharing results (ROADMAP.md, Responses view), and the notes table
+  already records an author for that day.
+- Statuses of the owner's own making, and colours for them.
+- Notes in search, mentions, and a notification when a note is added.
+- Following a status into Tables or the CSV file.
+
+### 20.6 Open points
+
+1. Should a `spam` response still count towards the response limit (section 3.1)? Proposed: yes for
+   now, since the limit is checked on every submission with one count, and an owner who marks spam can
+   raise the limit. Leaving spam out is the better behaviour and costs a second condition in that count.
+2. Should existing responses start as `reviewed` (proposed above) or as `new`?
+3. Should opening a response mark it `reviewed` by itself (proposed above), or only a click?
