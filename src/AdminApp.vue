@@ -18,6 +18,7 @@ import { computed, onMounted, ref } from 'vue'
 import { fetchCaptchaSettings, saveCaptchaSettings } from './api/admin.ts'
 import MailAdmin from './components/admin/MailAdmin.vue'
 import PolicyAdmin from './components/admin/PolicyAdmin.vue'
+import StatusAdmin from './components/admin/StatusAdmin.vue'
 
 const loaded = ref(false)
 const saving = ref(false)
@@ -123,6 +124,8 @@ async function save() {
 	</NcSettingsSection>
 
 	<PolicyAdmin />
+
+	<StatusAdmin />
 
 	<MailAdmin />
 </template>

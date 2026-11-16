@@ -35,7 +35,7 @@ describe('statuses', () => {
 
 	it('makes an id from a name', () => {
 		expect(statusIdFromLabel('Called back', [])).toBe('called_back')
-		expect(statusIdFromLabel('  Zurückgerufen! ', [])).toBe('zuru_ckgerufen')
+		expect(statusIdFromLabel('  Zurückgerufen! ', [])).toBe('zuruckgerufen')
 		expect(statusIdFromLabel('2nd look', [])).toBe('status_2nd_look')
 		expect(statusIdFromLabel('OK', [])).toBe('status')
 		expect(statusIdFromLabel('日本', [])).toBe('status')

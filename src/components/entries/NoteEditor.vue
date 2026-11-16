@@ -33,10 +33,12 @@ const changed = computed(() => text.value.trim() !== (props.entry.note ?? ''))
 const tooLong = computed(() => text.value.trim().length > MAX)
 
 // Another response is shown in the same place (stepping through them), or the note changed elsewhere.
-watch(() => [props.entry.id, props.entry.note], () => {
+watch(() => [props.entry.id, props.entry.note] as const, ([id], [previousId]) => {
 	text.value = props.entry.note ?? ''
-	failed.value = false
-	justSaved.value = false
+	if (id !== previousId) {
+		failed.value = false
+		justSaved.value = false
+	}
 })
 
 async function save(): Promise<void> {

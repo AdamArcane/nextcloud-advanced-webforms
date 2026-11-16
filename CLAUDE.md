@@ -88,6 +88,12 @@ value control for every input field, and the link filling fields by field id unl
 is false. Prefill is read in the browser only (`src/prefill.ts`); the server validates submitted values
 as usual. Tried on the dev instance.
 
+New responses, statuses and a note (docs/SCHEMA.md section 20): `responses_seen_at` on the form marks
+what is new (not a status), responses carry `status` (an id from the administrator's list in app
+config, `StatusSettings`) and `note`, and `#/f/<id>/responses/<entryId>` is a page for one response,
+shown inside `EntriesView` so the list keeps its state. No assignment, by decision. Not yet tried on
+the dev instance: the migration, the routes and the print view.
+
 Sharing (docs/SCHEMA.md section 18): custom address, QR code, and embedding in a frame through the
 `embed` routes, which skip the request token and are always anonymous. Loading and submitting were
 tried in a real frame on another site; uploads and the redirect action in a frame were not.

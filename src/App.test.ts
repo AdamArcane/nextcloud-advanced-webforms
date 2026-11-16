@@ -59,3 +59,38 @@ describe('where a form in the list opens', () => {
 		expect(window.location.hash).toBe('#/f/1/responses')
 	})
 })
+
+describe('new responses in the forms list', () => {
+	it('shows how many arrived since the last look, only on forms that have some', async () => {
+		vi.mocked(fetchUserPreferences).mockResolvedValue({ openPublishedOnResponses: true })
+		vi.mocked(listForms).mockResolvedValue([
+			{ ...form(1, FORM_STATUS_PUBLISHED, false), newCount: 3 },
+			{ ...form(2, FORM_STATUS_PUBLISHED, false), newCount: 0 },
+			form(3, FORM_STATUS_PUBLISHED, false),
+		])
+		const wrapper = mount(App, { global: { stubs: { BuilderView: true, EntriesView: true, teleport: true } } })
+		await flushPromises()
+		const bubbles = wrapper.findAll('[aria-label$="new responses"]')
+		expect(bubbles).toHaveLength(1)
+		expect(bubbles[0].text()).toBe('3')
+		wrapper.unmount()
+	})
+
+	it('reads one response from the address, and passes it to the responses view', async () => {
+		vi.mocked(fetchUserPreferences).mockResolvedValue({ openPublishedOnResponses: true })
+		vi.mocked(listForms).mockResolvedValue([{ ...form(1, FORM_STATUS_PUBLISHED, false), newCount: 2 }])
+		window.location.hash = '#/f/1/responses/42'
+		const wrapper = mount(App, { global: { stubs: { BuilderView: true, EntriesView: true, teleport: true } } })
+		await flushPromises()
+		const view = wrapper.findComponent({ name: 'EntriesView' })
+		expect(view.props('entryId')).toBe(42)
+		expect(view.props('formId')).toBe(1)
+
+		// Looking at the list clears the count beside the form.
+		view.vm.$emit('seen')
+		await flushPromises()
+		expect(wrapper.findAll('[aria-label$="new responses"]')).toHaveLength(0)
+		window.location.hash = ''
+		wrapper.unmount()
+	})
+})

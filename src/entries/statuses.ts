@@ -40,7 +40,7 @@ const ID_PATTERN = /^[a-z][a-z0-9_]{2,31}$/
  * changed afterwards, so renaming a status keeps it on the responses that have it.
  */
 export function statusIdFromLabel(label: string, taken: readonly string[]): string {
-	let base = label.normalize('NFKD').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+	let base = label.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
 	if (!/^[a-z]/.test(base)) {
 		base = 'status_' + base
 	}
