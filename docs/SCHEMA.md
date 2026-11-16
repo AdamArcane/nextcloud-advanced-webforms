@@ -1362,132 +1362,126 @@ matching response:
 - Like Tables, the file is a copy: deleting a response or the form does not remove its line, and
   retention (section 16) does not touch the file.
 
-## 20. Response workflow (PROPOSAL)
+## 20. New responses, statuses and a note (PROPOSAL)
 
 Not built yet. This section is the design to agree on before the code. Once it is built the heading
 becomes a decision and the open points at the end are removed.
 
-What an owner does with a response after it arrives: mark how far it has got, write notes about it, and
-open it on a page of its own. None of this is part of the form definition. It belongs to the response,
-takes effect at once, and is never shown or sent to the respondent.
+Three small things an owner can do with responses: see which ones arrived since the last look, give a
+response a status, and keep a note on it. It is deliberately not a workflow. Nothing is assigned to
+anyone and nothing has to be moved through steps. None of it is part of the form definition, it takes
+effect at once, and it is never shown or sent to the respondent.
 
-### 20.1 Status
+### 20.1 New responses
 
-Every response has one status.
+A response is **new** when it arrived after the owner last opened the form's list of responses. It is
+not a status and nobody sets it: it follows from one moment kept per form.
 
-| Status | Stored as | Meaning |
-| --- | --- | --- |
-| `new` | 0 | nobody has dealt with it yet |
-| `reviewed` | 1 | seen, and still to be done or kept |
-| `done` | 2 | finished |
-| `spam` | 3 | unwanted |
+- `advforms_forms` gets `responses_seen_at` (Unix seconds, nullable). A response is new when its
+  `submitted_at` is later. Empty means the list was never opened, so every response is new.
+- Opening the Responses view calls `POST /api/v1/forms/{id}/entries/seen`. It sets the moment to now and
+  answers `{ "previousSeenAt": ... }`, the moment before this visit. The view marks the responses that
+  are later than that as new, and keeps marking them until the owner leaves the view, so they do not
+  lose the mark while being read. Paging, filtering and sorting do not move the moment.
+- The next visit starts clean: only what arrived in between is new.
+- `GET /api/v1/forms` gives each form `newCount`, how many responses are later than its moment, and the
+  forms list shows it beside the form. It is one count on the existing `form_id, submitted_at` index.
+- When the migration runs, forms that already exist get the moment set to that time, so nothing old
+  shows up as new after the update.
+- Opening the builder, a download, the summary or a single response does not count as looking at the
+  list.
 
-- A response is stored as `new`. The list is fixed: owners cannot add statuses of their own.
-- The status is a column on `advforms_entries` (`status`, small integer, not null, default 0) with an
-  index on `form_id, status`, so filtering and counting by status are answered by the database and never
-  need the scan of section 17.
-- **Responses that already exist** become `reviewed` when the migration runs. They arrived before
-  anyone could mark them, and counting them all as new would light up every form at once.
-- **Opening** a `new` response on its own page (20.3) makes it `reviewed`. Seeing it in the table or a
-  card does not. "Mark as new" puts it back.
-- **Spam** is kept, not deleted, so a mistake can be undone. A spam response is left out of the list
-  unless the filter asks for it, out of the summary (section 17.2) and out of a download unless the
-  filter asks for it. Marking it does not take back what the actions already did: an email that was
-  sent stays sent and a Tables row stays. Retention (section 16) deletes spam like any other response.
-- `PUT /api/v1/forms/{id}/entries/{entryId}/status` with `{ "status": "done" }` answers the response.
-  An unknown status is `422 status_invalid`.
-- `POST /api/v1/forms/{id}/entries/bulk-status` takes `{ "status": "...", "ids": [...] }` (at most 500)
-  or `{ "status": "...", "filter": {...}, "expected": N }`, with the same rules as the bulk delete of
-  section 17.1: `409 count_changed` when the filter no longer matches the number the person confirmed,
-  and `422 too_many_matches` above 5 000. It answers how many changed.
+### 20.2 Statuses
 
-**In the list.** `GET /api/v1/forms/{id}/entries` gains:
+A response has one status or none. A status is a label for the owner's own sorting.
 
-| Parameter | Meaning |
-| --- | --- |
-| `status` | comma separated statuses. Without it: every status except `spam` |
+**The list is the administrator's.** Under Administration settings, "Forms and responses", the
+administrator keeps one list of statuses for the whole server, and every form uses it. It is app config
+like the rest of section 16.
 
-Each response in the answer has `status` and `noteCount`. The answer also has `counts`, how many
-responses the form has in each status, not narrowed by the filter, for the tabs above the table. The
-same `status` parameter is taken by the summary, the download and the bulk delete filter.
+- A status has an `id` (like a field ID: `^[a-z][a-z0-9_]{2,31}$`, made from the name when it is
+  created and never changed), a `label` (1 to 40 characters) and a `color` (one of eight fixed colours).
+  At most 20 statuses, shown in the order the administrator puts them in.
+- A fresh server starts with `in_progress` ("In progress"), `done` ("Done") and `spam` ("Spam"). They
+  are ordinary statuses: the administrator can rename, reorder or delete them. Their labels are
+  translated only until the list is first changed.
+- Renaming a status changes it everywhere, because responses store the `id`.
+- Deleting a status clears it from every response that has it, on all forms. The settings page says how
+  many responses that is before it happens.
+- A damaged list reads as empty, and responses then show no status until it is repaired. Stored ids
+  are not touched.
 
-**In the forms list.** `GET /api/v1/forms` gives each form `newCount`, and the list shows it beside the
-form, so an owner sees where something is waiting without opening each form.
+**On a response.** `advforms_entries` gets `status` (string, 32, nullable) with an index on
+`form_id, status`, so filtering by status is answered by the database and never needs the scan of
+section 17. A response arrives with none.
 
-**In a download.** The CSV and Excel files get a fourth fixed column, `Status`, after `Respondent`. The
-Files action (section 19) and the Tables action (section 15) do not: they run when a response arrives,
-when it is always `new`, and they are copies that are not followed afterwards.
+- `PUT /api/v1/forms/{id}/entries/{entryId}/status` with `{ "status": "done" }`, or `null` to clear it.
+  An id that is not in the list is `422 status_invalid`.
+- `POST /api/v1/forms/{id}/entries/bulk-status` takes `{ "status": ..., "ids": [...] }` (at most 500) or
+  `{ "status": ..., "filter": {...}, "expected": N }`, with the same rules as the bulk delete of section
+  17.1: `409 count_changed` when the filter no longer matches the number the person confirmed, and
+  `422 too_many_matches` above 5 000. It answers how many changed.
+- `GET /api/v1/forms/{id}/entries` takes `status`, a comma separated list of ids, where `none` means
+  responses without one. Each response in the answer has `status` and `note`. The summary, the
+  download and the bulk delete filter take the same parameter.
+- The owner's app gets the list of statuses with its first page load.
+- The table shows the status as a coloured label in a column of its own, changed from a menu on the
+  row, and ticked rows can be given a status together.
+- A status changes nothing else. A response marked "Spam" is still in the list, the summary and the
+  count for the response limit, and what its actions already did stays done. Filter it out to hide it.
 
-### 20.2 Notes
+**In a download.** The CSV and Excel files get a fourth fixed column, `Status`, after `Respondent`,
+holding the label. The Files action (section 19) and the Tables action (section 15) do not: they run
+when a response arrives, when it has no status, and they are copies that are not followed afterwards.
 
-Notes are the owner's own remarks on a response: what was agreed on the phone, why it was marked done.
+**Event.** One more event in the pattern of section 14: `EntryStatusChangedEvent`,
+`entry.status_changed`, with the common keys plus `versionId`, `entryId`, `status`, `previousStatus`
+(each an id or `null`) and `changedBy`. No answers. Setting the status a response already has fires
+nothing, a bulk change fires one event per response that changed, and a status deleted by the
+administrator fires none. It is registered with Flow as "Response status changed" (section 14.1).
 
-- A response can have several notes, shown oldest first with who wrote each and when. A note is plain
-  text, 1 to 4 000 characters, and line breaks are kept. No markdown and no mentions.
-- They live in their own table, `advforms_entry_notes`: `id`, `form_id`, `entry_id`, `user_id` (the
-  author), `body`, `created_at`, `updated_at`, with an index on `entry_id`. A table and not a column,
-  so that several people can write on one response once results can be shared.
-- A response takes at most 100 notes (`422 too_many_notes`).
-- **Private.** Notes are never in an email, a webhook body, an event payload, a Tables row, the Files
-  action or a download, and no public route can read them. Free text search (section 17) does not look
-  in them in this step.
-- Deleting a response deletes its notes, like its deliveries. Deleting a form deletes them all. When an
-  account is deleted its forms go, and their notes with them.
-- Routes, all for the form's owner:
-  - `GET /api/v1/forms/{id}/entries/{entryId}/notes`
-  - `POST /api/v1/forms/{id}/entries/{entryId}/notes` with `{ "body": "..." }`, answers `201` and the note
-  - `PUT /api/v1/forms/{id}/entries/{entryId}/notes/{noteId}` with `{ "body": "..." }`
-  - `DELETE /api/v1/forms/{id}/entries/{entryId}/notes/{noteId}`
+### 20.3 A note
 
-  A note has `id`, `userId`, `displayName`, `body`, `createdAt` and `updatedAt`. Writing is limited to
-  60 per minute per user.
+A response can carry one note: plain text, at most 4 000 characters, line breaks kept. It is a column
+on `advforms_entries` (`note`, text, nullable).
 
-### 20.3 A page for one response
+- `PUT /api/v1/forms/{id}/entries/{entryId}/note` with `{ "note": "..." }`. Empty text removes it.
+- The table shows a mark on a response that has a note, and the note is read and edited on the
+  response's card and page.
+- **Private.** The note is never in an email, a webhook body, an event payload, a Tables row, the Files
+  action or a download, and no public route can read it. Free text search (section 17) does not look in
+  it.
+- It goes when the response is deleted.
+
+### 20.4 A page for one response
 
 `#/f/<id>/responses/<entryId>` in the owner's app shows one response by itself. It is an address, so it
-can be bookmarked, reached with the back button and pasted to oneself. It only opens for someone who
-may see the form's responses, which today is the owner.
+can be bookmarked and reached with the back button. It only opens for the form's owner.
 
-- `GET /api/v1/forms/{id}/entries/{entryId}` answers the response (as in the list, with `status`), the
-  definition of its own version, its notes, and `previousId` and `nextId`, the neighbours by when they
-  were submitted, so the page can step through responses without going back to the table.
+- `GET /api/v1/forms/{id}/entries/{entryId}` answers the response (as in the list), the definition of
+  its own version, and `previousId` and `nextId`, the neighbours by when they were submitted, so the
+  page can step through responses without going back to the table.
 - The page shows every question of that version in layout order with its answer, read like the emails
   do (option labels, yes or no, file names as download links). A question the response did not answer
   is shown as unanswered instead of left out, so the page reads like the form.
-- Beside the answers: the status with a control to change it, the notes with a box to add one, when it
-  was submitted and by whom, and the deliveries of this response from the delivery log (section 9.2).
+- Beside the answers: the status, the note, when it was submitted and by whom, and the deliveries of
+  this response from the delivery log (section 9.2).
 - **Print.** The page has a print style: the answers, the form's title, the response id and the date.
-  Navigation, the status control, notes and deliveries are not printed. This is the browser's own
-  print, which can save a PDF. The app generates no PDF (a non-goal, section 1).
+  Navigation, the status, the note and deliveries are not printed. This is the browser's own print,
+  which can save a PDF. The app generates no PDF (a non-goal, section 1).
 - The table and the cards link each response to its page. A response of another form, or one that was
   deleted, is `404`.
 
-### 20.4 Events
+### 20.5 Left out on purpose
 
-One more event, in the pattern of section 14:
-
-| Class | `event` | Fired when |
-| --- | --- | --- |
-| `EntryStatusChangedEvent` | `entry.status_changed` | a response's status changes |
-
-The payload has the common keys plus `versionId`, `entryId`, `status`, `previousStatus` and
-`changedBy`. No answers and no notes. Setting the status it already has fires nothing. A bulk change
-fires one event for each response that changed. It is registered with Flow as "Response status
-changed" (section 14.1). Notes fire no events.
-
-### 20.5 Not in this step
-
-- **Assignment.** A form has one owner and nobody else can open its responses, so there is no one to
-  assign a response to. It comes with sharing results (ROADMAP.md, Responses view), and the notes table
-  already records an author for that day.
-- Statuses of the owner's own making, and colours for them.
-- Notes in search, mentions, and a notification when a note is added.
-- Following a status into Tables or the CSV file.
+- **Assignment.** Forms are not a task tool. Handing a response to someone is what Tasks and Deck are
+  for, and a flow on "Response submitted" or "Response status changed" can create one there.
+- Statuses per form or per user. One list for the server keeps it simple.
+- Hiding responses of a status by default, or leaving them out of the response limit.
+- Several notes, authors, mentions and notifications.
 
 ### 20.6 Open points
 
-1. Should a `spam` response still count towards the response limit (section 3.1)? Proposed: yes for
-   now, since the limit is checked on every submission with one count, and an owner who marks spam can
-   raise the limit. Leaving spam out is the better behaviour and costs a second condition in that count.
-2. Should existing responses start as `reviewed` (proposed above) or as `new`?
-3. Should opening a response mark it `reviewed` by itself (proposed above), or only a click?
+1. Is one note per response wanted at all in this step, or only new and statuses?
+2. Should the administrator be able to stop form owners from using statuses, like the other switches
+   of section 16? Proposed: no switch, since an unused status costs nothing.
