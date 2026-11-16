@@ -17,7 +17,7 @@ import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { computed } from 'vue'
 import { operatorLabel } from '../../builder/labels.ts'
 import { changeLeafField, changeLeafOp, valueKind } from '../../builder/rules.ts'
-import { operatorsFor } from '../../rules/fieldTypes.ts'
+import { isBooleanType, isNumericType, isTemporalType, operatorsFor, temporalInputType } from '../../rules/fieldTypes.ts'
 import SegmentedControl from './SegmentedControl.vue'
 
 const props = defineProps<{
@@ -50,11 +50,12 @@ const choiceOptions = computed(() => (field.value?.options ?? []).map((option) =
 
 const listText = computed(() => (Array.isArray(props.leaf.value) ? props.leaf.value.join(', ') : ''))
 const scalarText = computed(() => (props.leaf.value === undefined || props.leaf.value === null ? '' : String(props.leaf.value)))
-const isTemporal = computed(() => type.value === 'date' || type.value === 'time')
+const isTemporal = computed(() => isTemporalType(type.value))
+const isNumeric = computed(() => isNumericType(type.value))
 
 function setScalar(raw: string | number): void {
 	const text = String(raw)
-	if (type.value === 'number') {
+	if (isNumeric.value) {
 		const parsed = Number(text)
 		emit('update', { ...props.leaf, value: text.trim() === '' || Number.isNaN(parsed) ? '' : parsed })
 		return
@@ -64,7 +65,7 @@ function setScalar(raw: string | number): void {
 
 function setList(raw: string | number): void {
 	const parts = String(raw).split(',').map((part) => part.trim()).filter((part) => part !== '')
-	const value = type.value === 'number' ? parts.map(Number).filter((n) => !Number.isNaN(n)) : parts
+	const value = isNumeric.value ? parts.map(Number).filter((n) => !Number.isNaN(n)) : parts
 	emit('update', { ...props.leaf, value })
 }
 </script>
@@ -90,7 +91,7 @@ function setList(raw: string | number): void {
 				@update:model-value="(op: string) => emit('update', changeLeafOp(definition, leaf, op))" />
 
 			<template v-if="kind !== 'none'">
-				<SegmentedControl v-if="type === 'checkbox'"
+				<SegmentedControl v-if="isBooleanType(type)"
 					:model-value="leaf.value === false ? 'no' : 'yes'"
 					:group-label="t('webforms', 'Value')"
 					:options="[
@@ -125,14 +126,14 @@ function setList(raw: string | number): void {
 				<!-- NcTextField has no date or time type, so these use a native input styled to match. -->
 				<label v-else-if="isTemporal" class="af-cond__native">
 					<span>{{ t('webforms', 'Value') }}</span>
-					<input :type="type"
+					<input :type="temporalInputType(type)"
 						:value="scalarText"
 						@input="setScalar(($event.target as HTMLInputElement).value)">
 				</label>
 
 				<NcTextField v-else
 					:model-value="scalarText"
-					:type="type === 'number' ? 'number' : 'text'"
+					:type="isNumeric ? 'number' : 'text'"
 					:label="t('webforms', 'Value')"
 					@update:model-value="setScalar" />
 			</template>

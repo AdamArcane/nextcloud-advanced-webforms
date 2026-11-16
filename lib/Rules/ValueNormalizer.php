@@ -35,6 +35,8 @@ final class ValueNormalizer {
 			case FieldType::PHONE:
 				return self::phone($raw);
 			case FieldType::NUMBER:
+			case FieldType::RATING:
+			case FieldType::SCALE:
 				return self::number($raw);
 			case FieldType::SELECT:
 			case FieldType::RADIO:
@@ -43,7 +45,10 @@ final class ValueNormalizer {
 			case FieldType::FILE:
 				return self::list($raw);
 			case FieldType::CHECKBOX:
+			case FieldType::CONSENT:
 				return is_bool($raw) ? $raw : null;
+			case FieldType::DATETIME:
+				return (is_string($raw) && preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/D', $raw) === 1) ? $raw : null;
 			case FieldType::DATE:
 				return (is_string($raw) && preg_match('/^\d{4}-\d{2}-\d{2}$/D', $raw) === 1) ? $raw : null;
 			case FieldType::TIME:

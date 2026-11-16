@@ -98,7 +98,8 @@ Gap review written against 0.3.x (2026-11-15), from README.md, docs/SCHEMA.md an
 - Theming and custom CSS. `design` only offers width, card, background and accent color.
 - Nextcloud Tables as an optional response storage backend. Today Tables is only an after-submit action,
   by decision (see the decision above).
-- Rating, matrix and signature fields (SCHEMA.md, deferred field types). Hidden fields are done.
+- Matrix and signature fields (SCHEMA.md, deferred field types). Hidden, rating, scale, consent and
+  date and time fields are done.
 - App store listing, signing, screenshots and real translations.
 
 ### Gaps not tracked anywhere
@@ -116,9 +117,10 @@ Gap review written against 0.3.x (2026-11-15), from README.md, docs/SCHEMA.md an
   - No per-response PDF.
   - No review states or assignment.
 - **Save and resume.** Drafts autosave for the owner, but respondents cannot resume a long form.
-- **Respondent experience.** Done: a progress indicator on forms with several pages (SCHEMA.md section 5.1). Still open: per-form language and field-level images.
+- **Respondent experience.** Done: a progress indicator on forms with several pages (SCHEMA.md section 5.1). Still open: per-form language, and a picture inside a question (image blocks, SCHEMA.md section 4.9, are done).
 - **Sharing.** Public link, custom address, QR code and embedding (see Sharing above). No collaborator or co-editor sharing and no per-user form permissions.
-- **Question types.** No scale or slider, color, consent checkbox, or date-range field.
+- **Question types.** Done: rating, scale, consent and date and time (SCHEMA.md section 4.8). Still open:
+  slider, color, date range, and name and address fields. Image blocks are done (SCHEMA.md section 4.9).
 - **Builder.** Touch dragging is not supported.
 - **Rules.** Show, hide and require only. No conditional values or calculated fields.
 - **Actions.** Submit message and redirect are resolved synchronously, so they cannot depend on a background action.

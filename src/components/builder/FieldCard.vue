@@ -10,7 +10,9 @@ import { t } from '@nextcloud/l10n'
 import { computed } from 'vue'
 import { describeError } from '../../builder/errors.ts'
 import { fieldTypeName } from '../../builder/fieldTypeNames.ts'
-import { fieldTypeIcon } from '../../icons.ts'
+import { fieldTypeIcon, icons } from '../../icons.ts'
+import { steps } from '../../rules/fieldTypes.ts'
+import { ownerImageUrl } from '../../images.ts'
 import Icon from '../common/Icon.vue'
 import MarkdownText from '../render/MarkdownText.ts'
 import '../render/typography.css'
@@ -30,7 +32,8 @@ const emit = defineEmits<{
 	select: []
 }>()
 
-const isDisplay = computed(() => ['heading', 'paragraph', 'divider'].includes(props.field.type))
+const isDisplay = computed(() => ['heading', 'paragraph', 'divider', 'image'].includes(props.field.type))
+const imageUrl = computed(() => (props.field.type === 'image' ? ownerImageUrl(props.field.src ?? '') : null))
 const required = computed(() => props.field.required === true)
 const hasOptions = computed(() => ['select', 'radio', 'checkboxes'].includes(props.field.type))
 const hiddenLabel = computed(() => props.labelPosition === 'hidden')
@@ -97,6 +100,17 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 			<component :is="headingTag" v-else-if="field.type === 'heading'" class="af-heading" :style="alignStyle">
 				{{ field.text }}
 			</component>
+			<div v-else-if="field.type === 'image'" class="af-card__image" :style="alignStyle">
+				<img v-if="imageUrl"
+					:src="imageUrl"
+					:alt="field.alt ?? ''"
+					:style="{ maxWidth: (field.width ?? 100) + '%' }"
+					referrerpolicy="no-referrer">
+				<span v-else class="af-card__upload">
+					<Icon :path="fieldTypeIcon('image')" :size="18" />
+					{{ t('webforms', 'Choose a picture') }}
+				</span>
+			</div>
 			<MarkdownText v-else :source="field.text ?? ''" :style="alignStyle" />
 		</template>
 
@@ -106,6 +120,22 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 			</span>
 			<span class="af-card__control">
 				<span v-if="field.type === 'checkbox'" class="af-card__fake af-card__fake--box" aria-hidden="true" />
+				<span v-else-if="field.type === 'consent'" class="af-card__consent" aria-hidden="true">
+					<span class="af-card__fake af-card__fake--box" />
+					<MarkdownText :source="field.text ?? ''" />
+				</span>
+				<span v-else-if="field.type === 'rating'" class="af-card__stars" aria-hidden="true">
+					<Icon v-for="value in steps(field)" :key="value" :path="icons.star" :size="24" />
+				</span>
+				<span v-else-if="field.type === 'scale'" class="af-card__scale" aria-hidden="true">
+					<span class="af-card__steps">
+						<span v-for="value in steps(field)" :key="value" class="af-card__step">{{ value }}</span>
+					</span>
+					<span v-if="field.minLabel || field.maxLabel" class="af-card__ends">
+						<span>{{ field.minLabel }}</span>
+						<span>{{ field.maxLabel }}</span>
+					</span>
+				</span>
 				<span v-else-if="field.type === 'hidden'" class="af-card__upload af-card__upload--hidden">
 					<Icon :path="fieldTypeIcon('hidden')" :size="18" />
 					<span>
@@ -290,6 +320,58 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 	align-items: flex-start;
 	min-height: calc(var(--default-clickable-area) * 2);
 	padding-top: calc(var(--default-grid-baseline) * 2);
+}
+
+.af-card__image img {
+	max-width: 100%;
+	height: auto;
+	vertical-align: middle;
+}
+
+.af-card__consent {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+}
+
+.af-card__consent :deep(p) {
+	margin: 0;
+}
+
+.af-card__stars {
+	display: flex;
+	gap: 2px;
+	color: var(--color-border-maxcontrast, var(--color-border-dark));
+}
+
+.af-card__scale {
+	display: block;
+}
+
+.af-card__steps {
+	display: flex;
+	gap: 4px;
+}
+
+.af-card__step {
+	display: flex;
+	flex: 1 1 0;
+	align-items: center;
+	justify-content: center;
+	max-width: 56px;
+	min-height: 30px;
+	border: 2px solid var(--color-border-maxcontrast, var(--color-border-dark));
+	border-radius: var(--border-radius-element, 8px);
+	color: var(--color-text-maxcontrast);
+	font-weight: 600;
+}
+
+.af-card__ends {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 4px;
+	color: var(--color-text-maxcontrast);
+	font-size: 0.9em;
 }
 
 .af-card__fake--box {

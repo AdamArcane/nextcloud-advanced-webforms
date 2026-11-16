@@ -7,10 +7,11 @@ import type { ActionType } from '../types.ts'
 import type { RuleEffect } from '../rules/types.ts'
 
 import { t } from '@nextcloud/l10n'
+import { isTemporalType } from '../rules/fieldTypes.ts'
 
 /** Wording for an operator, adjusted for dates and times where "greater" reads oddly. */
 export function operatorLabel(op: string, type: string): string {
-	const temporal = type === 'date' || type === 'time'
+	const temporal = isTemporalType(type)
 	switch (op) {
 		case 'eq': return t('webforms', 'is')
 		case 'neq': return t('webforms', 'is not')

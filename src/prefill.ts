@@ -6,6 +6,7 @@
 // Filling fields from the address the form was opened with (docs/SCHEMA.md section 4.7).
 
 import type { FormField } from './types.ts'
+import { steps } from './rules/fieldTypes.ts'
 
 /** Limits from lib/Forms/FieldValueValidator.php, so a prefilled value is one the server takes. */
 const MAX_TEXT = 2000
@@ -48,6 +49,15 @@ export function prefillValue(fieldId: string, field: FormField, params: URLSearc
 			return option(field, raw)
 		case 'checkboxes':
 			return options(field, all)
+		case 'rating':
+		case 'scale':
+			return /^\d+$/.test(raw) && steps(field).includes(Number(raw)) ? String(Number(raw)) : undefined
+		case 'datetime': {
+			// A space reads better in a link than the T the value is stored with.
+			const stamp = raw.replace(' ', 'T')
+			return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(stamp) && inRange(field, stamp) ? stamp : undefined
+		}
+		case 'consent':
 		case 'checkbox': {
 			const word = raw.toLowerCase()
 			return CHECKED.has(word) ? true : UNCHECKED.has(word) ? false : undefined

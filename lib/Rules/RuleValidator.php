@@ -209,13 +209,17 @@ final class RuleValidator {
 			case FieldType::HIDDEN:
 				return ValueNormalizer::normalize($type, $value) !== null;
 			case FieldType::NUMBER:
+			case FieldType::RATING:
+			case FieldType::SCALE:
 				return is_int($value) || (is_float($value) && is_finite($value));
 			case FieldType::SELECT:
 			case FieldType::RADIO:
 			case FieldType::CHECKBOXES:
 				return is_string($value) && in_array($value, $this->optionValues($field), true);
 			case FieldType::CHECKBOX:
+			case FieldType::CONSENT:
 				return is_bool($value);
+			case FieldType::DATETIME:
 			case FieldType::DATE:
 			case FieldType::TIME:
 				return ValueNormalizer::normalize($type, $value) !== null;
