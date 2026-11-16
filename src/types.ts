@@ -115,6 +115,8 @@ export interface FormSettings {
 	hideTitle?: boolean
 	/** False stops the address from filling fields by their id (docs/SCHEMA.md 4.7). Default true. */
 	prefill?: boolean
+	/** Keep a respondent's unsent answers in their own browser (docs/SCHEMA.md 21). Default false. */
+	saveProgress?: boolean
 	/** Ask anonymous respondents to pass the server's spam check. Default true; false turns it off for this form. */
 	captcha?: boolean
 	closedMessage?: string

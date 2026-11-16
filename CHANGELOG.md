@@ -7,6 +7,11 @@
 
 ## Unreleased
 
+- Continue later. A form can keep a respondent's unsent answers in their own browser, so a long form
+  can be left and picked up again on the same device for up to 30 days. Switch it on per form under
+  Settings, "Let people continue later", and publish. Nothing is stored on the server, uploaded files
+  are not kept, and a "Start over" button clears the kept answers. See `docs/SCHEMA.md` section 21.
+
 - New responses. The forms list shows how many responses each form got since you last looked at its
   responses, and the Responses view marks those as new until you leave it. Nothing has to be clicked:
   the next visit only marks what arrived in between. See `docs/SCHEMA.md` section 20.1.

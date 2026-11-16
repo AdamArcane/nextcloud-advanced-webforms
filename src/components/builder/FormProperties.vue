@@ -131,6 +131,14 @@ function str(value: string | number): string | undefined {
 			<p class="af-form-props__hint">
 				{{ t('webforms', 'Add ?field_id=value to the form link to fill a field when it opens, for example to track where people came from. Each field shows its parameter.') }}
 			</p>
+			<NcCheckboxRadioSwitch type="switch"
+				:model-value="definition.settings.saveProgress === true"
+				@update:model-value="(value: boolean) => emit('settings', { saveProgress: value ? true : undefined })">
+				{{ t('webforms', 'Let people continue later') }}
+			</NcCheckboxRadioSwitch>
+			<p class="af-form-props__hint">
+				{{ t('webforms', 'Answers are kept in the browser as they are typed, for up to 30 days, and come back when the form is opened again on the same device. Nothing reaches you until the form is sent. Uploaded files are not kept. Leave this off for forms that are filled in on shared computers.') }}
+			</p>
 		</section>
 
 		<template v-if="section === 'design'">

@@ -88,6 +88,10 @@ value control for every input field, and the link filling fields by field id unl
 is false. Prefill is read in the browser only (`src/prefill.ts`); the server validates submitted values
 as usual. Tried on the dev instance.
 
+Continuing later (docs/SCHEMA.md section 21): `settings.saveProgress` keeps unsent answers in the
+respondent's browser only (`src/progress.ts`, local storage, 30 days). No server side at all, by
+decision: no link for another device, no uploads, no count. Not yet tried on the dev instance.
+
 New responses, statuses and a note (docs/SCHEMA.md section 20): `responses_seen_at` on the form marks
 what is new (not a status), responses carry `status` (an id from the administrator's list in app
 config, `StatusSettings`) and `note`, and `#/f/<id>/responses/<entryId>` is a page for one response,

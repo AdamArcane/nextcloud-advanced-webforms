@@ -9,7 +9,7 @@ import type { FormField, PublicForm } from '../../types.ts'
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
-import { computed, nextTick, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { ApiError, submitPublicForm } from '../../api/public.ts'
 import { renderedLabelPosition } from '../../layout/labelPosition.ts'
 import { progressColorStyle, progressLabel, progressStyle, submitAlign, submitButtonStyle } from '../../design.ts'
@@ -21,6 +21,7 @@ import { isBooleanType, isInputType } from '../../rules/fieldTypes.ts'
 import CaptchaField from './CaptchaField.vue'
 import FieldInput from './FieldInput.vue'
 import { prefillValue } from '../../prefill.ts'
+import { clearProgress, isKept, packProgress, readProgress, restoreProgress, writeProgress } from '../../progress.ts'
 import { messageFor } from './messages.ts'
 import { createUploadState } from './uploadState.ts'
 
@@ -63,10 +64,17 @@ function initialValue(id: string, field: FormField): unknown {
 	}
 }
 
+// Unsent answers kept in this browser (docs/SCHEMA.md section 21), when the form asks for it. They come
+// before the address and the defaults. Never in the builder preview.
+const keepsProgress = !props.preview && definition.value.settings?.saveProgress === true
+const restored = keepsProgress ? restoreProgress(readProgress(props.form.token), fields.value, Date.now()) : null
+/** Shown above the form while the answers on it came from an earlier visit. */
+const restoredNotice = ref(restored ? { savedAt: restored.savedAt, dropped: restored.dropped } : null)
+
 const values = reactive<Record<string, unknown>>({})
 for (const [id, field] of Object.entries(fields.value)) {
 	if (isInputType(field.type)) {
-		values[id] = initialValue(id, field)
+		values[id] = restored && Object.hasOwn(restored.values, id) ? restored.values[id] : initialValue(id, field)
 	}
 }
 
@@ -106,7 +114,7 @@ const shown = computed(() => new Set([...visible.value].filter((id) => fields.va
 const pages = computed(() => visiblePages(definition.value.pages, shown.value))
 const submitStyle = computed(() => submitButtonStyle(definition.value.settings?.design))
 const actionsAlign = computed(() => submitAlign(definition.value.settings?.design))
-const pageIndex = ref(0)
+const pageIndex = ref(restored?.page ?? 0)
 // Hiding fields can remove pages, so never point past the end.
 const currentIndex = computed(() => Math.min(pageIndex.value, Math.max(0, pages.value.length - 1)))
 const currentPage = computed(() => pages.value[currentIndex.value])
@@ -147,6 +155,69 @@ function imageSrc(fieldId: string): string | null {
 		return null
 	}
 	return props.preview ? ownerImageUrl(field.src) : publicImageUrl(field.src, props.form.token, fieldId, props.form.versionId)
+}
+
+// Keeping the answers as they are typed. A short wait gathers a burst of typing into one write, and
+// leaving the page writes at once.
+let keepTimer: ReturnType<typeof setTimeout> | null = null
+let keeping = keepsProgress
+
+function keepNow() {
+	if (keepTimer !== null) {
+		clearTimeout(keepTimer)
+		keepTimer = null
+	}
+	if (!keeping) {
+		return
+	}
+	const record = packProgress(fields.value, values, currentIndex.value, props.form.versionId, Date.now())
+	if (record !== null) {
+		writeProgress(props.form.token, record)
+	}
+}
+
+function forgetProgress() {
+	if (keepTimer !== null) {
+		clearTimeout(keepTimer)
+		keepTimer = null
+	}
+	clearProgress(props.form.token)
+}
+
+if (keepsProgress) {
+	watch([values, pageIndex], () => {
+		if (keepTimer === null) {
+			keepTimer = setTimeout(keepNow, 400)
+		}
+	})
+	window.addEventListener('pagehide', keepNow)
+	onBeforeUnmount(() => {
+		window.removeEventListener('pagehide', keepNow)
+		keepNow()
+	})
+}
+
+const restoredText = computed(() => {
+	if (!restoredNotice.value) {
+		return ''
+	}
+	const date = new Date(restoredNotice.value.savedAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+	return restoredNotice.value.dropped
+		? t('webforms', 'Your answers from {date} are back, except some that no longer fit because the form has changed. They are kept in this browser only.', { date })
+		: t('webforms', 'Your answers from {date} are back. They are kept in this browser only.', { date })
+})
+
+/** Throw the kept answers away and put the form back as it opens. Files already added stay. */
+function startOver() {
+	forgetProgress()
+	for (const [id, field] of Object.entries(fields.value)) {
+		if (isKept(field)) {
+			values[id] = initialValue(id, field)
+		}
+	}
+	clearErrors()
+	pageIndex.value = 0
+	restoredNotice.value = null
 }
 
 const submitLabel = computed(() => definition.value.settings?.submitLabel || t('webforms', 'Send'))
@@ -281,6 +352,9 @@ async function onSubmit() {
 			hp: honeypot.value,
 			captcha,
 		})
+		// Sent, so nothing is left to come back to.
+		keeping = false
+		forgetProgress()
 		done.value = { message: result.message ?? t('webforms', 'Thank you. Your response has been sent.') }
 		if (result.redirect?.startsWith('https://')) {
 			leaveTo(result.redirect)
@@ -337,6 +411,13 @@ async function showError(error: unknown) {
 	</NcNoteCard>
 
 	<form v-else class="af-form" novalidate @submit.prevent="onSubmit">
+		<NcNoteCard v-if="restoredNotice" type="info" role="status" class="af-restored">
+			<p>{{ restoredText }}</p>
+			<NcButton variant="secondary" @click="startOver">
+				{{ t('webforms', 'Start over') }}
+			</NcButton>
+		</NcNoteCard>
+
 		<div v-if="progress" class="af-progress" :style="progressColor">
 			<p v-if="progress.text"
 				ref="progressText"
@@ -442,6 +523,10 @@ async function showError(error: unknown) {
 	.af-cell {
 		grid-column: 1 / -1;
 	}
+}
+
+.af-restored p {
+	margin: 0 0 8px;
 }
 
 .af-actions {

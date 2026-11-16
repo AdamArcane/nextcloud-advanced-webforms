@@ -36,7 +36,7 @@ final class DefinitionValidator {
 	public const MAX_TABLES_COLUMNS = 100;
 	public const ACTION_TYPES = ['email', 'webhook', 'message', 'redirect', 'tables', 'files'];
 
-	private const SETTINGS_KEYS = ['submitLabel', 'labelPosition', 'requireLogin', 'allowMultipleSubmissions', 'hideRequiredIndicator', 'hideTitle', 'captcha', 'closedMessage', 'maxResponses', 'showRemaining', 'opensAt', 'closesAt', 'notOpenMessage', 'fullMessage', 'prefill', 'design'];
+	private const SETTINGS_KEYS = ['submitLabel', 'labelPosition', 'requireLogin', 'allowMultipleSubmissions', 'hideRequiredIndicator', 'hideTitle', 'captcha', 'closedMessage', 'maxResponses', 'showRemaining', 'opensAt', 'closesAt', 'notOpenMessage', 'fullMessage', 'prefill', 'saveProgress', 'design'];
 	private const MAX_PAGES = 20;
 	private const TOP_KEYS = ['schemaVersion', 'title', 'description', 'settings', 'fields', 'pages', 'rules', 'actions'];
 	private const COMMON_INPUT_KEYS = ['type', 'label', 'description', 'required', 'defaultValue', 'labelPosition', 'hideLabel'];
@@ -124,7 +124,7 @@ final class DefinitionValidator {
 				if (!in_array($value, self::LABEL_POSITIONS, true)) {
 					$this->err('settings_invalid', $path);
 				}
-			} elseif (in_array($key, ['requireLogin', 'allowMultipleSubmissions', 'hideRequiredIndicator', 'hideTitle', 'captcha', 'showRemaining', 'prefill'], true)) {
+			} elseif (in_array($key, ['requireLogin', 'allowMultipleSubmissions', 'hideRequiredIndicator', 'hideTitle', 'captcha', 'showRemaining', 'prefill', 'saveProgress'], true)) {
 				if (!is_bool($value)) {
 					$this->err('settings_invalid', $path);
 				}

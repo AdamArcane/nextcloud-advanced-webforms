@@ -132,6 +132,9 @@ by an administrator (section 10.1).
 `settings.prefill` (boolean, default true) lets the address the public form is opened with fill its
 fields by field id (section 4.7). False switches that off for the form.
 
+`settings.saveProgress` (boolean, default false) keeps a respondent's unsent answers in their own
+browser so they can continue later on the same device (section 21).
+
 `settings.hideTitle` (boolean, default false) leaves the form title off the public page and the
 builder preview. The title is still the page's heading for assistive technology, and the
 description is unaffected.
@@ -1562,3 +1565,48 @@ can be bookmarked and reached with the back button. It only opens for the form's
 - Statuses per form or per user. One list for the server keeps it simple.
 - Hiding responses of a status by default, or leaving them out of the response limit.
 - Several notes, authors, mentions and notifications.
+
+## 21. Continuing later (DECISION)
+
+A respondent can leave a long form and carry on later, on the same device. `settings.saveProgress`
+(boolean, default false) turns it on for a form, in the builder as "Let people continue later". Like
+every setting it applies when the form is published.
+
+It is done entirely in the respondent's browser. The server stores nothing, has no route for it and
+does not know that anyone has started.
+
+- **What is kept.** The answer to every input field except uploads and hidden fields, and the page
+  the respondent is on. Empty answers are left out. A hidden field is never kept: it always comes from
+  the address or its default (section 4.7).
+- **Where.** The browser's local storage, under `webforms:progress:<token>`, one record per form. It is
+  written shortly after an answer changes and again when the page is left.
+- **Coming back.** When the form opens and a record exists, its answers are put back and the form
+  opens on the page that was kept. A note above the form says from when they are and that they are
+  kept in this browser only, with a **Start over** button that throws the record away and puts the
+  form back as it opens. A kept answer comes before a value from the address and before a default.
+- **For how long.** 30 days after the last change. An older record is ignored. Sending the form
+  removes the record.
+- **A form that was published again.** The record is still used. Field ids never change meaning
+  (section 4.1), so each answer goes back to its field if the field still exists and still takes it
+  (an option that is still offered, the right kind of value). The others are left out, and the note
+  says that some answers no longer fit.
+- **Nothing is trusted.** Putting answers back only checks their shape. Sending the form runs the
+  usual checks (section 10), so a record adds nothing a respondent could not type.
+- **A form that closed, filled up or ended** shows its usual message. Kept answers hold no place.
+- **Embedded forms** (section 18.3) keep their answers in the frame's own storage, which browsers keep
+  apart for each website the form is embedded in.
+- **When storage is refused** (a private window, blocked site data) the form works as it does without
+  the setting.
+- **Never in the builder preview.**
+
+### 21.1 Left out on purpose
+
+- **A link to continue on another device,** and with it any copy of unsent answers on the server.
+  Decided 2026-11-16: device only.
+- **Uploads.** A file waits on the server for 25 hours at most (section 4.6), so it could not be
+  promised to still be there. Files are added again before sending.
+- **A count of people who started,** since the server is told nothing. It would need its own counter
+  and could not tell "still filling in" from "gave up".
+
+The answers sit readable in the browser for up to 30 days, for anyone who uses that browser profile.
+Leave the setting off for forms that are filled in on shared computers.
