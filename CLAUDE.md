@@ -83,9 +83,10 @@ appending and adding a column to an existing header were tried on the dev instan
 Lock keys for `ILockingProvider` must stay under 64 characters (hash them): the database provider
 cuts longer keys and then never releases them.
 
-Hidden fields and prefill (docs/SCHEMA.md section 4.7): a `hidden` field type, and a `prefill` link
-parameter on every input field except uploads. Prefill is read in the browser only (`src/prefill.ts`);
-the server validates submitted values as usual. Tried on the dev instance.
+Hidden fields, defaults and prefill (docs/SCHEMA.md section 4.7): a `hidden` field type, a default
+value control for every input field, and the link filling fields by field id unless `settings.prefill`
+is false. Prefill is read in the browser only (`src/prefill.ts`); the server validates submitted values
+as usual. Tried on the dev instance.
 
 Sharing (docs/SCHEMA.md section 18): custom address, QR code, and embedding in a frame through the
 `embed` routes, which skip the request token and are always anonymous. Loading and submitting were

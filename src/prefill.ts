@@ -21,9 +21,10 @@ const UNCHECKED = new Set(['0', 'false', 'no', 'off'])
  * not accept: then the field keeps its default. The value has the shape the form keeps answers in (text
  * as a string, checkboxes as a list of option values, a checkbox as a boolean).
  */
-export function prefillValue(field: FormField, params: URLSearchParams): unknown {
-	const name = field.prefill
-	if (!name || field.type === 'file' || !params.has(name)) {
+export function prefillValue(fieldId: string, field: FormField, params: URLSearchParams): unknown {
+	// The parameter is the field id: a readable id gives a readable link.
+	const name = fieldId
+	if (field.type === 'file' || !params.has(name)) {
 		return undefined
 	}
 	const all = params.getAll(name)

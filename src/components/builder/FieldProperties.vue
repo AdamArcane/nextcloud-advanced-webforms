@@ -23,6 +23,7 @@ import { fieldIdProblem } from '../../builder/fieldId.ts'
 import { DEFAULT_ACCEPT, DEFAULT_MAX_FILES, DEFAULT_MAX_SIZE_MB, UPLOAD_GROUPS } from '../../uploads.ts'
 import { renderedLabelPosition, requestedLabelPosition, supportsInline } from '../../layout/labelPosition.ts'
 import AddFieldMenu from './AddFieldMenu.vue'
+import DefaultValueEditor from './DefaultValueEditor.vue'
 import OptionsEditor from './OptionsEditor.vue'
 import SegmentedControl from './SegmentedControl.vue'
 
@@ -55,15 +56,20 @@ const hasPlaceholder = computed(() => ['text', 'textarea', 'email', 'url', 'numb
 const hasOptions = computed(() => ['select', 'radio', 'checkboxes'].includes(type.value))
 const isHidden = computed(() => type.value === 'hidden')
 const hasLabel = computed(() => !isDisplay.value && !isHidden.value)
-/** Every input field except uploads can be filled from the link (docs/SCHEMA.md 4.7). */
+/** Every input field except uploads has a default and can be filled from the link (docs/SCHEMA.md 4.7). */
 const canPrefill = computed(() => !isDisplay.value && type.value !== 'file')
-const prefillProblem = computed(() => {
-	const name = field.value?.prefill
-	return name && !/^[A-Za-z][A-Za-z0-9_.-]{0,63}$/.test(name)
-		? t('webforms', 'Start with a letter, then letters, digits, dots, dashes or underscores.')
-		: null
-})
-const prefillExample = computed(() => '?' + (field.value?.prefill || 'name') + '=' + t('webforms', 'value'))
+const prefillOff = computed(() => props.definition.settings.prefill === false)
+const copied = ref(false)
+
+async function copyParameter(): Promise<void> {
+	try {
+		await navigator.clipboard.writeText(linkParameter.value)
+		copied.value = true
+		setTimeout(() => { copied.value = false }, 2000)
+	} catch {
+		copied.value = false
+	}
+}
 
 // The segment shown: what this field sets itself, or "Form" when it follows the form-wide default.
 const labelChoice = computed(() => {
@@ -150,6 +156,11 @@ const idMessage = computed(() => {
 		default: return null
 	}
 })
+
+// The ID being typed once it is a valid new ID, so the link shown always matches the box above it.
+const linkId = computed(() => (idProblem.value === null ? idDraft.value : props.fieldId))
+const linkPending = computed(() => idProblem.value === null)
+const linkParameter = computed(() => '?' + linkId.value + '=')
 
 function applyId(): void {
 	if (idProblem.value === null) {
@@ -280,6 +291,7 @@ const moves: { move: Move, label: string, icon: string }[] = [
 					:model-value="field.placeholder ?? ''"
 					:label="type === 'select' ? t('webforms', 'Prompt') : t('webforms', 'Placeholder')"
 					@update:model-value="(value: string | number) => text('placeholder', value)" />
+				<DefaultValueEditor v-if="canPrefill" :field-id="fieldId" :field="field" @change="(value) => emit('update', { defaultValue: value })" />
 				<NcCheckboxRadioSwitch type="switch"
 					:model-value="field.required === true"
 					@update:model-value="(value: boolean) => emit('update', { required: value })">
@@ -302,10 +314,10 @@ const moves: { move: Move, label: string, icon: string }[] = [
 					:label="t('webforms', 'Label')"
 					:helper-text="t('webforms', 'Names the value in responses, downloads and emails. Respondents never see it.')"
 					@update:model-value="(value: string | number) => emit('update', { label: String(value) })" />
-				<NcTextField :model-value="typeof field.defaultValue === 'string' ? field.defaultValue : ''"
-					:label="t('webforms', 'Default value')"
-					:helper-text="t('webforms', 'Sent when the link does not fill it. Leave empty to send nothing.')"
-					@update:model-value="(value: string | number) => text('defaultValue', value)" />
+				<DefaultValueEditor :field-id="fieldId" :field="field" @change="(value) => emit('update', { defaultValue: value })" />
+				<p class="af-props__hint">
+					{{ t('webforms', 'Sent when the link does not fill it. Leave empty to send nothing.') }}
+				</p>
 				<NcTextField :model-value="field.description ?? ''"
 					:label="t('webforms', 'Note')"
 					:helper-text="t('webforms', 'Only for you, for example what fills this value.')"
@@ -529,27 +541,6 @@ const moves: { move: Move, label: string, icon: string }[] = [
 			</template>
 		</section>
 
-		<section v-if="canPrefill" class="af-props__section">
-			<h3 class="af-props__heading">
-				{{ t('webforms', 'Fill from the link') }}
-			</h3>
-			<NcTextField :model-value="field.prefill ?? ''"
-				:label="t('webforms', 'Link parameter')"
-				:placeholder="t('webforms', 'for example source')"
-				:error="prefillProblem !== null"
-				:helper-text="prefillProblem ?? t('webforms', 'Add {example} to the form link to fill this field when it opens.', { example: prefillExample })"
-				@update:model-value="(value: string | number) => text('prefill', String(value).trim())" />
-			<p v-if="type === 'checkboxes'" class="af-props__hint">
-				{{ t('webforms', 'Choices are matched by their label or value. Separate several with commas.') }}
-			</p>
-			<p v-else-if="type === 'checkbox'" class="af-props__hint">
-				{{ t('webforms', 'Use yes or no.') }}
-			</p>
-			<p v-else-if="hasOptions" class="af-props__hint">
-				{{ t('webforms', 'The choice is matched by its label or value.') }}
-			</p>
-		</section>
-
 		<section class="af-props__section">
 			<h3 class="af-props__heading">
 				{{ t('webforms', 'Layout') }}
@@ -601,11 +592,40 @@ const moves: { move: Move, label: string, icon: string }[] = [
 				@update:model-value="(value: string | number) => { idDraft = String(value) }"
 				@keydown.enter.prevent="applyId" />
 			<NcNoteCard v-if="published && idProblem === null" type="info">
-				{{ t('webforms', 'This form is published. After you publish again, webhooks and exports use the new ID. Responses already received keep the old one.') }}
+				{{ t('webforms', 'This form is published. After you publish again, webhooks, exports and links that fill this field use the new ID. Responses already received keep the old one.') }}
 			</NcNoteCard>
 			<NcButton variant="secondary" :disabled="idProblem !== null" @click="applyId">
 				{{ t('webforms', 'Change ID') }}
 			</NcButton>
+
+			<div v-if="canPrefill" class="af-props__group">
+				<span class="af-props__caption">{{ t('webforms', 'Fill from the link') }}</span>
+				<p v-if="prefillOff" class="af-props__hint">
+					{{ t('webforms', 'Switched off for this form under Settings, General.') }}
+				</p>
+				<template v-else>
+					<div class="af-props__link">
+						<code class="af-props__param">{{ linkParameter }}{{ t('webforms', 'value') }}</code>
+						<NcButton variant="tertiary" @click="copyParameter">
+							{{ copied ? t('webforms', 'Copied') : t('webforms', 'Copy') }}
+						</NcButton>
+					</div>
+					<p class="af-props__hint">
+						{{ linkPending
+							? t('webforms', 'This is the parameter with the new ID. It works once you change the ID.')
+							: t('webforms', 'Add this to the form link to fill the field when it opens. It is the field ID above.') }}
+					</p>
+					<p v-if="type === 'checkboxes'" class="af-props__hint">
+						{{ t('webforms', 'Choices are matched by their label or value. Separate several with commas.') }}
+					</p>
+					<p v-else-if="type === 'checkbox'" class="af-props__hint">
+						{{ t('webforms', 'Use yes or no.') }}
+					</p>
+					<p v-else-if="hasOptions" class="af-props__hint">
+						{{ t('webforms', 'The choice is matched by its label or value.') }}
+					</p>
+				</template>
+			</div>
 		</section>
 
 		<section class="af-props__section af-props__actions">
@@ -649,6 +669,19 @@ const moves: { move: Move, label: string, icon: string }[] = [
 	color: var(--color-text-maxcontrast);
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
+}
+
+.af-props__link {
+	display: flex;
+	align-items: center;
+	gap: var(--default-grid-baseline);
+}
+
+.af-props__param {
+	overflow-wrap: anywhere;
+	padding: 2px 6px;
+	border-radius: var(--border-radius-small);
+	background: var(--color-background-dark);
 }
 
 .af-props__group {

@@ -438,28 +438,48 @@ class DefinitionValidatorTest extends TestCase {
 			$d['pages'][0]['rows'][] = ['id' => 'r_source', 'cells' => [['id' => 'c_source', 'span' => 12, 'field' => 'f_source']]];
 			return $d;
 		};
-		$this->assertSame([], $this->codes($add(['type' => 'hidden', 'label' => 'Source', 'description' => 'From the newsletter link', 'defaultValue' => 'direct', 'prefill' => 'source'])));
+		$this->assertSame([], $this->codes($add(['type' => 'hidden', 'label' => 'Source', 'description' => 'From the newsletter link', 'defaultValue' => 'direct'])));
+		$this->assertSame(['unknown_property'], $this->codes($add(['type' => 'hidden', 'label' => 'Source', 'prefill' => 'source'])));
 		$this->assertSame(['field_label_invalid'], $this->codes($add(['type' => 'hidden'])));
 		$this->assertSame(['unknown_property', 'unknown_property', 'unknown_property'], $this->codes($add(['type' => 'hidden', 'label' => 'S', 'required' => true, 'placeholder' => 'x', 'hideLabel' => true])));
 		$this->assertSame(['field_default_invalid'], $this->codes($add(['type' => 'hidden', 'label' => 'S', 'defaultValue' => str_repeat('x', 2001)])));
 	}
 
-	public function testPrefill(): void {
-		$prefill = static fn (string $id, mixed $name): callable => static function (array $d) use ($id, $name): array {
-			$d['fields'][$id]['prefill'] = $name;
+	public function testPrefillSetting(): void {
+		$set = static fn (mixed $value): callable => static function (array $d) use ($value): array {
+			$d['settings']['prefill'] = $value;
 			return $d;
 		};
-		$ids = array_keys(self::specExample()['fields']);
-		$this->assertSame([], $this->codes($prefill($ids[0], 'utm_source')));
-		$this->assertSame([], $this->codes($prefill($ids[0], 'a.b-c_9')));
-		foreach (['', '9abc', 'has space', 'a&b', str_repeat('a', 65), 12] as $bad) {
-			$this->assertSame(['field_prefill_invalid'], $this->codes($prefill($ids[0], $bad)), var_export($bad, true));
-		}
-		$this->assertSame(['field_prefill_duplicate'], $this->codes(static function (array $d) use ($ids): array {
-			$d['fields'][$ids[0]]['prefill'] = 'source';
-			$d['fields'][$ids[1]]['prefill'] = 'source';
+		$this->assertSame([], $this->codes($set(false)));
+		$this->assertSame([], $this->codes($set(true)));
+		$this->assertSame(['settings_invalid'], $this->codes($set('no')));
+	}
+
+	public function testDefaultValuesPerType(): void {
+		$withDefault = static fn (array $field): callable => static function (array $d) use ($field): array {
+			$d['fields']['f_extra'] = $field;
+			$d['pages'][0]['rows'][] = ['id' => 'r_extra', 'cells' => [['id' => 'c_extra', 'span' => 12, 'field' => 'f_extra']]];
 			return $d;
-		}));
+		};
+		$options = [['value' => 'aaa', 'label' => 'A'], ['value' => 'bbb', 'label' => 'B']];
+		foreach ([
+			['type' => 'text', 'label' => 'L', 'defaultValue' => 'Ada'],
+			['type' => 'number', 'label' => 'L', 'min' => 1, 'max' => 10, 'defaultValue' => 5],
+			['type' => 'select', 'label' => 'L', 'options' => $options, 'defaultValue' => 'bbb'],
+			['type' => 'checkboxes', 'label' => 'L', 'options' => $options, 'defaultValue' => ['aaa', 'bbb']],
+			['type' => 'checkbox', 'label' => 'L', 'defaultValue' => true],
+			['type' => 'date', 'label' => 'L', 'defaultValue' => '2026-12-01'],
+			['type' => 'time', 'label' => 'L', 'defaultValue' => '09:30'],
+		] as $field) {
+			$this->assertSame([], $this->codes($withDefault($field)), $field['type']);
+		}
+		foreach ([
+			['type' => 'number', 'label' => 'L', 'max' => 10, 'defaultValue' => 11],
+			['type' => 'select', 'label' => 'L', 'options' => $options, 'defaultValue' => 'ccc'],
+			['type' => 'date', 'label' => 'L', 'defaultValue' => '1/12/2026'],
+		] as $field) {
+			$this->assertSame(['field_default_invalid'], $this->codes($withDefault($field)), $field['type']);
+		}
 	}
 
 	public function testRulesCannotTargetAHiddenField(): void {

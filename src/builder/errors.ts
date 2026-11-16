@@ -102,10 +102,6 @@ export function describeError(code: string): string {
 			return t('webforms', 'The signing secret is not valid. Generate a new one.')
 		case 'too_many_actions':
 			return t('webforms', 'This form has too many actions.')
-		case 'field_prefill_invalid':
-			return t('webforms', 'The link parameter must start with a letter and use only letters, digits, dots, dashes and underscores.')
-		case 'field_prefill_duplicate':
-			return t('webforms', 'Another field already uses this link parameter.')
 		case 'rule_target_hidden_field':
 			return t('webforms', 'A hidden value is never shown, so a rule cannot show, hide or require it.')
 		case 'field_upload_invalid':

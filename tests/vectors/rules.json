@@ -4477,8 +4477,7 @@
       "fields": {
         "f_source": {
           "type": "hidden",
-          "label": "Source",
-          "prefill": "source"
+          "label": "Source"
         },
         "f_code": {
           "type": "text",

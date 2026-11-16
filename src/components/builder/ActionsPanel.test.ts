@@ -297,8 +297,8 @@ describe('ActionsPanel', () => {
 		const wrapper = mountPanel(addAction(base().def, 'webhook').definition)
 		await wrapper.find('.af-action__head').trigger('click')
 		await button(wrapper, 'Generate a secret').trigger('click')
-		await flushPromises()
-		expect(wrapper.text()).toContain('Could not create a secret')
+		// The failing request rejects on a timer, which one flush does not always reach.
+		await vi.waitFor(() => expect(wrapper.text()).toContain('Could not create a secret'))
 		expect(wrapper.emitted('change')).toBeUndefined()
 	})
 

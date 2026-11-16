@@ -39,12 +39,12 @@ const emit = defineEmits<{
 const definition = computed(() => props.form.definition)
 const fields = computed(() => definition.value.fields)
 
-// The address the form was opened with can fill fields (docs/SCHEMA.md 4.7). Never in the builder
-// preview: its address is the builder's own.
-const params = props.preview ? null : new URLSearchParams(window.location.search)
+// The address the form was opened with fills fields by their id (docs/SCHEMA.md 4.7), unless the form
+// switches that off. Never in the builder preview: its address is the builder's own.
+const params = props.preview || definition.value.settings?.prefill === false ? null : new URLSearchParams(window.location.search)
 
-function initialValue(field: FormField): unknown {
-	const given = params ? prefillValue(field, params) : undefined
+function initialValue(id: string, field: FormField): unknown {
+	const given = params ? prefillValue(id, field, params) : undefined
 	if (given !== undefined) {
 		return Array.isArray(given) ? [...given] : given
 	}
@@ -64,7 +64,7 @@ function initialValue(field: FormField): unknown {
 const values = reactive<Record<string, unknown>>({})
 for (const [id, field] of Object.entries(fields.value)) {
 	if (isInputType(field.type)) {
-		values[id] = initialValue(field)
+		values[id] = initialValue(id, field)
 	}
 }
 
