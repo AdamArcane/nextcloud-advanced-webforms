@@ -107,8 +107,9 @@ Gap review written against 0.3.x (2026-11-15), from README.md, docs/SCHEMA.md an
   message for each (SCHEMA.md section 3.1). They apply on publish. Still open: changing them on a live
   form without publishing, and telling respondents when a form will open.
 - **Duplicate-submission control.** Anonymous duplicates are not controlled (SCHEMA.md open question 6).
-- **URL prefill.** Done, with hidden fields (SCHEMA.md section 4.7). Still open: forwarding the host
-  page's parameters into an embedded form, and making a prefilled field read only.
+- **URL prefill.** Done, with hidden fields and default values: the address fills fields by their id,
+  unless the form switches it off (SCHEMA.md section 4.7). Still open: forwarding the host page's
+  parameters into an embedded form, and making a prefilled field read only.
 - **Response management.**
   - No search or filter UI, no charts or summary.
   - Respondents cannot edit a response after submitting.

@@ -123,6 +123,14 @@ function str(value: string | number): string | undefined {
 				:label="t('webforms', 'Submit button text')"
 				:placeholder="t('webforms', 'Send')"
 				@update:model-value="(value: string | number) => emit('settings', { submitLabel: str(value) })" />
+			<NcCheckboxRadioSwitch type="switch"
+				:model-value="definition.settings.prefill !== false"
+				@update:model-value="(value: boolean) => emit('settings', { prefill: value ? undefined : false })">
+				{{ t('webforms', 'Let the link fill in fields') }}
+			</NcCheckboxRadioSwitch>
+			<p class="af-form-props__hint">
+				{{ t('webforms', 'Add ?field_id=value to the form link to fill a field when it opens, for example to track where people came from. Each field shows its parameter.') }}
+			</p>
 		</section>
 
 		<template v-if="section === 'design'">

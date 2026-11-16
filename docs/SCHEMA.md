@@ -129,6 +129,9 @@ releases migrate stored definitions.
 when false. It is a form setting only; which check runs, and its keys, are server-wide and set
 by an administrator (section 10.1).
 
+`settings.prefill` (boolean, default true) lets the address the public form is opened with fill its
+fields by field id (section 4.7). False switches that off for the form.
+
 `settings.hideTitle` (boolean, default false) leaves the form title off the public page and the
 builder preview. The title is still the page's heading for assistive technology, and the
 description is unaffected.
@@ -409,11 +412,11 @@ locking) apply. `folder` and `storage` are never sent to respondents.
 as attachments. Emails and CSV show file names only; webhook payloads carry `name`, `size` and `mime`
 for each file, never where it is stored.
 
-### 4.7 Hidden fields and prefill (DECISION)
+### 4.7 Hidden fields, default values and filling from the address (DECISION)
 
 A `hidden` field carries a value the respondent never sees, such as where they came from or an id from
 another system. Its properties are `label` (required: it names the value in responses, exports and
-emails), `description` (a note for the owner, never shown), `defaultValue` and `prefill`. `required`,
+emails), `description` (a note for the owner, never shown) and `defaultValue`. `required`,
 `placeholder`, `labelPosition` and `hideLabel` are `unknown_property`.
 
 - **Value.** Text, trimmed, at most 2000 characters like a short text answer. Empty means no answer.
@@ -427,24 +430,36 @@ emails), `description` (a note for the owner, never shown), `defaultValue` and `
 - **Not a secret, not a proof.** The value is in the page and in the address, and a respondent can change
   it before sending. Never use it to decide something a respondent must not be able to fake.
 
-`prefill` (optional, on every input type except `file`) names an address parameter that fills the field
-when the public form opens: with `"prefill": "source"`, `/f/<token>?source=newsletter` starts the field as
-`newsletter`. The name matches `^[A-Za-z][A-Za-z0-9_.-]{0,63}$` (`field_prefill_invalid`) and two fields
-of a form cannot use the same one (`field_prefill_duplicate`).
+**Default values.** Every input field except `file` may have a `defaultValue`, the answer it starts
+with: text for the text types and `hidden`, a number for `number`, an option value for `select` and
+`radio`, a list of option values for `checkboxes`, `true` or `false` for `checkbox`, `YYYY-MM-DD` for a
+date and `HH:MM` for a time. It must be a value the field itself accepts (`field_default_invalid`). A
+respondent can change the default of a field that is shown.
 
+**Filling fields from the address.** When the public form opens, every input field except `file` can
+be filled from the address by its field id: `/f/<token>?utm_source=newsletter` starts the field with id
+`utm_source` as `newsletter`. Nothing needs to be set up per field; to get a readable parameter, give
+the field a readable id (section 4.1). `settings.prefill: false` switches this off for the whole form,
+and then the address fills nothing.
+
+- A value from the address replaces the field's `defaultValue`. A field with neither starts empty.
+- Changing a field id changes the parameter that fills it, as it changes what webhooks and exports see,
+  so links that use the old id stop filling the field.
 - How the text in the address becomes a value: text, email, phone, web address, long text and hidden
   take it as it is; a number must be a number; a date `YYYY-MM-DD` and a time `HH:MM`; a dropdown or
   single choice takes an option's value or its label (ignoring case); multiple choice takes several,
   either by repeating the parameter or separated by commas, and leaves out any it does not know; a
   checkbox is checked by `1`, `true`, `yes` or `on` and left unchecked by `0`, `false`, `no` or `off`.
 - A value the field would not accept (wrong type, not an option, outside the field's limits) is ignored
-  and the field keeps its default. So is a parameter the form does not name. Nothing is reported to the
-  respondent.
+  and the field keeps its default. So is a parameter that is not a field id of the form. Nothing is
+  reported to the respondent.
 - A prefilled field that is shown can still be changed by the respondent.
 - It happens in the browser, when the form opens. The server checks what is submitted as for any
   answer, so prefill adds nothing a respondent could not already send.
 - An embedded form reads the address of its frame, so put the parameters on the `src` of the frame
-  (`/f/<token>/embed?source=partner`). The builder preview does not prefill.
+  (`/f/<token>/embed?utm_source=partner`). The builder preview does not fill anything from the address.
+- Because any field can be filled, a default, including a hidden field's, is only a starting value:
+  `?<id>=...` replaces it unless the form switches filling off.
 
 ## 5. Layout: pages > rows > cells (DECISION)
 

@@ -21,8 +21,6 @@ export type FormField = {
 	description?: string
 	required?: boolean
 	defaultValue?: unknown
-	/** An address parameter that fills the field when the public form opens (docs/SCHEMA.md 4.7). */
-	prefill?: string
 	/** Older flag, the same as `labelPosition: 'hidden'`. */
 	hideLabel?: boolean
 	labelPosition?: LabelPosition
@@ -97,6 +95,8 @@ export interface FormSettings {
 	hideRequiredIndicator?: boolean
 	/** Leave the title out of the public page. It stays there for screen readers. Default false. */
 	hideTitle?: boolean
+	/** False stops the address from filling fields by their id (docs/SCHEMA.md 4.7). Default true. */
+	prefill?: boolean
 	/** Ask anonymous respondents to pass the server's spam check. Default true; false turns it off for this form. */
 	captcha?: boolean
 	closedMessage?: string

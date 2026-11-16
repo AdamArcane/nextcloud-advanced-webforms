@@ -52,6 +52,17 @@ const areaStyle = computed(() => (props.field.type === 'textarea'
 	? { minHeight: `calc(${Math.min(20, Math.max(2, props.field.rows ?? 5))} * 1.5em + 16px)` }
 	: undefined))
 
+/** A text-like default, shown in the preview box the way the form will start. */
+const defaultText = computed(() => {
+	const value = props.field.defaultValue
+	if (typeof value === 'number') {
+		return String(value)
+	}
+	if (typeof value !== 'string' || value === '') {
+		return ''
+	}
+	return props.field.type === 'select' ? (props.field.options ?? []).find((option) => option.value === value)?.label ?? '' : value
+})
 const title = computed(() => props.field.label || props.field.text || typeLabel.value)
 </script>
 
@@ -70,9 +81,6 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 			<span class="af-card__type">{{ typeLabel }}</span>
 			<span v-if="ruleCount > 0" class="af-card__badge" :title="t('webforms', 'This field has conditional logic')">
 				{{ t('webforms', 'Conditional') }}
-			</span>
-			<span v-if="field.prefill" class="af-card__badge af-card__badge--quiet" :title="t('webforms', 'Filled from the link')">
-				?{{ field.prefill }}
 			</span>
 			<span v-if="hiddenLabel" class="af-card__badge af-card__badge--quiet">
 				{{ t('webforms', 'Label hidden') }}
@@ -104,7 +112,7 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 						{{ t('webforms', 'Not shown to respondents.') }}
 						{{ typeof field.defaultValue === 'string' && field.defaultValue !== ''
 							? t('webforms', 'Default: {value}', { value: field.defaultValue })
-							: (field.prefill ? '' : t('webforms', 'Give it a default or fill it from the link.')) }}
+							: t('webforms', 'Filled from the link, or give it a default.') }}
 					</span>
 				</span>
 				<span v-else-if="field.type === 'file'" class="af-card__upload" aria-hidden="true">
@@ -123,7 +131,8 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 					:style="areaStyle"
 					aria-hidden="true">
 					<span v-if="field.type === 'number' && field.prefix" class="af-card__affix">{{ field.prefix }}</span>
-					<span class="af-card__placeholder">{{ field.placeholder }}</span>
+					<span v-if="defaultText" class="af-card__default">{{ defaultText }}</span>
+					<span v-else class="af-card__placeholder">{{ field.placeholder }}</span>
 					<span v-if="field.type === 'number' && field.suffix" class="af-card__affix af-card__affix--end">{{ field.suffix }}</span>
 					<span v-if="field.type === 'select'" class="af-card__chevron" />
 				</span>
@@ -305,6 +314,10 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 	justify-content: flex-start;
 	padding: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 3);
 	text-align: start;
+}
+
+.af-card__default {
+	color: var(--color-main-text);
 }
 
 .af-card__affix {

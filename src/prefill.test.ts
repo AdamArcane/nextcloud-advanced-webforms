@@ -11,12 +11,12 @@ import { prefillValue } from './prefill.ts'
 const options = [{ value: 'news', label: 'Newsletter' }, { value: 'ad', label: 'An advert' }, { value: 'friend', label: 'A friend' }]
 
 function value(field: FormField, query: string): unknown {
-	return prefillValue({ prefill: 'p', ...field }, new URLSearchParams(query))
+	return prefillValue('p', field, new URLSearchParams(query))
 }
 
 describe('prefillValue', () => {
-	it('gives nothing without a prefill name, a matching parameter, or for uploads', () => {
-		expect(prefillValue({ type: 'text' }, new URLSearchParams('p=x'))).toBeUndefined()
+	it('reads the parameter named by the field id, and never fills uploads', () => {
+		expect(prefillValue('f_name', { type: 'text' }, new URLSearchParams('f_name=Ada&p=x'))).toBe('Ada')
 		expect(value({ type: 'text' }, 'other=x')).toBeUndefined()
 		expect(value({ type: 'file' }, 'p=x')).toBeUndefined()
 	})
