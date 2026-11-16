@@ -11,3 +11,8 @@ build/
 dist/
 
 CLAUDE.local.md
+
+# Signing keys and certificate requests
+*.key
+*.csr
+*.crt
