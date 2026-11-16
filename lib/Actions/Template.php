@@ -188,6 +188,10 @@ final class Template {
 		if (is_int($value) || is_float($value)) {
 			return self::number($value);
 		}
+		if (($field['type'] ?? null) === FieldType::DATETIME && is_string($value)) {
+			// Stored with a T between the date and the time; people read a space.
+			return str_replace('T', ' ', $value);
+		}
 		return self::optionLabel($field, $value);
 	}
 

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-import type { DefinitionError } from '../types.ts'
+import type { DefinitionError, DraftDefinition } from '../types.ts'
 
 import { t } from '@nextcloud/l10n'
 
@@ -12,6 +12,10 @@ export function describeError(code: string): string {
 	switch (code) {
 		case 'field_label_invalid':
 			return t('webforms', 'Give this field a label.')
+		case 'field_image_invalid':
+			return t('webforms', 'Choose a picture from your Files (PNG, JPEG, GIF or WebP), or give an address that starts with https://.')
+		case 'field_image_missing':
+			return t('webforms', 'This picture is not in your Files, or it is larger than 10 MB.')
 		case 'field_text_invalid':
 			return t('webforms', 'Add some text.')
 		case 'options_invalid':
@@ -143,4 +147,19 @@ export function groupErrors(errors: readonly DefinitionError[]): Map<string, Def
 		groups.set(key, [...(groups.get(key) ?? []), error])
 	}
 	return groups
+}
+
+/**
+ * The errors worth showing while a form is still being built. A block that was just added and has
+ * nothing in it yet (an image with no picture chosen) is not a mistake until publishing is tried.
+ */
+export function withoutUnstarted(errors: readonly DefinitionError[], definition: DraftDefinition | null): DefinitionError[] {
+	return errors.filter((error) => {
+		if (error.code !== 'field_image_invalid') {
+			return true
+		}
+		const id = errorFieldId(error)
+		const src = id ? definition?.fields[id]?.src : undefined
+		return typeof src === 'string' && src.trim() !== ''
+	})
 }

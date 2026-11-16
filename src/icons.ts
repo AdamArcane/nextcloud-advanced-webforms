@@ -5,6 +5,12 @@
 
 // Only the icons the app uses are imported, so the bundle keeps just those paths.
 import {
+	mdiImageOutline,
+	mdiStar,
+	mdiStarOutline,
+	mdiCalendarClock,
+	mdiShieldCheckOutline,
+	mdiRayStartEnd,
 	mdiPackageVariantClosed,
 	mdiFolderOutline,
 	mdiAccountLockOutline,
@@ -160,6 +166,7 @@ export const icons = {
 	audienceLogin: mdiAccountLockOutline,
 	storageFiles: mdiFolderOutline,
 	storageApp: mdiPackageVariantClosed,
+	star: mdiStar,
 	/** Line styles and column counts have no stock icon, so these are drawn on a 24 grid. */
 	lineSolid: 'M3 11h18v2H3z',
 	lineDashed: 'M2 11h5v2H2zM9.5 11h5v2h-5zM17 11h5v2h-5z',
@@ -184,11 +191,16 @@ export const fieldTypeIcons: Record<string, string> = {
 	checkbox: mdiCheckboxOutline,
 	date: mdiCalendar,
 	time: mdiClockOutline,
+	datetime: mdiCalendarClock,
+	rating: mdiStarOutline,
+	scale: mdiRayStartEnd,
+	consent: mdiShieldCheckOutline,
 	file: mdiPaperclip,
 	hidden: mdiEyeOffOutline,
 	heading: mdiFormatHeader1,
 	paragraph: mdiFormatParagraph,
 	divider: mdiMinus,
+	image: mdiImageOutline,
 }
 
 export const actionTypeIcons: Record<string, string> = {

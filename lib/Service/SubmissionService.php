@@ -25,6 +25,7 @@ use OCA\Webforms\Forms\Availability;
 use OCA\Webforms\Forms\JsonShape;
 use OCA\Webforms\Forms\SubmissionValidator;
 use OCA\Webforms\Forms\UploadPolicy;
+use OCA\Webforms\Forms\ImageSource;
 use OCA\Webforms\Rules\FieldType;
 use OCA\Webforms\Security\Captcha\CaptchaService;
 use OCA\Webforms\Security\FillTimeToken;
@@ -90,6 +91,10 @@ class SubmissionService {
 		foreach ($definition['fields'] as $fieldId => $field) {
 			if (is_array($field) && ($field['type'] ?? null) === FieldType::FILE) {
 				unset($definition['fields'][$fieldId]['folder'], $definition['fields'][$fieldId]['storage']);
+			}
+			// Neither is where a picture sits in the owner's Files: the page asks for it by field id.
+			if (is_array($field) && ($field['type'] ?? null) === FieldType::IMAGE && ImageSource::kind($field['src'] ?? null) === ImageSource::FILES) {
+				$definition['fields'][$fieldId]['src'] = ImageSource::FILES_MARKER;
 			}
 			// A hidden field's description is the owner's own note about it (docs/SCHEMA.md section 4.7).
 			if (is_array($field) && ($field['type'] ?? null) === FieldType::HIDDEN) {
@@ -302,6 +307,27 @@ class SubmissionService {
 	 *
 	 * @throws NotFoundException
 	 */
+	/**
+	 * The picture of an image block that comes from the owner's Files, for whoever may open the form
+	 * right now: the same checks as getPublic(), so a closed or unpublished form gives nothing away.
+	 *
+	 * @return array{ownerId: string, path: string}
+	 * @throws NotFoundException
+	 * @throws FormClosedException
+	 * @throws LoginRequiredException
+	 */
+	public function imageSource(string $token, ?string $userId, string $fieldId, bool $embedded = false): array {
+		$form = $this->findForm($token, $embedded);
+		$version = $this->openVersion($form, $embedded ? null : $userId);
+		$field = $version->getDefinitionArray()['fields'][$fieldId] ?? null;
+		$src = is_array($field) && ($field['type'] ?? null) === FieldType::IMAGE ? ($field['src'] ?? null) : null;
+		$path = is_string($src) && ImageSource::kind($src) === ImageSource::FILES ? ImageSource::filesPath($src) : null;
+		if ($path === null) {
+			throw new NotFoundException();
+		}
+		return ['ownerId' => $form->getOwnerId(), 'path' => $path];
+	}
+
 	private function findForm(string $token, bool $embedded): Form {
 		$form = $this->forms->findByToken($token);
 		if ($embedded && !$form->isEmbeddable()) {

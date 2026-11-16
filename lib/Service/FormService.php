@@ -32,7 +32,9 @@ use OCA\Webforms\Db\FormMapper;
 use OCA\Webforms\Db\Version;
 use OCA\Webforms\Db\VersionMapper;
 use OCA\Webforms\Exception\NotFoundException;
+use OCA\Webforms\Forms\ImageSource;
 use OCA\Webforms\Forms\UploadPolicy;
+use OCA\Webforms\Uploads\Ports\OwnerImagePort;
 use OCA\Webforms\Rules\FieldType;
 use OCA\Webforms\Uploads\UploadRejected;
 use OCA\Webforms\Uploads\UploadService;
@@ -77,6 +79,7 @@ class FormService {
 		private readonly EntryQueryService $query,
 		private readonly ResponseFilesPort $responseFiles,
 		private readonly StatusSettings $statuses,
+		private readonly OwnerImagePort $images,
 	) {
 	}
 
@@ -261,7 +264,7 @@ class FormService {
 		$form->setUpdatedAt($this->time->getTime());
 		$form = $this->forms->update($form);
 
-		return ['form' => $form, 'errors' => array_merge($this->validator->validate($definition), $this->uploadPermissionErrors($form, $definition), $this->responseFileErrors($form, $definition), $this->policy->actionErrors($definition))];
+		return ['form' => $form, 'errors' => array_merge($this->validator->validate($definition), $this->uploadPermissionErrors($form, $definition), $this->imageErrors($form, $definition), $this->responseFileErrors($form, $definition), $this->policy->actionErrors($definition))];
 	}
 
 	/**
@@ -276,7 +279,7 @@ class FormService {
 		$this->refuseIfArchived($form);
 		$draft = $form->getDraftDefinition();
 
-		$errors = array_merge($this->validator->validate($draft), $this->uploadPermissionErrors($form, $draft), $this->responseFileErrors($form, $draft), $this->tablesErrors($form, $draft), $this->policy->actionErrors($draft));
+		$errors = array_merge($this->validator->validate($draft), $this->uploadPermissionErrors($form, $draft), $this->imageErrors($form, $draft), $this->responseFileErrors($form, $draft), $this->tablesErrors($form, $draft), $this->policy->actionErrors($draft));
 		if ($errors !== []) {
 			throw new ValidationException($errors);
 		}
@@ -745,6 +748,27 @@ class FormService {
 				$this->uploads->requireDestination($form->getOwnerId(), $title, $field, (string)$fieldId);
 			} catch (UploadRejected $e) {
 				$errors[] = ['code' => $e->reason, 'path' => 'fields.' . $fieldId];
+			}
+		}
+		return $errors;
+	}
+
+	/**
+	 * Image blocks whose picture is not in the owner's Files, or is too large to serve
+	 * (docs/SCHEMA.md section 4.9). A picture that goes missing later simply stops showing.
+	 *
+	 * @param array<string, mixed> $definition
+	 * @return list<array{code: string, path: string}>
+	 */
+	private function imageErrors(Form $form, array $definition): array {
+		$errors = [];
+		foreach (self::fieldsOf($definition) as $fieldId => $field) {
+			$src = ($field['type'] ?? null) === FieldType::IMAGE ? ($field['src'] ?? null) : null;
+			if (!is_string($src) || ImageSource::kind($src) !== ImageSource::FILES) {
+				continue;
+			}
+			if (!$this->images->exists($form->getOwnerId(), (string)ImageSource::filesPath($src))) {
+				$errors[] = ['code' => 'field_image_missing', 'path' => 'fields.' . $fieldId . '.src'];
 			}
 		}
 		return $errors;

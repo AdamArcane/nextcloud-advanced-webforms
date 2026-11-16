@@ -1395,7 +1395,7 @@
         }
       ],
       "values": {
-        "f_a": "\u00a0yes\u00a0"
+        "f_a": " yes "
       },
       "expect": {
         "visible": [
@@ -1429,14 +1429,14 @@
               {
                 "field": "f_a",
                 "op": "eq",
-                "value": "\u00e9t\u00e9"
+                "value": "été"
               }
             ]
           }
         }
       ],
       "values": {
-        "f_a": "\u00c9T\u00c9"
+        "f_a": "ÉTÉ"
       },
       "expect": {
         "visible": [
@@ -4591,6 +4591,336 @@
         "required": [
           "f_note"
         ]
+      }
+    },
+    {
+      "name": "rating: gte compares as a number, the answer arrives as text",
+      "fields": {
+        "f_src": {
+          "type": "rating",
+          "label": "L",
+          "max": 5
+        },
+        "f_more": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_more"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_src",
+                "op": "gte",
+                "value": 4
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_src": "4"
+      },
+      "expect": {
+        "visible": [
+          "f_more",
+          "f_src"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "rating: below the value",
+      "fields": {
+        "f_src": {
+          "type": "rating",
+          "label": "L",
+          "max": 5
+        },
+        "f_more": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_more"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_src",
+                "op": "gte",
+                "value": 4
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_src": 3
+      },
+      "expect": {
+        "visible": [
+          "f_src"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "scale: zero is an answer, not empty",
+      "fields": {
+        "f_src": {
+          "type": "scale",
+          "label": "L",
+          "min": 0,
+          "max": 10
+        },
+        "f_more": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_more"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_src",
+                "op": "lte",
+                "value": 6
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_src": "0"
+      },
+      "expect": {
+        "visible": [
+          "f_more",
+          "f_src"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "scale: unanswered is empty",
+      "fields": {
+        "f_src": {
+          "type": "scale",
+          "label": "L",
+          "min": 0,
+          "max": 10
+        },
+        "f_more": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_more"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_src",
+                "op": "not_empty"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_src": ""
+      },
+      "expect": {
+        "visible": [
+          "f_src"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "consent: ticked",
+      "fields": {
+        "f_src": {
+          "type": "consent",
+          "label": "L",
+          "text": "I agree."
+        },
+        "f_more": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_more"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_src",
+                "op": "eq",
+                "value": true
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_src": true
+      },
+      "expect": {
+        "visible": [
+          "f_more",
+          "f_src"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "consent: not ticked",
+      "fields": {
+        "f_src": {
+          "type": "consent",
+          "label": "L",
+          "text": "I agree."
+        },
+        "f_more": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_more"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_src",
+                "op": "eq",
+                "value": true
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_src": false
+      },
+      "expect": {
+        "visible": [
+          "f_src"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "datetime: after",
+      "fields": {
+        "f_src": {
+          "type": "datetime",
+          "label": "L"
+        },
+        "f_more": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_more"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_src",
+                "op": "gt",
+                "value": "2026-05-01T12:00"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_src": "2026-05-01T12:01"
+      },
+      "expect": {
+        "visible": [
+          "f_more",
+          "f_src"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "datetime: a date alone is not a date and time",
+      "fields": {
+        "f_src": {
+          "type": "datetime",
+          "label": "L"
+        },
+        "f_more": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_more"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_src",
+                "op": "not_empty"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_src": "2026-05-01"
+      },
+      "expect": {
+        "visible": [
+          "f_src"
+        ],
+        "required": []
       }
     }
   ]

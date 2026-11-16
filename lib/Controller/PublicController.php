@@ -27,6 +27,10 @@ use OCP\AppFramework\Http\Attribute\UserRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IRequest;
+use OCP\AppFramework\Http\Response;
+use OCP\AppFramework\Http\StreamResponse;
+use OCA\Webforms\Forms\ImageSource;
+use OCA\Webforms\Uploads\Ports\OwnerImagePort;
 use OCP\IUserSession;
 
 /**
@@ -50,6 +54,7 @@ class PublicController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly CaptchaService $captcha,
 		private readonly ITimeFactory $time,
+		private readonly OwnerImagePort $images,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 	}
@@ -171,6 +176,49 @@ class PublicController extends Controller {
 			$this->service->upload($token, $this->userId(), $versionId, $fieldId, $fillToken, is_array($file) ? $file : null),
 			Http::STATUS_CREATED,
 		));
+	}
+
+	/**
+	 * The picture of an image block that sits in the owner's Files (docs/SCHEMA.md section 4.9). It is
+	 * named by its field, never by a path, and only for a form the caller could open.
+	 */
+	#[PublicPage]
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 240, period: 60)]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/public/{token}/image/{fieldId}')]
+	public function image(string $token, string $fieldId): Response {
+		return $this->sendImage($token, $fieldId, false);
+	}
+
+	#[PublicPage]
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 240, period: 60)]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/public/{token}/embed/image/{fieldId}')]
+	public function imageEmbedded(string $token, string $fieldId): Response {
+		return $this->sendImage($token, $fieldId, true);
+	}
+
+	private function sendImage(string $token, string $fieldId, bool $embedded): Response {
+		try {
+			$source = $this->service->imageSource($token, $embedded ? null : $this->userId(), $fieldId, $embedded);
+		} catch (NotFoundException|FormClosedException|LoginRequiredException) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+		$mime = ImageSource::mime($source['path']);
+		$file = $mime === null ? null : $this->images->open($source['ownerId'], $source['path']);
+		if ($file === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+		$response = new StreamResponse($file['stream']);
+		// The type comes from the name, which was checked against a short list; the browser must not guess another.
+		$response->addHeader('Content-Type', $mime);
+		$response->addHeader('Content-Length', (string)$file['size']);
+		$response->addHeader('Content-Disposition', 'inline');
+		$response->addHeader('X-Content-Type-Options', 'nosniff');
+		$response->addHeader('Cache-Control', 'private, max-age=300');
+		return $response;
 	}
 
 	private function userId(): ?string {

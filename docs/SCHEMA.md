@@ -250,6 +250,10 @@ Input types (produce a value):
 | `checkbox` | boolean | single yes/no, `required` means must be true |
 | `date` | string | `YYYY-MM-DD`, optional `min` and `max` (same format, inclusive) |
 | `time` | string | `HH:MM` 24 hour, optional `min` and `max` (same format, inclusive) |
+| `datetime` | string | `YYYY-MM-DDTHH:MM`, one day and time, optional `min` and `max` (same format, inclusive), see 4.8 |
+| `rating` | number | stars: a whole number from 1 to `max` (3 to 10, default 5), see 4.8 |
+| `scale` | number | a whole number from `min` (0 or 1, default 1) to `max` (2 to 10, default 5), optional `minLabel` and `maxLabel` (up to 50 characters), see 4.8 |
+| `consent` | boolean | a checkbox beside `text` (limited markdown, see 4.5), `required` means must be true, see 4.8 |
 | `file` | list of files | uploaded files, see 4.6 |
 | `hidden` | string | never shown to respondents, see 4.7 |
 
@@ -260,8 +264,9 @@ Display types (no value, cannot be rule sources, can be rule targets):
 | `heading` | `text`, `level` (1 to 6, default 2, rendered as `h1` to `h6`), `align` |
 | `paragraph` | `text` (limited markdown, see 4.5), `align` |
 | `divider` | `style` (`solid` default, `dashed`, `dotted`) |
+| `image` | `src`, `alt`, `width` (25, 50, 75 or 100), `align`, see 4.9 |
 
-Deferred: rating, matrix, signature.
+Deferred: matrix, signature.
 
 Common properties for input fields: `label` (required), `description`,
 `required` (default false), `defaultValue`, `labelPosition`, `hideLabel` (default false).
@@ -309,8 +314,8 @@ Renderer contract:
 - `inline` is a request, not a guarantee. When the field's own box is narrow
   (about 380 px) the label moves above the input, so a quarter-width field or a
   phone never gets a cramped two-column row.
-- `inline` always renders as `above` for `textarea`, `radio`, `checkboxes`, and
-  `checkbox`. Their label either belongs to a group or is part of the control,
+- `inline` always renders as `above` for `textarea`, `radio`, `checkboxes`,
+  `checkbox`, `rating`, `scale` and `consent`. Their label either belongs to a group or is part of the control,
   and a side label reads badly next to a tall or multi-line control.
 - `hidden` applies to every input type. For `checkbox` the text beside the box is
   the label, so it is hidden visually and still read by screen readers.
@@ -433,8 +438,9 @@ emails), `description` (a note for the owner, never shown) and `defaultValue`. `
 
 **Default values.** Every input field except `file` may have a `defaultValue`, the answer it starts
 with: text for the text types and `hidden`, a number for `number`, an option value for `select` and
-`radio`, a list of option values for `checkboxes`, `true` or `false` for `checkbox`, `YYYY-MM-DD` for a
-date and `HH:MM` for a time. It must be a value the field itself accepts (`field_default_invalid`). A
+`radio`, a list of option values for `checkboxes`, `true` or `false` for `checkbox` and `consent`, a
+number the field offers for `rating` and `scale`, `YYYY-MM-DD` for a date, `HH:MM` for a time and
+`YYYY-MM-DDTHH:MM` for a date and time. It must be a value the field itself accepts (`field_default_invalid`). A
 respondent can change the default of a field that is shown.
 
 **Filling fields from the address.** When the public form opens, every input field except `file` can
@@ -461,6 +467,73 @@ and then the address fills nothing.
   (`/f/<token>/embed?utm_source=partner`). The builder preview does not fill anything from the address.
 - Because any field can be filled, a default, including a hidden field's, is only a starting value:
   `?<id>=...` replaces it unless the form switches filling off.
+
+### 4.8 Date and time, rating, scale and consent (DECISION)
+
+Four input types that store one plain value each, so rules, exports, placeholders and the Tables
+action treat them like the types they resemble.
+
+- **`datetime`.** One answer for a day and a time, stored as `YYYY-MM-DDTHH:MM` with no time zone: it
+  is the respondent's own clock, like `date` and `time`. The day must exist and the time is 24 hour.
+  `min` and `max` are in the same format and inclusive; an answer outside them is `date_too_early` or
+  `date_too_late`. Because the format has a fixed width, text order is time order, which is how rules
+  and limits compare it. Where people read it (responses, CSV, email, Tables) the `T` is shown as a
+  space. A Tables date-and-time column takes it as it is.
+- **`rating`.** A row of stars. The answer is a whole number from 1 to `max`; `max` is 3 to 10 and 5
+  when left out. There is no zero: no stars is no answer. In a new table it becomes a stars column when
+  `max` is 5 or less (Tables draws five stars) and a number column otherwise.
+- **`scale`.** A row of numbers from `min` to `max` with an optional label at each end, for questions
+  like "How likely are you to recommend us?". `min` is 0 or 1 (default 1), `max` is 2 to 10 (default 5).
+  Zero is an answer here, not an empty one.
+- **Picking.** For both, picking the number already chosen takes the answer back, so an optional
+  question can be left unanswered again. They are radio buttons underneath, so the arrow keys move
+  between them, and each is announced with the field's label.
+- **Numbers.** `rating` and `scale` answers are stored as JSON numbers, are summarised with an average
+  like `number`, and take the same rule operators. An answer outside the range is `below_min` or
+  `above_max`, one that is not whole is `not_step`.
+- **`consent`.** A checkbox beside a text the respondent agrees to. `text` is required, up to 2000
+  characters, in the paragraph's markdown (4.5), so it can link to terms or a privacy notice. `label`
+  names the answer in responses and exports ("Terms") and is shown above the checkbox unless hidden.
+  The answer is `true` or `false` like `checkbox`, and `required` means it must be ticked. The wording
+  that was agreed to is the `text` of the version the response answered: versions are immutable and
+  every response stores its version id, so it can always be shown later.
+- **Filling from the address** (4.7): a number the field offers for `rating` and `scale`, `yes` or
+  `no` for `consent`, and a date and time with a `T` or a space for `datetime`.
+
+### 4.9 Image blocks (DECISION)
+
+An `image` is a display type: it shows a picture, holds no value, and can be the target of a rule.
+`src` is one piece of text that is read in one of two ways.
+
+- **An address on another site.** It must start with `https://`, name a host, and carry no user name,
+  password, white space or quotes. The respondent's browser loads it straight from that site, so that
+  site sees each visit and decides whether the picture stays. The public page's content security
+  policy names the hosts of the published form's pictures, and nothing else, for pictures only.
+- **A path in the owner's Files**, anything that does not start with a scheme: `Pictures/logo.png`,
+  below the owner's home folder. Its parts are plain names (no `.` or `..`), and it must end in
+  `.png`, `.jpg`, `.jpeg`, `.gif` or `.webp`. SVG is refused: it can carry script and would be served
+  from this site's own address. The builder's "Choose from Files" button fills the path in.
+- Anything else is `field_image_invalid`. A draft may hold an image with no picture yet; publishing
+  waits for one.
+
+How a picture in Files reaches respondents:
+
+- The path is the owner's business. The definition sent to the public page carries `@files` in its
+  place, and the page asks for the picture by form and field:
+  `GET /api/v1/public/<token>/image/<fieldId>` (and the same under `embed` for a framed form).
+- That route answers only for a form the caller could open right now, with the same checks as loading
+  the form, and only for an image block of the published version. It reads the file as the owner,
+  so it reaches only what the owner can reach, and serves it with the type its extension names and
+  `nosniff`. Pictures over 10 MB are not served.
+- The file is read where it is, not copied. Replace it and the form shows the new picture; move or
+  delete it and the block shows nothing. Saving a draft warns, and publishing refuses, when the file
+  is not there (`field_image_missing`).
+- In the builder the owner sees their own file through `GET /api/v1/image?path=...`, which takes
+  the same paths and serves the same types, for the signed-in user only.
+
+Other properties: `alt` (up to 255 characters, what the picture shows; empty marks it as decoration),
+`width` (the most room it takes in its cell, as a percentage: 25, 50, 75 or 100, default 100; a
+picture is never stretched past its own size), and `align` as for a paragraph.
 
 ## 5. Layout: pages > rows > cells (DECISION)
 
@@ -569,9 +642,9 @@ Comparison semantics (**DECISION**, must be identical in PHP and TypeScript):
 - Free text (`text`, `textarea`, `email`, `url`): trimmed, case-insensitive.
 - `phone`: compared on digits and a leading `+` only, so spacing and punctuation
   do not matter.
-- `number`: numeric. A non-numeric stored value counts as empty.
-- `date` and `time`: lexical comparison on the normalized string formats above.
-- `checkbox`: compares as boolean (`eq` with `true` or `false`).
+- `number`, `rating`, `scale`: numeric. A non-numeric stored value counts as empty.
+- `date`, `time` and `datetime`: lexical comparison on the normalized string formats above.
+- `checkbox`, `consent`: compares as boolean (`eq` with `true` or `false`).
 - Empty means: missing, `null`, empty string after trim, or empty array.
 - A comparison against an empty value is false, except `empty`, `neq`,
   `not_contains`, `not_in`, and `contains_none`, which are true. `contains_all`
@@ -586,13 +659,13 @@ Normalization before comparing (applied to the submitted value and to the rule's
   then lowercased with full Unicode lowercasing.
 - `phone`: digits plus a leading `+` are kept, everything else is dropped. No
   digits means empty.
-- `number`: a JSON number, or a string like `12` or `-3.5`. Anything else
+- `number`, `rating`, `scale`: a JSON number, or a string like `12` or `-3.5`. Anything else
   (including exponent forms like `1e3`) counts as empty.
 - `select`, `radio`: a non-empty string, compared exactly. Any other type counts
   as empty.
 - `checkboxes`: a list of strings. Any other type counts as empty.
-- `checkbox`: a boolean. Any other type counts as empty.
-- `date`, `time`: strings in the formats from section 4.2, anything else counts
+- `checkbox`, `consent`: a boolean. Any other type counts as empty.
+- `date`, `time`, `datetime`: strings in the formats from section 4.2, anything else counts
   as empty.
 
 Operators allowed per field type (a rule using any other operator is rejected
@@ -601,15 +674,15 @@ on save, and evaluates to false if it ever reaches the engine):
 | field type | operators |
 | --- | --- |
 | `text`, `textarea`, `email`, `phone`, `url` | `eq`, `neq`, `contains`, `not_contains`, `in`, `not_in`, `empty`, `not_empty` |
-| `number` | `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `not_in`, `empty`, `not_empty` |
+| `number`, `rating`, `scale` | `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `not_in`, `empty`, `not_empty` |
 | `select`, `radio` | `eq`, `neq`, `in`, `not_in`, `empty`, `not_empty` |
 | `checkboxes` | `contains`, `not_contains`, `empty`, `not_empty` |
-| `checkbox` | `eq`, `neq` |
-| `date`, `time` | `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `empty`, `not_empty` |
+| `checkbox`, `consent` | `eq`, `neq` |
+| `date`, `time`, `datetime` | `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `empty`, `not_empty` |
 
 Rule values must fit the source field: for `select`, `radio`, and `checkboxes`
-they must be existing option values, for `number` a number, for `checkbox` a
-boolean, for `date` and `time` a valid string. `in` and `not_in` take a
+they must be existing option values, for `number`, `rating` and `scale` a number, for `checkbox` and
+`consent` a boolean, for `date`, `time` and `datetime` a valid string. `in` and `not_in` take a
 non-empty list of such values. `empty` and `not_empty` take no value. `all` and
 `any` groups must not be empty.
 

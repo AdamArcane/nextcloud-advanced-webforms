@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\Webforms\Actions;
 
+use OCA\Webforms\Forms\FieldValueValidator;
 use OCA\Webforms\Rules\FieldType;
 
 /**
@@ -44,7 +45,13 @@ final class TablesSchema {
 					+ (is_string($field['suffix'] ?? null) && $field['suffix'] !== '' ? ['suffix' => mb_substr($field['suffix'], 0, 20)] : []),
 				FieldType::SELECT, FieldType::RADIO => ['type' => 'selection', 'subtype' => '', 'options' => self::options($field)],
 				FieldType::CHECKBOXES => ['type' => 'selection', 'subtype' => 'multi', 'options' => self::options($field)],
-				FieldType::CHECKBOX => ['type' => 'selection', 'subtype' => 'check'],
+				// Tables draws five stars, so a longer rating is a plain number.
+				FieldType::RATING => FieldValueValidator::ratingMax($field) <= 5
+					? ['type' => 'number', 'subtype' => 'stars']
+					: ['type' => 'number', 'subtype' => '', 'decimals' => 0],
+				FieldType::SCALE => ['type' => 'number', 'subtype' => '', 'decimals' => 0],
+				FieldType::CHECKBOX, FieldType::CONSENT => ['type' => 'selection', 'subtype' => 'check'],
+				FieldType::DATETIME => ['type' => 'datetime', 'subtype' => ''],
 				FieldType::DATE => ['type' => 'datetime', 'subtype' => 'date'],
 				FieldType::TIME => ['type' => 'datetime', 'subtype' => 'time'],
 				// Text, email, phone, url, and uploads (their file names).

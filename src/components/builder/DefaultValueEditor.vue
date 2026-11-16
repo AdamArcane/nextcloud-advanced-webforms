@@ -10,6 +10,7 @@ import { t } from '@nextcloud/l10n'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
+import { isBooleanType, isNumericType, isTemporalType, temporalInputType } from '../../rules/fieldTypes.ts'
 import { computed } from 'vue'
 
 // The answer a field starts with (docs/SCHEMA.md 4.7), with a control that suits its type. The server
@@ -52,7 +53,7 @@ function toggleOption(option: string, on: boolean): void {
 
 <template>
 	<div class="af-default">
-		<NcCheckboxRadioSwitch v-if="type === 'checkbox'"
+		<NcCheckboxRadioSwitch v-if="isBooleanType(type)"
 			type="switch"
 			:model-value="value === true"
 			@update:model-value="(on: boolean) => emit('change', on ? true : undefined)">
@@ -84,11 +85,11 @@ function toggleOption(option: string, on: boolean): void {
 			</select>
 		</template>
 
-		<template v-else-if="type === 'date' || type === 'time'">
+		<template v-else-if="isTemporalType(type)">
 			<label class="af-default__caption" :for="inputId">{{ t('webforms', 'Default value') }}</label>
 			<input :id="inputId"
 				class="af-default__native"
-				:type="type"
+				:type="temporalInputType(type)"
 				:value="text"
 				@change="setText(($event.target as HTMLInputElement).value)">
 		</template>
@@ -99,7 +100,7 @@ function toggleOption(option: string, on: boolean): void {
 			rows="3"
 			@update:model-value="setText" />
 
-		<NcTextField v-else-if="type === 'number'"
+		<NcTextField v-else-if="isNumericType(type)"
 			:model-value="text"
 			type="number"
 			:label="t('webforms', 'Default value')"

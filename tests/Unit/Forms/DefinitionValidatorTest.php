@@ -565,6 +565,54 @@ class DefinitionValidatorTest extends TestCase {
 		}));
 	}
 
+	/**
+	 * @param array<string, mixed> $field
+	 * @return list<string>
+	 */
+	private function codesForField(array $field): array {
+		return $this->codes(static function (array $d) use ($field): array {
+			$d['fields']['f_new'] = $field + ['label' => 'New'];
+			$d['pages'][0]['rows'][] = ['id' => 'r_new', 'cells' => [['id' => 'c_new', 'span' => 12, 'field' => 'f_new']]];
+			return $d;
+		});
+	}
+
+	public function testRatingScaleConsentAndDateTime(): void {
+		$this->assertSame([], $this->codesForField(['type' => 'rating']));
+		$this->assertSame([], $this->codesForField(['type' => 'rating', 'max' => 10, 'defaultValue' => 7]));
+		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'rating', 'max' => 11]));
+		$this->assertSame(['field_default_invalid'], $this->codesForField(['type' => 'rating', 'defaultValue' => 6]));
+		$this->assertSame(['unknown_property'], $this->codesForField(['type' => 'rating', 'min' => 0]));
+
+		$this->assertSame([], $this->codesForField(['type' => 'scale', 'min' => 0, 'max' => 10, 'minLabel' => 'Not likely', 'maxLabel' => 'Very likely']));
+		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'scale', 'min' => 2]));
+		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'scale', 'max' => 1]));
+		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'scale', 'maxLabel' => str_repeat('x', 51)]));
+
+		$this->assertSame([], $this->codesForField(['type' => 'consent', 'text' => 'I agree to the [terms](https://example.com).', 'required' => true]));
+		$this->assertSame(['field_text_invalid'], $this->codesForField(['type' => 'consent']));
+		$this->assertSame(['field_text_invalid'], $this->codesForField(['type' => 'consent', 'text' => ' ']));
+
+		$this->assertSame([], $this->codesForField(['type' => 'datetime', 'min' => '2026-05-01T09:00', 'max' => '2026-05-31T17:00']));
+		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'datetime', 'min' => '2026-05-01']));
+		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'datetime', 'min' => '2026-06-01T09:00', 'max' => '2026-05-31T17:00']));
+	}
+
+	public function testImageBlock(): void {
+		$image = static fn (array $field): \Closure => static function (array $d) use ($field): array {
+			$d['fields']['f_img'] = ['type' => 'image'] + $field;
+			$d['pages'][0]['rows'][] = ['id' => 'r_img', 'cells' => [['id' => 'c_img', 'span' => 12, 'field' => 'f_img']]];
+			return $d;
+		};
+		$this->assertSame([], $this->codes($image(['src' => 'Pictures/logo.png', 'alt' => 'Our logo', 'width' => 50, 'align' => 'center'])));
+		$this->assertSame([], $this->codes($image(['src' => 'https://example.com/logo.png'])));
+		$this->assertSame(['field_image_invalid'], $this->codes($image([])));
+		$this->assertSame(['field_image_invalid'], $this->codes($image(['src' => 'http://example.com/logo.png'])));
+		$this->assertSame(['field_image_invalid'], $this->codes($image(['src' => '../logo.png'])));
+		$this->assertSame(['field_limit_invalid'], $this->codes($image(['src' => 'logo.png', 'width' => 33])));
+		$this->assertSame(['unknown_property'], $this->codes($image(['src' => 'logo.png', 'label' => 'x'])));
+	}
+
 	public function testPageProgress(): void {
 		foreach (['bar', 'steps', 'none'] as $style) {
 			foreach (['step', 'title', 'percent', 'none'] as $label) {
