@@ -91,6 +91,10 @@ class SubmissionService {
 			if (is_array($field) && ($field['type'] ?? null) === FieldType::FILE) {
 				unset($definition['fields'][$fieldId]['folder'], $definition['fields'][$fieldId]['storage']);
 			}
+			// A hidden field's description is the owner's own note about it (docs/SCHEMA.md section 4.7).
+			if (is_array($field) && ($field['type'] ?? null) === FieldType::HIDDEN) {
+				unset($definition['fields'][$fieldId]['description']);
+			}
 		}
 
 		return [

@@ -157,6 +157,10 @@ export function forbiddenSources(definition: DraftDefinition, rule: Pick<Rule, '
 
 /** A new rule on a field, or null when no field is available to read. */
 export function newRule(definition: DraftDefinition, targetId: string): Rule | null {
+	// A hidden value is never shown or required, so no rule can act on it (docs/SCHEMA.md 6.5).
+	if (definition.fields[targetId]?.type === 'hidden') {
+		return null
+	}
 	const probe = { id: '', targets: [targetId] }
 	const forbidden = forbiddenSources(definition, probe)
 	const source = sourceFields(definition).find((candidate) => !forbidden.has(candidate.id))

@@ -199,3 +199,15 @@ describe('edits stay consistent', () => {
 		expect(defaultLeaf(next, kind)).toMatchObject({ field: kind, op: 'eq', value: '' })
 	})
 })
+
+describe('hidden values', () => {
+	it('start without a required flag, can be a rule source, and never a target', () => {
+		const { def, name } = form()
+		const added = addField(def, 'hidden', { kind: 'row', index: def.pages[0].rows.length })
+		const hidden = added.definition.fields[added.fieldId]
+		expect(hidden).toEqual({ type: 'hidden', label: 'Hidden value' })
+		expect(sourceFields(added.definition).map((source) => source.id)).toContain(added.fieldId)
+		expect(newRule(added.definition, added.fieldId)).toBeNull()
+		expect(newRule(added.definition, name)).not.toBeNull()
+	})
+})

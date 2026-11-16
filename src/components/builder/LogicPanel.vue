@@ -28,6 +28,7 @@ const emit = defineEmits<{
 const entries = computed(() => rulesTargeting(props.definition, props.fieldId))
 const dependents = computed(() => dependentsOf(props.definition, props.fieldId))
 const draftRule = computed(() => newRule(props.definition, props.fieldId))
+const isHidden = computed(() => props.definition.fields[props.fieldId]?.type === 'hidden')
 
 function labelOf(id: string): string {
 	const field = props.definition.fields[id]
@@ -75,14 +76,17 @@ function removeFromField(index: number): void {
 			@remove="remove(index)"
 			@remove-from-field="removeFromField(index)" />
 
-		<p v-if="entries.length === 0" class="af-logic__empty">
+		<p v-if="isHidden" class="af-logic__empty">
+			{{ t('webforms', 'A hidden value is never shown, so rules cannot act on it. Other fields can use it in their rules.') }}
+		</p>
+		<p v-else-if="entries.length === 0" class="af-logic__empty">
 			{{ t('webforms', 'No rules yet. This field is always shown.') }}
 		</p>
 		<p v-else class="af-logic__hint">
 			{{ t('webforms', 'With several "show" rules the field appears when any of them matches. A "hide" rule always wins.') }}
 		</p>
 
-		<div class="af-logic__add">
+		<div v-if="!isHidden" class="af-logic__add">
 			<NcButton variant="secondary" :disabled="!draftRule" @click="add">
 				{{ t('webforms', 'Add rule') }}
 			</NcButton>

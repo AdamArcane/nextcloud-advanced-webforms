@@ -98,7 +98,7 @@ Gap review written against 0.3.x (2026-11-15), from README.md, docs/SCHEMA.md an
 - Theming and custom CSS. `design` only offers width, card, background and accent color.
 - Nextcloud Tables as an optional response storage backend. Today Tables is only an after-submit action,
   by decision (see the decision above).
-- Hidden fields, rating, matrix and signature fields (SCHEMA.md, deferred field types).
+- Rating, matrix and signature fields (SCHEMA.md, deferred field types). Hidden fields are done.
 - App store listing, signing, screenshots and real translations.
 
 ### Gaps not tracked anywhere
@@ -107,7 +107,8 @@ Gap review written against 0.3.x (2026-11-15), from README.md, docs/SCHEMA.md an
   message for each (SCHEMA.md section 3.1). They apply on publish. Still open: changing them on a live
   form without publishing, and telling respondents when a form will open.
 - **Duplicate-submission control.** Anonymous duplicates are not controlled (SCHEMA.md open question 6).
-- **URL prefill.** Fields cannot be prefilled from query parameters. This goes with hidden fields.
+- **URL prefill.** Done, with hidden fields (SCHEMA.md section 4.7). Still open: forwarding the host
+  page's parameters into an embedded form, and making a prefilled field read only.
 - **Response management.**
   - No search or filter UI, no charts or summary.
   - Respondents cannot edit a response after submitting.
@@ -124,6 +125,6 @@ Gap review written against 0.3.x (2026-11-15), from README.md, docs/SCHEMA.md an
 ### Suggested first picks from the gap review
 
 1. Response limits and scheduling (done).
-2. URL prefill together with hidden fields.
+2. URL prefill together with hidden fields (done).
 
 Both are mostly schema and validator work and fit the existing architecture.

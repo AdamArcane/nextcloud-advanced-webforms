@@ -71,6 +71,9 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 			<span v-if="ruleCount > 0" class="af-card__badge" :title="t('webforms', 'This field has conditional logic')">
 				{{ t('webforms', 'Conditional') }}
 			</span>
+			<span v-if="field.prefill" class="af-card__badge af-card__badge--quiet" :title="t('webforms', 'Filled from the link')">
+				?{{ field.prefill }}
+			</span>
 			<span v-if="hiddenLabel" class="af-card__badge af-card__badge--quiet">
 				{{ t('webforms', 'Label hidden') }}
 			</span>
@@ -95,6 +98,15 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 			</span>
 			<span class="af-card__control">
 				<span v-if="field.type === 'checkbox'" class="af-card__fake af-card__fake--box" aria-hidden="true" />
+				<span v-else-if="field.type === 'hidden'" class="af-card__upload af-card__upload--hidden">
+					<Icon :path="fieldTypeIcon('hidden')" :size="18" />
+					<span>
+						{{ t('webforms', 'Not shown to respondents.') }}
+						{{ typeof field.defaultValue === 'string' && field.defaultValue !== ''
+							? t('webforms', 'Default: {value}', { value: field.defaultValue })
+							: (field.prefill ? '' : t('webforms', 'Give it a default or fill it from the link.')) }}
+					</span>
+				</span>
 				<span v-else-if="field.type === 'file'" class="af-card__upload" aria-hidden="true">
 					<Icon :path="fieldTypeIcon('file')" :size="18" />
 					{{ (field.maxFiles ?? 1) > 1 ? t('webforms', 'Choose files') : t('webforms', 'Choose a file') }}
@@ -287,6 +299,12 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 	border: 2px dashed var(--color-border-maxcontrast);
 	border-radius: var(--border-radius-large);
 	color: var(--color-text-maxcontrast);
+}
+
+.af-card__upload--hidden {
+	justify-content: flex-start;
+	padding: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 3);
+	text-align: start;
 }
 
 .af-card__affix {

@@ -33,6 +33,8 @@ final class DefinitionValidator {
 	public const OPTION_VALUE_PATTERN = '/^[a-z][a-z0-9_]{1,31}$/D';
 	public const SPANS = [3, 4, 6, 8, 9, 12];
 	public const LABEL_POSITIONS = ['above', 'inline', 'hidden'];
+	/** An address parameter that fills a field when the form opens (docs/SCHEMA.md section 4.7). */
+	public const PREFILL_PATTERN = '/^[A-Za-z][A-Za-z0-9_.-]{0,63}$/D';
 	public const MAX_TABLES_COLUMNS = 100;
 	public const ACTION_TYPES = ['email', 'webhook', 'message', 'redirect', 'tables', 'files'];
 
@@ -181,6 +183,7 @@ final class DefinitionValidator {
 		}
 
 		$usable = [];
+		$prefills = [];
 		foreach ($fields as $id => $field) {
 			$path = 'fields.' . $id;
 			if (preg_match(self::ID_PATTERN, (string)$id) !== 1) {
@@ -200,6 +203,14 @@ final class DefinitionValidator {
 				$this->err('field_unknown_type', $path . '.type');
 				continue;
 			}
+			// One address parameter fills one field, or which one wins would be a guess.
+			$prefill = $field['prefill'] ?? null;
+			if (is_string($prefill) && $prefill !== '') {
+				if (isset($prefills[$prefill])) {
+					$this->err('field_prefill_duplicate', $path . '.prefill');
+				}
+				$prefills[$prefill] = true;
+			}
 			$usable[(string)$id] = $field;
 		}
 		return $usable;
@@ -209,7 +220,13 @@ final class DefinitionValidator {
 	 * @param array<string, mixed> $field
 	 */
 	private function inputField(array $field, string $type, string $path): void {
-		$allowed = self::COMMON_INPUT_KEYS;
+		$allowed = $type === FieldType::HIDDEN
+			// Never shown, so nothing about how it looks, and never required.
+			? ['type', 'label', 'description', 'defaultValue']
+			: self::COMMON_INPUT_KEYS;
+		if ($type !== FieldType::FILE) {
+			$allowed[] = 'prefill';
+		}
 		if (in_array($type, self::PLACEHOLDER_TYPES, true)) {
 			$allowed[] = 'placeholder';
 		}
@@ -235,6 +252,10 @@ final class DefinitionValidator {
 		$label = $field['label'] ?? null;
 		if (!is_string($label) || trim($label) === '' || mb_strlen($label) > 255) {
 			$this->err('field_label_invalid', $path . '.label');
+		}
+		if (array_key_exists('prefill', $field) && $type !== FieldType::FILE
+			&& (!is_string($field['prefill']) || preg_match(self::PREFILL_PATTERN, $field['prefill']) !== 1)) {
+			$this->err('field_prefill_invalid', $path . '.prefill');
 		}
 		$this->optionalString($field, 'description', 1000, 'field_description_invalid', $path . '.');
 		$this->optionalString($field, 'placeholder', 255, 'field_placeholder_invalid', $path . '.');

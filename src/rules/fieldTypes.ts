@@ -28,6 +28,7 @@ const OPERATORS = new Map<string, readonly string[]>([
 	['date', ORDERED_OPERATORS],
 	['time', ORDERED_OPERATORS],
 	['file', FILE_OPERATORS],
+	['hidden', TEXT_OPERATORS],
 ])
 
 export function isInputType(type: string): boolean {

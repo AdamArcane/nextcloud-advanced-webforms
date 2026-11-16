@@ -36,7 +36,7 @@ final class FieldValueValidator {
 		$type = is_string($field['type'] ?? null) ? $field['type'] : '';
 
 		return match ($type) {
-			FieldType::TEXT => self::text($field, $raw, self::MAX_TEXT),
+			FieldType::TEXT, FieldType::HIDDEN => self::text($field, $raw, self::MAX_TEXT),
 			FieldType::TEXTAREA => self::text($field, $raw, self::MAX_TEXTAREA),
 			FieldType::EMAIL => self::email($raw),
 			FieldType::PHONE => self::phone($raw),

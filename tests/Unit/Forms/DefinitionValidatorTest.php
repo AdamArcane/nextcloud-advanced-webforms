@@ -432,6 +432,45 @@ class DefinitionValidatorTest extends TestCase {
 		$this->assertSame(['action_bad_file_path'], $this->codes($withPath(12)));
 	}
 
+	public function testHiddenField(): void {
+		$add = static fn (array $field): callable => static function (array $d) use ($field): array {
+			$d['fields']['f_source'] = $field;
+			$d['pages'][0]['rows'][] = ['id' => 'r_source', 'cells' => [['id' => 'c_source', 'span' => 12, 'field' => 'f_source']]];
+			return $d;
+		};
+		$this->assertSame([], $this->codes($add(['type' => 'hidden', 'label' => 'Source', 'description' => 'From the newsletter link', 'defaultValue' => 'direct', 'prefill' => 'source'])));
+		$this->assertSame(['field_label_invalid'], $this->codes($add(['type' => 'hidden'])));
+		$this->assertSame(['unknown_property', 'unknown_property', 'unknown_property'], $this->codes($add(['type' => 'hidden', 'label' => 'S', 'required' => true, 'placeholder' => 'x', 'hideLabel' => true])));
+		$this->assertSame(['field_default_invalid'], $this->codes($add(['type' => 'hidden', 'label' => 'S', 'defaultValue' => str_repeat('x', 2001)])));
+	}
+
+	public function testPrefill(): void {
+		$prefill = static fn (string $id, mixed $name): callable => static function (array $d) use ($id, $name): array {
+			$d['fields'][$id]['prefill'] = $name;
+			return $d;
+		};
+		$ids = array_keys(self::specExample()['fields']);
+		$this->assertSame([], $this->codes($prefill($ids[0], 'utm_source')));
+		$this->assertSame([], $this->codes($prefill($ids[0], 'a.b-c_9')));
+		foreach (['', '9abc', 'has space', 'a&b', str_repeat('a', 65), 12] as $bad) {
+			$this->assertSame(['field_prefill_invalid'], $this->codes($prefill($ids[0], $bad)), var_export($bad, true));
+		}
+		$this->assertSame(['field_prefill_duplicate'], $this->codes(static function (array $d) use ($ids): array {
+			$d['fields'][$ids[0]]['prefill'] = 'source';
+			$d['fields'][$ids[1]]['prefill'] = 'source';
+			return $d;
+		}));
+	}
+
+	public function testRulesCannotTargetAHiddenField(): void {
+		$this->assertContains('rule_target_hidden_field', $this->codes(static function (array $d): array {
+			$d['fields']['f_source'] = ['type' => 'hidden', 'label' => 'Source'];
+			$d['pages'][0]['rows'][] = ['id' => 'r_source', 'cells' => [['id' => 'c_source', 'span' => 12, 'field' => 'f_source']]];
+			$d['rules'][0]['targets'] = ['f_source'];
+			return $d;
+		}));
+	}
+
 	public function testEmailActionStaticRecipient(): void {
 		$this->assertSame([], $this->codes(static function (array $d): array {
 			$d['actions'][0]['to'] = 'owner@example.com';
