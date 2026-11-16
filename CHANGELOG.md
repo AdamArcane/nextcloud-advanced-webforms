@@ -5,7 +5,9 @@
 
 # Changelog
 
-## Unreleased
+## 0.3.6 - 2026-11-16
+
+- App store listing: a description that matches what the app does now, and six screenshots.
 
 - Fixed the Summary tab on the Responses page: in the cards for number, rating and scale questions, the
   labels (Average, Lowest, Highest, Total) now sit directly above their values instead of drifting away
