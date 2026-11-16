@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-import type { ActionType } from '../types.ts'
+import type { ActionType, ResponseStatus } from '../types.ts'
 
 import axios from '@nextcloud/axios'
 import { url } from './http.ts'
@@ -14,6 +14,8 @@ export interface UserPolicy {
 	allowedActionTypes: ActionType[]
 	maxActions: number
 	mail: MailPolicy
+	/** The statuses a response can be given (docs/SCHEMA.md section 20.2). */
+	statuses: ResponseStatus[]
 }
 
 /** What the administrator set for mail that forms send (docs/SCHEMA.md section 16.2). */
@@ -39,12 +41,13 @@ export const OPEN_POLICY: UserPolicy = {
 	allowedActionTypes: ['message', 'redirect', 'email', 'webhook', 'tables', 'files'],
 	maxActions: 10,
 	mail: OPEN_MAIL_POLICY,
+	statuses: [],
 }
 
 export async function fetchUserPolicy(): Promise<UserPolicy> {
 	try {
 		const policy = (await axios.get<UserPolicy>(url('/settings'))).data
-		return { ...policy, mail: { ...OPEN_MAIL_POLICY, ...policy.mail } }
+		return { ...policy, mail: { ...OPEN_MAIL_POLICY, ...policy.mail }, statuses: Array.isArray(policy.statuses) ? policy.statuses : [] }
 	} catch {
 		// The server still enforces the policy when a form is published, so showing everything is safe.
 		return OPEN_POLICY

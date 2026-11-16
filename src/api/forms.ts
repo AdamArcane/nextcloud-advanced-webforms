@@ -3,14 +3,14 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-import type { BulkDeleteRequest, ExportOptions } from '../entries/exporting.ts'
+import type { BulkDeleteRequest, BulkStatusRequest, ExportOptions } from '../entries/exporting.ts'
 import type { EntryFilterState } from '../entries/filter.ts'
 import type { EntrySummaryData } from '../entries/summary.ts'
-import type { DefinitionError, DeliveriesPage, Delivery, DeliveryStatus, DraftDefinition, EntriesPage, OwnerForm } from '../types.ts'
+import type { DefinitionError, DeliveriesPage, Delivery, DeliveryStatus, DraftDefinition, EntriesPage, EntryDetail, EntryRecord, OwnerForm } from '../types.ts'
 
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
-import { bulkDeleteBody, exportQuery } from '../entries/exporting.ts'
+import { bulkDeleteBody, bulkStatusBody, exportQuery } from '../entries/exporting.ts'
 import { EMPTY_FILTER, filterParams } from '../entries/filter.ts'
 import { toApiError, url } from './http.ts'
 
@@ -136,6 +136,34 @@ export function exportUrl(id: number, options: ExportOptions = {}): string {
 /** Delete the ticked responses, or everything a filter matches. Resolves to how many were deleted. */
 export async function bulkDeleteEntries(id: number, request: BulkDeleteRequest): Promise<number> {
 	return (await call(axios.post<{ deleted: number }>(url('/forms/' + id + '/entries/bulk-delete'), bulkDeleteBody(request)))).deleted
+}
+
+/** One response, with the definition it answered and its neighbours. Rejects with status 404 when it is gone. */
+export function getEntry(id: number, entryId: number): Promise<EntryDetail> {
+	return call(axios.get<EntryDetail>(url('/forms/' + id + '/entries/' + entryId)))
+}
+
+/**
+ * Tell the server the owner is looking at the list of responses, so only later ones are new from now on.
+ * Resolves to the moment before this visit (unix seconds), or null when the list was never opened.
+ */
+export async function markEntriesSeen(id: number): Promise<number | null> {
+	return (await call(axios.post<{ previousSeenAt: number | null }>(url('/forms/' + id + '/entries/seen')))).previousSeenAt
+}
+
+/** Give a response a status, or null for none. Resolves to the response. */
+export function setEntryStatus(id: number, entryId: number, status: string | null): Promise<EntryRecord> {
+	return call(axios.put<EntryRecord>(url('/forms/' + id + '/entries/' + entryId + '/status'), { status }))
+}
+
+/** Save the private note on a response. Empty text removes it. Resolves to the response. */
+export function setEntryNote(id: number, entryId: number, note: string): Promise<EntryRecord> {
+	return call(axios.put<EntryRecord>(url('/forms/' + id + '/entries/' + entryId + '/note'), { note }))
+}
+
+/** Give the ticked responses, or everything a filter matches, a status. Resolves to how many changed. */
+export async function bulkSetEntryStatus(id: number, request: BulkStatusRequest): Promise<number> {
+	return (await call(axios.post<{ changed: number }>(url('/forms/' + id + '/entries/bulk-status'), bulkStatusBody(request)))).changed
 }
 
 export type ExportSource = 'draft' | 'published'

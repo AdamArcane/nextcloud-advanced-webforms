@@ -5,9 +5,9 @@
 
 <script setup lang="ts">
 import type { EntryFilterState } from '../../entries/filter.ts'
-import type { Delivery, DeliveryStatus, DraftDefinition, EntryRecord, VersionDefinition } from '../../types.ts'
+import type { Delivery, DeliveryStatus, DraftDefinition, EntryRecord, ResponseStatus, VersionDefinition } from '../../types.ts'
 
-import { t } from '@nextcloud/l10n'
+import { n, t } from '@nextcloud/l10n'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
 import NcActionCaption from '@nextcloud/vue/components/NcActionCaption'
 import NcActionCheckbox from '@nextcloud/vue/components/NcActionCheckbox'
@@ -18,27 +18,41 @@ import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
-import { bulkDeleteEntries, deleteEntry, exportUrl, fetchEntrySummary, listDeliveries, listEntries, retryDelivery } from '../../api/forms.ts'
+import { bulkDeleteEntries, bulkSetEntryStatus, deleteEntry, exportUrl, fetchEntrySummary, listDeliveries, listEntries, markEntriesSeen, retryDelivery, setEntryStatus } from '../../api/forms.ts'
 import { ApiError } from '../../api/http.ts'
 import { defaultColumnIds, loadColumnChoice, responseColumns, saveColumnChoice, visibleColumns } from '../../entries/columns.ts'
 import { exportScope, MAX_SELECTED } from '../../entries/exporting.ts'
 import type { ExportFormat } from '../../entries/exporting.ts'
 import { EMPTY_FILTER, isFilterActive } from '../../entries/filter.ts'
+import { findStatus, isNewResponse, statusLabel } from '../../entries/statuses.ts'
 import type { EntrySummaryData } from '../../entries/summary.ts'
 import FormBar from '../FormBar.vue'
 import SegmentedControl from '../builder/SegmentedControl.vue'
 import DeliveryRow from './DeliveryRow.vue'
 import ResponseCard from './ResponseCard.vue'
 import ResponseFilters from './ResponseFilters.vue'
+import ResponsePage from './ResponsePage.vue'
 import ResponseSummary from './ResponseSummary.vue'
 import ResponsesTable from './ResponsesTable.vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
 	formId: number
 	title: string
+	/** Show this one response on a page of its own, in place of the list. */
+	entryId?: number | null
+	/** The statuses a response can be given (the administrator's list). */
+	statuses?: readonly ResponseStatus[]
+}>(), {
+	entryId: null,
+	statuses: () => [],
+})
+
+const emit = defineEmits<{
+	/** The owner looked at the list, so this form has no new responses any more. */
+	seen: []
 }>()
 
 const PAGE = 50
@@ -61,6 +75,43 @@ const grandTotal = ref(0)
 const truncated = ref(false)
 const entryFilter = ref<EntryFilterState>({ ...EMPTY_FILTER })
 const filtered = computed(() => isFilterActive(entryFilter.value))
+
+// ---- New since the last look, and statuses (docs/SCHEMA.md section 20) ----
+
+/**
+ * When the owner last looked at this list before this visit. Responses after it stay marked as new for
+ * as long as this view is open, so they do not lose the mark while being read. Undefined until known.
+ */
+const seenAt = ref<number | null | undefined>(undefined)
+const newOnPage = computed(() => entries.value.filter((entry) => isNewResponse(entry, seenAt.value)).length)
+
+async function markSeen(): Promise<void> {
+	try {
+		seenAt.value = await markEntriesSeen(props.formId)
+		emit('seen')
+	} catch {
+		// Without the moment nothing is marked. The list itself still works.
+	}
+}
+
+const statusBusyId = ref<number | null>(null)
+const statusError = ref(false)
+
+function replaceEntry(updated: EntryRecord): void {
+	entries.value = entries.value.map((entry) => (entry.id === updated.id ? updated : entry))
+}
+
+async function changeStatus(id: number, status: string | null): Promise<void> {
+	statusBusyId.value = id
+	statusError.value = false
+	try {
+		replaceEntry(await setEntryStatus(props.formId, id, status))
+	} catch {
+		statusError.value = true
+	} finally {
+		statusBusyId.value = null
+	}
+}
 
 type ResponsesView = 'table' | 'cards'
 const VIEW_KEY = 'webforms.responsesView'
@@ -182,6 +233,7 @@ async function bulkDelete(): Promise<void> {
 	bulkBusy.value = true
 	bulkError.value = null
 	bulkDone.value = null
+	bulkStatusDone.value = null
 	try {
 		const deleted = await bulkDeleteEntries(props.formId, allMatching.value
 			? { filter: entryFilter.value, expected: total.value }
@@ -204,6 +256,46 @@ async function bulkDelete(): Promise<void> {
 		}
 	} finally {
 		bulkBusy.value = false
+	}
+}
+
+/** What the last bulk change of status did, for the note above the table. */
+const bulkStatusDone = ref<{ changed: number, label: string } | null>(null)
+
+async function bulkStatus(status: string | null): Promise<void> {
+	bulkBusy.value = true
+	bulkError.value = null
+	bulkDone.value = null
+	bulkStatusDone.value = null
+	try {
+		const which = allMatching.value ? { filter: entryFilter.value, expected: total.value } : { ids: [...selected.value] }
+		const changed = await bulkSetEntryStatus(props.formId, { ...which, status })
+		const chosen = findStatus(props.statuses, status)
+		bulkStatusDone.value = { changed, label: chosen ? statusLabel(chosen) : t('webforms', 'No status') }
+		clearSelection()
+		await loadEntries(false)
+	} catch (error) {
+		if (error instanceof ApiError && error.code === 'count_changed') {
+			bulkError.value = t('webforms', 'The number of matching responses changed from {before} to {now}, so nothing was changed. Check the list and try again.', { before: total.value, now: Number(error.data.current ?? 0) })
+			clearSelection()
+			await loadEntries(false)
+		} else if (error instanceof ApiError && error.code === 'validation') {
+			bulkError.value = t('webforms', 'That is too many responses to change at once. Narrow the filter, or select fewer.')
+		} else {
+			bulkError.value = t('webforms', 'Could not change the status of the responses.')
+		}
+	} finally {
+		bulkBusy.value = false
+	}
+}
+
+function onBulkStatus(event: Event): void {
+	const select = event.target as HTMLSelectElement
+	const value = select.value
+	// Back to the prompt, so the same status can be picked again later.
+	select.value = '__pick'
+	if (value !== '__pick') {
+		void bulkStatus(value === '' ? null : value)
 	}
 }
 
@@ -272,6 +364,7 @@ function applyFilter(next: EntryFilterState): void {
 	expandedId.value = null
 	clearSelection()
 	bulkDone.value = null
+	bulkStatusDone.value = null
 	bulkError.value = null
 	void loadEntries(false)
 	// Changing only the order does not change what the responses add up to.
@@ -441,11 +534,25 @@ async function retry(delivery: Delivery): Promise<void> {
 
 const deliveryHasMore = computed(() => deliveries.value.length < deliveryTotal.value)
 
-onMounted(() => {
-	refreshTimer = setInterval(tick, REFRESH_MS)
+let listStarted = false
+
+/** The first time the list itself is on screen. Opening one response by its address is not a look at the list. */
+function startList(): void {
+	listStarted = true
+	void markSeen()
 	void loadEntries(false)
 	void refreshFailedCount()
 	void loadSummary()
+}
+
+watch(() => props.entryId, (entryId) => {
+	if (entryId === null && !listStarted) {
+		startList()
+	}
+}, { immediate: true })
+
+onMounted(() => {
+	refreshTimer = setInterval(tick, REFRESH_MS)
 })
 </script>
 
@@ -483,7 +590,16 @@ onMounted(() => {
 			</template>
 		</FormBar>
 
-		<div class="af-entries__body">
+		<div v-if="entryId !== null" class="af-entries__body">
+			<ResponsePage :form-id="formId"
+				:entry-id="entryId"
+				:title="title"
+				:statuses="statuses"
+				@updated="replaceEntry"
+				@changed="refreshFailedCount" />
+		</div>
+
+		<div v-else class="af-entries__body">
 			<SegmentedControl :model-value="tab"
 				class="af-entries__tabs"
 				:group-label="t('webforms', 'What to show')"
@@ -505,6 +621,7 @@ onMounted(() => {
 				<ResponseFilters v-if="grandTotal > 0 || filtered"
 					:model-value="entryFilter"
 					:definition="filterDefinition"
+					:statuses="statuses"
 					@update:model-value="applyFilter" />
 
 				<div v-if="loading" class="af-entries__center">
@@ -545,6 +662,12 @@ onMounted(() => {
 					<NcNoteCard v-if="bulkDone !== null" type="success">
 						{{ t('webforms', 'Deleted {n} responses.', { n: bulkDone }) }}
 					</NcNoteCard>
+					<NcNoteCard v-if="bulkStatusDone !== null" type="success">
+						{{ t('webforms', 'Set {n} responses to "{status}".', { n: bulkStatusDone.changed, status: bulkStatusDone.label }) }}
+					</NcNoteCard>
+					<NcNoteCard v-if="statusError" type="error">
+						{{ t('webforms', 'Could not change the status.') }}
+					</NcNoteCard>
 					<NcNoteCard v-if="bulkError" type="error">
 						{{ bulkError }}
 					</NcNoteCard>
@@ -558,6 +681,21 @@ onMounted(() => {
 							{{ t('webforms', 'Select up to {max} at a time, or use "Select all matching".', { max: MAX_SELECTED }) }}
 						</span>
 						<span class="af-entries__spacer" />
+						<select v-if="statuses.length > 0"
+							class="af-entries__setstatus"
+							:aria-label="t('webforms', 'Set the status of the selected responses')"
+							:disabled="tooManySelected || bulkBusy"
+							@change="onBulkStatus">
+							<option value="__pick" selected>
+								{{ t('webforms', 'Set status…') }}
+							</option>
+							<option value="">
+								{{ t('webforms', 'No status') }}
+							</option>
+							<option v-for="status in statuses" :key="status.id" :value="status.id">
+								{{ statusLabel(status) }}
+							</option>
+						</select>
 						<NcButton variant="error" :disabled="tooManySelected || bulkBusy" @click="confirmBulk = true">
 							<template #icon>
 								<NcLoadingIcon v-if="bulkBusy" :size="20" />
@@ -585,6 +723,9 @@ onMounted(() => {
 							</template>
 							{{ t('webforms', 'Summary') }}
 						</NcButton>
+						<span v-if="newOnPage > 0" class="af-entries__newcount" role="status">
+							{{ n('webforms', '%n new since your last visit', '%n new since your last visit', newOnPage) }}
+						</span>
 						<span class="af-entries__spacer" />
 						<NcActions v-if="view === 'table'" :aria-label="t('webforms', 'Choose columns')" :name="t('webforms', 'Columns')">
 							<template #icon>
@@ -607,6 +748,11 @@ onMounted(() => {
 						:expanded-id="expandedId"
 						:sort="entryFilter.sort"
 						:selected="selected"
+						:statuses="statuses"
+						:seen-at="seenAt"
+						:busy-id="statusBusyId"
+						@status="changeStatus"
+						@updated="replaceEntry"
 						@select="selectOne"
 						@select-page="selectPage"
 						@toggle="(id) => (expandedId = expandedId === id ? null : id)"
@@ -619,6 +765,11 @@ onMounted(() => {
 								:entry="entry"
 								:definition="definitionFor(entry)"
 								:expanded="expandedId === entry.id"
+								:statuses="statuses"
+								:is-new="isNewResponse(entry, seenAt)"
+								:busy="statusBusyId === entry.id"
+								@status="(value) => changeStatus(entry.id, value)"
+								@updated="replaceEntry"
 								@toggle="expandedId = expandedId === entry.id ? null : entry.id"
 								@delete="confirmDeleteId = entry.id"
 								@changed="refreshFailedCount" />
@@ -795,6 +946,21 @@ onMounted(() => {
 	border: 1px solid var(--color-primary-element);
 	border-radius: var(--border-radius-large);
 	background: var(--color-primary-element-light, var(--color-background-hover));
+}
+
+.af-entries__setstatus {
+	min-height: var(--default-clickable-area);
+	margin: 0;
+}
+
+.af-entries__newcount {
+	padding: 0 10px;
+	border-radius: var(--border-radius-pill, 999px);
+	background: var(--color-primary-element);
+	color: var(--color-primary-element-text);
+	font-size: 13px;
+	font-weight: bold;
+	line-height: 24px;
 }
 
 .af-entries__spacer {

@@ -4,7 +4,7 @@
 -->
 
 <script setup lang="ts">
-import type { Delivery, EntryRecord, VersionDefinition } from '../../types.ts'
+import type { Delivery, EntryRecord, ResponseStatus, VersionDefinition } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -14,14 +14,23 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { computed, ref, watch } from 'vue'
 import { listDeliveries, retryDelivery } from '../../api/forms.ts'
 import { answerLines, entryFileUrl, formatTime, previewLines } from '../../entries/format.ts'
+import { findStatus, statusLabel } from '../../entries/statuses.ts'
 import { formatSize } from '../../uploads.ts'
 import DeliveryRow from './DeliveryRow.vue'
+import NoteEditor from './NoteEditor.vue'
+import StatusSelect from './StatusSelect.vue'
 
 const props = defineProps<{
 	formId: number
 	entry: EntryRecord
 	definition: VersionDefinition
 	expanded: boolean
+	/** The statuses a response can be given. None hides the status. */
+	statuses?: readonly ResponseStatus[]
+	/** It arrived since the owner last looked at the list. */
+	isNew?: boolean
+	/** A status is being saved. */
+	busy?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -29,7 +38,13 @@ const emit = defineEmits<{
 	delete: []
 	/** A delivery was retried, so the totals elsewhere are out of date. */
 	changed: []
+	/** The owner picked a status, or none. The parent saves it. */
+	status: [status: string | null]
+	/** The response changed on the server (its note), and this is how it reads now. */
+	updated: [entry: EntryRecord]
 }>()
+
+const status = computed(() => findStatus(props.statuses ?? [], props.entry.status))
 
 const lines = computed(() => answerLines(props.definition, props.entry.data))
 const preview = computed(() => previewLines(props.definition, props.entry.data))
@@ -76,8 +91,14 @@ async function retry(delivery: Delivery): Promise<void> {
 			class="af-response__head"
 			:aria-expanded="expanded"
 			@click="emit('toggle')">
+			<span v-if="isNew" class="af-response__new">{{ t('webforms', 'New') }}</span>
 			<span class="af-response__when">{{ formatTime(entry.submittedAt) }}</span>
 			<span v-if="entry.userId" class="af-response__who">{{ entry.userId }}</span>
+			<span v-if="status" class="af-response__status">{{ statusLabel(status) }}</span>
+			<span v-if="entry.note" class="af-response__noted" :title="t('webforms', 'Has a note')">
+				<Icon :path="icons.note" :size="16" />
+				<span class="af-response__sr">{{ t('webforms', 'Has a note') }}</span>
+			</span>
 			<span class="af-response__preview">
 				<template v-if="preview.length > 0">
 					<span v-for="line in preview" :key="line.id" class="af-response__bit"><strong>{{ line.label }}:</strong> {{ line.value }}</span>
@@ -104,6 +125,20 @@ async function retry(delivery: Delivery): Promise<void> {
 					</dd>
 				</template>
 			</dl>
+
+			<div class="af-response__meta">
+				<StatusSelect v-if="statuses && statuses.length > 0"
+					:statuses="statuses"
+					:model-value="entry.status"
+					:label="t('webforms', 'Status of response {id}', { id: entry.id })"
+					:disabled="busy"
+					@update:model-value="(value) => emit('status', value)" />
+				<a class="af-response__open" :href="'#/f/' + formId + '/responses/' + entry.id">
+					{{ t('webforms', 'Open on its own page') }}
+				</a>
+			</div>
+
+			<NoteEditor :form-id="formId" :entry="entry" @saved="(saved) => emit('updated', saved)" />
 
 			<section class="af-response__deliveries">
 				<h4 class="af-response__heading">
@@ -175,6 +210,52 @@ async function retry(delivery: Delivery): Promise<void> {
 .af-response__when {
 	font-weight: bold;
 	white-space: nowrap;
+}
+
+.af-response__new {
+	padding: 0 8px;
+	border-radius: var(--border-radius-pill, 999px);
+	background: var(--color-primary-element);
+	color: var(--color-primary-element-text);
+	font-size: 12px;
+	font-weight: bold;
+	line-height: 20px;
+}
+
+.af-response__status {
+	padding: 0 8px;
+	border: 1px solid var(--color-border-dark);
+	border-radius: var(--border-radius-pill, 999px);
+	font-size: 12px;
+	line-height: 18px;
+}
+
+.af-response__noted {
+	display: inline-flex;
+	align-self: center;
+	color: var(--color-text-maxcontrast);
+}
+
+.af-response__sr {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+.af-response__meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: calc(var(--default-grid-baseline) * 2);
+}
+
+.af-response__open {
+	color: var(--color-primary-element);
+	text-decoration: underline;
 }
 
 .af-response__who {

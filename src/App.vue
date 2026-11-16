@@ -6,7 +6,7 @@
 <script setup lang="ts">
 import type { OwnerForm } from './types.ts'
 
-import { t } from '@nextcloud/l10n'
+import { n, t } from '@nextcloud/l10n'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcActionLink from '@nextcloud/vue/components/NcActionLink'
@@ -16,6 +16,7 @@ import NcAppNavigationList from '@nextcloud/vue/components/NcAppNavigationList'
 import NcAppNavigationNew from '@nextcloud/vue/components/NcAppNavigationNew'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcContent from '@nextcloud/vue/components/NcContent'
+import NcCounterBubble from '@nextcloud/vue/components/NcCounterBubble'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
@@ -55,9 +56,14 @@ const selectedTitle = computed(() => forms.value.find((form) => form.id === sele
 // The selected form and screen live in the URL hash, so a reload, the back button and a shared link all work.
 type View = 'edit' | 'settings' | 'responses'
 
-function readHash(): { id: number | null, view: View } {
-	const match = /^#\/f\/(\d+)(?:\/(responses|settings))?$/.exec(window.location.hash)
-	return match ? { id: Number(match[1]), view: (match[2] as View | undefined) ?? 'edit' } : { id: null, view: 'edit' }
+/** `#/f/<id>`, `#/f/<id>/settings`, `#/f/<id>/responses`, or one response at `#/f/<id>/responses/<entryId>`. */
+function readHash(): { id: number | null, view: View, entryId: number | null } {
+	const match = /^#\/f\/(\d+)(?:\/(settings|responses(?:\/(\d+))?))?$/.exec(window.location.hash)
+	if (!match) {
+		return { id: null, view: 'edit', entryId: null }
+	}
+	const view: View = match[2] === undefined ? 'edit' : match[2] === 'settings' ? 'settings' : 'responses'
+	return { id: Number(match[1]), view, entryId: match[3] === undefined ? null : Number(match[3]) }
 }
 
 function onHashChange(): void {
@@ -161,6 +167,11 @@ async function onImportFile(event: Event): Promise<void> {
 	}
 }
 
+/** The owner looked at a form's responses, so none of them is new any more. */
+function onResponsesSeen(id: number): void {
+	forms.value = forms.value.map((form) => (form.id === id ? { ...form, newCount: 0 } : form))
+}
+
 /** Keep the list in step with edits made in the builder (title, status). */
 function onChanged(form: OwnerForm): void {
 	forms.value = forms.value.map((existing) => (existing.id === form.id ? { ...existing, ...form } : existing))
@@ -211,6 +222,12 @@ function hasNewerDraft(form: OwnerForm): boolean {
 						:title="hasNewerDraft(form) ? t('webforms', '{title} (unpublished changes)', { title: form.title }) : undefined"
 						:aria-description="hasNewerDraft(form) ? t('webforms', 'The draft has changes that are not published yet') : undefined"
 						@click="openForm(form)">
+						<template v-if="(form.newCount ?? 0) > 0" #counter>
+							<NcCounterBubble :count="form.newCount ?? 0"
+								type="highlighted"
+								:title="n('webforms', '%n new response', '%n new responses', form.newCount ?? 0)"
+								:aria-label="n('webforms', '%n new response', '%n new responses', form.newCount ?? 0)" />
+						</template>
 						<template #actions>
 							<NcActionLink :href="formExportUrl(form.id, 'draft')"
 								:download="''"
@@ -311,7 +328,10 @@ function hasNewerDraft(form: OwnerForm): boolean {
 		<EntriesView v-if="selectedId !== null && view === 'responses'"
 			:key="'responses-' + selectedId"
 			:form-id="selectedId"
-			:title="selectedTitle" />
+			:title="selectedTitle"
+			:entry-id="route.entryId"
+			:statuses="policy.statuses"
+			@seen="onResponsesSeen(selectedId)" />
 
 		<BuilderView v-else-if="selectedId !== null"
 			:key="selectedId"

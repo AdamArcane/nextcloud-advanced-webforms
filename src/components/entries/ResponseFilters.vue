@@ -5,7 +5,7 @@
 
 <script setup lang="ts">
 import type { EntryFilterState, Respondent } from '../../entries/filter.ts'
-import type { DraftDefinition } from '../../types.ts'
+import type { DraftDefinition, ResponseStatus } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -13,7 +13,8 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { defaultLeaf, makeGroup, sourceFields } from '../../builder/rules.ts'
-import { isFilterActive, rangeInvalid } from '../../entries/filter.ts'
+import { isFilterActive, NO_STATUS, rangeInvalid } from '../../entries/filter.ts'
+import { statusLabel } from '../../entries/statuses.ts'
 import { icons } from '../../icons.ts'
 import ConditionGroup from '../builder/ConditionGroup.vue'
 import Icon from '../common/Icon.vue'
@@ -22,6 +23,8 @@ const props = defineProps<{
 	modelValue: EntryFilterState
 	/** The newest version of the form, whose questions the answers filter can use. Null until responses load. */
 	definition: DraftDefinition | null
+	/** The statuses a response can be given. None hides the status filter. */
+	statuses?: readonly ResponseStatus[]
 }>()
 
 const emit = defineEmits<{
@@ -83,7 +86,7 @@ function toggleAnswers(): void {
 function clear(): void {
 	text.value = ''
 	answersOpen.value = false
-	emit('update:modelValue', { text: '', from: '', to: '', respondent: 'any', where: null, sort: props.modelValue.sort })
+	emit('update:modelValue', { text: '', from: '', to: '', respondent: 'any', where: null, statuses: [], sort: props.modelValue.sort })
 }
 </script>
 
@@ -122,6 +125,21 @@ function clear(): void {
 				<select :value="modelValue.respondent" @change="update({ respondent: ($event.target as HTMLSelectElement).value as Respondent })">
 					<option v-for="option in RESPONDENTS" :key="option.value" :value="option.value">
 						{{ option.label }}
+					</option>
+				</select>
+			</label>
+
+			<label v-if="statuses && statuses.length > 0" class="af-filters__field">
+				<span>{{ t('webforms', 'Status') }}</span>
+				<select :value="modelValue.statuses[0] ?? ''" @change="update({ statuses: ($event.target as HTMLSelectElement).value === '' ? [] : [($event.target as HTMLSelectElement).value] })">
+					<option value="">
+						{{ t('webforms', 'Any') }}
+					</option>
+					<option :value="NO_STATUS">
+						{{ t('webforms', 'No status') }}
+					</option>
+					<option v-for="status in statuses" :key="status.id" :value="status.id">
+						{{ statusLabel(status) }}
 					</option>
 				</select>
 			</label>
