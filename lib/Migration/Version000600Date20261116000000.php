@@ -10,11 +10,8 @@ declare(strict_types=1);
 namespace OCA\Webforms\Migration;
 
 use Closure;
-use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\DB\ISchemaWrapper;
-use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\DB\Types;
-use OCP\IDBConnection;
 use OCP\Migration\IOutput;
 use OCP\Migration\SimpleMigrationStep;
 
@@ -23,14 +20,6 @@ use OCP\Migration\SimpleMigrationStep;
  * responses, and a status and a note on each response.
  */
 class Version000600Date20261116000000 extends SimpleMigrationStep {
-	private bool $addedSeenAt = false;
-
-	public function __construct(
-		private readonly IDBConnection $db,
-		private readonly ITimeFactory $time,
-	) {
-	}
-
 	/**
 	 * @param Closure(): ISchemaWrapper $schemaClosure
 	 * @param array<string, mixed> $options
@@ -41,9 +30,9 @@ class Version000600Date20261116000000 extends SimpleMigrationStep {
 
 		$forms = $schema->getTable('advforms_forms');
 		if (!$forms->hasColumn('responses_seen_at')) {
-			// Unix seconds. A response submitted later is new. Null means the list was never opened.
+			// Unix seconds. A response submitted later is new. Null means the list was never opened, which is
+			// how forms that already exist start: their responses are new until the owner opens the list.
 			$forms->addColumn('responses_seen_at', Types::BIGINT, ['notnull' => false, 'length' => 20]);
-			$this->addedSeenAt = true;
 			$changed = true;
 		}
 
@@ -60,22 +49,5 @@ class Version000600Date20261116000000 extends SimpleMigrationStep {
 			$changed = true;
 		}
 		return $changed ? $schema : null;
-	}
-
-	/**
-	 * Forms that exist already start as looked at, so nothing old shows up as new after the update.
-	 *
-	 * @param Closure(): ISchemaWrapper $schemaClosure
-	 * @param array<string, mixed> $options
-	 */
-	public function postSchemaChange(IOutput $output, Closure $schemaClosure, array $options): void {
-		if (!$this->addedSeenAt) {
-			return;
-		}
-		$qb = $this->db->getQueryBuilder();
-		$qb->update('advforms_forms')
-			->set('responses_seen_at', $qb->createNamedParameter($this->time->getTime(), IQueryBuilder::PARAM_INT))
-			->where($qb->expr()->isNull('responses_seen_at'));
-		$qb->executeStatement();
 	}
 }

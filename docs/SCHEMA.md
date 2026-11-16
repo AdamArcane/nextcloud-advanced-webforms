@@ -1386,8 +1386,8 @@ not a status and nobody sets it: it follows from one moment kept per form.
 - The next visit starts clean: only what arrived in between is new.
 - `GET /api/v1/forms` gives each form `newCount`, how many responses are later than its moment, and the
   forms list shows it beside the form. It is one count on the existing `form_id, submitted_at` index.
-- When the migration runs, forms that already exist get the moment set to that time, so nothing old
-  shows up as new after the update.
+- Forms that already exist start with the moment empty. After the update each of them shows all its
+  responses as new, once, until the owner opens its list.
 - Opening the builder, a download, the summary or a single response does not count as looking at the
   list.
 
