@@ -34,6 +34,10 @@ export function displayAnswer(field: FormField, value: unknown): string {
 	if (typeof value === 'number') {
 		return String(value)
 	}
+	if (field.type === 'datetime' && typeof value === 'string') {
+		// Stored with a T between the date and the time; people read a space.
+		return value.replace('T', ' ')
+	}
 	return optionLabel(field, value)
 }
 

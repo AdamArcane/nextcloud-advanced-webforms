@@ -222,7 +222,10 @@ final class DefinitionValidator {
 			FieldType::TEXT => ['minLength', 'maxLength'],
 			FieldType::TEXTAREA => ['minLength', 'maxLength', 'rows'],
 			FieldType::NUMBER => ['min', 'max', 'step', 'prefix', 'suffix'],
-			FieldType::DATE, FieldType::TIME => ['min', 'max'],
+			FieldType::DATE, FieldType::TIME, FieldType::DATETIME => ['min', 'max'],
+			FieldType::RATING => ['max'],
+			FieldType::SCALE => ['min', 'max', 'minLabel', 'maxLabel'],
+			FieldType::CONSENT => ['text'],
 			FieldType::SELECT => ['options'],
 			FieldType::RADIO => ['options', 'columns'],
 			FieldType::CHECKBOXES => ['options', 'minSelected', 'maxSelected', 'columns'],
@@ -269,8 +272,28 @@ final class DefinitionValidator {
 				$this->err('field_limit_invalid', $path . '.rows');
 			}
 		}
-		if ($type === FieldType::DATE || $type === FieldType::TIME) {
+		if ($type === FieldType::DATE || $type === FieldType::TIME || $type === FieldType::DATETIME) {
 			$this->dateTimeLimits($field, $type, $path);
+		}
+		if ($type === FieldType::RATING && array_key_exists('max', $field) && (!is_int($field['max']) || $field['max'] < 3 || $field['max'] > 10)) {
+			$this->err('field_limit_invalid', $path . '.max');
+		}
+		if ($type === FieldType::SCALE) {
+			if (array_key_exists('min', $field) && $field['min'] !== 0 && $field['min'] !== 1) {
+				$this->err('field_limit_invalid', $path . '.min');
+			}
+			if (array_key_exists('max', $field) && (!is_int($field['max']) || $field['max'] < 2 || $field['max'] > 10)) {
+				$this->err('field_limit_invalid', $path . '.max');
+			}
+			$this->optionalString($field, 'minLabel', 50, 'field_limit_invalid', $path . '.');
+			$this->optionalString($field, 'maxLabel', 50, 'field_limit_invalid', $path . '.');
+		}
+		if ($type === FieldType::CONSENT) {
+			// What the respondent agrees to, in the paragraph's markdown.
+			$text = $field['text'] ?? null;
+			if (!is_string($text) || trim($text) === '' || mb_strlen($text) > 2000) {
+				$this->err('field_text_invalid', $path . '.text');
+			}
 		}
 		if (($type === FieldType::RADIO || $type === FieldType::CHECKBOXES)
 			&& array_key_exists('columns', $field) && (!is_int($field['columns']) || $field['columns'] < 1 || $field['columns'] > 4)) {
@@ -359,7 +382,11 @@ final class DefinitionValidator {
 	 * @param array<string, mixed> $field
 	 */
 	private function dateTimeLimits(array $field, string $type, string $path): void {
-		$valid = $type === FieldType::DATE ? FieldValueValidator::isDate(...) : FieldValueValidator::isTime(...);
+		$valid = match ($type) {
+			FieldType::DATE => FieldValueValidator::isDate(...),
+			FieldType::DATETIME => FieldValueValidator::isDateTime(...),
+			default => FieldValueValidator::isTime(...),
+		};
 		foreach (['min', 'max'] as $key) {
 			if (array_key_exists($key, $field) && !$valid($field[$key])) {
 				$this->err('field_limit_invalid', $path . '.' . $key);
@@ -420,6 +447,7 @@ final class DefinitionValidator {
 			FieldType::HEADING => ['type', 'text', 'level', 'align'],
 			FieldType::PARAGRAPH => ['type', 'text', 'align'],
 			FieldType::DIVIDER => ['type', 'style'],
+			FieldType::IMAGE => ['type', 'src', 'alt', 'width', 'align'],
 			default => ['type'],
 		};
 		foreach (array_keys($field) as $key) {
@@ -430,6 +458,19 @@ final class DefinitionValidator {
 		if ($type === FieldType::DIVIDER) {
 			if (array_key_exists('style', $field) && !in_array($field['style'], ['solid', 'dashed', 'dotted'], true)) {
 				$this->err('field_limit_invalid', $path . '.style');
+			}
+			return;
+		}
+		if ($type === FieldType::IMAGE) {
+			if (ImageSource::kind($field['src'] ?? null) === null) {
+				$this->err('field_image_invalid', $path . '.src');
+			}
+			$this->optionalString($field, 'alt', 255, 'field_limit_invalid', $path . '.');
+			if (array_key_exists('width', $field) && !in_array($field['width'], [25, 50, 75, 100], true)) {
+				$this->err('field_limit_invalid', $path . '.width');
+			}
+			if (array_key_exists('align', $field) && !in_array($field['align'], ['start', 'center', 'end'], true)) {
+				$this->err('field_limit_invalid', $path . '.align');
 			}
 			return;
 		}

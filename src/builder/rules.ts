@@ -65,7 +65,10 @@ export function defaultOp(type: string): string {
 		case 'select':
 		case 'radio':
 		case 'number':
+		case 'rating':
+		case 'scale':
 		case 'checkbox':
+		case 'consent':
 			return 'eq'
 		case 'checkboxes':
 			return 'contains'
@@ -81,9 +84,14 @@ function defaultScalar(field: FormField | undefined): unknown {
 		case 'checkboxes':
 			return field.options?.[0]?.value ?? ''
 		case 'checkbox':
+		case 'consent':
 			return true
 		case 'number':
 			return 0
+		case 'rating':
+			return 1
+		case 'scale':
+			return field.min === 0 ? 0 : 1
 		default:
 			return ''
 	}

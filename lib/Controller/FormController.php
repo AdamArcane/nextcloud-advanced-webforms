@@ -18,6 +18,8 @@ use OCA\Webforms\Service\ActionLogService;
 use OCA\Webforms\Forms\EntryFilter;
 use OCA\Webforms\Service\EntryExportService;
 use OCA\Webforms\Service\FormService;
+use OCA\Webforms\Forms\ImageSource;
+use OCA\Webforms\Uploads\Ports\OwnerImagePort;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\FrontpageRoute;
@@ -41,8 +43,32 @@ class FormController extends Controller {
 		private readonly NextcloudSecrets $secrets,
 		private readonly ActionLogService $actionLog,
 		private readonly EntryExportService $export,
+		private readonly OwnerImagePort $images,
 	) {
 		parent::__construct(Application::APP_ID, $request);
+	}
+
+	/**
+	 * A picture from the caller's own Files, for the builder to show an image block before the form is
+	 * published (docs/SCHEMA.md section 4.9). Only the picture types an image block may use.
+	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/image')]
+	public function image(string $path = ''): StreamResponse|JSONResponse {
+		$clean = ImageSource::filesPath($path);
+		$mime = $clean === null ? null : ImageSource::mime($clean);
+		$file = $clean === null || $mime === null ? null : $this->images->open($this->userId(), $clean);
+		if ($file === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+		$response = new StreamResponse($file['stream']);
+		$response->addHeader('Content-Type', $mime);
+		$response->addHeader('Content-Length', (string)$file['size']);
+		$response->addHeader('Content-Disposition', 'inline');
+		$response->addHeader('X-Content-Type-Options', 'nosniff');
+		$response->addHeader('Cache-Control', 'private, max-age=60');
+		return $response;
 	}
 
 	#[NoAdminRequired]

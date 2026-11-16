@@ -79,3 +79,26 @@ describe('prefillValue', () => {
 		expect(value({ type: 'time', max: '09:00' }, 'p=09:30')).toBeUndefined()
 	})
 })
+
+describe('prefillValue for ratings, scales, consent and date and time', () => {
+	it('takes a number the rating or scale offers', () => {
+		expect(value({ type: 'rating' }, 'p=4')).toBe('4')
+		expect(value({ type: 'rating' }, 'p=6')).toBeUndefined()
+		expect(value({ type: 'rating', max: 10 }, 'p=10')).toBe('10')
+		expect(value({ type: 'scale', min: 0, max: 10 }, 'p=0')).toBe('0')
+		expect(value({ type: 'scale', max: 10 }, 'p=0')).toBeUndefined()
+		expect(value({ type: 'scale' }, 'p=2.5')).toBeUndefined()
+	})
+
+	it('ticks a consent with yes or no', () => {
+		expect(value({ type: 'consent', text: 'I agree.' }, 'p=yes')).toBe(true)
+		expect(value({ type: 'consent', text: 'I agree.' }, 'p=maybe')).toBeUndefined()
+	})
+
+	it('takes a date and time with a T or a space, within the limits', () => {
+		expect(value({ type: 'datetime' }, 'p=2026-05-01T09:30')).toBe('2026-05-01T09:30')
+		expect(value({ type: 'datetime' }, 'p=2026-05-01+09:30')).toBe('2026-05-01T09:30')
+		expect(value({ type: 'datetime' }, 'p=2026-05-01')).toBeUndefined()
+		expect(value({ type: 'datetime', min: '2026-05-01T10:00' }, 'p=2026-05-01T09:30')).toBeUndefined()
+	})
+})

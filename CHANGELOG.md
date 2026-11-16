@@ -7,6 +7,15 @@
 
 ## Unreleased
 
+- Four new field types. "Rating" is a row of 3 to 10 stars. "Scale" is a row of numbers, from 0 or 1 up
+  to 10, with a label at each end. "Consent" is a checkbox beside a text to agree to, which can link to
+  your terms. "Date and time" is one answer for a day and a time. All four work in rules, defaults,
+  filling from the link, exports, emails and the Tables action. See `docs/SCHEMA.md` section 4.8.
+
+- Image blocks. Add a picture to a form from your Files, with a "Choose from Files" button, or by the
+  address of a picture on another site. Set its description, largest width and alignment. A picture in
+  Files is read where it is, so replacing the file updates the form. See `docs/SCHEMA.md` section 4.9.
+
 - Page progress. A form with several pages shows respondents where they are: a bar or numbered steps,
   with the step number ("Step 2 of 4"), the page's name or a percentage. It is on by default, as a bar
   with the step number, and forms that are already published show it too. It takes the accent colour or

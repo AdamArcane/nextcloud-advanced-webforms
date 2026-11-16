@@ -14,9 +14,10 @@ import { ApiError, submitPublicForm } from '../../api/public.ts'
 import { renderedLabelPosition } from '../../layout/labelPosition.ts'
 import { progressColorStyle, progressLabel, progressStyle, submitAlign, submitButtonStyle } from '../../design.ts'
 import { leaveTo } from '../../embedded.ts'
+import { ownerImageUrl, publicImageUrl } from '../../images.ts'
 import { visiblePages } from '../../layout/visibleLayout.ts'
 import { evaluateRules } from '../../rules/engine.ts'
-import { isInputType } from '../../rules/fieldTypes.ts'
+import { isBooleanType, isInputType } from '../../rules/fieldTypes.ts'
 import CaptchaField from './CaptchaField.vue'
 import FieldInput from './FieldInput.vue'
 import { prefillValue } from '../../prefill.ts'
@@ -51,6 +52,7 @@ function initialValue(id: string, field: FormField): unknown {
 	const fallback = field.defaultValue
 	switch (field.type) {
 		case 'checkbox':
+		case 'consent':
 			return fallback === true
 		case 'checkboxes':
 			return Array.isArray(fallback) ? [...fallback] : []
@@ -138,10 +140,19 @@ const progress = computed(() => {
 	return { style, step, total, percent, stepText, text }
 })
 
+/** The picture of an image block: the owner's own view in the preview, the form's route for respondents. */
+function imageSrc(fieldId: string): string | null {
+	const field = fields.value[fieldId]
+	if (field?.type !== 'image' || typeof field.src !== 'string') {
+		return null
+	}
+	return props.preview ? ownerImageUrl(field.src) : publicImageUrl(field.src, props.form.token, fieldId, props.form.versionId)
+}
+
 const submitLabel = computed(() => definition.value.settings?.submitLabel || t('webforms', 'Send'))
 
 function isEmpty(field: FormField, value: unknown): boolean {
-	if (field.type === 'checkbox') {
+	if (isBooleanType(field.type)) {
 		return value !== true
 	}
 	if (Array.isArray(value)) {
@@ -369,7 +380,8 @@ async function showError(error: unknown) {
 					:uploads="uploads"
 					:signed-in="form.signedIn === true"
 					:preview="preview === true"
-					:upload-limit="form.uploadLimit" />
+					:upload-limit="form.uploadLimit"
+					:image-src="imageSrc(cell.field)" />
 			</div>
 		</div>
 

@@ -37,6 +37,8 @@ use OCA\Webforms\Uploads\Adapter\NextcloudPendingStore;
 use OCA\Webforms\Uploads\Adapter\NextcloudTokens;
 use OCA\Webforms\Uploads\Ports\MimePort;
 use OCA\Webforms\Uploads\Ports\OwnerFilesPort;
+use OCA\Webforms\Uploads\Ports\OwnerImagePort;
+use OCA\Webforms\Uploads\Adapter\NextcloudOwnerImages;
 use OCA\Webforms\Uploads\Ports\PendingStorePort;
 use OCA\Webforms\Uploads\Ports\TokenPort;
 use OCA\Webforms\Uploads\Ports\UploadRegistryPort;
@@ -71,6 +73,7 @@ class Application extends App implements IBootstrap {
 		$context->registerServiceAlias(UploadRegistryPort::class, UploadMapper::class);
 		$context->registerServiceAlias(PendingStorePort::class, NextcloudPendingStore::class);
 		$context->registerServiceAlias(OwnerFilesPort::class, NextcloudOwnerFiles::class);
+		$context->registerServiceAlias(OwnerImagePort::class, NextcloudOwnerImages::class);
 		$context->registerServiceAlias(TokenPort::class, NextcloudTokens::class);
 		$context->registerServiceAlias(MimePort::class, NextcloudMime::class);
 

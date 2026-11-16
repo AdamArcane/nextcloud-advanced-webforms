@@ -29,7 +29,10 @@ export type FormField = {
 	maxLength?: number
 	/** Rows shown by a textarea (2 to 20). */
 	rows?: number
-	/** A number for `number` fields; `YYYY-MM-DD` for `date`; `HH:MM` for `time`. */
+	/**
+	 * A number for `number` fields; `YYYY-MM-DD` for `date`; `HH:MM` for `time`; `YYYY-MM-DDTHH:MM` for
+	 * `datetime`. A `rating` has only `max` (3 to 10 stars), a `scale` runs from `min` (0 or 1) to `max`.
+	 */
 	min?: number | string
 	max?: number | string
 	/** Text shown before or after a number input, such as a currency sign or a unit. */
@@ -40,11 +43,20 @@ export type FormField = {
 	/** Line style of a divider. Default solid. */
 	style?: 'solid' | 'dashed' | 'dotted'
 	step?: number
+	/** What the two ends of a `scale` mean, such as "Not likely" and "Very likely". */
+	minLabel?: string
+	maxLabel?: string
 	options?: FieldOption[]
 	minSelected?: number
 	maxSelected?: number
 	text?: string
 	level?: number
+	/** An image block: an `https://` address or a path in the owner's Files (docs/SCHEMA.md 4.9). */
+	src?: string
+	/** What the picture shows, for people who cannot see it. Empty for decoration. */
+	alt?: string
+	/** The most room an image takes, as a percentage of its cell: 25, 50, 75 or 100 (default). */
+	width?: number
 	/** Text alignment of a heading or paragraph. Default `start`. */
 	align?: 'start' | 'center' | 'end'
 	/** Upload fields (docs/SCHEMA.md 4.6). */

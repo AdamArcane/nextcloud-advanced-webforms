@@ -6,7 +6,10 @@
 <script setup lang="ts">
 import type { FormField, LabelPosition } from '../../types.ts'
 
+import { n } from '@nextcloud/l10n'
 import { computed } from 'vue'
+import { icons } from '../../icons.ts'
+import { isTemporalType, steps, temporalInputType } from '../../rules/fieldTypes.ts'
 import FileInput from './FileInput.vue'
 import type { UploadState } from './uploadState.ts'
 import MarkdownText from './MarkdownText.ts'
@@ -29,6 +32,8 @@ const props = defineProps<{
 	signedIn?: boolean
 	preview?: boolean
 	uploadLimit?: number
+	/** Where an image block's picture loads from, worked out by the form (it knows the token). */
+	imageSrc?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -50,8 +55,14 @@ const describedBy = computed(() => {
 	return ids.length > 0 ? ids.join(' ') : undefined
 })
 
-const isDisplay = computed(() => ['heading', 'paragraph', 'divider'].includes(props.field.type))
-const isGroup = computed(() => props.field.type === 'radio' || props.field.type === 'checkboxes')
+const isDisplay = computed(() => ['heading', 'paragraph', 'divider', 'image'].includes(props.field.type))
+const imageStyle = computed(() => ({ maxWidth: ([25, 50, 75].includes(props.field.width ?? 100) ? props.field.width : 100) + '%' }))
+const isTemporal = computed(() => isTemporalType(props.field.type))
+const isPick = computed(() => props.field.type === 'rating' || props.field.type === 'scale')
+const isGroup = computed(() => props.field.type === 'radio' || props.field.type === 'checkboxes' || isPick.value)
+const pickValues = computed(() => (isPick.value ? steps(props.field) : []))
+/** The picked number of a rating or a scale, or null. Kept as text like every typed answer. */
+const picked = computed(() => (typeof props.modelValue === 'string' && props.modelValue !== '' ? Number(props.modelValue) : null))
 const inputType = computed(() => ({
 	text: 'text',
 	email: 'email',
@@ -60,6 +71,7 @@ const inputType = computed(() => ({
 	number: 'number',
 	date: 'date',
 	time: 'time',
+	datetime: temporalInputType('datetime'),
 }[props.field.type] ?? 'text'))
 /** Only headings and paragraphs align; start is the default and needs no style. */
 const alignStyle = computed(() => (props.field.align === 'center' || props.field.align === 'end' ? { textAlign: props.field.align } : undefined))
@@ -76,6 +88,11 @@ const listValue = computed(() => (Array.isArray(props.modelValue) ? props.modelV
 
 function onInput(event: Event) {
 	emit('update:modelValue', (event.target as HTMLInputElement).value)
+}
+
+/** Pick a number; picking the one already chosen takes the answer back. */
+function pick(value: number) {
+	emit('update:modelValue', picked.value === value ? '' : String(value))
 }
 
 function onCheckbox(event: Event) {
@@ -99,6 +116,14 @@ function toggleOption(value: string, event: Event) {
 			{{ field.text }}
 		</component>
 		<MarkdownText v-else-if="field.type === 'paragraph'" :source="field.text ?? ''" :style="alignStyle" />
+		<div v-else-if="field.type === 'image'" class="af-image" :style="alignStyle">
+			<img v-if="imageSrc"
+				:src="imageSrc"
+				:alt="field.alt ?? ''"
+				:style="imageStyle"
+				loading="lazy"
+				referrerpolicy="no-referrer">
+		</div>
 		<hr v-else class="af-divider" :class="field.style && field.style !== 'solid' ? 'af-divider--' + field.style : undefined">
 	</template>
 
@@ -120,6 +145,70 @@ function toggleOption(value: string, event: Event) {
 				<span :class="{ 'af-sr-only': hiddenLabel }">{{ field.label }}<span v-if="required && !hideRequiredIndicator" aria-hidden="true"> *</span></span>
 			</label>
 		</template>
+
+		<!-- Consent: the label names the question, the checkbox sits beside what is agreed to. -->
+		<template v-else-if="field.type === 'consent'">
+			<span class="af-label" :class="{ 'af-sr-only': hiddenLabel }">
+				{{ field.label }}<span v-if="required && !hideRequiredIndicator" aria-hidden="true"> *</span>
+			</span>
+			<label class="af-checkbox af-consent">
+				<input :id="domId"
+					type="checkbox"
+					:checked="modelValue === true"
+					:aria-required="required || undefined"
+					:aria-invalid="error ? true : undefined"
+					:aria-describedby="describedBy"
+					@change="onCheckbox">
+				<MarkdownText class="af-consent__text" :source="field.text ?? ''" />
+			</label>
+		</template>
+
+		<!-- A rating or a scale: one number picked from a row, as radio buttons underneath. -->
+		<fieldset v-else-if="isPick" class="af-group" :aria-describedby="describedBy" :aria-invalid="error ? true : undefined">
+			<legend :class="{ 'af-sr-only': hiddenLabel }">
+				{{ field.label }}<span v-if="required && !hideRequiredIndicator" aria-hidden="true"> *</span>
+			</legend>
+			<p v-if="field.description" :id="domId + '-desc'" class="af-description">
+				{{ field.description }}
+			</p>
+			<div v-if="field.type === 'rating'" class="af-rating">
+				<label v-for="value in pickValues"
+					:key="value"
+					class="af-rating__star"
+					:class="{ 'af-rating__star--on': picked !== null && value <= picked }">
+					<input class="af-sr-only"
+						type="radio"
+						:name="domId"
+						:value="value"
+						:checked="picked === value"
+						:aria-required="required || undefined"
+						@click="pick(value)">
+					<svg viewBox="0 0 24 24" aria-hidden="true"><path :d="icons.star" /></svg>
+					<span class="af-sr-only">{{ n('webforms', '%n star', '%n stars', value) }}</span>
+				</label>
+			</div>
+			<div v-else class="af-scale">
+				<div class="af-scale__row">
+					<label v-for="value in pickValues"
+						:key="value"
+						class="af-scale__step"
+						:class="{ 'af-scale__step--on': picked === value }">
+						<input class="af-sr-only"
+							type="radio"
+							:name="domId"
+							:value="value"
+							:checked="picked === value"
+							:aria-required="required || undefined"
+							@click="pick(value)">
+						<span>{{ value }}</span>
+					</label>
+				</div>
+				<div v-if="field.minLabel || field.maxLabel" class="af-scale__ends">
+					<span>{{ field.minLabel }}</span>
+					<span>{{ field.maxLabel }}</span>
+				</div>
+			</div>
+		</fieldset>
 
 		<!-- Groups use fieldset and legend so the label names the whole group. -->
 		<fieldset v-else-if="isGroup" class="af-group" :aria-describedby="describedBy" :aria-invalid="error ? true : undefined">
@@ -193,8 +282,8 @@ function toggleOption(value: string, event: Event) {
 					:placeholder="field.placeholder"
 					:minlength="field.type === 'text' ? field.minLength : undefined"
 					:maxlength="field.type === 'text' ? field.maxLength : undefined"
-					:min="field.type === 'number' ? numberLimit(field.min) : (field.type === 'date' || field.type === 'time' ? textLimit(field.min) : undefined)"
-					:max="field.type === 'number' ? numberLimit(field.max) : (field.type === 'date' || field.type === 'time' ? textLimit(field.max) : undefined)"
+					:min="field.type === 'number' ? numberLimit(field.min) : (isTemporal ? textLimit(field.min) : undefined)"
+					:max="field.type === 'number' ? numberLimit(field.max) : (isTemporal ? textLimit(field.max) : undefined)"
 					:step="field.type === 'number' ? (field.step ?? 'any') : undefined"
 					:aria-required="required || undefined"
 					:aria-invalid="error ? true : undefined"
@@ -307,6 +396,93 @@ function toggleOption(value: string, event: Event) {
 .af-checkbox input {
 	margin: 0;
 	flex: none;
+}
+
+.af-image {
+	margin-bottom: 16px;
+}
+
+.af-image img {
+	max-width: 100%;
+	height: auto;
+	vertical-align: middle;
+	border-radius: var(--border-radius-small, 4px);
+}
+
+.af-consent {
+	align-items: flex-start;
+}
+
+.af-consent input {
+	/* Level with the first line of the text. */
+	margin-top: calc((1.5em - 14px) / 2);
+}
+
+.af-consent__text :deep(p) {
+	margin: 0;
+}
+
+.af-rating {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2px;
+}
+
+.af-rating__star {
+	display: flex;
+	color: var(--color-border-maxcontrast, var(--color-border-dark));
+	cursor: pointer;
+	border-radius: var(--border-radius-small, 4px);
+}
+
+.af-rating__star svg {
+	width: 32px;
+	height: 32px;
+	fill: currentColor;
+}
+
+.af-rating__star--on {
+	color: var(--color-primary-element);
+}
+
+.af-scale__row {
+	display: flex;
+	gap: 4px;
+}
+
+.af-scale__step {
+	display: flex;
+	flex: 1 1 0;
+	align-items: center;
+	justify-content: center;
+	min-width: 0;
+	max-width: 56px;
+	min-height: var(--default-clickable-area, 34px);
+	border: 2px solid var(--color-border-maxcontrast, var(--color-border-dark));
+	border-radius: var(--border-radius-element, 8px);
+	cursor: pointer;
+	font-weight: 600;
+}
+
+.af-scale__step--on {
+	border-color: var(--color-primary-element);
+	background: var(--color-primary-element);
+	color: var(--color-primary-element-text);
+}
+
+.af-rating__star:has(input:focus-visible),
+.af-scale__step:has(input:focus-visible) {
+	outline: 2px solid var(--color-main-text);
+	outline-offset: 2px;
+}
+
+.af-scale__ends {
+	display: flex;
+	justify-content: space-between;
+	gap: 16px;
+	margin-top: 4px;
+	color: var(--color-text-maxcontrast);
+	font-size: 0.9em;
 }
 
 .af-description {

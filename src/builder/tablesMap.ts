@@ -10,6 +10,7 @@
 import type { DraftDefinition } from '../types.ts'
 
 import { t } from '@nextcloud/l10n'
+import { isBooleanType, isNumericType } from '../rules/fieldTypes.ts'
 import { sourceFields } from './rules.ts'
 
 export interface TablesColumn {
@@ -64,12 +65,12 @@ export function compatible(source: string, kind: ColumnKind | null): boolean {
 		case 'text': return true
 		case 'number':
 		case 'stars':
-		case 'progress': return source === 'number'
+		case 'progress': return isNumericType(source)
 		case 'single': return source === 'select' || source === 'radio'
 		case 'multi': return source === 'checkboxes'
-		case 'check': return source === 'checkbox'
-		case 'date':
-		case 'datetime': return source === 'date'
+		case 'check': return isBooleanType(source)
+		case 'date': return source === 'date'
+		case 'datetime': return source === 'date' || source === 'datetime'
 		case 'time': return source === 'time'
 		default: return false
 	}
@@ -174,6 +175,8 @@ export interface TableFieldSpec {
 	label: string
 	options?: { value: string, label: string }[]
 	step?: number
+	/** The most stars of a rating: five or fewer becomes a stars column. */
+	max?: number
 	prefix?: string
 	suffix?: string
 }
@@ -188,6 +191,9 @@ export function fieldsForTable(definition: DraftDefinition): TableFieldSpec[] {
 		}
 		if (typeof extra.step === 'number') {
 			spec.step = extra.step
+		}
+		if (field.type === 'rating' && typeof extra.max === 'number') {
+			spec.max = extra.max
 		}
 		if (typeof extra.prefix === 'string') {
 			spec.prefix = extra.prefix

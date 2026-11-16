@@ -87,11 +87,12 @@ final class TablesValue {
 		return match ($kind) {
 			// Anything has a text form, including choices and uploaded file names.
 			self::KIND_TEXT => FieldType::isInput($source),
-			self::KIND_NUMBER, self::KIND_STARS, self::KIND_PROGRESS => $source === FieldType::NUMBER,
+			self::KIND_NUMBER, self::KIND_STARS, self::KIND_PROGRESS => FieldType::isNumeric($source),
 			self::KIND_SINGLE => $source === FieldType::SELECT || $source === FieldType::RADIO,
 			self::KIND_MULTI => $source === FieldType::CHECKBOXES,
-			self::KIND_CHECK => $source === FieldType::CHECKBOX,
-			self::KIND_DATE, self::KIND_DATETIME => $source === FieldType::DATE,
+			self::KIND_CHECK => FieldType::isBoolean($source),
+			self::KIND_DATE => $source === FieldType::DATE,
+			self::KIND_DATETIME => $source === FieldType::DATE || $source === FieldType::DATETIME,
 			self::KIND_TIME => $source === FieldType::TIME,
 			default => false,
 		};
@@ -158,7 +159,10 @@ final class TablesValue {
 			case self::KIND_DATE:
 				return is_string($value) ? $value : null;
 			case self::KIND_DATETIME:
-				return is_string($value) ? $value . ' 00:00' : null;
+				if (!is_string($value)) {
+					return null;
+				}
+				return $source === FieldType::DATETIME ? str_replace('T', ' ', $value) : $value . ' 00:00';
 			case self::KIND_TIME:
 				return is_string($value) ? $value : null;
 		}
@@ -183,6 +187,9 @@ final class TablesValue {
 				}
 			}
 			return implode(', ', array_filter($parts, static fn (string $part): bool => $part !== ''));
+		}
+		if (($field['type'] ?? null) === FieldType::DATETIME) {
+			return str_replace('T', ' ', (string)$value);
 		}
 		return self::labelOf($field, (string)$value);
 	}

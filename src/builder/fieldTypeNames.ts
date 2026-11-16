@@ -22,11 +22,16 @@ export function fieldTypeName(type: string): string {
 		case 'checkbox': return t('webforms', 'Checkbox')
 		case 'date': return t('webforms', 'Date')
 		case 'time': return t('webforms', 'Time')
+		case 'datetime': return t('webforms', 'Date and time')
+		case 'rating': return t('webforms', 'Rating')
+		case 'scale': return t('webforms', 'Scale')
+		case 'consent': return t('webforms', 'Consent')
 		case 'file': return t('webforms', 'File upload')
 		case 'hidden': return t('webforms', 'Hidden value')
 		case 'heading': return t('webforms', 'Heading')
 		case 'paragraph': return t('webforms', 'Paragraph')
 		case 'divider': return t('webforms', 'Divider')
+		case 'image': return t('webforms', 'Image')
 		default: return type
 	}
 }
@@ -46,11 +51,16 @@ export function fieldTypeHint(type: string): string {
 		case 'checkbox': return t('webforms', 'A single yes or no')
 		case 'date': return t('webforms', 'Pick a day')
 		case 'time': return t('webforms', 'Pick a time')
+		case 'datetime': return t('webforms', 'A day and a time in one answer')
+		case 'rating': return t('webforms', 'Stars, from 1 to 5 or more')
+		case 'scale': return t('webforms', 'A number on a line, such as 0 to 10')
+		case 'consent': return t('webforms', 'Agree to a text, with links')
 		case 'file': return t('webforms', 'Attach files to the response')
 		case 'hidden': return t('webforms', 'Not shown, filled from the link or a default')
 		case 'heading': return t('webforms', 'A title for a section')
 		case 'paragraph': return t('webforms', 'Some explanatory text')
 		case 'divider': return t('webforms', 'A line between sections')
+		case 'image': return t('webforms', 'A picture from your Files or a web address')
 		default: return ''
 	}
 }
