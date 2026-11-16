@@ -156,8 +156,10 @@ final class DefinitionValidator {
 				'width' => in_array($value, ['narrow', 'standard', 'wide'], true),
 				'card' => is_bool($value),
 				'background' => in_array($value, ['default', 'plain', 'color'], true),
-				'backgroundColor', 'accentColor', 'buttonColor' => is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1,
+				'backgroundColor', 'accentColor', 'buttonColor', 'progressColor' => is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1,
 				'submitAlign' => in_array($value, ['left', 'center', 'right', 'justify'], true),
+				'progress' => in_array($value, ['bar', 'steps', 'none'], true),
+				'progressLabel' => in_array($value, ['step', 'title', 'percent', 'none'], true),
 				default => null,
 			};
 			if ($valid === null) {

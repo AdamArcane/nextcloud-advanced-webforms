@@ -12,7 +12,7 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, nextTick, reactive, ref } from 'vue'
 import { ApiError, submitPublicForm } from '../../api/public.ts'
 import { renderedLabelPosition } from '../../layout/labelPosition.ts'
-import { submitAlign, submitButtonStyle } from '../../design.ts'
+import { progressColorStyle, progressLabel, progressStyle, submitAlign, submitButtonStyle } from '../../design.ts'
 import { leaveTo } from '../../embedded.ts'
 import { visiblePages } from '../../layout/visibleLayout.ts'
 import { evaluateRules } from '../../rules/engine.ts'
@@ -112,6 +112,32 @@ const rows = computed(() => currentPage.value?.rows ?? [])
 const isFirst = computed(() => currentIndex.value === 0)
 const isLast = computed(() => currentIndex.value >= pages.value.length - 1)
 
+// Progress through the pages (docs/SCHEMA.md 5.1). It counts the pages that can be reached right now,
+// so the total follows the rules, and a form with one page shows nothing.
+const progressText = ref<HTMLElement | null>(null)
+const progressColor = computed(() => progressColorStyle(definition.value.settings?.design))
+const progress = computed(() => {
+	const total = pages.value.length
+	const style = progressStyle(definition.value.settings?.design)
+	const label = progressLabel(definition.value.settings?.design)
+	if (total < 2 || (style === 'none' && label === 'none')) {
+		return null
+	}
+	const step = currentIndex.value + 1
+	const percent = Math.round((step / total) * 100)
+	const stepText = t('webforms', 'Step {step} of {total}', { step, total })
+	let text: string | null = stepText
+	if (label === 'none') {
+		text = null
+	} else if (label === 'percent') {
+		text = t('webforms', '{percent}%', { percent })
+	} else if (label === 'title') {
+		// A page without a name falls back to its step number.
+		text = currentPage.value?.title?.trim() || stepText
+	}
+	return { style, step, total, percent, stepText, text }
+})
+
 const submitLabel = computed(() => definition.value.settings?.submitLabel || t('webforms', 'Send'))
 
 function isEmpty(field: FormField, value: unknown): boolean {
@@ -179,6 +205,8 @@ async function goBack() {
 async function scrollToTop() {
 	await nextTick()
 	document.querySelector<HTMLElement>('.af-form')?.scrollIntoView?.({ block: 'start' })
+	// Screen readers announce the new page, and the keyboard carries on from the top of it.
+	progressText.value?.focus({ preventScroll: true })
 }
 
 async function onSubmit() {
@@ -298,6 +326,34 @@ async function showError(error: unknown) {
 	</NcNoteCard>
 
 	<form v-else class="af-form" novalidate @submit.prevent="onSubmit">
+		<div v-if="progress" class="af-progress" :style="progressColor">
+			<p v-if="progress.text"
+				ref="progressText"
+				class="af-progress__label"
+				tabindex="-1">
+				{{ progress.text }}
+			</p>
+			<div v-if="progress.style === 'bar'"
+				class="af-progress__bar"
+				role="progressbar"
+				aria-valuemin="0"
+				aria-valuemax="100"
+				:aria-valuenow="progress.percent"
+				:aria-valuetext="progress.stepText"
+				:aria-label="t('webforms', 'Progress')">
+				<div class="af-progress__fill" :style="{ width: progress.percent + '%' }" />
+			</div>
+			<ol v-else-if="progress.style === 'steps'" class="af-progress__steps" :aria-label="progress.stepText">
+				<li v-for="n in progress.total"
+					:key="n"
+					class="af-progress__step"
+					:class="{ 'af-progress__step--done': n < progress.step, 'af-progress__step--current': n === progress.step }"
+					:aria-current="n === progress.step ? 'step' : undefined">
+					<span class="af-progress__dot">{{ n }}</span>
+				</li>
+			</ol>
+		</div>
+
 		<div v-for="row in rows" :key="row.id" class="af-row">
 			<div v-for="cell in row.cells"
 				:key="cell.id"
@@ -395,12 +451,106 @@ async function showError(error: unknown) {
 }
 
 .af-progress {
-	margin: 0 0 8px;
-	color: var(--color-text-maxcontrast);
+	margin: 0 0 20px;
 }
 
-.af-page-title {
-	margin: 0 0 16px;
+.af-progress__label {
+	margin: 0 0 6px;
+	color: var(--color-text-maxcontrast);
+	font-weight: 600;
+}
+
+/* Focused by the form itself after Next and Back, never by the Tab key. */
+.af-progress__label:focus {
+	outline: none;
+}
+
+.af-progress__bar {
+	height: 6px;
+	border-radius: 3px;
+	background: var(--color-background-dark);
+	overflow: hidden;
+}
+
+.af-progress__fill {
+	height: 100%;
+	border-radius: 3px;
+	background: var(--color-primary-element);
+	transition: width 0.25s ease;
+}
+
+.af-progress__steps {
+	display: flex;
+	align-items: center;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.af-progress__step {
+	display: flex;
+	align-items: center;
+}
+
+/* The line that joins a step to the one before it. */
+.af-progress__step + .af-progress__step {
+	flex: 1 1 0;
+}
+
+.af-progress__step + .af-progress__step::before {
+	content: '';
+	flex: 1 1 0;
+	height: 2px;
+	background: var(--color-border-dark);
+}
+
+.af-progress__step--done::before,
+.af-progress__step--current::before {
+	background: var(--color-primary-element) !important;
+}
+
+.af-progress__dot {
+	display: flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border: 2px solid var(--color-border-dark);
+	border-radius: 50%;
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1;
+}
+
+.af-progress__step--done .af-progress__dot,
+.af-progress__step--current .af-progress__dot {
+	border-color: var(--color-primary-element);
+}
+
+.af-progress__step--done .af-progress__dot {
+	background: var(--color-primary-element);
+	color: var(--color-primary-element-text);
+}
+
+.af-progress__step--current .af-progress__dot {
+	color: var(--color-main-text);
+}
+
+/* Twenty numbered steps do not fit a phone: there they are plain dots. */
+@container (max-width: 600px) {
+	.af-progress__dot {
+		width: 12px;
+		height: 12px;
+		font-size: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.af-progress__fill {
+		transition: none;
+	}
 }
 
 .af-hp {

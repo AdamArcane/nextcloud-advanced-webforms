@@ -229,6 +229,43 @@ describe('FormRenderer with several pages', () => {
 		expect(submitMock.mock.calls[0][1].values).toEqual({ f_name: 'Ann', f_mail: '' })
 	})
 
+	it('shows a progress bar with the step number by default', async () => {
+		const wrapper = mount(FormRenderer, { props: { form: paged, preview: true }, attachTo: document.body })
+		expect(wrapper.find('.af-progress__label').text()).toBe('Step 1 of 2')
+		expect(wrapper.find('[role=progressbar]').attributes('aria-valuenow')).toBe('50')
+		await wrapper.find('form').trigger('submit')
+		expect(wrapper.find('.af-progress__label').text()).toBe('Step 2 of 2')
+		expect(wrapper.find('[role=progressbar]').attributes('aria-valuenow')).toBe('100')
+		expect(document.activeElement).toBe(wrapper.find('.af-progress__label').element)
+	})
+
+	it('follows the design: steps, page name, percent or nothing', async () => {
+		const withDesign = (design: NonNullable<PublicForm['definition']['settings']>['design']) => mount(FormRenderer, {
+			props: { form: { ...paged, definition: { ...paged.definition, settings: { design } } }, preview: true },
+			attachTo: document.body,
+		})
+		const named = withDesign({ progress: 'steps', progressLabel: 'title' })
+		expect(named.find('[role=progressbar]').exists()).toBe(false)
+		expect(named.findAll('.af-progress__step')).toHaveLength(2)
+		expect(named.find('[aria-current=step]').text()).toBe('1')
+		expect(named.find('.af-progress__label').text()).toBe('About you')
+		// The second page has no name, so it falls back to its step number.
+		await named.find('form').trigger('submit')
+		expect(named.find('.af-progress__label').text()).toBe('Step 2 of 2')
+		expect(named.find('[aria-current=step]').text()).toBe('2')
+
+		expect(withDesign({ progressColor: '#00aa55' }).find('.af-progress').attributes('style')).toContain('#00aa55')
+		expect(withDesign({ progressLabel: 'percent' }).find('.af-progress__label').text()).toBe('50%')
+		const bare = withDesign({ progressLabel: 'none' })
+		expect(bare.find('.af-progress__label').exists()).toBe(false)
+		expect(bare.find('[role=progressbar]').exists()).toBe(true)
+		expect(withDesign({ progress: 'none', progressLabel: 'none' }).find('.af-progress').exists()).toBe(false)
+	})
+
+	it('shows no progress on a form with one page', () => {
+		expect(render().find('.af-progress').exists()).toBe(false)
+	})
+
 	it('lets the preview page through but never submits', async () => {
 		submitMock.mockReset()
 		const wrapper = mount(FormRenderer, { props: { form: paged, preview: true }, attachTo: document.body })

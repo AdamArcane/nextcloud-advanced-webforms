@@ -7,6 +7,12 @@
 
 ## Unreleased
 
+- Page progress. A form with several pages shows respondents where they are: a bar or numbered steps,
+  with the step number ("Step 2 of 4"), the page's name or a percentage. It is on by default, as a bar
+  with the step number, and forms that are already published show it too. It takes the accent colour or
+  a colour of its own. Change it or switch it off
+  under Settings, Design. See `docs/SCHEMA.md` section 5.1.
+
 - Hidden values, default values and filling fields from the link. A new "Hidden value" field is never
   shown to respondents and is sent with every response. Every field except an upload can have a default
   value, and the form's link can fill any field by its field ID: `?utm_source=newsletter` fills the

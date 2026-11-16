@@ -565,6 +565,33 @@ class DefinitionValidatorTest extends TestCase {
 		}));
 	}
 
+	public function testPageProgress(): void {
+		foreach (['bar', 'steps', 'none'] as $style) {
+			foreach (['step', 'title', 'percent', 'none'] as $label) {
+				$this->assertSame([], $this->codes(static function (array $d) use ($style, $label): array {
+					$d['settings']['design'] = ['progress' => $style, 'progressLabel' => $label];
+					return $d;
+				}));
+			}
+		}
+		$this->assertSame(['settings_invalid'], $this->codes(static function (array $d): array {
+			$d['settings']['design'] = ['progress' => 'dots'];
+			return $d;
+		}));
+		$this->assertSame(['settings_invalid'], $this->codes(static function (array $d): array {
+			$d['settings']['design'] = ['progressLabel' => true];
+			return $d;
+		}));
+		$this->assertSame([], $this->codes(static function (array $d): array {
+			$d['settings']['design'] = ['progressColor' => '#00aa55'];
+			return $d;
+		}));
+		$this->assertSame(['settings_invalid'], $this->codes(static function (array $d): array {
+			$d['settings']['design'] = ['progressColor' => 'green'];
+			return $d;
+		}));
+	}
+
 	public function testPlaceholderMustReferenceInputField(): void {
 		$this->assertSame(['action_unknown_placeholder'], $this->codes(static function (array $d): array {
 			$d['actions'][0]['body'] = 'Hi {f_note}';
