@@ -132,6 +132,12 @@ by an administrator (section 10.1).
 `settings.prefill` (boolean, default true) lets the address the public form is opened with fill its
 fields by field id (section 4.7). False switches that off for the form.
 
+`settings.reviewStep` (boolean) and `settings.reviewTitle` (text) add a step that lists the answers
+before sending (section 5.2).
+
+`settings.saveProgress` (boolean, default false) keeps a respondent's unsent answers in their own
+browser so they can continue later on the same device (section 21).
+
 `settings.hideTitle` (boolean, default false) leaves the form title off the public page and the
 builder preview. The title is still the page's heading for assistive technology, and the
 description is unaffected.
@@ -586,6 +592,42 @@ A form with more than one page shows where the respondent is, above the fields. 
   whatever the label shows, and the current step in the row is marked `aria-current="step"`. After Next
   and Back the label takes focus, so the new page is announced and the keyboard carries on from its top.
 - This is display only. The server takes no part in it and nothing about it is stored with a response.
+
+### 5.2 Review step (DECISION)
+
+`settings.reviewStep` (boolean, default false) adds one more step after the last page that lists what
+was entered before the form is sent, in the builder as "Show a summary before sending".
+`settings.reviewTitle` (text, at most 64 characters) is its heading, "Review your answers" when empty. Like
+every setting they apply when the form is published.
+
+The step is made by the renderer. It is not a page of the form: it has no rows, cannot be edited in the
+layout and changes nothing the server sees or stores. It works on a form with one page too, where it
+only repeats that page before sending.
+
+- **Where.** It is the last step, so the progress indicator counts it (5.1), and with the label set to the page name it shows the
+  review's heading. The Send button and the spam check (10.1) are on it. Back
+  leads to the last page.
+- **What is listed.** The input fields that are shown right now, in layout order, grouped by page, each
+  as its label and answer. It is what will be sent: a field hidden by a rule is not there, and neither
+  are hidden fields, display blocks and empty optional fields. A field with no label shows its id.
+- **How answers read.** As in the Responses view (section 17): option labels, "Yes" and "No", lists
+  joined with commas, and the names of the files added to an upload field.
+- **Optional questions left empty** are not listed, only counted ("3 optional questions skipped"), so
+  the summary stays short.
+- **Required questions left empty** are listed in red, as "Required, not answered yet", with a button
+  that opens their page. They can only be reached when kept answers (section 21) opened the form on
+  the review, since each page checks its own required fields before Next.
+- **Changing an answer.** With more than one page (or a page that has a name), each page's group has an Edit button. It
+  opens that page, and Next from there returns to the review instead of walking through the pages in
+  between. Back leaves that shortcut.
+- **Size.** The list sits in a box of its own, at most 28rem or 60% of the window height, whichever is
+  less, that scrolls. The box can be reached and scrolled with the keyboard. An answer shows two lines at
+  most, and the whole answer is its tooltip and is read out in full by assistive technology. The height is
+  fixed, not a setting.
+- **With continue later.** The kept page can be the review, and a form published without the step opens
+  on its last page instead.
+- **Left out on purpose:** a printable version (use the browser's print on the form), and listing
+  empty optional answers.
 
 ## 6. Rules
 
@@ -1562,3 +1604,53 @@ can be bookmarked and reached with the back button. It only opens for the form's
 - Statuses per form or per user. One list for the server keeps it simple.
 - Hiding responses of a status by default, or leaving them out of the response limit.
 - Several notes, authors, mentions and notifications.
+
+## 21. Continuing later (DECISION)
+
+A respondent can leave a long form and carry on later, on the same device. `settings.saveProgress`
+(boolean, default false) turns it on for a form, in the builder as "Let people continue later". Like
+every setting it applies when the form is published.
+
+It is done entirely in the respondent's browser. The server stores nothing, has no route for it and
+does not know that anyone has started.
+
+- **What is kept.** The answer to every input field except uploads and hidden fields, and the page
+  the respondent is on. Empty answers are left out. A hidden field is never kept: it always comes from
+  the address or its default (section 4.7).
+- **Where.** The browser's local storage, under `webforms:progress:<token>`, one record per form. It is
+  written shortly after an answer changes and again when the page is left.
+- **A line that says so.** Under the buttons the form says that answers are saved in this browser and can
+  be picked up again on this device. Once the browser has taken a save it adds the time ("Saved in this
+  browser at 6:41 PM"). If the browser refuses, or the record is too large, it says in red that the answers
+  could not be saved and to send the form before closing the page, so the promise is never false. There is
+  no save button: saving happens as answers change.
+- **Coming back.** When the form opens and a record exists, its answers are put back and the form
+  opens on the page that was kept. A note above the form says from when they are and that they are
+  kept in this browser only, with a **Start over** button that throws the record away and puts the
+  form back as it opens. A kept answer comes before a value from the address and before a default.
+- **For how long.** 30 days after the last change. An older record is ignored. Sending the form
+  removes the record.
+- **A form that was published again.** The record is still used. Field ids never change meaning
+  (section 4.1), so each answer goes back to its field if the field still exists and still takes it
+  (an option that is still offered, the right kind of value). The others are left out, and the note
+  says that some answers no longer fit.
+- **Nothing is trusted.** Putting answers back only checks their shape. Sending the form runs the
+  usual checks (section 10), so a record adds nothing a respondent could not type.
+- **A form that closed, filled up or ended** shows its usual message. Kept answers hold no place.
+- **Embedded forms** (section 18.3) keep their answers in the frame's own storage, which browsers keep
+  apart for each website the form is embedded in.
+- **When storage is refused** (a private window, blocked site data) the form works as it does without
+  the setting.
+- **Never in the builder preview.**
+
+### 21.1 Left out on purpose
+
+- **A link to continue on another device,** and with it any copy of unsent answers on the server.
+  Decided 2026-11-16: device only.
+- **Uploads.** A file waits on the server for 25 hours at most (section 4.6), so it could not be
+  promised to still be there. Files are added again before sending.
+- **A count of people who started,** since the server is told nothing. It would need its own counter
+  and could not tell "still filling in" from "gave up".
+
+The answers sit readable in the browser for up to 30 days, for anyone who uses that browser profile.
+Leave the setting off for forms that are filled in on shared computers.

@@ -131,6 +131,28 @@ function str(value: string | number): string | undefined {
 			<p class="af-form-props__hint">
 				{{ t('webforms', 'Add ?field_id=value to the form link to fill a field when it opens, for example to track where people came from. Each field shows its parameter.') }}
 			</p>
+			<NcCheckboxRadioSwitch type="switch"
+				:model-value="definition.settings.saveProgress === true"
+				@update:model-value="(value: boolean) => emit('settings', { saveProgress: value ? true : undefined })">
+				{{ t('webforms', 'Let people continue later') }}
+			</NcCheckboxRadioSwitch>
+			<p class="af-form-props__hint">
+				{{ t('webforms', 'Answers are kept in the browser as they are typed, for up to 30 days, and come back when the form is opened again on the same device. A line under the buttons tells people so. Nothing reaches you until the form is sent. Uploaded files are not kept. Leave this off for forms that are filled in on shared computers.') }}
+			</p>
+			<NcCheckboxRadioSwitch type="switch"
+				:model-value="definition.settings.reviewStep === true"
+				@update:model-value="(value: boolean) => emit('settings', { reviewStep: value ? true : undefined })">
+				{{ t('webforms', 'Show a summary before sending') }}
+			</NcCheckboxRadioSwitch>
+			<NcTextField v-if="definition.settings.reviewStep === true"
+				:model-value="definition.settings.reviewTitle ?? ''"
+				:label="t('webforms', 'Summary heading')"
+				:placeholder="t('webforms', 'Review your answers')"
+				maxlength="64"
+				@update:model-value="(value: string | number) => emit('settings', { reviewTitle: str(value) })" />
+			<p class="af-form-props__hint">
+				{{ t('webforms', 'Adds a last step that lists what was entered, with a button to change each page, and the Send button moves there. A long summary scrolls inside its own box.') }}
+			</p>
 		</section>
 
 		<template v-if="section === 'design'">

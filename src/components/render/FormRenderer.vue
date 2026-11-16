@@ -6,10 +6,10 @@
 <script setup lang="ts">
 import type { FormField, PublicForm } from '../../types.ts'
 
-import { t } from '@nextcloud/l10n'
+import { n, t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
-import { computed, nextTick, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { ApiError, submitPublicForm } from '../../api/public.ts'
 import { renderedLabelPosition } from '../../layout/labelPosition.ts'
 import { progressColorStyle, progressLabel, progressStyle, submitAlign, submitButtonStyle } from '../../design.ts'
@@ -17,10 +17,12 @@ import { leaveTo } from '../../embedded.ts'
 import { ownerImageUrl, publicImageUrl } from '../../images.ts'
 import { visiblePages } from '../../layout/visibleLayout.ts'
 import { evaluateRules } from '../../rules/engine.ts'
-import { isBooleanType, isInputType } from '../../rules/fieldTypes.ts'
+import { isInputType } from '../../rules/fieldTypes.ts'
 import CaptchaField from './CaptchaField.vue'
 import FieldInput from './FieldInput.vue'
 import { prefillValue } from '../../prefill.ts'
+import { clearProgress, isKept, packProgress, readProgress, restoreProgress, writeProgress } from '../../progress.ts'
+import { buildReview, isUnanswered } from '../../review.ts'
 import { messageFor } from './messages.ts'
 import { createUploadState } from './uploadState.ts'
 
@@ -63,10 +65,17 @@ function initialValue(id: string, field: FormField): unknown {
 	}
 }
 
+// Unsent answers kept in this browser (docs/SCHEMA.md section 21), when the form asks for it. They come
+// before the address and the defaults. Never in the builder preview.
+const keepsProgress = !props.preview && definition.value.settings?.saveProgress === true
+const restored = keepsProgress ? restoreProgress(readProgress(props.form.token), fields.value, Date.now()) : null
+/** Shown above the form while the answers on it came from an earlier visit. */
+const restoredNotice = ref(restored ? { savedAt: restored.savedAt, dropped: restored.dropped } : null)
+
 const values = reactive<Record<string, unknown>>({})
 for (const [id, field] of Object.entries(fields.value)) {
 	if (isInputType(field.type)) {
-		values[id] = initialValue(id, field)
+		values[id] = restored && Object.hasOwn(restored.values, id) ? restored.values[id] : initialValue(id, field)
 	}
 }
 
@@ -106,20 +115,42 @@ const shown = computed(() => new Set([...visible.value].filter((id) => fields.va
 const pages = computed(() => visiblePages(definition.value.pages, shown.value))
 const submitStyle = computed(() => submitButtonStyle(definition.value.settings?.design))
 const actionsAlign = computed(() => submitAlign(definition.value.settings?.design))
-const pageIndex = ref(0)
+const pageIndex = ref(restored?.page ?? 0)
+// The review step (docs/SCHEMA.md 5.2) is one more step after the last page, made by the renderer.
+const hasReview = computed(() => definition.value.settings?.reviewStep === true)
+const stepCount = computed(() => pages.value.length + (hasReview.value ? 1 : 0))
 // Hiding fields can remove pages, so never point past the end.
-const currentIndex = computed(() => Math.min(pageIndex.value, Math.max(0, pages.value.length - 1)))
+const currentIndex = computed(() => Math.min(pageIndex.value, Math.max(0, stepCount.value - 1)))
+const onReview = computed(() => hasReview.value && currentIndex.value === pages.value.length)
 const currentPage = computed(() => pages.value[currentIndex.value])
 const rows = computed(() => currentPage.value?.rows ?? [])
 const isFirst = computed(() => currentIndex.value === 0)
-const isLast = computed(() => currentIndex.value >= pages.value.length - 1)
+const isLast = computed(() => currentIndex.value >= stepCount.value - 1)
+const reviewTitle = computed(() => definition.value.settings?.reviewTitle?.trim() || t('webforms', 'Review your answers'))
+const reviewHeading = ref<HTMLElement | null>(null)
+/** Set when a page is opened from the review to change an answer: Next then goes back to the review. */
+const editingFromReview = ref(false)
+const review = computed(() => (onReview.value
+	? buildReview(pages.value, fields.value, values, required.value, (id) => uploads.items(id).filter((item) => item.status === 'done').map((item) => item.name))
+	: null))
+
+function pageName(group: { pageIndex: number, title: string | null }): string {
+	return group.title ?? t('webforms', 'Page {number}', { number: group.pageIndex + 1 })
+}
+
+async function editPage(index: number) {
+	clearErrors()
+	editingFromReview.value = true
+	pageIndex.value = index
+	await scrollToTop()
+}
 
 // Progress through the pages (docs/SCHEMA.md 5.1). It counts the pages that can be reached right now,
 // so the total follows the rules, and a form with one page shows nothing.
 const progressText = ref<HTMLElement | null>(null)
 const progressColor = computed(() => progressColorStyle(definition.value.settings?.design))
 const progress = computed(() => {
-	const total = pages.value.length
+	const total = stepCount.value
 	const style = progressStyle(definition.value.settings?.design)
 	const label = progressLabel(definition.value.settings?.design)
 	if (total < 2 || (style === 'none' && label === 'none')) {
@@ -135,7 +166,7 @@ const progress = computed(() => {
 		text = t('webforms', '{percent}%', { percent })
 	} else if (label === 'title') {
 		// A page without a name falls back to its step number.
-		text = currentPage.value?.title?.trim() || stepText
+		text = onReview.value ? reviewTitle.value : currentPage.value?.title?.trim() || stepText
 	}
 	return { style, step, total, percent, stepText, text }
 })
@@ -149,17 +180,88 @@ function imageSrc(fieldId: string): string | null {
 	return props.preview ? ownerImageUrl(field.src) : publicImageUrl(field.src, props.form.token, fieldId, props.form.versionId)
 }
 
-const submitLabel = computed(() => definition.value.settings?.submitLabel || t('webforms', 'Send'))
+// Keeping the answers as they are typed. A short wait gathers a burst of typing into one write, and
+// leaving the page writes at once.
+let keepTimer: ReturnType<typeof setTimeout> | null = null
+let keeping = keepsProgress
+// What the line under the buttons says: nothing kept yet, kept (and when), or the browser said no.
+const saveState = ref<'idle' | 'saved' | 'failed'>('idle')
+const savedAt = ref(0)
 
-function isEmpty(field: FormField, value: unknown): boolean {
-	if (isBooleanType(field.type)) {
-		return value !== true
+function keepNow() {
+	if (keepTimer !== null) {
+		clearTimeout(keepTimer)
+		keepTimer = null
 	}
-	if (Array.isArray(value)) {
-		return value.length === 0
+	if (!keeping) {
+		return
 	}
-	return typeof value !== 'string' || value.trim() === ''
+	const record = packProgress(fields.value, values, currentIndex.value, props.form.versionId, Date.now())
+	if (record !== null && writeProgress(props.form.token, record)) {
+		saveState.value = 'saved'
+		savedAt.value = Date.now()
+	} else {
+		saveState.value = 'failed'
+	}
 }
+
+function forgetProgress() {
+	if (keepTimer !== null) {
+		clearTimeout(keepTimer)
+		keepTimer = null
+	}
+	clearProgress(props.form.token)
+}
+
+if (keepsProgress) {
+	watch([values, pageIndex], () => {
+		if (keepTimer === null) {
+			keepTimer = setTimeout(keepNow, 400)
+		}
+	})
+	window.addEventListener('pagehide', keepNow)
+	onBeforeUnmount(() => {
+		window.removeEventListener('pagehide', keepNow)
+		keepNow()
+	})
+}
+
+/** Tells people that they can leave and come back, and says so plainly when that is not true. */
+const saveLine = computed(() => {
+	if (saveState.value === 'failed') {
+		return t('webforms', 'Your answers could not be saved in this browser. Send the form before you close this page.')
+	}
+	if (saveState.value === 'saved') {
+		const time = new Date(savedAt.value).toLocaleTimeString(undefined, { timeStyle: 'short' })
+		return t('webforms', 'Saved in this browser at {time}. You can close this page and come back to it on this device.', { time })
+	}
+	return t('webforms', 'Your answers are saved in this browser as you go, so you can close this page and come back to it on this device.')
+})
+
+const restoredText = computed(() => {
+	if (!restoredNotice.value) {
+		return ''
+	}
+	const date = new Date(restoredNotice.value.savedAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+	return restoredNotice.value.dropped
+		? t('webforms', 'Your answers from {date} are back, except some that no longer fit because the form has changed. They are kept in this browser only.', { date })
+		: t('webforms', 'Your answers from {date} are back. They are kept in this browser only.', { date })
+})
+
+/** Throw the kept answers away and put the form back as it opens. Files already added stay. */
+function startOver() {
+	forgetProgress()
+	for (const [id, field] of Object.entries(fields.value)) {
+		if (isKept(field)) {
+			values[id] = initialValue(id, field)
+		}
+	}
+	clearErrors()
+	pageIndex.value = 0
+	restoredNotice.value = null
+}
+
+const submitLabel = computed(() => definition.value.settings?.submitLabel || t('webforms', 'Send'))
 
 function clearErrors() {
 	for (const key of Object.keys(fieldErrors)) {
@@ -181,7 +283,7 @@ function checkRequired(ids: Iterable<string>): boolean {
 	let ok = true
 	for (const id of ids) {
 		const field = fields.value[id]
-		if (visible.value.has(id) && isInputType(field.type) && required.value.has(id) && isEmpty(field, values[id])) {
+		if (visible.value.has(id) && isInputType(field.type) && required.value.has(id) && isUnanswered(field, values[id])) {
 			fieldErrors[id] = messageFor('required')
 			ok = false
 		}
@@ -203,12 +305,15 @@ async function goNext() {
 		await focusFirstError()
 		return
 	}
-	pageIndex.value = currentIndex.value + 1
+	// After changing an answer from the review, go back to it rather than through the pages in between.
+	pageIndex.value = editingFromReview.value ? pages.value.length : currentIndex.value + 1
+	editingFromReview.value = false
 	await scrollToTop()
 }
 
 async function goBack() {
 	clearErrors()
+	editingFromReview.value = false
 	pageIndex.value = Math.max(0, currentIndex.value - 1)
 	await scrollToTop()
 }
@@ -217,7 +322,7 @@ async function scrollToTop() {
 	await nextTick()
 	document.querySelector<HTMLElement>('.af-form')?.scrollIntoView?.({ block: 'start' })
 	// Screen readers announce the new page, and the keyboard carries on from the top of it.
-	progressText.value?.focus({ preventScroll: true })
+	;(onReview.value ? reviewHeading.value : progressText.value)?.focus({ preventScroll: true })
 }
 
 async function onSubmit() {
@@ -281,6 +386,9 @@ async function onSubmit() {
 			hp: honeypot.value,
 			captcha,
 		})
+		// Sent, so nothing is left to come back to.
+		keeping = false
+		forgetProgress()
 		done.value = { message: result.message ?? t('webforms', 'Thank you. Your response has been sent.') }
 		if (result.redirect?.startsWith('https://')) {
 			leaveTo(result.redirect)
@@ -337,6 +445,13 @@ async function showError(error: unknown) {
 	</NcNoteCard>
 
 	<form v-else class="af-form" novalidate @submit.prevent="onSubmit">
+		<NcNoteCard v-if="restoredNotice" type="info" role="status" class="af-restored">
+			<p>{{ restoredText }}</p>
+			<NcButton variant="secondary" @click="startOver">
+				{{ t('webforms', 'Start over') }}
+			</NcButton>
+		</NcNoteCard>
+
 		<div v-if="progress" class="af-progress" :style="progressColor">
 			<p v-if="progress.text"
 				ref="progressText"
@@ -364,6 +479,51 @@ async function showError(error: unknown) {
 				</li>
 			</ol>
 		</div>
+
+		<section v-if="review" class="af-review" aria-labelledby="af-review-title">
+			<h2 id="af-review-title" ref="reviewHeading" class="af-review__title" tabindex="-1">
+				{{ reviewTitle }}
+			</h2>
+			<!-- A box of its own, so a long form's summary does not make the page long. -->
+			<div class="af-review__box" role="region" tabindex="0" aria-labelledby="af-review-title">
+				<p v-if="review.groups.length === 0" class="af-review__empty">
+					{{ t('webforms', 'Nothing has been filled in yet.') }}
+				</p>
+				<section v-for="group in review.groups" :key="group.pageIndex" class="af-review__group">
+					<div v-if="pages.length > 1 || group.title" class="af-review__head">
+						<h3 class="af-review__page">
+							{{ pageName(group) }}
+						</h3>
+						<NcButton variant="tertiary"
+							:aria-label="t('webforms', 'Edit {page}', { page: pageName(group) })"
+							@click="editPage(group.pageIndex)">
+							{{ t('webforms', 'Edit') }}
+						</NcButton>
+					</div>
+					<ul class="af-review__list">
+						<li v-for="item in group.items" :key="item.id" class="af-review__item" :class="{ 'af-review__item--missing': item.missing }">
+							<span class="af-review__label">{{ item.label }}</span>
+							<span class="af-review__answer" :title="item.missing ? undefined : item.text">
+								<template v-if="item.missing">
+									{{ t('webforms', 'Required, not answered yet') }}
+									<NcButton variant="tertiary"
+										class="af-review__fix"
+										@click="editPage(group.pageIndex)">
+										{{ t('webforms', 'Answer') }}
+									</NcButton>
+								</template>
+								<template v-else>
+									{{ item.text }}
+								</template>
+							</span>
+						</li>
+					</ul>
+				</section>
+			</div>
+			<p v-if="review.skipped > 0" class="af-review__skipped">
+				{{ n('webforms', '{count} optional question skipped.', '{count} optional questions skipped.', review.skipped, { count: review.skipped }) }}
+			</p>
+		</section>
 
 		<div v-for="row in rows" :key="row.id" class="af-row">
 			<div v-for="cell in row.cells"
@@ -415,6 +575,10 @@ async function showError(error: unknown) {
 				{{ submitLabel }}
 			</NcButton>
 		</div>
+
+		<p v-if="keepsProgress" class="af-saveline" :class="{ 'af-saveline--failed': saveState === 'failed' }">
+			{{ saveLine }}
+		</p>
 	</form>
 </template>
 
@@ -442,6 +606,135 @@ async function showError(error: unknown) {
 	.af-cell {
 		grid-column: 1 / -1;
 	}
+}
+
+.af-review__title {
+	margin: 0 0 12px;
+	font-size: 1.25em;
+}
+
+.af-review__title:focus {
+	outline: none;
+}
+
+/* Capped height with its own scrolling. The background trick shows a shadow only on the side that has more. */
+.af-review__box {
+	max-height: min(28rem, 60dvh);
+	overflow-y: auto;
+	padding: 4px 12px;
+	box-sizing: border-box;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large);
+	background:
+		linear-gradient(var(--color-main-background) 30%, transparent) top / 100% 24px no-repeat local,
+		linear-gradient(transparent, var(--color-main-background) 70%) bottom / 100% 24px no-repeat local,
+		radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, 0.18), transparent) top / 100% 8px no-repeat scroll,
+		radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.18), transparent) bottom / 100% 8px no-repeat scroll,
+		var(--color-main-background);
+}
+
+.af-review__group + .af-review__group {
+	margin-top: 8px;
+	border-top: 1px solid var(--color-border);
+}
+
+.af-review__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding-top: 4px;
+}
+
+.af-review__page {
+	margin: 0;
+	font-size: 1em;
+	color: var(--color-text-maxcontrast);
+}
+
+/* Plain elements with every size set here, so nothing from the page's own styles changes the layout.
+   One column by default (a phone): the label above its answer. Side by side only when there is room. */
+.af-review__list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.af-review__item {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 2px;
+	margin: 0;
+	padding: 8px 0;
+	min-height: 0;
+	line-height: 1.4;
+}
+
+.af-review__label {
+	display: block;
+	margin: 0;
+	padding: 0;
+	min-height: 0;
+	text-align: start;
+	font-size: 0.9em;
+	color: var(--color-text-maxcontrast);
+	overflow-wrap: anywhere;
+}
+
+/* Two lines of an answer at most; the whole answer is in the tooltip and read out in full. */
+.af-review__answer {
+	margin: 0;
+	padding: 0;
+	min-height: 0;
+	text-align: start;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	overflow: hidden;
+	overflow-wrap: anywhere;
+	white-space: pre-line;
+}
+
+.af-review__item--missing .af-review__answer {
+	color: var(--color-error-text);
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px;
+}
+
+.af-review__skipped,
+.af-review__empty {
+	margin: 8px 0 0;
+	color: var(--color-text-maxcontrast);
+}
+
+@container (min-width: 601px) {
+	.af-review__item {
+		display: grid;
+		grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+		gap: 12px;
+	}
+
+	.af-review__label {
+		font-size: 1em;
+	}
+}
+
+.af-saveline {
+	margin: 12px 0 0;
+	font-size: 0.9em;
+	color: var(--color-text-maxcontrast);
+}
+
+.af-saveline--failed {
+	color: var(--color-error-text);
+}
+
+.af-restored p {
+	margin: 0 0 8px;
 }
 
 .af-actions {

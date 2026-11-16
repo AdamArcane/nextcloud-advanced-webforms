@@ -115,8 +115,10 @@ Gap review written against 0.3.x (2026-11-15), from README.md, docs/SCHEMA.md an
 - **Response management.** Done: search, filters, a summary, statuses, notes and a printable page for
   one response (SCHEMA.md sections 17 and 20). Still open: respondents cannot edit a response after
   submitting.
-- **Save and resume.** Drafts autosave for the owner, but respondents cannot resume a long form.
-- **Respondent experience.** Done: a progress indicator on forms with several pages (SCHEMA.md section 5.1). Still open: per-form language, and a picture inside a question (image blocks, SCHEMA.md section 4.9, are done).
+- **Save and resume.** Done for the same device: a form can keep unsent answers in the respondent's
+  browser (SCHEMA.md section 21). Left out by decision: a link to continue on another device, uploads,
+  and a count of people who started.
+- **Respondent experience.** Done: a progress indicator on forms with several pages (SCHEMA.md section 5.1). Also done: a review step that lists the answers before sending (SCHEMA.md section 5.2). Still open: per-form language, and a picture inside a question (image blocks, SCHEMA.md section 4.9, are done).
 - **Sharing.** Public link, custom address, QR code and embedding (see Sharing above). No collaborator or co-editor sharing and no per-user form permissions.
 - **Question types.** Done: rating, scale, consent and date and time (SCHEMA.md section 4.8). Still open:
   slider, color, date range, and name and address fields. Image blocks are done (SCHEMA.md section 4.9).
