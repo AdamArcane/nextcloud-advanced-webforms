@@ -8,6 +8,7 @@ import type { ResponseStatus } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
 import { computed } from 'vue'
+import { statusColor } from '../../entries/statusColors.ts'
 import { findStatus, statusLabel } from '../../entries/statuses.ts'
 
 // The status of one response, as a small menu with the status's colour beside it
@@ -35,7 +36,7 @@ function onChange(event: Event): void {
 </script>
 
 <template>
-	<span class="af-status" :class="current ? 'af-status--' + current.color : 'af-status--none'">
+	<span class="af-status" :class="{ 'af-status--none': !current }" :style="current ? { '--af-status-color': statusColor(current.color) } : undefined">
 		<span class="af-status__dot" aria-hidden="true" />
 		<select class="af-status__select"
 			:value="current?.id ?? ''"
@@ -86,14 +87,4 @@ function onChange(event: Event): void {
 .af-status--none .af-status__select {
 	color: var(--color-text-maxcontrast);
 }
-
-/* One fixed set of colours, picked to stay readable as a dot on light and dark backgrounds. */
-.af-status--gray { --af-status-color: #8a8a8a; }
-.af-status--red { --af-status-color: #d9363e; }
-.af-status--orange { --af-status-color: #e9730c; }
-.af-status--yellow { --af-status-color: #c9a000; }
-.af-status--green { --af-status-color: #2d9d4f; }
-.af-status--teal { --af-status-color: #0f9b8e; }
-.af-status--blue { --af-status-color: #0082c9; }
-.af-status--purple { --af-status-color: #8b5cf6; }
 </style>

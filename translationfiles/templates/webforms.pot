@@ -135,7 +135,7 @@ msgstr ""
 msgid "A secret is set"
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:209
+#: src/components/admin/StatusAdmin.vue:216
 msgid "A server can have up to {max} statuses."
 msgstr ""
 
@@ -205,7 +205,7 @@ msgstr ""
 msgid "Add a row to Tables"
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:206
+#: src/components/admin/StatusAdmin.vue:213
 msgid "Add a status"
 msgstr ""
 
@@ -311,7 +311,7 @@ msgid "All {n} responses"
 msgstr ""
 
 #: src/components/entries/ResponsePage.vue:145
-#: src/components/entries/ResponsePage.vue:174
+#: src/components/entries/ResponsePage.vue:176
 msgid "All responses"
 msgstr ""
 
@@ -477,7 +477,7 @@ msgstr ""
 msgid "beside the field"
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:51
+#: src/components/admin/StatusAdmin.vue:52
 msgid "Blue"
 msgstr ""
 
@@ -514,7 +514,7 @@ msgid "Canadian provinces"
 msgstr ""
 
 #: src/components/admin/PolicyAdmin.vue:252
-#: src/components/admin/StatusAdmin.vue:227
+#: src/components/admin/StatusAdmin.vue:234
 #: src/components/builder/BuilderView.vue:590
 msgid "Cancel"
 msgstr ""
@@ -666,7 +666,7 @@ msgstr ""
 msgid "Colour"
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:171
+#: src/components/admin/StatusAdmin.vue:170
 msgid "Colour of status {n}"
 msgstr ""
 
@@ -721,7 +721,7 @@ msgid "Could not change the status of the responses."
 msgstr ""
 
 #: src/components/entries/EntriesView.vue:669
-#: src/components/entries/ResponsePage.vue:233
+#: src/components/entries/ResponsePage.vue:235
 msgid "Could not change the status."
 msgstr ""
 
@@ -753,8 +753,8 @@ msgstr ""
 msgid "Could not load more responses."
 msgstr ""
 
-#: src/components/entries/ResponseCard.vue:149
-#: src/components/entries/ResponsePage.vue:244
+#: src/components/entries/ResponseCard.vue:150
+#: src/components/entries/ResponsePage.vue:246
 msgid "Could not load or update the deliveries."
 msgstr ""
 
@@ -762,7 +762,7 @@ msgstr ""
 msgid "Could not load the deliveries."
 msgstr ""
 
-#: src/components/entries/ResponsePage.vue:179
+#: src/components/entries/ResponsePage.vue:181
 msgid "Could not load the response."
 msgstr ""
 
@@ -772,7 +772,7 @@ msgstr ""
 
 #: src/AdminApp.vue:70
 #: src/components/admin/PolicyAdmin.vue:142
-#: src/components/admin/StatusAdmin.vue:152
+#: src/components/admin/StatusAdmin.vue:153
 msgid "Could not load the settings."
 msgstr ""
 
@@ -812,7 +812,7 @@ msgstr ""
 msgid "Could not save the settings. Check the keys and try again."
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:140
+#: src/components/admin/StatusAdmin.vue:141
 msgid "Could not save the statuses."
 msgstr ""
 
@@ -931,7 +931,7 @@ msgstr ""
 msgid "Delete page"
 msgstr ""
 
-#: src/components/entries/ResponseCard.vue:169
+#: src/components/entries/ResponseCard.vue:170
 msgid "Delete response"
 msgstr ""
 
@@ -949,7 +949,7 @@ msgstr ""
 msgid "Delete rule for all fields"
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:193
+#: src/components/admin/StatusAdmin.vue:200
 msgid "Delete status {n}"
 msgstr ""
 
@@ -1078,7 +1078,7 @@ msgstr ""
 msgid "Each response is added as a line, with the same columns as the CSV download. The file is created when the first response arrives. If it already exists, its own header row is kept: answers go under the matching heading, and new questions are added as columns at the end."
 msgstr ""
 
-#: src/components/entries/ResponsePage.vue:151
+#: src/components/entries/ResponsePage.vue:152
 msgid "Earlier"
 msgstr ""
 
@@ -1111,8 +1111,8 @@ msgstr ""
 msgid "Email you, or the respondent, a copy of the answers."
 msgstr ""
 
-#: src/components/entries/ResponseCard.vue:145
-#: src/components/entries/ResponsePage.vue:241
+#: src/components/entries/ResponseCard.vue:146
+#: src/components/entries/ResponsePage.vue:243
 msgid "Emails and webhooks"
 msgstr ""
 
@@ -1403,11 +1403,11 @@ msgstr ""
 msgid "Give this field a label."
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:45
+#: src/components/admin/StatusAdmin.vue:46
 msgid "Gray"
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:49
+#: src/components/admin/StatusAdmin.vue:50
 msgid "Green"
 msgstr ""
 
@@ -1419,8 +1419,8 @@ msgstr ""
 msgid "H1 is the largest and H6 the smallest. Keep headings in order for screen readers. The form title is already a level 1 heading, so H2 is usually the right start."
 msgstr ""
 
-#: src/components/entries/ResponseCard.vue:98
-#: src/components/entries/ResponseCard.vue:100
+#: src/components/entries/ResponseCard.vue:99
+#: src/components/entries/ResponseCard.vue:101
 #: src/components/entries/ResponsesTable.vue:138
 msgid "Has a note"
 msgstr ""
@@ -1599,7 +1599,7 @@ msgstr ""
 msgid "It may have been deleted, or you may not have access to it."
 msgstr ""
 
-#: src/components/entries/ResponsePage.vue:171
+#: src/components/entries/ResponsePage.vue:173
 msgid "It may have been deleted."
 msgstr ""
 
@@ -1645,7 +1645,7 @@ msgstr ""
 msgid "Labels"
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:150
+#: src/components/admin/StatusAdmin.vue:151
 msgid "Labels that form owners can put on a response, such as Done. One list for every form on this server."
 msgstr ""
 
@@ -1657,7 +1657,7 @@ msgstr ""
 msgid "Largest file, in MB"
 msgstr ""
 
-#: src/components/entries/ResponsePage.vue:156
+#: src/components/entries/ResponsePage.vue:158
 msgid "Later"
 msgstr ""
 
@@ -1871,11 +1871,11 @@ msgstr ""
 msgid "Move row up"
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:186
+#: src/components/admin/StatusAdmin.vue:193
 msgid "Move status {n} down"
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:178
+#: src/components/admin/StatusAdmin.vue:185
 msgid "Move status {n} up"
 msgstr ""
 
@@ -1899,7 +1899,7 @@ msgstr ""
 msgid "Must start with https://. Nextcloud blocks addresses on private networks unless an administrator allows them."
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:168
+#: src/components/admin/StatusAdmin.vue:169
 msgid "Name"
 msgstr ""
 
@@ -1907,7 +1907,7 @@ msgstr ""
 msgid "Name emails are sent under"
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:166
+#: src/components/admin/StatusAdmin.vue:167
 msgid "Name of status {n}"
 msgstr ""
 
@@ -1923,7 +1923,7 @@ msgstr ""
 msgid "Never used"
 msgstr ""
 
-#: src/components/entries/ResponseCard.vue:94
+#: src/components/entries/ResponseCard.vue:95
 #: src/components/entries/ResponsesTable.vue:136
 msgid "New"
 msgstr ""
@@ -1958,8 +1958,8 @@ msgstr ""
 msgid "No actions yet. Respondents will see a default thank-you."
 msgstr ""
 
-#: src/components/entries/ResponseCard.vue:106
-#: src/components/entries/ResponsePage.vue:218
+#: src/components/entries/ResponseCard.vue:107
+#: src/components/entries/ResponsePage.vue:220
 msgid "No answers"
 msgstr ""
 
@@ -2020,7 +2020,7 @@ msgstr ""
 msgid "None"
 msgstr ""
 
-#: src/components/entries/ResponsePage.vue:212
+#: src/components/entries/ResponsePage.vue:214
 msgid "Not answered"
 msgstr ""
 
@@ -2065,8 +2065,8 @@ msgstr ""
 msgid "Nothing sent yet"
 msgstr ""
 
-#: src/components/entries/ResponseCard.vue:152
-#: src/components/entries/ResponsePage.vue:248
+#: src/components/entries/ResponseCard.vue:153
+#: src/components/entries/ResponsePage.vue:250
 msgid "Nothing was sent for this response."
 msgstr ""
 
@@ -2151,7 +2151,7 @@ msgstr ""
 msgid "Only you see this. It is never sent to the person who filled in the form."
 msgstr ""
 
-#: src/components/entries/ResponseCard.vue:137
+#: src/components/entries/ResponseCard.vue:138
 msgid "Open on its own page"
 msgstr ""
 
@@ -2210,7 +2210,7 @@ msgstr ""
 msgid "Or start a new table from this form"
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:47
+#: src/components/admin/StatusAdmin.vue:48
 msgid "Orange"
 msgstr ""
 
@@ -2349,7 +2349,7 @@ msgstr ""
 msgid "Preview only, nothing saved"
 msgstr ""
 
-#: src/components/entries/ResponsePage.vue:162
+#: src/components/entries/ResponsePage.vue:164
 msgid "Print"
 msgstr ""
 
@@ -2407,7 +2407,7 @@ msgstr ""
 msgid "Publishing…"
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:52
+#: src/components/admin/StatusAdmin.vue:53
 msgid "Purple"
 msgstr ""
 
@@ -2427,7 +2427,7 @@ msgstr ""
 msgid "QR code for the public link"
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:46
+#: src/components/admin/StatusAdmin.vue:47
 msgid "Red"
 msgstr ""
 
@@ -2473,7 +2473,7 @@ msgstr ""
 msgid "Rename page"
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:215
+#: src/components/admin/StatusAdmin.vue:222
 msgid "Renaming a status renames it on every response that has it. Deleting one takes it off those responses."
 msgstr ""
 
@@ -2502,8 +2502,8 @@ msgid "Resize field"
 msgstr ""
 
 #: src/components/entries/DeliveryRow.vue:56
-#: src/components/entries/ResponseCard.vue:164
-#: src/components/entries/ResponsePage.vue:192
+#: src/components/entries/ResponseCard.vue:165
+#: src/components/entries/ResponsePage.vue:194
 msgid "Response #{id}"
 msgstr ""
 
@@ -2515,7 +2515,7 @@ msgstr ""
 msgid "Response number"
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:149
+#: src/components/admin/StatusAdmin.vue:150
 msgid "Response statuses"
 msgstr ""
 
@@ -2594,7 +2594,7 @@ msgstr ""
 msgid "Save address"
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:224
+#: src/components/admin/StatusAdmin.vue:231
 msgid "Save anyway"
 msgstr ""
 
@@ -2941,18 +2941,18 @@ msgid "Start your form"
 msgstr ""
 
 #: src/components/entries/ResponseFilters.vue:133
-#: src/components/entries/ResponsePage.vue:225
+#: src/components/entries/ResponsePage.vue:227
 #: src/components/entries/ResponsesTable.vue:108
 msgid "Status"
 msgstr ""
 
-#: src/components/entries/ResponseCard.vue:133
-#: src/components/entries/ResponsePage.vue:229
+#: src/components/entries/ResponseCard.vue:134
+#: src/components/entries/ResponsePage.vue:231
 #: src/components/entries/ResponsesTable.vue:146
 msgid "Status of response {id}"
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:135
+#: src/components/admin/StatusAdmin.vue:136
 msgid "Statuses saved"
 msgstr ""
 
@@ -3038,7 +3038,7 @@ msgstr ""
 msgid "Tablet"
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:50
+#: src/components/admin/StatusAdmin.vue:51
 msgid "Teal"
 msgstr ""
 
@@ -3310,7 +3310,7 @@ msgstr ""
 msgid "Their account email"
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:157
+#: src/components/admin/StatusAdmin.vue:158
 msgid "There are no statuses, so responses show none."
 msgstr ""
 
@@ -3501,7 +3501,7 @@ msgstr ""
 msgid "This page was open for too long. Please send again."
 msgstr ""
 
-#: src/components/entries/ResponsePage.vue:170
+#: src/components/entries/ResponsePage.vue:172
 msgid "This response does not exist"
 msgstr ""
 
@@ -3601,7 +3601,7 @@ msgstr ""
 msgid "Two options share the same value."
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:212
+#: src/components/admin/StatusAdmin.vue:219
 msgid "Two statuses have the same name."
 msgstr ""
 
@@ -3796,7 +3796,7 @@ msgstr ""
 msgid "Write each website as its address without a path, like https://www.example.com"
 msgstr ""
 
-#: src/components/admin/StatusAdmin.vue:48
+#: src/components/admin/StatusAdmin.vue:49
 msgid "Yellow"
 msgstr ""
 

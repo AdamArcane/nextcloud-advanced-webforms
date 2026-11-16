@@ -14,11 +14,12 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { computed, ref, watch } from 'vue'
 import { listDeliveries, retryDelivery } from '../../api/forms.ts'
 import { answerLines, entryFileUrl, formatTime, previewLines } from '../../entries/format.ts'
-import { findStatus, statusLabel } from '../../entries/statuses.ts'
+import { findStatus } from '../../entries/statuses.ts'
 import { formatSize } from '../../uploads.ts'
 import DeliveryRow from './DeliveryRow.vue'
 import NoteEditor from './NoteEditor.vue'
 import StatusSelect from './StatusSelect.vue'
+import StatusTag from './StatusTag.vue'
 
 const props = defineProps<{
 	formId: number
@@ -94,7 +95,7 @@ async function retry(delivery: Delivery): Promise<void> {
 			<span v-if="isNew" class="af-response__new">{{ t('webforms', 'New') }}</span>
 			<span class="af-response__when">{{ formatTime(entry.submittedAt) }}</span>
 			<span v-if="entry.userId" class="af-response__who">{{ entry.userId }}</span>
-			<span v-if="status" class="af-response__status">{{ statusLabel(status) }}</span>
+			<StatusTag v-if="status" :status="status" />
 			<span v-if="entry.note" class="af-response__noted" :title="t('webforms', 'Has a note')">
 				<Icon :path="icons.note" :size="16" />
 				<span class="af-response__sr">{{ t('webforms', 'Has a note') }}</span>
@@ -188,7 +189,7 @@ async function retry(delivery: Delivery): Promise<void> {
 	position: relative;
 	width: 100%;
 	box-sizing: border-box;
-	padding: calc(var(--default-grid-baseline) * 3) calc(var(--default-grid-baseline) * 9) calc(var(--default-grid-baseline) * 3) calc(var(--default-grid-baseline) * 4);
+	padding: calc(var(--default-grid-baseline) * 3) calc(var(--default-grid-baseline) * 9) calc(var(--default-grid-baseline) * 3) calc(var(--default-grid-baseline) * 3);
 	border: 0;
 	border-radius: var(--border-radius-large);
 	background: transparent;
@@ -220,14 +221,6 @@ async function retry(delivery: Delivery): Promise<void> {
 	font-size: 12px;
 	font-weight: bold;
 	line-height: 20px;
-}
-
-.af-response__status {
-	padding: 0 8px;
-	border: 1px solid var(--color-border-dark);
-	border-radius: var(--border-radius-pill, 999px);
-	font-size: 12px;
-	line-height: 18px;
 }
 
 .af-response__noted {
@@ -340,6 +333,27 @@ async function retry(delivery: Delivery): Promise<void> {
 }
 
 @media (max-width: 600px) {
+	.af-response__body {
+		padding: 0 calc(var(--default-grid-baseline) * 3) calc(var(--default-grid-baseline) * 3);
+	}
+
+	/* The status menu takes the full width, and the link to the page sits under it. */
+	.af-response__meta {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.af-response__meta :deep(.af-status),
+	.af-response__meta :deep(.af-status__select) {
+		width: 100%;
+		max-width: none;
+	}
+
+	.af-response__footer {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
 	.af-response__answers {
 		grid-template-columns: 1fr;
 		gap: 0;

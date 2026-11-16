@@ -954,6 +954,18 @@ describe('EntriesView new responses, statuses and notes', () => {
 		wrapper.unmount()
 	})
 
+	it('shows the status on a card as a tag in its own colour', async () => {
+		window.localStorage.setItem('webforms.responsesView', 'cards')
+		listEntriesMock.mockResolvedValue(page([{ ...entry(1), status: 'done' }, entry(2)]))
+		const wrapper = mountWith()
+		await flushPromises()
+		const tags = wrapper.findAll('.af-tag')
+		expect(tags).toHaveLength(1)
+		expect(tags[0].text()).toBe('Done')
+		expect(tags[0].attributes('style')).toContain('#2d9d4f')
+		wrapper.unmount()
+	})
+
 	it('shows a status the administrator has deleted as none', async () => {
 		listEntriesMock.mockResolvedValue(page([{ ...entry(1), status: 'gone' }]))
 		const wrapper = mountWith()

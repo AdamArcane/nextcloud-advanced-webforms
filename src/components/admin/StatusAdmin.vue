@@ -15,6 +15,7 @@ import NcSettingsSection from '@nextcloud/vue/components/NcSettingsSection'
 import { computed, onMounted, ref } from 'vue'
 import { fetchStatuses, saveStatuses } from '../../api/admin.ts'
 import { ApiError } from '../../api/http.ts'
+import { statusColor } from '../../entries/statusColors.ts'
 import { statusIdFromLabel, statusLabel } from '../../entries/statuses.ts'
 import { icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
@@ -158,7 +159,7 @@ async function save(confirmDelete = false): Promise<void> {
 			</p>
 			<ul v-else class="af-statuses__list">
 				<li v-for="(row, index) in rows" :key="row.key" class="af-statuses__row">
-					<span class="af-statuses__dot" :class="'af-statuses__dot--' + row.color" aria-hidden="true" />
+					<span class="af-statuses__dot" :style="{ background: statusColor(row.color) }" aria-hidden="true" />
 					<input v-model="row.label"
 						class="af-statuses__name"
 						type="text"
@@ -166,13 +167,19 @@ async function save(confirmDelete = false): Promise<void> {
 						:aria-label="t('webforms', 'Name of status {n}', { n: index + 1 })"
 						:aria-invalid="!labelValid(row)"
 						:placeholder="t('webforms', 'Name')">
-					<select v-model="row.color"
-						class="af-statuses__color"
-						:aria-label="t('webforms', 'Colour of status {n}', { n: index + 1 })">
-						<option v-for="color in colors" :key="color" :value="color">
-							{{ colorName(color) }}
-						</option>
-					</select>
+					<div class="af-statuses__swatches" role="radiogroup" :aria-label="t('webforms', 'Colour of status {n}', { n: index + 1 })">
+						<button v-for="color in colors"
+							:key="color"
+							type="button"
+							role="radio"
+							class="af-statuses__swatch"
+							:class="{ 'af-statuses__swatch--on': row.color === color }"
+							:style="{ '--af-swatch': statusColor(color) }"
+							:aria-checked="row.color === color"
+							:aria-label="colorName(color)"
+							:title="colorName(color)"
+							@click="row.color = color" />
+					</div>
 					<NcButton variant="tertiary"
 						:disabled="index === 0"
 						:aria-label="t('webforms', 'Move status {n} up', { n: index + 1 })"
@@ -278,9 +285,32 @@ async function save(confirmDelete = false): Promise<void> {
 	border-color: var(--color-error);
 }
 
-.af-statuses__color {
+.af-statuses__swatches {
+	display: flex;
 	flex: 0 0 auto;
-	margin: 0;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.af-statuses__swatch {
+	width: 24px;
+	height: 24px;
+	min-height: 0;
+	padding: 0;
+	border: 2px solid transparent;
+	border-radius: 50%;
+	background: var(--af-swatch);
+	box-shadow: inset 0 0 0 2px var(--color-main-background);
+	cursor: pointer;
+}
+
+.af-statuses__swatch--on {
+	border-color: var(--color-main-text);
+}
+
+.af-statuses__swatch:focus-visible {
+	outline: 2px solid var(--color-main-text);
+	outline-offset: 2px;
 }
 
 .af-statuses__hint {
@@ -300,19 +330,14 @@ async function save(confirmDelete = false): Promise<void> {
 	margin-top: var(--default-grid-baseline);
 }
 
-/* The same colours as the status beside a response (StatusSelect.vue). */
-.af-statuses__dot--gray { background: #8a8a8a; }
-.af-statuses__dot--red { background: #d9363e; }
-.af-statuses__dot--orange { background: #e9730c; }
-.af-statuses__dot--yellow { background: #c9a000; }
-.af-statuses__dot--green { background: #2d9d4f; }
-.af-statuses__dot--teal { background: #0f9b8e; }
-.af-statuses__dot--blue { background: #0082c9; }
-.af-statuses__dot--purple { background: #8b5cf6; }
-
 @media (max-width: 600px) {
 	.af-statuses__row {
 		flex-wrap: wrap;
+	}
+
+	/* The name takes a whole line, and the colours and buttons sit under it. */
+	.af-statuses__name {
+		flex-basis: calc(100% - 24px);
 	}
 }
 </style>

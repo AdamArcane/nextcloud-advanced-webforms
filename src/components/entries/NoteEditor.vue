@@ -113,6 +113,13 @@ async function save(): Promise<void> {
 	gap: calc(var(--default-grid-baseline) * 2);
 }
 
+@media (max-width: 600px) {
+	/* 16px keeps a phone browser from zooming in when the box is tapped. */
+	.af-note__text {
+		font-size: 16px;
+	}
+}
+
 .af-note__state {
 	color: var(--color-text-maxcontrast);
 	font-size: 13px;

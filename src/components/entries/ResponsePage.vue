@@ -138,24 +138,26 @@ function print(): void {
 <template>
 	<div class="af-page">
 		<nav class="af-page__nav af-noprint" :aria-label="t('webforms', 'Responses')">
-			<NcButton variant="tertiary" :href="listHref">
+			<NcButton class="af-page__back" variant="tertiary" :href="listHref">
 				<template #icon>
 					<Icon :path="icons.arrowLeft" />
 				</template>
 				{{ t('webforms', 'All responses') }}
 			</NcButton>
 			<span class="af-page__spacer" />
-			<NcButton variant="secondary"
+			<NcButton class="af-page__step"
+				variant="secondary"
 				:disabled="!detail || detail.previousId === null"
 				:href="detail && detail.previousId !== null ? listHref + '/' + detail.previousId : undefined">
 				{{ t('webforms', 'Earlier') }}
 			</NcButton>
-			<NcButton variant="secondary"
+			<NcButton class="af-page__step"
+				variant="secondary"
 				:disabled="!detail || detail.nextId === null"
 				:href="detail && detail.nextId !== null ? listHref + '/' + detail.nextId : undefined">
 				{{ t('webforms', 'Later') }}
 			</NcButton>
-			<NcButton variant="secondary" :disabled="!detail" @click="print">
+			<NcButton class="af-page__step" variant="secondary" :disabled="!detail" @click="print">
 				<template #icon>
 					<Icon :path="icons.print" />
 				</template>
@@ -387,6 +389,43 @@ function print(): void {
 }
 
 @media (max-width: 600px) {
+	/* The back link has a line to itself, and the three buttons share the next one. */
+	.af-page__nav {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	.af-page__back {
+		grid-column: 1 / -1;
+		justify-self: start;
+	}
+
+	.af-page__spacer {
+		display: none;
+	}
+
+	.af-page__step {
+		width: 100%;
+	}
+
+	.af-page__sheet {
+		padding: calc(var(--default-grid-baseline) * 3);
+	}
+
+	.af-page__title {
+		font-size: 19px;
+	}
+
+	.af-page__block :deep(.af-status),
+	.af-page__block :deep(.af-status__select) {
+		width: 100%;
+		max-width: none;
+	}
+
+	.af-page__block {
+		align-items: stretch;
+	}
+
 	.af-page__answers {
 		grid-template-columns: 1fr;
 		gap: 0;

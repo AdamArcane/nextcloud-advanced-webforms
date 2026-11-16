@@ -91,7 +91,7 @@ describe('StatusAdmin', () => {
 	it('renames a status without changing its id, so responses keep it', async () => {
 		const wrapper = await mountIt()
 		await wrapper.findAll('input.af-statuses__name')[1].setValue('Finished')
-		await wrapper.findAll('select.af-statuses__color')[1].setValue('teal')
+		await wrapper.find('[role="radiogroup"][aria-label="Colour of status 2"] button[aria-label="Teal"]').trigger('click')
 		await button(wrapper, 'Save').trigger('click')
 		await flushPromises()
 		expect(saves[0].statuses[1]).toEqual({ id: 'done', label: 'Finished', color: 'teal' })
