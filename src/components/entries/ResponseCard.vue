@@ -111,20 +111,10 @@ async function retry(delivery: Delivery): Promise<void> {
 
 		<div v-if="expanded" class="af-response__body">
 			<dl class="af-response__answers">
-				<template v-for="line in lines" :key="line.id">
+				<div v-for="line in lines" :key="line.id" class="af-response__row">
 					<dt>{{ line.label }}</dt>
-					<dd :class="{ 'af-response__none': !line.answered }">
-						<ul v-if="line.files.length > 0" class="af-response__files">
-							<li v-for="(file, index) in line.files" :key="index">
-								<a :href="entryFileUrl(formId, entry.id, line.id, index)" download>{{ file.name }}</a>
-								<span class="af-response__size">{{ formatSize(file.size) }}</span>
-							</li>
-						</ul>
-						<template v-else>
-							{{ line.answered ? line.value : '—' }}
-						</template>
-					</dd>
-				</template>
+					<dd :class="{ 'af-response__none': !line.answered }"><ul v-if="line.files.length > 0" class="af-response__files"><li v-for="(file, index) in line.files" :key="index"><a :href="entryFileUrl(formId, entry.id, line.id, index)" download>{{ file.name }}</a><span class="af-response__size">{{ formatSize(file.size) }}</span></li></ul><template v-else>{{ line.answered ? line.value : '—' }}</template></dd>
+				</div>
 			</dl>
 
 			<div class="af-response__meta">
@@ -299,10 +289,26 @@ async function retry(delivery: Delivery): Promise<void> {
 }
 
 .af-response__answers {
+	display: flex;
+	flex-direction: column;
+	gap: calc(var(--default-grid-baseline) * 3);
+	margin: 0;
+	padding: 0;
+}
+
+.af-response__row {
 	display: grid;
 	grid-template-columns: minmax(7rem, 30%) minmax(0, 1fr);
-	gap: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 4);
+	gap: var(--default-grid-baseline) calc(var(--default-grid-baseline) * 4);
+}
+
+/* Reset what the page around the app may set on definition lists, so a label always starts at the left. */
+.af-response__answers dt,
+.af-response__answers dd {
 	margin: 0;
+	padding: 0;
+	text-align: start;
+	line-height: 1.4;
 }
 
 .af-response__answers dt {
@@ -323,7 +329,6 @@ async function retry(delivery: Delivery): Promise<void> {
 }
 
 .af-response__answers dd {
-	margin: 0;
 	white-space: pre-wrap;
 	overflow-wrap: anywhere;
 }
@@ -354,13 +359,17 @@ async function retry(delivery: Delivery): Promise<void> {
 		align-items: stretch;
 	}
 
-	.af-response__answers {
-		grid-template-columns: 1fr;
-		gap: 0;
+	.af-response__row {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 2px;
 	}
 
-	.af-response__answers dd {
-		margin-bottom: calc(var(--default-grid-baseline) * 2);
+	.af-response__answers {
+		gap: calc(var(--default-grid-baseline) * 3);
+	}
+
+	.af-response__answers dt {
+		font-size: 13px;
 	}
 }
 

@@ -201,20 +201,10 @@ function print(): void {
 					</p>
 				</header>
 				<dl class="af-page__answers">
-					<template v-for="line in lines" :key="line.id">
+					<div v-for="line in lines" :key="line.id" class="af-page__row">
 						<dt>{{ line.label }}</dt>
-						<dd :class="{ 'af-page__none': !line.answered }">
-							<ul v-if="line.files.length > 0" class="af-page__files">
-								<li v-for="(file, index) in line.files" :key="index">
-									<a :href="entryFileUrl(formId, detail.entry.id, line.id, index)" download>{{ file.name }}</a>
-									<span class="af-page__size">{{ formatSize(file.size) }}</span>
-								</li>
-							</ul>
-							<template v-else>
-								{{ line.answered ? line.value : t('webforms', 'Not answered') }}
-							</template>
-						</dd>
-					</template>
+						<dd :class="{ 'af-page__none': !line.answered }"><ul v-if="line.files.length > 0" class="af-page__files"><li v-for="(file, index) in line.files" :key="index"><a :href="entryFileUrl(formId, detail.entry.id, line.id, index)" download>{{ file.name }}</a><span class="af-page__size">{{ formatSize(file.size) }}</span></li></ul><template v-else>{{ line.answered ? line.value : t('webforms', 'Not answered') }}</template></dd>
+					</div>
 				</dl>
 				<p v-if="lines.length === 0" class="af-page__none">
 					{{ t('webforms', 'No answers') }}
@@ -313,10 +303,26 @@ function print(): void {
 }
 
 .af-page__answers {
+	display: flex;
+	flex-direction: column;
+	gap: calc(var(--default-grid-baseline) * 3);
+	margin: 0;
+	padding: 0;
+}
+
+.af-page__row {
 	display: grid;
 	grid-template-columns: minmax(8rem, 32%) minmax(0, 1fr);
-	gap: calc(var(--default-grid-baseline) * 3) calc(var(--default-grid-baseline) * 5);
+	gap: var(--default-grid-baseline) calc(var(--default-grid-baseline) * 5);
+}
+
+/* Reset what the page around the app may set on definition lists, so a label always starts at the left. */
+.af-page__answers dt,
+.af-page__answers dd {
 	margin: 0;
+	padding: 0;
+	text-align: start;
+	line-height: 1.4;
 }
 
 .af-page__answers dt {
@@ -325,7 +331,6 @@ function print(): void {
 }
 
 .af-page__answers dd {
-	margin: 0;
 	white-space: pre-wrap;
 	overflow-wrap: anywhere;
 }
@@ -426,13 +431,13 @@ function print(): void {
 		align-items: stretch;
 	}
 
-	.af-page__answers {
-		grid-template-columns: 1fr;
-		gap: 0;
+	.af-page__row {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 2px;
 	}
 
-	.af-page__answers dd {
-		margin-bottom: calc(var(--default-grid-baseline) * 3);
+	.af-page__answers dt {
+		font-size: 13px;
 	}
 }
 
@@ -454,8 +459,7 @@ function print(): void {
 		color: #000;
 	}
 
-	.af-page__answers dt,
-	.af-page__answers dd {
+	.af-page__row {
 		break-inside: avoid;
 	}
 }
