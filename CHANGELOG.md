@@ -5,7 +5,6 @@
 
 # Changelog
 
-<<<<<<< HEAD
 ## Unreleased
 
 - Response limit and opening dates. A form can take at most a number of responses, open at a set time
@@ -13,7 +12,34 @@
   left. Set them under Settings, Sharing; they apply when the form is published. The forms list shows
   Scheduled, Ended or Full, and the settings show the responses counted against the limit. See
   `docs/SCHEMA.md` section 3.1.
-=======
+
+- A new action adds each response as a line to a CSV file in your Files, with the same columns as the
+  CSV download. An existing file keeps its own header row: answers go under the matching heading, and
+  new questions become columns at the end. See `docs/SCHEMA.md` section 19.
+
+- The Actions tab has one "Add an action" button at the top, with the kinds of action grouped by
+  whether they happen on the page or in the background, each with a short description.
+
+- Rename a form from the header of the builder: double-click its name (or press Enter or F2 on it),
+  type, and press Enter. Escape cancels.
+
+- Email actions can include every answer at once. "Add all answers" puts `{all_fields}` in the body,
+  which becomes a list of the questions the person answered with their labels. Such a mail is also sent
+  as HTML, with the answers in a table. See `docs/SCHEMA.md` section 7.2.
+
+- Email actions can set a reply-to address, picked the same way as the recipient: an email field,
+  your account, the signed-in respondent, or a typed address. A notification to you can then be answered
+  straight to the person who filled in the form.
+
+- Email actions can set a sender name. Only the name changes; the sender address stays the server's.
+
+- Administration settings, "Emails from forms": a default reply-to for emails that set none (the form
+  owner's account email or one fixed address), a default sender name, and a switch for whether form
+  owners may set their own. With the switch off, a form may still reply to the address a respondent
+  typed. See `docs/SCHEMA.md` section 16.2.
+
+- Design: choose where the submit button sits, left, center, right or full width.
+
 ## 0.3.4 - 2026-11-15
 
 - Picking a published form that has no unpublished changes now opens its responses instead of the
@@ -25,7 +51,6 @@
   other websites to embed the form in a frame, for any website or only the ones you list, and copy the
   code as plain HTML or with a short script that fits the frame to the form. Embedding is off until you
   switch it on for a form. See `docs/SCHEMA.md` section 18.
->>>>>>> origin/dev
 
 ## 0.3.3 - 2026-11-15
 

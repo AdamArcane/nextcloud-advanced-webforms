@@ -58,6 +58,12 @@ export function describeError(code: string): string {
 			return t('webforms', 'A group of conditions is empty or nested too deeply.')
 		case 'action_bad_recipient':
 			return t('webforms', 'Choose who should receive this email.')
+		case 'action_mail_locked':
+			return t('webforms', 'The administrator does not allow forms to set their own reply-to address or sender name. Remove it to publish.')
+		case 'action_from_name_invalid':
+			return t('webforms', 'The sender name must be one line of at most 100 characters.')
+		case 'action_bad_reply_to':
+			return t('webforms', 'The reply-to address is not a valid email address or email field.')
 		case 'action_text_invalid':
 			return t('webforms', 'Fill in all the text for this action.')
 		case 'action_bad_url':
@@ -72,6 +78,10 @@ export function describeError(code: string): string {
 			return t('webforms', 'Pick the Tables table that should get the rows.')
 		case 'action_bad_table_map':
 			return t('webforms', 'Choose which answer goes in at least one column.')
+		case 'action_bad_file_path':
+			return t('webforms', 'Enter a file path in your Files that ends in .csv, like Webforms/Responses.csv.')
+		case 'files_not_writable':
+			return t('webforms', 'You cannot change that file or create it there. Choose a folder you can write to.')
 		case 'tables_unavailable':
 			return t('webforms', 'The Tables app is not available on this server.')
 		case 'tables_not_allowed':

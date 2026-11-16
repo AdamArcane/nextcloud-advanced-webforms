@@ -142,7 +142,9 @@ still validated.
 `standard`, `wide`), `card` (boolean), `background` (`default`, `plain`,
 `color`), `backgroundColor`, `accentColor` and `buttonColor` (the submit button only; defaults to
 `accentColor`) (`#rrggbb` only, so a value can
-never carry CSS).
+never carry CSS), and `submitAlign` (`left`, `center`, `right` or `justify`; default `left`), where
+the buttons under the form sit. `justify` makes them share the full width. Back and Next on a form
+with several pages follow it too.
 
 ### 3.1 Response limit and opening dates (DECISION)
 
@@ -585,7 +587,24 @@ condition group (same format as rules) evaluated against the submitted
       respondent was signed in with (skipped as `not_signed_in` for an
       anonymous response, or `no_account_email`).
     The last two store no address in the form, so they follow account changes.
+  - `replyTo` (optional) is where a reply to the mail goes, written exactly like `to`: a static
+    address, `{ "field": "<id>" }`, `{ "owner": true }` or `{ "respondent": true }`
+    (`action_bad_reply_to` otherwise). The usual use is a notification to the owner that replies to
+    the address the respondent typed. Unlike `to` it is never a reason not to send: when it resolves
+    to nothing, or to something that is not one plain address, the mail goes out without a reply-to.
+    It is not counted against the hourly cap, because it does not decide who receives mail.
+  - `fromName` (optional) is the name the mail is sent under: one line of at most 100 characters
+    (`action_from_name_invalid`). Only the name changes. The sender address is always the server's
+    own, which is what its SPF and DKIM records vouch for.
+  - An administrator can set defaults for both, and switch off a form's own choice (section 16.2).
   - `subject`, `body`: plain text with `{field_id}` placeholders.
+  - In `body` only, `{all_fields}` stands for every question the respondent answered, in the order the
+    form shows them, as `Label: answer` lines (an answer of several lines is indented under its label).
+    Unanswered and hidden questions are left out, and a question without a label is listed by its id.
+    A mail whose body uses it is also sent as HTML, with the answers as a table of labels and answers
+    and everything a person typed escaped. A mail without it stays plain text only. Anywhere else
+    `{all_fields}` is an unknown placeholder, and a field that really has the id `all_fields` keeps
+    its own meaning.
   - Sent through Nextcloud's configured mailer.
   - Recipient from respondent input is only allowed from an `email` field and is
     always rate limited per form, because it is an abuse vector (spam relay).
@@ -623,6 +642,8 @@ condition group (same format as rules) evaluated against the submitted
 - `redirect`: URL the respondent is sent to. Set by the form owner, https only,
   placeholders are not allowed in scheme or host, and substituted values are
   URL-encoded. First matching `message` or `redirect` wins (they share one slot).
+- `tables`: adds a row to a Nextcloud Tables table (section 15).
+- `files`: adds a line to a CSV file in the owner's Files (section 19).
 
 ### 7.3 Webhook payload
 
@@ -989,7 +1010,7 @@ of allowed actions allows none, the safe side.
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
-| Allowed actions | all of `message`, `redirect`, `email`, `webhook`, `tables` | which action types forms may use |
+| Allowed actions | all of `message`, `redirect`, `email`, `webhook`, `tables`, `files` | which action types forms may use |
 | Retention | 0 (off) | delete responses older than this many days, 1 to 3650 |
 | Responses per form | 0 (no limit) | a form accepts at most this many, up to 1 000 000 |
 | Actions per form | 10 | lower than the structural maximum of 10 only, 1 to 10 |
@@ -1011,7 +1032,7 @@ of allowed actions allows none, the safe side.
 - **Retention.** `RetentionJob` runs hourly and deletes the oldest due responses, at most 1000 per run so
   a first run on a big server does not hold a background job, with the same clean-up as an owner
   deleting a response: uploaded files and delivery log rows go too. Copies already sent by email,
-  webhook or to Tables are not touched. No `entry.deleted` event is sent for these deletions.
+  webhook, to Tables or to a CSV file are not touched. No `entry.deleted` event is sent for these deletions.
   Because this deletes data, saving a retention that is newly on or shorter than before is refused with
   `409 confirmation_required` and `due` (how many responses are affected) until the request repeats with
   `confirmDelete: true`. The page shows the same count before saving.
@@ -1033,6 +1054,38 @@ so they are removed with the account, and they change nothing about forms or oth
   does the address `#/f/<id>` when it is typed or shared: only the links in the form list change.
 - Endpoints (any signed-in user, own preferences only): `GET` and `PUT /api/v1/preferences` with
   `openPublishedOnResponses` (boolean).
+
+### 16.2 Emails from forms
+
+An administrator sets defaults for the mail that forms send, under Administration settings, "Emails
+from forms". They are app config, read through `MailSettings`, and never configured means the behaviour
+without them. They are applied when a mail is sent, not copied into forms, so a change takes effect at
+once on forms that are already live.
+
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| Where replies go | the server's sender address | the reply-to for an email action that sets none: nothing, the form owner's account email, or one fixed address |
+| Sender name | Nextcloud's own | the name mail is sent under |
+| Form owners may set their own | yes | whether an action's `replyTo` and `fromName` count |
+
+- **Order.** Reply-to is the action's own `replyTo` if it is allowed and resolves to an address, else
+  the default, else none. Sender name is the action's own `fromName` if allowed, else the default, else
+  Nextcloud's. A default reply-to equal to the recipient is left out.
+- **Locked.** With "form owners may set their own" off, an action's `fromName` and `replyTo` are
+  ignored when sending, with one exception: a `replyTo` of `{ "field": "<id>" }` still counts, because
+  replying to the person who filled in the form is what a notification is for and it names nobody the
+  form owner chose. On a draft and at publish such an action is reported as `action_mail_locked` (path
+  `actions[n].replyTo` or `.fromName`), a warning on a draft and a refusal at publish. Forms that are
+  already live keep sending. Nothing is deleted from a definition, so switching it back on restores
+  the form's own choice.
+- **Damaged values** fall back to the default: an unknown mode or a fixed address that is not one plain
+  address means no reply-to, and only an explicit off locks.
+- Endpoints (administrators only): `GET` and `PUT /api/v1/admin/mail` (`replyToMode` of `none`, `owner`
+  or `address`, `replyToAddress`, `allowOverride`, `fromName`). `GET /api/v1/settings` gives every
+  signed-in user the same four values under `mail`, with `defaultReplyTo` and `defaultFromName`: the
+  real address and name that apply to that user's forms when an action sets none (their own account
+  email, the fixed address, or the server's sender address; the default name or Nextcloud's own). The
+  builder shows them in the empty boxes and hides what is locked.
 
 ## 17. Finding responses
 
@@ -1187,3 +1240,41 @@ leading `*.` for subdomains (`embed_origins_invalid` otherwise). An empty list a
   browser does not allow that, the frame itself goes there.
 - **Not done yet.** A server-wide switch for administrators to forbid embedding, and a form rendered
   as plain HTML with no script (ROADMAP.md).
+
+## 19. Files action (DECISION)
+
+An action of type `files` adds a line to a CSV file in the form owner's Nextcloud Files for each
+matching response:
+
+```json
+{ "id": "act_sheet", "type": "files", "path": "Webforms/Contact responses.csv" }
+```
+
+- `path` is the file, relative to the owner's home: names joined by `/`, no `.` or `..` parts, no
+  control characters or backslashes, at most 8 parts and 255 bytes, ending in `.csv`
+  (`action_bad_file_path` otherwise). The builder suggests `Webforms/<form title> responses.csv`.
+- It runs like email, webhook and Tables (section 7.4): queued after the response is stored, retried
+  with backoff, shown in the delivery log with the path as its target, and never able to fail a
+  submission.
+- **Columns and values** are those of the CSV export (section 9.1) for the version the response was
+  submitted against: `Response ID`, `Submitted (UTC)`, `Respondent`, then one column per input field in
+  layout order, headed by its label (`Label (field_id)` when two fields share one). Values read the
+  same way, and text that a spreadsheet would run as a formula gets a leading apostrophe.
+- **A new file** is created with a byte order mark, the header row and the response, with CRLF line
+  endings and RFC 4180 quoting. Folders on the way are created.
+- **An existing file** keeps its own header row. Columns are matched to it by their heading, so the
+  owner may reorder columns or add their own. A heading the file does not have yet (a new field, or a
+  renamed label) is added to the end of the header row; rows already in the file simply have no value
+  there. Columns the form no longer fills stay and get an empty cell. A file that is empty (or only a
+  byte order mark) gets a new header row. A file without a final line break gets one first.
+- **Permissions.** The file is written as the owner, so Nextcloud's own rules (quota, locking,
+  versions, antivirus) apply. At publish the owner must be able to change the file, or create it in
+  the nearest folder that exists (`files_not_writable`); the same is checked again on every run.
+- **Failures.** No permission (`files_not_writable`), a folder where the file should be or a file where
+  a folder should be (`files_not_a_file`), and a file over 20 MB (`files_too_large`, start a new file)
+  are not retried. The file being in use (`files_busy`), a full quota (`files_storage_full`) and other
+  storage errors (`files_error`) are.
+- Two deliveries never write the same file at once: each holds a lock on it while it reads and
+  writes, and one that finds it locked is retried.
+- Like Tables, the file is a copy: deleting a response or the form does not remove its line, and
+  retention (section 16) does not touch the file.

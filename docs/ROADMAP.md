@@ -16,12 +16,12 @@ after-submit action (see the decision below). The work here makes that model com
 1. **Send existing responses to a destination (backfill).** Adding a Tables action after responses
    were collected leaves the old ones behind. A "send existing responses" button on the action replays
    them through the same queue, with the same retries and delivery log.
-2. **Administration settings.** Done: allowed action types, response retention, limits per form and who
-   can create forms (SCHEMA.md section 16). Still open: defaults for destinations, such as a default
-   Tables folder or sender address.
-3. **Files destination.** Append each response to a CSV file in the form owner's Files. Real
-   spreadsheet formats are harder, since Nextcloud has no native spreadsheet storage, and wait until
-   there is demand.
+2. **Administration settings.** Done: allowed action types, response retention, limits per form, who
+   can create forms, and defaults for email (reply-to, sender name, and whether forms may set their
+   own; SCHEMA.md sections 16 and 16.2). Still open: a default Tables folder.
+3. **Files destination.** Done: the `files` action appends each response to a CSV file in the owner's
+   Files (SCHEMA.md section 19). Real spreadsheet formats are harder, since Nextcloud has no native
+   spreadsheet storage, and wait until there is demand.
 4. **Remember the destination row.** The Tables action already receives the new row's id and drops it.
    Keeping it in the delivery log makes it possible to follow deletes (and later edits) of a response
    into Tables, which are not followed today. Decide per action whether deletes propagate.

@@ -81,6 +81,8 @@ export interface FormDesign {
 	accentColor?: string
 	/** `#rrggbb` for the final submit button only. Defaults to the accent colour. */
 	buttonColor?: string
+	/** Where the buttons under the form sit. `justify` makes them fill the row. Default `left`. */
+	submitAlign?: 'left' | 'center' | 'right' | 'justify'
 }
 
 export interface FormSettings {
@@ -152,7 +154,7 @@ export interface FieldError {
 	code: string
 }
 
-export type ActionType = 'message' | 'redirect' | 'email' | 'webhook' | 'tables'
+export type ActionType = 'message' | 'redirect' | 'email' | 'webhook' | 'tables' | 'files'
 
 interface ActionBase {
 	/** Stable id, unique in the form. */
@@ -171,13 +173,20 @@ export interface RedirectAction extends ActionBase {
 	url: string
 }
 
+/** Where an email address comes from: fixed, an email field, the owner's account or the signed-in respondent's. */
+export type EmailAddressSource = string | { field: string } | { owner: true } | { respondent: true }
+
 export interface EmailAction extends ActionBase {
 	type: 'email'
 	/**
 	 * A fixed address, the answer to an email field, the form owner's account email, or the
 	 * signed-in respondent's account email. The last two are looked up when the email is sent.
 	 */
-	to: string | { field: string } | { owner: true } | { respondent: true }
+	to: EmailAddressSource
+	/** Where replies go, written like `to`. Left out, replies go to the server's sender address. */
+	replyTo?: EmailAddressSource
+	/** The name the mail is sent under. Left out, the server's default. The sender address never changes. */
+	fromName?: string
 	subject: string
 	body: string
 }
@@ -197,7 +206,13 @@ export interface TablesAction extends ActionBase {
 	map: Record<string, string>
 }
 
-export type FormAction = MessageAction | RedirectAction | EmailAction | WebhookAction | TablesAction
+export interface FilesAction extends ActionBase {
+	type: 'files'
+	/** A `.csv` file in the owner's Files, relative to their home, that gets a line per response (docs/SCHEMA.md section 19). */
+	path: string
+}
+
+export type FormAction = MessageAction | RedirectAction | EmailAction | WebhookAction | TablesAction | FilesAction
 
 /** The owner's editable definition (docs/SCHEMA.md section 3), including `actions`. */
 export interface DraftDefinition {

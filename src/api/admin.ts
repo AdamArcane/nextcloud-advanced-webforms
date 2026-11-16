@@ -95,3 +95,31 @@ export async function searchGroups(search: string): Promise<PolicyGroup[]> {
 		throw toApiError(error)
 	}
 }
+
+/** The settings for mail that forms send (docs/SCHEMA.md section 16.2). */
+export interface MailAdminSettings {
+	/** The default reply-to when an email action sets none: nothing, the form owner's account email, or `replyToAddress`. */
+	replyToMode: 'none' | 'owner' | 'address'
+	replyToAddress: string
+	/** Whether form owners may set a reply-to and sender name of their own. */
+	allowOverride: boolean
+	/** The name mail is sent under. Empty keeps Nextcloud's own. */
+	fromName: string
+}
+
+export async function fetchMailSettings(): Promise<MailAdminSettings> {
+	try {
+		return (await axios.get<MailAdminSettings>(url('/admin/mail'))).data
+	} catch (error) {
+		throw toApiError(error)
+	}
+}
+
+/** Rejects with code `invalid_reply_to_address` or `invalid_from_name` when a value is refused. */
+export async function saveMailSettings(input: MailAdminSettings): Promise<MailAdminSettings> {
+	try {
+		return (await axios.put<MailAdminSettings>(url('/admin/mail'), input)).data
+	} catch (error) {
+		throw toApiError(error)
+	}
+}

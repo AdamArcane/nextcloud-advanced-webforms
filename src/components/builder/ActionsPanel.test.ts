@@ -11,6 +11,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { addAction, updateAction } from '../../builder/actions.ts'
 import { addField, emptyDefinition } from '../../builder/definition.ts'
 import ActionsPanel from './ActionsPanel.vue'
+import AddActionMenu from './AddActionMenu.vue'
 
 const secretMock = vi.fn()
 // A rejecting vi.fn is reported by Vitest as an unhandled rejection even when the code under test
@@ -42,6 +43,15 @@ function lastChange(wrapper: ReturnType<typeof mountPanel>): DraftDefinition {
 	return events[events.length - 1][0] as DraftDefinition
 }
 
+function menu(wrapper: ReturnType<typeof mount>) {
+	return wrapper.findComponent(AddActionMenu)
+}
+
+async function pick(wrapper: ReturnType<typeof mount>, type: string): Promise<void> {
+	menu(wrapper).vm.$emit('pick', type)
+	await wrapper.vm.$nextTick()
+}
+
 function button(wrapper: ReturnType<typeof mountPanel>, text: string) {
 	return wrapper.findAll('button').find((b) => b.text() === text)!
 }
@@ -49,12 +59,7 @@ function button(wrapper: ReturnType<typeof mountPanel>, text: string) {
 describe('ActionsPanel and the server policy', () => {
 	it('offers only the action types the server allows', () => {
 		const wrapper = mount(ActionsPanel, { props: { definition: emptyDefinition('T'), formId: 7, errors: [], allowedTypes: ['message', 'email'] } })
-		const labels = wrapper.findAll('button').map((b) => b.text())
-		expect(labels).toContain('Show a message')
-		expect(labels).toContain('Send an email')
-		expect(labels).not.toContain('Call a webhook')
-		expect(labels).not.toContain('Redirect')
-		expect(labels).not.toContain('Add a row to Tables')
+		expect(menu(wrapper).props('types')).toEqual(['message', 'email'])
 	})
 
 	it('says so when every type is switched off', () => {
@@ -68,8 +73,7 @@ describe('ActionsPanel and the server policy', () => {
 		def = addAction(def, 'redirect').definition
 		const wrapper = mount(ActionsPanel, { props: { definition: def, formId: 7, errors: [], maxActions: 2 } })
 		expect(wrapper.text()).toContain('A form can have up to 2 actions.')
-		const add = wrapper.findAll('button').find((b) => b.text() === 'Show a message')!
-		expect(add.attributes('disabled')).toBeDefined()
+		expect(menu(wrapper).props('disabled')).toBe(true)
 	})
 
 	it('keeps an action of a switched-off type visible, with a warning once opened', async () => {
@@ -90,15 +94,14 @@ describe('ActionsPanel', () => {
 	it('invites you to add the first action', () => {
 		const wrapper = mountPanel(emptyDefinition('T'))
 		expect(wrapper.text()).toContain('No actions yet')
-		for (const label of ['Show a message', 'Redirect', 'Send an email', 'Call a webhook']) {
-			expect(button(wrapper, label)).toBeDefined()
-		}
+		expect(menu(wrapper).props('types')).toEqual(['message', 'redirect', 'email', 'webhook', 'tables', 'files'])
+		expect(menu(wrapper).props('disabled')).toBe(false)
 	})
 
 	it('adds each kind of action and opens it for editing', async () => {
-		for (const [label, type] of [['Show a message', 'message'], ['Redirect', 'redirect'], ['Send an email', 'email'], ['Call a webhook', 'webhook']]) {
+		for (const type of ['message', 'redirect', 'email', 'webhook', 'tables', 'files']) {
 			const wrapper = mountPanel(base().def)
-			await button(wrapper, label).trigger('click')
+			await pick(wrapper, type)
 			const next = lastChange(wrapper)
 			expect(next.actions).toHaveLength(1)
 			expect(next.actions[0].type).toBe(type)
@@ -155,6 +158,83 @@ describe('ActionsPanel', () => {
 
 		recipientSelect(wrapper).vm.$emit('update:modelValue', null)
 		expect(lastChange(wrapper).actions[0]).toMatchObject({ to: '' })
+	})
+
+	it('sets where replies go the same way, and removes the setting when the box is cleared', async () => {
+		const { def, email } = base()
+		const wrapper = mountPanel(addAction(def, 'email').definition)
+		await wrapper.find('.af-action__head').trigger('click')
+		const replySelect = () => wrapper.findAllComponents({ name: 'NcSelect' }).find((select) => select.props('inputLabel') === 'Reply to (optional)')!
+		expect(replySelect().props('modelValue')).toBeNull()
+		expect(replySelect().props('options')).toEqual(recipientSelect(wrapper).props('options'))
+
+		replySelect().vm.$emit('update:modelValue', { id: email, label: 'Email', kind: 'field' })
+		expect(lastChange(wrapper).actions[0]).toMatchObject({ replyTo: { field: email } })
+		await wrapper.setProps({ definition: lastChange(wrapper) })
+		expect(replySelect().props('modelValue')).toMatchObject({ id: email, kind: 'field' })
+
+		replySelect().vm.$emit('update:modelValue', { id: ' desk@example.com ', label: 'desk@example.com', kind: 'address' })
+		expect(lastChange(wrapper).actions[0]).toMatchObject({ replyTo: 'desk@example.com' })
+
+		replySelect().vm.$emit('update:modelValue', { id: '@owner', label: 'Me', kind: 'owner' })
+		expect(lastChange(wrapper).actions[0]).toMatchObject({ replyTo: { owner: true } })
+
+		await wrapper.setProps({ definition: lastChange(wrapper) })
+		replySelect().vm.$emit('update:modelValue', null)
+		expect('replyTo' in lastChange(wrapper).actions[0]).toBe(false)
+		// The recipient is untouched by any of it.
+		expect(lastChange(wrapper).actions[0]).toMatchObject({ to: { field: email } })
+	})
+
+	it('takes a sender name and says where replies go by default', async () => {
+		const definition = addAction(base().def, 'email').definition
+		const wrapper = mount(ActionsPanel, { props: { definition, formId: 7, errors: [], mail: { allowOverride: true, replyToMode: 'address' as const, replyToAddress: 'support@example.com', fromName: 'Acme', defaultReplyTo: 'support@example.com', defaultFromName: 'Acme' } } })
+		await wrapper.find('.af-action__head').trigger('click')
+		// The defaults are the placeholders of the empty boxes, with no text to explain them.
+		const reply = wrapper.findAllComponents({ name: 'NcSelect' }).find((select) => select.props('inputLabel') === 'Reply to (optional)')!
+		expect(reply.props('placeholder')).toBe('support@example.com')
+		expect(wrapper.text()).not.toContain('Where a reply to this email goes')
+		const name = wrapper.findAllComponents({ name: 'NcTextField' }).find((field) => field.props('label') === 'Sender name (optional)')!
+		expect(name.props('placeholder')).toBe('Acme')
+		name.vm.$emit('update:modelValue', 'Help desk')
+		expect(lastChange(wrapper).actions[0]).toMatchObject({ fromName: 'Help desk' })
+		await wrapper.setProps({ definition: lastChange(wrapper) })
+		name.vm.$emit('update:modelValue', '  ')
+		expect('fromName' in lastChange(wrapper).actions[0]).toBe(false)
+	})
+
+	it('falls back to words in the empty boxes when the server did not say what the defaults are', async () => {
+		const wrapper = mountPanel(addAction(base().def, 'email').definition)
+		await wrapper.find('.af-action__head').trigger('click')
+		const reply = wrapper.findAllComponents({ name: 'NcSelect' }).find((select) => select.props('inputLabel') === 'Reply to (optional)')!
+		expect(reply.props('placeholder')).toBe('Server sender address')
+		const name = wrapper.findAllComponents({ name: 'NcTextField' }).find((field) => field.props('label') === 'Sender name (optional)')!
+		expect(name.props('placeholder')).toBe('Server default')
+	})
+
+	it('shows the real sender address and name when the administrator set no defaults', async () => {
+		const definition = addAction(base().def, 'email').definition
+		const wrapper = mount(ActionsPanel, { props: { definition, formId: 7, errors: [], mail: { allowOverride: true, replyToMode: 'none' as const, replyToAddress: '', fromName: '', defaultReplyTo: 'no-reply@cloud.example.com', defaultFromName: 'Our Cloud' } } })
+		await wrapper.find('.af-action__head').trigger('click')
+		const reply = wrapper.findAllComponents({ name: 'NcSelect' }).find((select) => select.props('inputLabel') === 'Reply to (optional)')!
+		expect(reply.props('placeholder')).toBe('no-reply@cloud.example.com')
+		const name = wrapper.findAllComponents({ name: 'NcTextField' }).find((field) => field.props('label') === 'Sender name (optional)')!
+		expect(name.props('placeholder')).toBe('Our Cloud')
+	})
+
+	it('only offers email fields for reply-to, and no sender name, when the administrator locked them', async () => {
+		const { def, email } = base()
+		const definition = addAction(def, 'email').definition
+		const wrapper = mount(ActionsPanel, { props: { definition, formId: 7, errors: [], mail: { allowOverride: false, replyToMode: 'owner' as const, replyToAddress: '', fromName: '', defaultReplyTo: 'me@example.com', defaultFromName: 'Our Cloud' } } })
+		await wrapper.find('.af-action__head').trigger('click')
+		const reply = wrapper.findAllComponents({ name: 'NcSelect' }).find((select) => select.props('inputLabel') === 'Reply to (optional)')!
+		expect(reply.props('options')).toEqual([{ id: email, label: expect.any(String), kind: 'field' }])
+		expect(reply.props('taggable')).toBe(false)
+		expect(reply.props('placeholder')).toBe('me@example.com')
+		expect(wrapper.text()).toContain('only lets forms reply to an email field')
+		expect(wrapper.findAllComponents({ name: 'NcTextField' }).some((field) => field.props('label') === 'Sender name (optional)')).toBe(false)
+		// The recipient is not restricted.
+		expect((recipientSelect(wrapper).props('options') as unknown[]).length).toBe(3)
 	})
 
 	it('can address the form owner or the signed-in respondent, and says what each means', async () => {
@@ -262,7 +342,7 @@ describe('ActionsPanel', () => {
 			def = addAction(def, 'webhook').definition
 		}
 		const wrapper = mountPanel(def)
-		expect(button(wrapper, 'Show a message').attributes('disabled')).toBeDefined()
+		expect(menu(wrapper).props('disabled')).toBe(true)
 		expect(wrapper.text()).toContain('up to 10 actions')
 	})
 

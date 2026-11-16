@@ -447,7 +447,9 @@ async function onDeleteConfirmed(): Promise<void> {
 			<FormBar :form-id="formId"
 				:active="view"
 				:title="draft.title"
-				sidebar-toggle>
+				sidebar-toggle
+				renamable
+				@rename="onTitle">
 				<template #meta>
 					<!-- An icon says it at a glance; the words stay for screen readers and as a tooltip. -->
 					<span class="af-bar__status" :class="'af-bar__status--' + saveState" role="status" :title="saveLabel">
@@ -546,6 +548,7 @@ async function onDeleteConfirmed(): Promise<void> {
 						:show-errors="publishFailed"
 						:allowed-types="policy.allowedActionTypes"
 						:max-actions="policy.maxActions"
+						:mail="policy.mail"
 						@change="edit" />
 					<FormProperties v-else
 						:section="settingsTab"

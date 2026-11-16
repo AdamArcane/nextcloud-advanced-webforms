@@ -173,7 +173,7 @@ async function save(confirmDelete = false): Promise<void> {
 						:error="!daysValid"
 						:helper-text="daysValid ? '' : t('webforms', 'Enter a whole number from 1 to 3650.')" />
 					<NcNoteCard type="warning">
-						{{ t('webforms', 'Responses older than this are deleted for good, with their uploaded files and delivery log. Copies already sent by email, webhook or to Tables are not touched.') }}
+						{{ t('webforms', 'Responses older than this are deleted for good, with their uploaded files and delivery log. Copies already sent by email, webhook, to Tables or to a CSV file are not touched.') }}
 					</NcNoteCard>
 					<p v-if="due !== null" class="af-policy__hint">
 						{{ due === 0

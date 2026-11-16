@@ -31,6 +31,14 @@ final class ActionContext {
 		public readonly int $recentEmails = 0,
 		/** The account that owns the form, for `to: { owner: true }`. */
 		public readonly string $ownerId = '',
+		/**
+		 * The definition's pages, for the order `{all_fields}` lists answers in.
+		 *
+		 * @var array<mixed>
+		 */
+		public readonly array $pages = [],
+		/** The administrator's settings for mail (docs/SCHEMA.md section 16.2). */
+		public readonly MailPolicy $mail = new MailPolicy(),
 	) {
 	}
 }

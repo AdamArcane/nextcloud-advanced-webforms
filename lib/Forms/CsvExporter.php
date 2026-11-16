@@ -139,7 +139,7 @@ final class CsvExporter {
 		return $text !== '' && strpbrk($text[0], "=+-@\t\r") !== false ? "'" . $text : $text;
 	}
 
-	private static function quote(string $value): string {
+	public static function quote(string $value): string {
 		if ($value === '' || strpbrk($value, "\",\r\n") === false) {
 			return $value;
 		}

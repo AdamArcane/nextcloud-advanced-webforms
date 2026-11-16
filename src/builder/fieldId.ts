@@ -77,6 +77,9 @@ function renameInAction(action: FormAction, from: string, to: string): FormActio
 			if (typeof renamed.to === 'object' && 'field' in renamed.to && renamed.to.field === from) {
 				renamed.to = { field: to }
 			}
+			if (typeof renamed.replyTo === 'object' && 'field' in renamed.replyTo && renamed.replyTo.field === from) {
+				renamed.replyTo = { field: to }
+			}
 			break
 		case 'tables':
 			// The map is column id to source: the sources are what point at a field.

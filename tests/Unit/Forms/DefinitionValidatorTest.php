@@ -420,6 +420,18 @@ class DefinitionValidatorTest extends TestCase {
 		}));
 	}
 
+	public function testFilesActionPath(): void {
+		$withPath = static fn (mixed $path): callable => static function (array $d) use ($path): array {
+			$d['actions'] = [['id' => 'act_sheet', 'type' => 'files', 'path' => $path]];
+			return $d;
+		};
+		$this->assertSame([], $this->codes($withPath('Webforms/Leads.csv')));
+		$this->assertSame(['action_bad_file_path'], $this->codes($withPath('Webforms/Leads.xlsx')));
+		$this->assertSame(['action_bad_file_path'], $this->codes($withPath('/Webforms/Leads.csv')));
+		$this->assertSame(['action_bad_file_path'], $this->codes($withPath('../Leads.csv')));
+		$this->assertSame(['action_bad_file_path'], $this->codes($withPath(12)));
+	}
+
 	public function testEmailActionStaticRecipient(): void {
 		$this->assertSame([], $this->codes(static function (array $d): array {
 			$d['actions'][0]['to'] = 'owner@example.com';
@@ -440,6 +452,58 @@ class DefinitionValidatorTest extends TestCase {
 				return $d;
 			}));
 		}
+	}
+
+	public function testReplyToIsOptionalAndWrittenLikeTheRecipient(): void {
+		foreach (['desk@example.com', ['field' => 'f_email'], ['owner' => true], ['respondent' => true]] as $replyTo) {
+			$this->assertSame([], $this->codes(static function (array $d) use ($replyTo): array {
+				$d['actions'][0]['replyTo'] = $replyTo;
+				return $d;
+			}));
+		}
+		foreach (['', 'not an address', ['field' => 'f_name'], ['field' => 'f_missing'], ['owner' => false], ['user' => 'alice'], null, 5] as $replyTo) {
+			$this->assertSame(['action_bad_reply_to'], $this->codes(static function (array $d) use ($replyTo): array {
+				$d['actions'][0]['replyTo'] = $replyTo;
+				return $d;
+			}));
+		}
+	}
+
+	public function testSenderNameIsOneLineOfPlainText(): void {
+		$this->assertSame([], $this->codes(static function (array $d): array {
+			$d['actions'][0]['fromName'] = 'Acme Support';
+			return $d;
+		}));
+		foreach (['', '   ', "Acme\nBcc: x@example.com", str_repeat('a', 101), 5] as $name) {
+			$this->assertSame(['action_from_name_invalid'], $this->codes(static function (array $d) use ($name): array {
+				$d['actions'][0]['fromName'] = $name;
+				return $d;
+			}));
+		}
+	}
+
+	public function testAllFieldsIsAllowedInAnEmailBodyOnly(): void {
+		$this->assertSame([], $this->codes(static function (array $d): array {
+			$d['actions'][0]['body'] = "New response:\n{all_fields}";
+			return $d;
+		}));
+		$this->assertSame(['action_unknown_placeholder'], $this->codes(static function (array $d): array {
+			$d['actions'][0]['subject'] = 'New {all_fields}';
+			return $d;
+		}));
+	}
+
+	public function testSubmitButtonAlignment(): void {
+		foreach (['left', 'center', 'right', 'justify'] as $align) {
+			$this->assertSame([], $this->codes(static function (array $d) use ($align): array {
+				$d['settings']['design'] = ['submitAlign' => $align];
+				return $d;
+			}));
+		}
+		$this->assertSame(['settings_invalid'], $this->codes(static function (array $d): array {
+			$d['settings']['design'] = ['submitAlign' => 'middle'];
+			return $d;
+		}));
 	}
 
 	public function testPlaceholderMustReferenceInputField(): void {

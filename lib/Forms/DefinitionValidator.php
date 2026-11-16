@@ -9,6 +9,9 @@ declare(strict_types=1);
 
 namespace OCA\Webforms\Forms;
 
+use OCA\Webforms\Actions\CsvFile;
+use OCA\Webforms\Actions\MailPolicy;
+use OCA\Webforms\Actions\Template;
 use OCA\Webforms\Actions\TablesValue;
 use OCA\Webforms\Rules\FieldType;
 use OCA\Webforms\Rules\RuleValidator;
@@ -31,7 +34,7 @@ final class DefinitionValidator {
 	public const SPANS = [3, 4, 6, 8, 9, 12];
 	public const LABEL_POSITIONS = ['above', 'inline', 'hidden'];
 	public const MAX_TABLES_COLUMNS = 100;
-	public const ACTION_TYPES = ['email', 'webhook', 'message', 'redirect', 'tables'];
+	public const ACTION_TYPES = ['email', 'webhook', 'message', 'redirect', 'tables', 'files'];
 
 	private const SETTINGS_KEYS = ['submitLabel', 'labelPosition', 'requireLogin', 'allowMultipleSubmissions', 'hideRequiredIndicator', 'hideTitle', 'captcha', 'closedMessage', 'maxResponses', 'showRemaining', 'opensAt', 'closesAt', 'notOpenMessage', 'fullMessage', 'design'];
 	private const MAX_PAGES = 20;
@@ -154,6 +157,7 @@ final class DefinitionValidator {
 				'card' => is_bool($value),
 				'background' => in_array($value, ['default', 'plain', 'color'], true),
 				'backgroundColor', 'accentColor', 'buttonColor' => is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1,
+				'submitAlign' => in_array($value, ['left', 'center', 'right', 'justify'], true),
 				default => null,
 			};
 			if ($valid === null) {
@@ -569,7 +573,7 @@ final class DefinitionValidator {
 			$allowed = ['id', 'type', 'when'];
 			switch ($action['type']) {
 				case 'email':
-					$allowed = array_merge($allowed, ['to', 'subject', 'body']);
+					$allowed = array_merge($allowed, ['to', 'replyTo', 'fromName', 'subject', 'body']);
 					$this->emailAction($action, $fields, $path);
 					break;
 				case 'webhook':
@@ -579,6 +583,12 @@ final class DefinitionValidator {
 				case 'tables':
 					$allowed = array_merge($allowed, ['tableId', 'map']);
 					$this->tablesAction($action, $fields, $path);
+					break;
+				case 'files':
+					$allowed[] = 'path';
+					if (!is_string($action['path'] ?? null) || CsvFile::cleanPath($action['path']) !== $action['path']) {
+						$this->err('action_bad_file_path', $path . '.path');
+					}
 					break;
 				case 'message':
 					$allowed[] = 'text';
@@ -602,26 +612,46 @@ final class DefinitionValidator {
 	 * @param array<string, array<string, mixed>> $fields
 	 */
 	private function emailAction(array $action, array $fields, string $path): void {
-		$to = $action['to'] ?? null;
-		if (is_string($to)) {
-			if (filter_var($to, FILTER_VALIDATE_EMAIL) === false || strlen($to) > FieldValueValidator::MAX_EMAIL) {
-				$this->err('action_bad_recipient', $path . '.to');
+		$this->emailAddressSource($action['to'] ?? null, $fields, $path . '.to', 'action_bad_recipient');
+		if (array_key_exists('replyTo', $action)) {
+			// Optional, and written the same way as the recipient (section 7.2).
+			$this->emailAddressSource($action['replyTo'], $fields, $path . '.replyTo', 'action_bad_reply_to');
+		}
+		if (array_key_exists('fromName', $action)) {
+			// The name mail is sent under. One line of plain text: it becomes part of a mail header.
+			$name = $action['fromName'];
+			if (!is_string($name) || trim($name) === '' || mb_strlen($name) > MailPolicy::MAX_NAME || preg_match('/[\x00-\x1F\x7F]/', $name) === 1) {
+				$this->err('action_from_name_invalid', $path . '.fromName');
 			}
-		} elseif (is_array($to) && (array_keys($to) === ['owner'] || array_keys($to) === ['respondent'])) {
-			// "The form owner" and "the signed-in respondent": resolved to their account email when sent.
-			if (reset($to) !== true) {
-				$this->err('action_bad_recipient', $path . '.to');
-			}
-		} elseif (is_array($to) && array_keys($to) === ['field']) {
-			$source = is_string($to['field']) ? ($fields[$to['field']] ?? null) : null;
-			if ($source === null || ($source['type'] ?? null) !== FieldType::EMAIL) {
-				$this->err('action_bad_recipient', $path . '.to.field');
-			}
-		} else {
-			$this->err('action_bad_recipient', $path . '.to');
 		}
 		$this->textProp($action, 'subject', 255, $fields, $path);
-		$this->textProp($action, 'body', 5000, $fields, $path);
+		$this->textProp($action, 'body', 5000, $fields, $path, true);
+	}
+
+	/**
+	 * Where an email address comes from: a fixed address, an email field, the form owner's account or
+	 * the signed-in respondent's account.
+	 *
+	 * @param array<string, array<string, mixed>> $fields
+	 */
+	private function emailAddressSource(mixed $source, array $fields, string $path, string $code): void {
+		if (is_string($source)) {
+			if (filter_var($source, FILTER_VALIDATE_EMAIL) === false || strlen($source) > FieldValueValidator::MAX_EMAIL) {
+				$this->err($code, $path);
+			}
+		} elseif (is_array($source) && (array_keys($source) === ['owner'] || array_keys($source) === ['respondent'])) {
+			// "The form owner" and "the signed-in respondent": resolved to their account email when sent.
+			if (reset($source) !== true) {
+				$this->err($code, $path);
+			}
+		} elseif (is_array($source) && array_keys($source) === ['field']) {
+			$field = is_string($source['field']) ? ($fields[$source['field']] ?? null) : null;
+			if ($field === null || ($field['type'] ?? null) !== FieldType::EMAIL) {
+				$this->err($code, $path . '.field');
+			}
+		} else {
+			$this->err($code, $path);
+		}
 	}
 
 	/**
@@ -684,24 +714,28 @@ final class DefinitionValidator {
 	 * @param array<string, mixed> $action
 	 * @param array<string, array<string, mixed>> $fields
 	 */
-	private function textProp(array $action, string $key, int $max, array $fields, string $path): void {
+	private function textProp(array $action, string $key, int $max, array $fields, string $path, bool $allFields = false): void {
 		$value = $action[$key] ?? null;
 		if (!is_string($value) || trim($value) === '' || mb_strlen($value) > $max) {
 			$this->err('action_text_invalid', $path . '.' . $key);
 			return;
 		}
-		$this->checkPlaceholders($value, $fields, $path . '.' . $key);
+		$this->checkPlaceholders($value, $fields, $path . '.' . $key, $allFields);
 	}
 
 	/**
 	 * @param array<string, array<string, mixed>> $fields
 	 */
-	private function checkPlaceholders(string $text, array $fields, string $path): void {
+	private function checkPlaceholders(string $text, array $fields, string $path, bool $allFields = false): void {
 		if (preg_match_all('/\{([^{}]*)\}/', $text, $matches) === false) {
 			return;
 		}
 		foreach ($matches[1] as $name) {
 			$field = $fields[$name] ?? null;
+			if ($field === null && $allFields && $name === Template::ALL_FIELDS) {
+				// Every answer at once, in an email body (section 7.2).
+				continue;
+			}
 			if ($field === null || !isset(FieldType::OPERATORS[(string)($field['type'] ?? '')])) {
 				$this->err('action_unknown_placeholder', $path);
 				return;

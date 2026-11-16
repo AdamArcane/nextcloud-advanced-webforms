@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace OCA\Webforms\Settings;
 
+use OCA\Webforms\Actions\MailPolicy;
+
 /**
  * What the server policy says about a form's actions. Pure, so it is unit tested. Checked when a draft
  * is saved (as a warning), when a form is published (a refusal), and when an action is about to run.
@@ -28,6 +30,26 @@ final class PolicyCheck {
 		foreach ($actions as $index => $action) {
 			if (is_array($action) && is_string($action['type'] ?? null) && !in_array($action['type'], $allowedTypes, true)) {
 				$errors[] = ['code' => 'action_type_disabled', 'path' => 'actions[' . $index . ']'];
+			}
+		}
+		return $errors;
+	}
+
+	/**
+	 * Email actions that set a reply-to or sender name of their own while the administrator does not
+	 * allow that (docs/SCHEMA.md section 16.2). A reply-to that is the answer to an email field is fine.
+	 *
+	 * @param array<string, mixed> $definition
+	 * @return list<array{code: string, path: string}>
+	 */
+	public static function mailErrors(array $definition, MailPolicy $mail): array {
+		$errors = [];
+		foreach (is_array($definition['actions'] ?? null) ? $definition['actions'] : [] as $index => $action) {
+			if (!is_array($action) || ($action['type'] ?? null) !== 'email') {
+				continue;
+			}
+			foreach ($mail->lockedProperties($action) as $property) {
+				$errors[] = ['code' => 'action_mail_locked', 'path' => 'actions[' . $index . '].' . $property];
 			}
 		}
 		return $errors;

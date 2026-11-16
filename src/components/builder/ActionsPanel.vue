@@ -4,17 +4,15 @@
 -->
 
 <script setup lang="ts">
+import type { MailPolicy } from '../../api/settings.ts'
 import type { ActionType, DefinitionError, DraftDefinition, FormAction } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
-import NcButton from '@nextcloud/vue/components/NcButton'
-import { actionTypeIcons } from '../../icons.ts'
-import Icon from '../common/Icon.vue'
 import { computed, ref } from 'vue'
 import { createWebhookSecret } from '../../api/forms.ts'
 import { ACTION_TYPES, addAction, errorActionIndex, MAX_ACTIONS, moveAction, removeAction, unreachableResponseActions, updateAction } from '../../builder/actions.ts'
-import { actionHint, actionLabel } from '../../builder/labels.ts'
 import ActionCard from './ActionCard.vue'
+import AddActionMenu from './AddActionMenu.vue'
 
 const props = defineProps<{
 	definition: DraftDefinition
@@ -26,6 +24,8 @@ const props = defineProps<{
 	allowedTypes?: readonly ActionType[]
 	/** The most actions the server allows on a form, never above MAX_ACTIONS. */
 	maxActions?: number
+	/** The administrator's settings for mail, so an email action can say what applies. */
+	mail?: MailPolicy
 }>()
 
 const emit = defineEmits<{
@@ -99,8 +99,21 @@ async function generateSecret(index: number): Promise<void> {
 <template>
 	<div class="af-actions">
 		<p class="af-actions__intro">
-			{{ t('webforms', 'Choose what happens after someone sends the form. Emails and webhooks are sent in the background, so a slow mail server never holds up the respondent.') }}
+			{{ t('webforms', 'Choose what happens after someone sends the form. Background actions run after the response is saved, so a slow mail server or website never holds up the respondent.') }}
 		</p>
+
+		<div class="af-actions__add">
+			<AddActionMenu :types="choices" :disabled="full" @pick="add" />
+			<p v-if="choices.length === 0" class="af-actions__hint">
+				{{ t('webforms', 'An administrator has switched off every kind of action on this server.') }}
+			</p>
+			<p v-else-if="full" class="af-actions__hint">
+				{{ t('webforms', 'A form can have up to {max} actions.', { max: limit }) }}
+			</p>
+			<p v-else-if="definition.actions.length > 0" class="af-actions__hint">
+				{{ t('webforms', 'If several messages or redirects match, the first one is shown. Everything in the background runs.') }}
+			</p>
+		</div>
 
 		<ActionCard v-for="(action, index) in definition.actions"
 			:key="action.id"
@@ -113,6 +126,7 @@ async function generateSecret(index: number): Promise<void> {
 			:show-errors="showErrors"
 			:unreachable="unreachable.has(action.id)"
 			:switched-off="switchedOff.has(action.id)"
+			:mail="mail"
 			:revealed-secret="revealed?.actionId === action.id ? revealed.secret : null"
 			:secret-busy="secretBusyId === action.id"
 			:secret-failed="secretFailedId === action.id"
@@ -127,33 +141,6 @@ async function generateSecret(index: number): Promise<void> {
 			{{ t('webforms', 'No actions yet. Respondents will see a default thank-you.') }}
 		</p>
 
-		<section class="af-actions__add">
-			<h3 class="af-actions__heading">
-				{{ t('webforms', 'Add an action') }}
-			</h3>
-			<div class="af-actions__choices">
-				<NcButton v-for="type in choices"
-					:key="type"
-					variant="secondary"
-					:disabled="full"
-					:title="actionHint(type)"
-					@click="add(type)">
-					<template #icon>
-						<Icon :path="actionTypeIcons[type]" />
-					</template>
-					{{ actionLabel(type) }}
-				</NcButton>
-			</div>
-			<p v-if="choices.length === 0" class="af-actions__hint">
-				{{ t('webforms', 'An administrator has switched off every kind of action on this server.') }}
-			</p>
-			<p v-if="full" class="af-actions__hint">
-				{{ t('webforms', 'A form can have up to {max} actions.', { max: limit }) }}
-			</p>
-			<p v-else class="af-actions__hint">
-				{{ t('webforms', 'If several messages or redirects match, the first one is shown. Emails and webhooks all run.') }}
-			</p>
-		</section>
 	</div>
 </template>
 
@@ -179,21 +166,7 @@ async function generateSecret(index: number): Promise<void> {
 .af-actions__add {
 	display: flex;
 	flex-direction: column;
-	gap: var(--default-grid-baseline);
-}
-
-.af-actions__heading {
-	margin: 0;
-	font-size: 14px;
-	font-weight: bold;
-	color: var(--color-text-maxcontrast);
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
-}
-
-.af-actions__choices {
-	display: flex;
-	flex-wrap: wrap;
+	align-items: flex-start;
 	gap: var(--default-grid-baseline);
 }
 </style>

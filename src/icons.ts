@@ -74,6 +74,7 @@ import {
 	mdiTextLong,
 	mdiPalette,
 	mdiTable,
+	mdiFileDelimitedOutline,
 	mdiChartBar,
 	mdiTableLarge,
 	mdiViewColumnOutline,
@@ -191,6 +192,7 @@ export const actionTypeIcons: Record<string, string> = {
 	email: mdiEmailOutline,
 	webhook: mdiWebhook,
 	tables: mdiTable,
+	files: mdiFileDelimitedOutline,
 }
 
 export function fieldTypeIcon(type: string): string {

@@ -4,7 +4,8 @@
 -->
 
 <script setup lang="ts">
-import type { DraftDefinition, EmailAction, FormAction, MessageAction, RedirectAction, TablesAction, WebhookAction } from '../../types.ts'
+import type { MailPolicy } from '../../api/settings.ts'
+import type { DraftDefinition, EmailAction, EmailAddressSource, FilesAction, FormAction, MessageAction, RedirectAction, TablesAction, WebhookAction } from '../../types.ts'
 
 import { n, t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -16,12 +17,13 @@ import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { computed, ref } from 'vue'
-import { defaultWhen, emailFields, readablePlaceholders, setWhen, unknownPlaceholders, usesResponseSlot, withPlaceholder } from '../../builder/actions.ts'
+import { defaultWhen, emailFields, readablePlaceholders, setWhen, unknownPlaceholders, usesResponseSlot, withAllFields, withPlaceholder } from '../../builder/actions.ts'
 import { describeError } from '../../builder/errors.ts'
 import { actionLabel } from '../../builder/labels.ts'
 import { sourceFields } from '../../builder/rules.ts'
 import ConditionGroup from './ConditionGroup.vue'
 import PlaceholderMenu from './PlaceholderMenu.vue'
+import FilesActionBody from './FilesActionBody.vue'
 import TablesActionBody from './TablesActionBody.vue'
 
 const ARROW_UP: string = icons.arrowUp
@@ -41,6 +43,8 @@ const props = defineProps<{
 	unreachable: boolean
 	/** An administrator has switched this kind of action off. */
 	switchedOff?: boolean
+	/** The administrator's settings for mail. Left out, everything is allowed and there is no default. */
+	mail?: MailPolicy
 	/** A freshly generated secret to show once, for this action. */
 	revealedSecret: string | null
 	secretBusy: boolean
@@ -89,6 +93,7 @@ const summary = computed(() => {
 		case 'redirect': return readablePlaceholders(action.url, props.definition)
 		case 'webhook': return action.url
 		case 'tables': return tablesSummary(action)
+		case 'files': return action.path
 		default: {
 			const to = recipientSummary(action.to)
 			return t('webforms', 'To {to}: {subject}', { to: to || '…', subject: readablePlaceholders(action.subject, props.definition) })
@@ -112,9 +117,14 @@ const brokenPlaceholders = computed(() => {
 	} else if (action.type === 'redirect') {
 		texts.push(action.url)
 	} else if (action.type === 'email') {
-		texts.push(action.subject, action.body)
+		texts.push(action.subject)
 	}
-	return [...new Set(texts.flatMap((text) => unknownPlaceholders(text, props.definition)))]
+	const broken = texts.flatMap((text) => unknownPlaceholders(text, props.definition))
+	if (action.type === 'email') {
+		// Only the body may ask for the list of all answers.
+		broken.push(...unknownPlaceholders(action.body, props.definition, true))
+	}
+	return [...new Set(broken)]
 })
 
 // The action types are a union, so narrow once per type for the template.
@@ -123,6 +133,7 @@ const redirect = computed(() => props.action as RedirectAction)
 const email = computed(() => props.action as EmailAction)
 const webhook = computed(() => props.action as WebhookAction)
 const tablesAction = computed(() => props.action as TablesAction)
+const filesAction = computed(() => props.action as FilesAction)
 
 function patch(changes: Record<string, unknown>): void {
 	emit('update', { ...props.action, ...changes } as FormAction)
@@ -155,34 +166,76 @@ const recipientOptions = computed<RecipientOption[]>(() => [
 	...emails.value.map(({ id, label }): RecipientOption => ({ id, label: label || id, kind: 'field' })),
 ])
 
-/** One box for every kind of recipient. */
-const recipient = computed<RecipientOption | null>(() => {
-	const to = email.value.to
-	if (typeof to === 'string') {
-		return to === '' ? null : { id: to, label: to, kind: 'address' }
+/** The entry in the box for an address source, or null for none. */
+function optionFor(source: EmailAddressSource | undefined): RecipientOption | null {
+	if (source === undefined) {
+		return null
 	}
-	if ('owner' in to) {
+	if (typeof source === 'string') {
+		return source === '' ? null : { id: source, label: source, kind: 'address' }
+	}
+	if ('owner' in source) {
 		return OWNER_OPTION
 	}
-	if ('respondent' in to) {
+	if ('respondent' in source) {
 		return RESPONDENT_OPTION
 	}
-	return recipientOptions.value.find((option) => option.kind === 'field' && option.id === to.field) ?? { id: to.field, label: to.field, kind: 'field' }
-})
+	return recipientOptions.value.find((option) => option.kind === 'field' && option.id === source.field) ?? { id: source.field, label: source.field, kind: 'field' }
+}
+
+/** The address source an entry in the box stands for. */
+function sourceFor(option: RecipientOption): EmailAddressSource {
+	switch (option.kind) {
+		case 'owner': return { owner: true }
+		case 'respondent': return { respondent: true }
+		case 'field': return { field: option.id }
+		default: return option.id.trim()
+	}
+}
+
+/** One box for every kind of recipient. */
+const recipient = computed<RecipientOption | null>(() => optionFor(email.value.to))
 
 const recipientKind = computed<RecipientKind>(() => recipient.value?.kind ?? 'address')
 
 function setRecipient(option: RecipientOption | null): void {
-	if (option === null) {
-		patch({ to: '' })
-	} else if (option.kind === 'owner') {
-		patch({ to: { owner: true } })
-	} else if (option.kind === 'respondent') {
-		patch({ to: { respondent: true } })
-	} else if (option.kind === 'field') {
-		patch({ to: { field: option.id } })
+	patch({ to: option === null ? '' : sourceFor(option) })
+}
+
+/** Whether this action's own reply-to and sender name count, or the administrator's are used. */
+const mailLocked = computed(() => props.mail?.allowOverride === false)
+
+/** When locked, only "the address the respondent typed" is still the form owner's to pick. */
+const replyToOptions = computed(() => (mailLocked.value ? recipientOptions.value.filter((option) => option.kind === 'field') : recipientOptions.value))
+
+/**
+ * Where replies go when this action sets no reply-to: the real address, shown in the empty box. The
+ * words are only for when the server did not say.
+ */
+const defaultReplyTo = computed(() => props.mail?.defaultReplyTo || t('webforms', 'Server sender address'))
+
+/** The name mail is sent under when this action sets none. */
+const defaultFromName = computed(() => props.mail?.defaultFromName || t('webforms', 'Server default'))
+
+function setFromName(value: string): void {
+	if (value.trim() === '') {
+		const { fromName: _removed, ...rest } = email.value
+		emit('update', rest as FormAction)
 	} else {
-		patch({ to: option.id.trim() })
+		patch({ fromName: value })
+	}
+}
+
+/** The same box for where replies go. It is optional, so clearing it removes the setting. */
+const replyTo = computed<RecipientOption | null>(() => optionFor(email.value.replyTo))
+
+function setReplyTo(option: RecipientOption | null): void {
+	const source = option === null ? '' : sourceFor(option)
+	if (source === '') {
+		const { replyTo: _removed, ...rest } = email.value
+		emit('update', rest as FormAction)
+	} else {
+		patch({ replyTo: source })
 	}
 }
 
@@ -309,6 +362,44 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 						{{ t('webforms', 'Pick who receives it, or type an address and press Enter.') }}
 					</template>
 				</p>
+				<NcSelect :model-value="replyTo"
+					class="af-action__defaulted"
+					:input-label="t('webforms', 'Reply to (optional)')"
+					:placeholder="defaultReplyTo"
+					:options="replyToOptions"
+					:taggable="!mailLocked"
+					:create-option="createRecipient"
+					label="label"
+					@update:model-value="setReplyTo">
+					<template #option="option">
+						<span class="af-recipient">
+							<Icon :path="recipientIcon(option.kind)" :size="18" />
+							<span class="af-recipient__label">{{ option.label }}</span>
+							<span class="af-recipient__kind">{{ recipientTag(option.kind) }}</span>
+						</span>
+					</template>
+					<template #selected-option="option">
+						<span class="af-recipient">
+							<span class="af-recipient__label">{{ option.label }}</span>
+							<span v-if="option.kind !== 'address'" class="af-recipient__kind">{{ recipientTag(option.kind) }}</span>
+						</span>
+					</template>
+				</NcSelect>
+				<p v-if="mailLocked" class="af-action__hint">
+					{{ t('webforms', 'The administrator only lets forms reply to an email field.') }}
+				</p>
+				<NcTextField v-if="!mailLocked || email.fromName !== undefined"
+					class="af-action__defaulted"
+					:model-value="email.fromName ?? ''"
+					:label="t('webforms', 'Sender name (optional)')"
+					:placeholder="defaultFromName"
+					:disabled="mailLocked"
+					maxlength="100"
+					:helper-text="mailLocked ? t('webforms', 'The administrator sets the sender name. Clear this to publish.') : ''"
+					@update:model-value="(value: string | number) => setFromName(String(value))" />
+				<NcButton v-if="mailLocked && email.fromName !== undefined" variant="tertiary" @click="setFromName('')">
+					{{ t('webforms', 'Remove sender name') }}
+				</NcButton>
 				<NcTextField :model-value="email.subject"
 					:label="t('webforms', 'Subject')"
 					@update:model-value="(value: string | number) => patch({ subject: String(value) })" />
@@ -318,7 +409,12 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 					@update:model-value="(value: string) => patch({ body: value })" />
 				<div class="af-action__inserts">
 					<PlaceholderMenu :definition="definition" @pick="(id) => patch({ body: withPlaceholder(email.body, id) })" />
-					<span class="af-action__hint">{{ t('webforms', 'Adds an answer to the end of the body.') }}</span>
+					<NcButton variant="secondary"
+						:disabled="email.body.includes('{all_fields}')"
+						@click="patch({ body: withAllFields(email.body) })">
+						{{ t('webforms', 'Add all answers') }}
+					</NcButton>
+					<span class="af-action__hint">{{ t('webforms', 'Adds an answer to the end of the body. "All answers" adds {placeholder}, which becomes a list of every question the person answered, with its label.', { placeholder: '{all_fields}' }) }}</span>
 				</div>
 			</template>
 
@@ -326,6 +422,11 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 			<TablesActionBody v-else-if="action.type === 'tables'"
 				:action="tablesAction"
 				:definition="definition"
+				@patch="patch" />
+
+			<!-- CSV file in Files -->
+			<FilesActionBody v-else-if="action.type === 'files'"
+				:action="filesAction"
 				@patch="patch" />
 
 			<!-- Webhook -->
@@ -506,6 +607,26 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 	margin: 0;
 	color: var(--color-text-maxcontrast);
 	font-size: 13px;
+}
+
+/*
+ * A box whose placeholder is the default that applies when it is left empty. Nextcloud's fields hide
+ * the placeholder until they have focus and park the label inside the box instead, so here the label
+ * always sits on the border, as it does for a filled field, and the placeholder always shows.
+ */
+.af-action__defaulted :deep(.input-field__input:not(:focus)::placeholder) {
+	opacity: 1 !important;
+}
+
+.af-action__defaulted :deep(.input-field__input + .input-field__label) {
+	--input-label-font-size: 13px;
+	line-height: 1.5;
+	inset-block-start: calc(-1.5 * var(--input-label-font-size) / 2);
+	font-weight: var(--font-weight-element, 500);
+	border-radius: var(--default-grid-baseline) var(--default-grid-baseline) 0 0;
+	background-color: var(--color-main-background);
+	padding-inline: var(--default-grid-baseline);
+	margin-inline: calc(var(--input-padding-start) - var(--default-grid-baseline)) calc(var(--input-padding-end) - var(--default-grid-baseline));
 }
 
 .af-action__inserts,
