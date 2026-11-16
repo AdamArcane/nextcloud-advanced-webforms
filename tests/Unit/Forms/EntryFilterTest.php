@@ -24,8 +24,8 @@ final class EntryFilterTest extends TestCase {
 		'f_intro' => ['type' => 'paragraph', 'label' => 'Intro text'],
 	];
 
-	private function filter(string $text = '', string $from = '', string $to = '', string $respondent = '', string $where = '', string $sort = ''): EntryFilter {
-		return EntryFilter::fromInput($text, $from, $to, $respondent, $where, $sort);
+	private function filter(string $text = '', string $from = '', string $to = '', string $respondent = '', string $where = '', string $sort = '', string $status = ''): EntryFilter {
+		return EntryFilter::fromInput($text, $from, $to, $respondent, $where, $sort, $status);
 	}
 
 	public function testDefaultsShowEverythingNewestFirst(): void {
@@ -45,9 +45,21 @@ final class EntryFilterTest extends TestCase {
 		$this->assertFalse($filter->needsScan());
 	}
 
+	public function testStatusesAreAListTheDatabaseAnswers(): void {
+		$this->assertNull($this->filter()->statuses);
+		$filter = $this->filter(status: 'done,none,done');
+		$this->assertSame(['done', 'none'], $filter->statuses);
+		$this->assertTrue($filter->isActive());
+		$this->assertFalse($filter->needsScan());
+		// An id the administrator never made is not an error. It matches nothing.
+		$this->assertSame(['made_up'], $this->filter(status: 'made_up')->statuses);
+	}
+
 	/** @return array<string, array{array<string, string>}> */
 	public static function bad(): array {
 		return [
+			'status that is not an id' => [['status' => 'Done!']],
+			'status list with a gap' => [['status' => 'done,,spam']],
 			'not a date' => [['from' => 'yesterday']],
 			'impossible date' => [['to' => '2026-02-30']],
 			'wrong shape' => [['from' => '14/11/2026']],

@@ -19,6 +19,7 @@ use OCA\Webforms\Actions\ActionRunner;
 final class EventPayload {
 	public const ENTRY_CREATED = 'entry.created';
 	public const ENTRY_DELETED = 'entry.deleted';
+	public const ENTRY_STATUS_CHANGED = 'entry.status_changed';
 	public const FORM_PUBLISHED = 'form.published';
 	public const FORM_STATUS_CHANGED = 'form.status_changed';
 
@@ -71,6 +72,24 @@ final class EventPayload {
 			'versionId' => $versionId,
 			'entryId' => $entryId,
 			'deletedBy' => $deletedBy,
+		], $formTitle, $ownerId);
+	}
+
+	/**
+	 * Carries no answers and no note. A status is the id of one of the administrator's statuses, or null
+	 * for none (docs/SCHEMA.md section 20.2).
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function entryStatusChanged(int $formId, string $formTitle, string $ownerId, int $versionId, int $entryId, ?string $status, ?string $previousStatus, string $changedBy): array {
+		return self::withForm([
+			'event' => self::ENTRY_STATUS_CHANGED,
+			'formId' => $formId,
+			'versionId' => $versionId,
+			'entryId' => $entryId,
+			'status' => $status,
+			'previousStatus' => $previousStatus,
+			'changedBy' => $changedBy,
 		], $formTitle, $ownerId);
 	}
 

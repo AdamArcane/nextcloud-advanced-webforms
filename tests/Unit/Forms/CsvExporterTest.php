@@ -43,6 +43,18 @@ class CsvExporterTest extends TestCase {
 		return ['id' => $id, 'versionId' => $version, 'userId' => $user, 'submittedAt' => $at, 'data' => $data];
 	}
 
+	public function testADownloadCanCarryAStatusColumnAfterTheRespondent(): void {
+		$definitions = [1 => self::definition(['f_a' => ['type' => 'number', 'label' => 'A']])];
+		$entries = [self::entry(1, 1, ['f_a' => -4], 'ada') + ['status' => '=Done'], self::entry(2, 1, ['f_a' => 7])];
+		$rows = self::parse(CsvExporter::build($entries, $definitions, 'Submitted (UTC)', null, true));
+		$this->assertSame(['Response ID', 'Submitted (UTC)', 'Respondent', 'Status', 'A'], $rows[0]);
+		// A label is text an administrator typed, so it is made safe like any other text. The number stays a number.
+		$this->assertSame(["'=Done", '-4'], array_slice($rows[1], 3));
+		$this->assertSame(['', '7'], array_slice($rows[2], 3));
+		// The Files action writes the same table without it.
+		$this->assertSame(['Response ID', 'Submitted (UTC)', 'Respondent', 'A'], self::parse(CsvExporter::build($entries, $definitions))[0]);
+	}
+
 	public function testStartsWithAByteOrderMarkAndUsesWindowsLineEndings(): void {
 		$csv = CsvExporter::build([], [1 => self::definition(['f_a' => ['type' => 'text', 'label' => 'A']])]);
 		$this->assertStringStartsWith("\xEF\xBB\xBF", $csv);
