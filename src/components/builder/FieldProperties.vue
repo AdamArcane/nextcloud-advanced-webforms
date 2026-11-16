@@ -53,7 +53,17 @@ const type = computed(() => field.value?.type ?? '')
 const isDisplay = computed(() => ['heading', 'paragraph', 'divider'].includes(type.value))
 const hasPlaceholder = computed(() => ['text', 'textarea', 'email', 'url', 'number', 'phone', 'select'].includes(type.value))
 const hasOptions = computed(() => ['select', 'radio', 'checkboxes'].includes(type.value))
-const hasLabel = computed(() => !isDisplay.value)
+const isHidden = computed(() => type.value === 'hidden')
+const hasLabel = computed(() => !isDisplay.value && !isHidden.value)
+/** Every input field except uploads can be filled from the link (docs/SCHEMA.md 4.7). */
+const canPrefill = computed(() => !isDisplay.value && type.value !== 'file')
+const prefillProblem = computed(() => {
+	const name = field.value?.prefill
+	return name && !/^[A-Za-z][A-Za-z0-9_.-]{0,63}$/.test(name)
+		? t('webforms', 'Start with a letter, then letters, digits, dots, dashes or underscores.')
+		: null
+})
+const prefillExample = computed(() => '?' + (field.value?.prefill || 'name') + '=' + t('webforms', 'value'))
 
 // The segment shown: what this field sets itself, or "Form" when it follows the form-wide default.
 const labelChoice = computed(() => {
@@ -287,6 +297,24 @@ const moves: { move: Move, label: string, icon: string }[] = [
 				</div>
 			</template>
 
+			<template v-else-if="isHidden">
+				<NcTextField :model-value="field.label ?? ''"
+					:label="t('webforms', 'Label')"
+					:helper-text="t('webforms', 'Names the value in responses, downloads and emails. Respondents never see it.')"
+					@update:model-value="(value: string | number) => emit('update', { label: String(value) })" />
+				<NcTextField :model-value="typeof field.defaultValue === 'string' ? field.defaultValue : ''"
+					:label="t('webforms', 'Default value')"
+					:helper-text="t('webforms', 'Sent when the link does not fill it. Leave empty to send nothing.')"
+					@update:model-value="(value: string | number) => text('defaultValue', value)" />
+				<NcTextField :model-value="field.description ?? ''"
+					:label="t('webforms', 'Note')"
+					:helper-text="t('webforms', 'Only for you, for example what fills this value.')"
+					@update:model-value="(value: string | number) => text('description', value)" />
+				<NcNoteCard type="info">
+					{{ t('webforms', 'A respondent can see and change this value in the link or the page. Do not use it for anything that must not be faked.') }}
+				</NcNoteCard>
+			</template>
+
 			<template v-else-if="type === 'heading'">
 				<NcTextField :model-value="field.text ?? ''"
 					:label="t('webforms', 'Heading text')"
@@ -499,6 +527,27 @@ const moves: { move: Move, label: string, icon: string }[] = [
 					:label="t('webforms', 'Choose at most')"
 					@update:model-value="(value: string | number) => number('maxSelected', value)" />
 			</template>
+		</section>
+
+		<section v-if="canPrefill" class="af-props__section">
+			<h3 class="af-props__heading">
+				{{ t('webforms', 'Fill from the link') }}
+			</h3>
+			<NcTextField :model-value="field.prefill ?? ''"
+				:label="t('webforms', 'Link parameter')"
+				:placeholder="t('webforms', 'for example source')"
+				:error="prefillProblem !== null"
+				:helper-text="prefillProblem ?? t('webforms', 'Add {example} to the form link to fill this field when it opens.', { example: prefillExample })"
+				@update:model-value="(value: string | number) => text('prefill', String(value).trim())" />
+			<p v-if="type === 'checkboxes'" class="af-props__hint">
+				{{ t('webforms', 'Choices are matched by their label or value. Separate several with commas.') }}
+			</p>
+			<p v-else-if="type === 'checkbox'" class="af-props__hint">
+				{{ t('webforms', 'Use yes or no.') }}
+			</p>
+			<p v-else-if="hasOptions" class="af-props__hint">
+				{{ t('webforms', 'The choice is matched by its label or value.') }}
+			</p>
 		</section>
 
 		<section class="af-props__section">

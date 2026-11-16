@@ -19,6 +19,7 @@ import { evaluateRules } from '../../rules/engine.ts'
 import { isInputType } from '../../rules/fieldTypes.ts'
 import CaptchaField from './CaptchaField.vue'
 import FieldInput from './FieldInput.vue'
+import { prefillValue } from '../../prefill.ts'
 import { messageFor } from './messages.ts'
 import { createUploadState } from './uploadState.ts'
 
@@ -38,7 +39,15 @@ const emit = defineEmits<{
 const definition = computed(() => props.form.definition)
 const fields = computed(() => definition.value.fields)
 
+// The address the form was opened with can fill fields (docs/SCHEMA.md 4.7). Never in the builder
+// preview: its address is the builder's own.
+const params = props.preview ? null : new URLSearchParams(window.location.search)
+
 function initialValue(field: FormField): unknown {
+	const given = params ? prefillValue(field, params) : undefined
+	if (given !== undefined) {
+		return Array.isArray(given) ? [...given] : given
+	}
 	const fallback = field.defaultValue
 	switch (field.type) {
 		case 'checkbox':
@@ -90,7 +99,9 @@ const state = computed(() => {
 })
 const visible = computed(() => new Set(state.value.visible))
 const required = computed(() => new Set(state.value.required))
-const pages = computed(() => visiblePages(definition.value.pages, visible.value))
+// A hidden field counts as visible to the rules, so its value is sent, but it never takes room on the page.
+const shown = computed(() => new Set([...visible.value].filter((id) => fields.value[id]?.type !== 'hidden')))
+const pages = computed(() => visiblePages(definition.value.pages, shown.value))
 const submitStyle = computed(() => submitButtonStyle(definition.value.settings?.design))
 const actionsAlign = computed(() => submitAlign(definition.value.settings?.design))
 const pageIndex = ref(0)

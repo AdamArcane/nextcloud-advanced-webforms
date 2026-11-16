@@ -21,6 +21,8 @@ export type FormField = {
 	description?: string
 	required?: boolean
 	defaultValue?: unknown
+	/** An address parameter that fills the field when the public form opens (docs/SCHEMA.md 4.7). */
+	prefill?: string
 	/** Older flag, the same as `labelPosition: 'hidden'`. */
 	hideLabel?: boolean
 	labelPosition?: LabelPosition

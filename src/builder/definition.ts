@@ -45,6 +45,7 @@ export const FIELD_TYPES: readonly FieldTypeInfo[] = [
 	{ type: 'date', label: 'Date', group: 'datetime' },
 	{ type: 'time', label: 'Time', group: 'datetime' },
 	{ type: 'file', label: 'File upload', group: 'advanced' },
+	{ type: 'hidden', label: 'Hidden value', group: 'advanced' },
 	{ type: 'heading', label: 'Heading', group: 'content', display: true },
 	{ type: 'paragraph', label: 'Paragraph', group: 'content', display: true },
 	{ type: 'divider', label: 'Divider', group: 'content', display: true },
@@ -104,6 +105,9 @@ export function defaultField(type: string, optionValue: () => string): FormField
 			return { type, text: 'Some text.' }
 		case 'divider':
 			return { type }
+		case 'hidden':
+			// Never shown, so never required.
+			return { type, label }
 		case 'file':
 			return { type, label, required: false, maxFiles: 1, maxSizeMb: 10, accept: ['images', 'documents'], audience: 'anyone', storage: 'files' }
 		case 'select':

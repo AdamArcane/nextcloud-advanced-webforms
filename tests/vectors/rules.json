@@ -4471,6 +4471,128 @@
         ],
         "required": []
       }
+    },
+    {
+      "name": "hidden field as a rule source: compared like text, and always visible itself",
+      "fields": {
+        "f_source": {
+          "type": "hidden",
+          "label": "Source",
+          "prefill": "source"
+        },
+        "f_code": {
+          "type": "text",
+          "label": "Partner code"
+        },
+        "f_note": {
+          "type": "text",
+          "label": "Note"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_code"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_source",
+                "op": "eq",
+                "value": "partner"
+              }
+            ]
+          }
+        },
+        {
+          "id": "r2",
+          "effect": "require",
+          "targets": [
+            "f_note"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_source",
+                "op": "empty"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_source": "  Partner "
+      },
+      "expect": {
+        "visible": [
+          "f_code",
+          "f_note",
+          "f_source"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "hidden field left empty: show rule off, require rule on",
+      "fields": {
+        "f_source": {
+          "type": "hidden",
+          "label": "Source"
+        },
+        "f_code": {
+          "type": "text",
+          "label": "Partner code"
+        },
+        "f_note": {
+          "type": "text",
+          "label": "Note"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_code"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_source",
+                "op": "eq",
+                "value": "partner"
+              }
+            ]
+          }
+        },
+        {
+          "id": "r2",
+          "effect": "require",
+          "targets": [
+            "f_note"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_source",
+                "op": "empty"
+              }
+            ]
+          }
+        }
+      ],
+      "values": {},
+      "expect": {
+        "visible": [
+          "f_note",
+          "f_source"
+        ],
+        "required": [
+          "f_note"
+        ]
+      }
     }
   ]
 }

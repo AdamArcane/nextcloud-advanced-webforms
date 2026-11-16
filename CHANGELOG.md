@@ -7,6 +7,12 @@
 
 ## Unreleased
 
+- Hidden values and filling fields from the link. A new "Hidden value" field is never shown to
+  respondents and is sent with every response, from its default or from the form's link. Any field
+  except an upload can be filled from the link too: give it a link parameter such as `source`, and
+  `?source=newsletter` on the form's address fills it when the form opens. Rules can react to a hidden
+  value. See `docs/SCHEMA.md` section 4.7.
+
 - Response limit and opening dates. A form can take at most a number of responses, open at a set time
   and close at a set time, each with its own message, and can show respondents how many places are
   left. Set them under Settings, Sharing; they apply when the form is published. The forms list shows

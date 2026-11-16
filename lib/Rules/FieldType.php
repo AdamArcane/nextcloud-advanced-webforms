@@ -27,6 +27,8 @@ final class FieldType {
 	public const DATE = 'date';
 	public const TIME = 'time';
 	public const FILE = 'file';
+	/** Never shown to respondents; filled from its default or the address (docs/SCHEMA.md section 4.7). */
+	public const HIDDEN = 'hidden';
 
 	public const HEADING = 'heading';
 	public const PARAGRAPH = 'paragraph';
@@ -60,6 +62,7 @@ final class FieldType {
 		self::DATE => self::ORDERED_OPERATORS,
 		self::TIME => self::ORDERED_OPERATORS,
 		self::FILE => self::FILE_OPERATORS,
+		self::HIDDEN => self::TEXT_OPERATORS,
 	];
 
 	/** @var list<string> */

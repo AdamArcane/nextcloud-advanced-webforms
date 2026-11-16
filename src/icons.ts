@@ -181,6 +181,7 @@ export const fieldTypeIcons: Record<string, string> = {
 	date: mdiCalendar,
 	time: mdiClockOutline,
 	file: mdiPaperclip,
+	hidden: mdiEyeOffOutline,
 	heading: mdiFormatHeader1,
 	paragraph: mdiFormatParagraph,
 	divider: mdiMinus,

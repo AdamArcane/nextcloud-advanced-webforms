@@ -247,6 +247,7 @@ Input types (produce a value):
 | `date` | string | `YYYY-MM-DD`, optional `min` and `max` (same format, inclusive) |
 | `time` | string | `HH:MM` 24 hour, optional `min` and `max` (same format, inclusive) |
 | `file` | list of files | uploaded files, see 4.6 |
+| `hidden` | string | never shown to respondents, see 4.7 |
 
 Display types (no value, cannot be rule sources, can be rule targets):
 
@@ -256,7 +257,7 @@ Display types (no value, cannot be rule sources, can be rule targets):
 | `paragraph` | `text` (limited markdown, see 4.5), `align` |
 | `divider` | `style` (`solid` default, `dashed`, `dotted`) |
 
-Deferred: hidden fields, rating, matrix, signature.
+Deferred: rating, matrix, signature.
 
 Common properties for input fields: `label` (required), `description`,
 `required` (default false), `defaultValue`, `labelPosition`, `hideLabel` (default false).
@@ -408,6 +409,43 @@ locking) apply. `folder` and `storage` are never sent to respondents.
 as attachments. Emails and CSV show file names only; webhook payloads carry `name`, `size` and `mime`
 for each file, never where it is stored.
 
+### 4.7 Hidden fields and prefill (DECISION)
+
+A `hidden` field carries a value the respondent never sees, such as where they came from or an id from
+another system. Its properties are `label` (required: it names the value in responses, exports and
+emails), `description` (a note for the owner, never shown), `defaultValue` and `prefill`. `required`,
+`placeholder`, `labelPosition` and `hideLabel` are `unknown_property`.
+
+- **Value.** Text, trimmed, at most 2000 characters like a short text answer. Empty means no answer.
+- **On the page.** It sits in the layout like any field, so the builder can show and move it, but the
+  public form leaves its cell out and takes no room for it. A row or page with nothing else in it is
+  left out too.
+- **Rules.** It can be a rule source, with the operators of a text field. It cannot be a rule target
+  (section 6.5), so it is always sent.
+- **Everywhere else** it is a text answer: the Responses view, CSV and Excel downloads, `{field_id}` and
+  `{all_fields}` in emails, webhooks, Tables (a text column) and the CSV file action.
+- **Not a secret, not a proof.** The value is in the page and in the address, and a respondent can change
+  it before sending. Never use it to decide something a respondent must not be able to fake.
+
+`prefill` (optional, on every input type except `file`) names an address parameter that fills the field
+when the public form opens: with `"prefill": "source"`, `/f/<token>?source=newsletter` starts the field as
+`newsletter`. The name matches `^[A-Za-z][A-Za-z0-9_.-]{0,63}$` (`field_prefill_invalid`) and two fields
+of a form cannot use the same one (`field_prefill_duplicate`).
+
+- How the text in the address becomes a value: text, email, phone, web address, long text and hidden
+  take it as it is; a number must be a number; a date `YYYY-MM-DD` and a time `HH:MM`; a dropdown or
+  single choice takes an option's value or its label (ignoring case); multiple choice takes several,
+  either by repeating the parameter or separated by commas, and leaves out any it does not know; a
+  checkbox is checked by `1`, `true`, `yes` or `on` and left unchecked by `0`, `false`, `no` or `off`.
+- A value the field would not accept (wrong type, not an option, outside the field's limits) is ignored
+  and the field keeps its default. So is a parameter the form does not name. Nothing is reported to the
+  respondent.
+- A prefilled field that is shown can still be changed by the respondent.
+- It happens in the browser, when the form opens. The server checks what is submitted as for any
+  answer, so prefill adds nothing a respondent could not already send.
+- An embedded form reads the address of its frame, so put the parameters on the `src` of the frame
+  (`/f/<token>/embed?source=partner`). The builder preview does not prefill.
+
 ## 5. Layout: pages > rows > cells (DECISION)
 
 - `pages`: ordered, 1 to 20. Each page is shown as one step; respondents move
@@ -554,7 +592,8 @@ each field's visibility is final before it is used as a source.
 ### 6.5 Source and target restrictions
 
 - Sources must be input fields (they need a value).
-- Targets may be any field.
+- Targets may be any field except a `hidden` field (`rule_target_hidden_field`): it is never shown, so
+  there is nothing to show or hide, and it is never required.
 - Referencing a nonexistent field ID is a validation error on save.
 - The save-time checks (references, operator and value validity, nesting depth,
   dependency cycles) are done by the rule validator, `lib/Rules/RuleValidator.php`.
