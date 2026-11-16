@@ -373,6 +373,18 @@ class DefinitionValidatorTest extends TestCase {
 		}));
 	}
 
+	public function testFilesActionPath(): void {
+		$withPath = static fn (mixed $path): callable => static function (array $d) use ($path): array {
+			$d['actions'] = [['id' => 'act_sheet', 'type' => 'files', 'path' => $path]];
+			return $d;
+		};
+		$this->assertSame([], $this->codes($withPath('Webforms/Leads.csv')));
+		$this->assertSame(['action_bad_file_path'], $this->codes($withPath('Webforms/Leads.xlsx')));
+		$this->assertSame(['action_bad_file_path'], $this->codes($withPath('/Webforms/Leads.csv')));
+		$this->assertSame(['action_bad_file_path'], $this->codes($withPath('../Leads.csv')));
+		$this->assertSame(['action_bad_file_path'], $this->codes($withPath(12)));
+	}
+
 	public function testEmailActionStaticRecipient(): void {
 		$this->assertSame([], $this->codes(static function (array $d): array {
 			$d['actions'][0]['to'] = 'owner@example.com';

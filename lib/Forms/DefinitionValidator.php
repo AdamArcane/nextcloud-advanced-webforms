@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\Webforms\Forms;
 
+use OCA\Webforms\Actions\CsvFile;
 use OCA\Webforms\Actions\MailPolicy;
 use OCA\Webforms\Actions\Template;
 use OCA\Webforms\Actions\TablesValue;
@@ -33,7 +34,7 @@ final class DefinitionValidator {
 	public const SPANS = [3, 4, 6, 8, 9, 12];
 	public const LABEL_POSITIONS = ['above', 'inline', 'hidden'];
 	public const MAX_TABLES_COLUMNS = 100;
-	public const ACTION_TYPES = ['email', 'webhook', 'message', 'redirect', 'tables'];
+	public const ACTION_TYPES = ['email', 'webhook', 'message', 'redirect', 'tables', 'files'];
 
 	private const SETTINGS_KEYS = ['submitLabel', 'labelPosition', 'requireLogin', 'allowMultipleSubmissions', 'hideRequiredIndicator', 'hideTitle', 'captcha', 'closedMessage', 'design'];
 	private const MAX_PAGES = 20;
@@ -570,6 +571,12 @@ final class DefinitionValidator {
 				case 'tables':
 					$allowed = array_merge($allowed, ['tableId', 'map']);
 					$this->tablesAction($action, $fields, $path);
+					break;
+				case 'files':
+					$allowed[] = 'path';
+					if (!is_string($action['path'] ?? null) || CsvFile::cleanPath($action['path']) !== $action['path']) {
+						$this->err('action_bad_file_path', $path . '.path');
+					}
 					break;
 				case 'message':
 					$allowed[] = 'text';

@@ -5,7 +5,7 @@
 
 <script setup lang="ts">
 import type { MailPolicy } from '../../api/settings.ts'
-import type { DraftDefinition, EmailAction, EmailAddressSource, FormAction, MessageAction, RedirectAction, TablesAction, WebhookAction } from '../../types.ts'
+import type { DraftDefinition, EmailAction, EmailAddressSource, FilesAction, FormAction, MessageAction, RedirectAction, TablesAction, WebhookAction } from '../../types.ts'
 
 import { n, t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -23,6 +23,7 @@ import { actionLabel } from '../../builder/labels.ts'
 import { sourceFields } from '../../builder/rules.ts'
 import ConditionGroup from './ConditionGroup.vue'
 import PlaceholderMenu from './PlaceholderMenu.vue'
+import FilesActionBody from './FilesActionBody.vue'
 import TablesActionBody from './TablesActionBody.vue'
 
 const ARROW_UP: string = icons.arrowUp
@@ -92,6 +93,7 @@ const summary = computed(() => {
 		case 'redirect': return readablePlaceholders(action.url, props.definition)
 		case 'webhook': return action.url
 		case 'tables': return tablesSummary(action)
+		case 'files': return action.path
 		default: {
 			const to = recipientSummary(action.to)
 			return t('webforms', 'To {to}: {subject}', { to: to || '…', subject: readablePlaceholders(action.subject, props.definition) })
@@ -131,6 +133,7 @@ const redirect = computed(() => props.action as RedirectAction)
 const email = computed(() => props.action as EmailAction)
 const webhook = computed(() => props.action as WebhookAction)
 const tablesAction = computed(() => props.action as TablesAction)
+const filesAction = computed(() => props.action as FilesAction)
 
 function patch(changes: Record<string, unknown>): void {
 	emit('update', { ...props.action, ...changes } as FormAction)
@@ -419,6 +422,11 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 			<TablesActionBody v-else-if="action.type === 'tables'"
 				:action="tablesAction"
 				:definition="definition"
+				@patch="patch" />
+
+			<!-- CSV file in Files -->
+			<FilesActionBody v-else-if="action.type === 'files'"
+				:action="filesAction"
 				@patch="patch" />
 
 			<!-- Webhook -->

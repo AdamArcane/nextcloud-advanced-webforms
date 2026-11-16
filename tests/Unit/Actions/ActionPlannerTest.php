@@ -47,6 +47,11 @@ class ActionPlannerTest extends TestCase {
 		$this->assertNull($plan['message']);
 	}
 
+	public function testFilesActionIsQueued(): void {
+		$plan = $this->plan([['id' => 'act_sheet', 'type' => 'files', 'path' => 'Webforms/Leads.csv']], ['f_name' => 'Ada']);
+		$this->assertSame(['act_sheet'], $plan['queue']);
+	}
+
 	public function testEmailAndWebhookAreQueuedInOrderNotRun(): void {
 		$plan = $this->plan([
 			['id' => 'act_mail', 'type' => 'email'],

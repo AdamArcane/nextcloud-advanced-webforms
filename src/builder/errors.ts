@@ -76,6 +76,10 @@ export function describeError(code: string): string {
 			return t('webforms', 'Pick the Tables table that should get the rows.')
 		case 'action_bad_table_map':
 			return t('webforms', 'Choose which answer goes in at least one column.')
+		case 'action_bad_file_path':
+			return t('webforms', 'Enter a file path in your Files that ends in .csv, like Webforms/Responses.csv.')
+		case 'files_not_writable':
+			return t('webforms', 'You cannot change that file or create it there. Choose a folder you can write to.')
 		case 'tables_unavailable':
 			return t('webforms', 'The Tables app is not available on this server.')
 		case 'tables_not_allowed':

@@ -32,7 +32,7 @@ final class PolicySettingsTest extends TestCase {
 
 	public function testDefaultsKeepTodaysBehaviour(): void {
 		$policy = new PolicySettings($this->store());
-		$this->assertSame(['email', 'webhook', 'message', 'redirect', 'tables'], $policy->allowedActionTypes());
+		$this->assertSame(['email', 'webhook', 'message', 'redirect', 'tables', 'files'], $policy->allowedActionTypes());
 		$this->assertSame(0, $policy->retentionDays());
 		$this->assertSame(0, $policy->maxResponsesPerForm());
 		$this->assertSame(10, $policy->maxActionsPerForm());
@@ -52,9 +52,9 @@ final class PolicySettingsTest extends TestCase {
 	public function testAllTypesIsStoredAsNothingSoNewTypesStayAllowed(): void {
 		$store = $this->store();
 		$policy = new PolicySettings($store);
-		$policy->save(['email', 'webhook', 'message', 'redirect', 'tables'], 0, 0, 10, []);
+		$policy->save(['email', 'webhook', 'message', 'redirect', 'tables', 'files'], 0, 0, 10, []);
 		$this->assertSame('', $store->get('policy_action_types'));
-		$this->assertCount(5, $policy->allowedActionTypes());
+		$this->assertCount(6, $policy->allowedActionTypes());
 	}
 
 	public function testNoActionsAtAllIsAllowed(): void {

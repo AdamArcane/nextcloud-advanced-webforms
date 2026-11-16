@@ -11,6 +11,8 @@ namespace OCA\Webforms\Service;
 
 use OCA\Webforms\Actions\Adapter\NextcloudSecrets;
 use OCA\Webforms\Actions\Ports\TablesFailure;
+use OCA\Webforms\Actions\CsvFile;
+use OCA\Webforms\Actions\Ports\ResponseFilesPort;
 use OCA\Webforms\Actions\Ports\TablesPort;
 use OCA\Webforms\Actions\TablesValue;
 use OCA\Webforms\Db\ActionLogMapper;
@@ -69,6 +71,7 @@ class FormService {
 		private readonly TablesPort $tables,
 		private readonly PolicyService $policy,
 		private readonly EntryQueryService $query,
+		private readonly ResponseFilesPort $responseFiles,
 	) {
 	}
 
@@ -253,7 +256,7 @@ class FormService {
 		$form->setUpdatedAt($this->time->getTime());
 		$form = $this->forms->update($form);
 
-		return ['form' => $form, 'errors' => array_merge($this->validator->validate($definition), $this->uploadPermissionErrors($form, $definition), $this->policy->actionErrors($definition))];
+		return ['form' => $form, 'errors' => array_merge($this->validator->validate($definition), $this->uploadPermissionErrors($form, $definition), $this->responseFileErrors($form, $definition), $this->policy->actionErrors($definition))];
 	}
 
 	/**
@@ -268,7 +271,7 @@ class FormService {
 		$this->refuseIfArchived($form);
 		$draft = $form->getDraftDefinition();
 
-		$errors = array_merge($this->validator->validate($draft), $this->uploadPermissionErrors($form, $draft), $this->tablesErrors($form, $draft), $this->policy->actionErrors($draft));
+		$errors = array_merge($this->validator->validate($draft), $this->uploadPermissionErrors($form, $draft), $this->responseFileErrors($form, $draft), $this->tablesErrors($form, $draft), $this->policy->actionErrors($draft));
 		if ($errors !== []) {
 			throw new ValidationException($errors);
 		}
@@ -594,6 +597,27 @@ class FormService {
 				$this->uploads->requireDestination($form->getOwnerId(), $title, $field, (string)$fieldId);
 			} catch (UploadRejected $e) {
 				$errors[] = ['code' => $e->reason, 'path' => 'fields.' . $fieldId];
+			}
+		}
+		return $errors;
+	}
+
+	/**
+	 * `files` actions whose CSV file the owner may not change or create (docs/SCHEMA.md section 19).
+	 * Checked when the draft is saved (as a warning), at publish, and again on every run.
+	 *
+	 * @param array<string, mixed> $definition
+	 * @return list<array{code: string, path: string}>
+	 */
+	private function responseFileErrors(Form $form, array $definition): array {
+		$errors = [];
+		foreach (is_array($definition['actions'] ?? null) ? $definition['actions'] : [] as $index => $action) {
+			if (!is_array($action) || ($action['type'] ?? null) !== 'files' || !is_string($action['path'] ?? null)) {
+				continue;
+			}
+			$path = CsvFile::cleanPath($action['path']);
+			if ($path !== null && !$this->responseFiles->canWrite($form->getOwnerId(), $path)) {
+				$errors[] = ['code' => 'files_not_writable', 'path' => 'actions[' . $index . '].path'];
 			}
 		}
 		return $errors;

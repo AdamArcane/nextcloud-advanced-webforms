@@ -11,15 +11,18 @@ namespace OCA\Webforms\Actions;
 
 use OCA\Webforms\Actions\Ports\AccountPort;
 use OCA\Webforms\Actions\Ports\HttpPort;
+use OCA\Webforms\Actions\Ports\FilesFailure;
 use OCA\Webforms\Actions\Ports\MailPort;
+use OCA\Webforms\Actions\Ports\ResponseFilesPort;
 use OCA\Webforms\Actions\Ports\SecretPort;
 use OCA\Webforms\Actions\Ports\TablesFailure;
 use OCA\Webforms\Actions\Ports\TablesPort;
+use OCA\Webforms\Forms\CsvExporter;
 use OCA\Webforms\Rules\FieldType;
 
 /**
- * Runs one queued `email` or `webhook` action (docs/SCHEMA.md section 7.2).
- * It only decides and builds; the mailer, HTTP client and secret store are
+ * Runs one queued `email`, `webhook`, `tables` or `files` action (docs/SCHEMA.md sections 7.2, 15
+ * and 19). It only decides and builds; the mailer, HTTP client, secret store and file access are
  * passed in, so the behaviour can be tested without a Nextcloud server.
  */
 final class ActionRunner {
@@ -31,12 +34,16 @@ final class ActionRunner {
 	 */
 	public const MAX_RESPONDENT_EMAILS_PER_HOUR = 30;
 
+	/** A response file larger than this is not read again: the owner starts a new one. */
+	public const MAX_RESPONSE_FILE_BYTES = 20 * 1024 * 1024;
+
 	public function __construct(
 		private readonly MailPort $mail,
 		private readonly HttpPort $http,
 		private readonly SecretPort $secrets,
 		private readonly AccountPort $accounts,
 		private readonly ?TablesPort $tables = null,
+		private readonly ?ResponseFilesPort $files = null,
 	) {
 	}
 
@@ -50,6 +57,7 @@ final class ActionRunner {
 			'email' => $this->email($action, $context),
 			'webhook' => $this->webhook($action, $context),
 			'tables' => $this->tables($action, $context),
+			'files' => $this->files($action, $context),
 			default => throw new ActionFailed('unsupported_action', false),
 		};
 	}
@@ -206,6 +214,37 @@ final class ActionRunner {
 			}
 			$this->tables->addRow($tableId, $values, $context->ownerId);
 		} catch (TablesFailure $e) {
+			throw new ActionFailed($e->getMessage(), $e->retryable);
+		}
+	}
+
+	/**
+	 * Adds the response as a line of a CSV file in the owner's Files (docs/SCHEMA.md section 19), with the
+	 * columns and values of the CSV export. The file is read and written under a lock, so two deliveries
+	 * never lose each other's line.
+	 *
+	 * @param array<string, mixed> $action
+	 */
+	private function files(array $action, ActionContext $context): void {
+		$path = is_string($action['path'] ?? null) ? CsvFile::cleanPath($action['path']) : null;
+		if ($this->files === null || $path === null || $context->ownerId === '') {
+			throw new ActionFailed('files_bad_action', false);
+		}
+		$table = CsvExporter::table(
+			[['id' => $context->entryId, 'versionId' => $context->versionId, 'userId' => $context->userId, 'submittedAt' => $context->submittedAt, 'data' => $context->data]],
+			[$context->versionId => ['fields' => $context->fields, 'pages' => $context->pages]],
+		);
+		$files = $this->files;
+		$owner = $context->ownerId;
+		try {
+			$files->locked($owner, $path, static function () use ($files, $owner, $path, $table): void {
+				if (!$files->canWrite($owner, $path)) {
+					throw new FilesFailure('files_not_writable');
+				}
+				$existing = $files->read($owner, $path, self::MAX_RESPONSE_FILE_BYTES);
+				$files->write($owner, $path, CsvFile::append($existing, $table['header'], $table['rows'][0], $table['numbers'][0]));
+			});
+		} catch (FilesFailure $e) {
 			throw new ActionFailed($e->getMessage(), $e->retryable);
 		}
 	}
