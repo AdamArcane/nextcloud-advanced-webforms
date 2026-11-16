@@ -59,7 +59,6 @@ const hasLabel = computed(() => !isDisplay.value && !isHidden.value)
 /** Every input field except uploads has a default and can be filled from the link (docs/SCHEMA.md 4.7). */
 const canPrefill = computed(() => !isDisplay.value && type.value !== 'file')
 const prefillOff = computed(() => props.definition.settings.prefill === false)
-const linkParameter = computed(() => '?' + props.fieldId + '=')
 const copied = ref(false)
 
 async function copyParameter(): Promise<void> {
@@ -157,6 +156,11 @@ const idMessage = computed(() => {
 		default: return null
 	}
 })
+
+// The ID being typed once it is a valid new ID, so the link shown always matches the box above it.
+const linkId = computed(() => (idProblem.value === null ? idDraft.value : props.fieldId))
+const linkPending = computed(() => idProblem.value === null)
+const linkParameter = computed(() => '?' + linkId.value + '=')
 
 function applyId(): void {
 	if (idProblem.value === null) {
@@ -537,35 +541,6 @@ const moves: { move: Move, label: string, icon: string }[] = [
 			</template>
 		</section>
 
-		<section v-if="canPrefill" class="af-props__section">
-			<h3 class="af-props__heading">
-				{{ t('webforms', 'Fill from the link') }}
-			</h3>
-			<p v-if="prefillOff" class="af-props__hint">
-				{{ t('webforms', 'Switched off for this form under Settings, General.') }}
-			</p>
-			<template v-else>
-				<div class="af-props__link">
-					<code class="af-props__param">{{ linkParameter }}{{ t('webforms', 'value') }}</code>
-					<NcButton variant="tertiary" @click="copyParameter">
-						{{ copied ? t('webforms', 'Copied') : t('webforms', 'Copy') }}
-					</NcButton>
-				</div>
-				<p class="af-props__hint">
-					{{ t('webforms', 'Add this to the form link to fill the field when it opens. It uses the field ID, which you can change under Advanced.') }}
-				</p>
-				<p v-if="type === 'checkboxes'" class="af-props__hint">
-					{{ t('webforms', 'Choices are matched by their label or value. Separate several with commas.') }}
-				</p>
-				<p v-else-if="type === 'checkbox'" class="af-props__hint">
-					{{ t('webforms', 'Use yes or no.') }}
-				</p>
-				<p v-else-if="hasOptions" class="af-props__hint">
-					{{ t('webforms', 'The choice is matched by its label or value.') }}
-				</p>
-			</template>
-		</section>
-
 		<section class="af-props__section">
 			<h3 class="af-props__heading">
 				{{ t('webforms', 'Layout') }}
@@ -622,6 +597,35 @@ const moves: { move: Move, label: string, icon: string }[] = [
 			<NcButton variant="secondary" :disabled="idProblem !== null" @click="applyId">
 				{{ t('webforms', 'Change ID') }}
 			</NcButton>
+
+			<div v-if="canPrefill" class="af-props__group">
+				<span class="af-props__caption">{{ t('webforms', 'Fill from the link') }}</span>
+				<p v-if="prefillOff" class="af-props__hint">
+					{{ t('webforms', 'Switched off for this form under Settings, General.') }}
+				</p>
+				<template v-else>
+					<div class="af-props__link">
+						<code class="af-props__param">{{ linkParameter }}{{ t('webforms', 'value') }}</code>
+						<NcButton variant="tertiary" @click="copyParameter">
+							{{ copied ? t('webforms', 'Copied') : t('webforms', 'Copy') }}
+						</NcButton>
+					</div>
+					<p class="af-props__hint">
+						{{ linkPending
+							? t('webforms', 'This is the parameter with the new ID. It works once you change the ID.')
+							: t('webforms', 'Add this to the form link to fill the field when it opens. It is the field ID above.') }}
+					</p>
+					<p v-if="type === 'checkboxes'" class="af-props__hint">
+						{{ t('webforms', 'Choices are matched by their label or value. Separate several with commas.') }}
+					</p>
+					<p v-else-if="type === 'checkbox'" class="af-props__hint">
+						{{ t('webforms', 'Use yes or no.') }}
+					</p>
+					<p v-else-if="hasOptions" class="af-props__hint">
+						{{ t('webforms', 'The choice is matched by its label or value.') }}
+					</p>
+				</template>
+			</div>
 		</section>
 
 		<section class="af-props__section af-props__actions">
