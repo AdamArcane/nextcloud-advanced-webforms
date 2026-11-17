@@ -5,7 +5,7 @@
 
 # Changelog
 
-## Unreleased
+## 0.4.1 - 2026-11-17
 
 - The install script (`tools/install-release.sh`) now reloads PHP-FPM after installing, when the user is
   allowed to, so a server set not to check for changed files does not keep running the old version. It
