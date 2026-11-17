@@ -5,6 +5,12 @@
 
 # Changelog
 
+## Unreleased
+
+- The install script (`tools/install-release.sh`) now reloads PHP-FPM after installing, when the user is
+  allowed to, so a server set not to check for changed files does not keep running the old version. It
+  says so when it cannot. See `docs/RELEASING.md`.
+
 ## 0.4.0 - 2026-11-17
 
 - Settings inside the app. A "Settings" entry at the bottom of the sidebar opens your preferences in a

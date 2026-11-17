@@ -11,6 +11,8 @@
 # VERSION     Release tag to install, for example v0.3.1. Default: the latest release.
 # TOKEN_FILE  File holding a GitHub token, only needed if the repository is private.
 # REPO        GitHub repository. Default: AdamArcane/nextcloud-advanced-webforms.
+# FPM_SERVICE      The PHP-FPM service to reload afterwards. Default: php<version>-fpm for the PHP that runs occ.
+# SKIP_FPM_RELOAD  Set to 1 to leave PHP-FPM alone.
 set -euo pipefail
 
 NC_ROOT="${NC_ROOT:?set NC_ROOT to the Nextcloud folder that holds occ}"
@@ -63,4 +65,19 @@ php occ app:enable "$APP" || true
 php occ upgrade
 php occ app:enable "$APP"
 php occ app:list | grep -A1 "$APP" || true
-echo "Advanced Webforms $TAG installed. Reload PHP-FPM if the old build still shows (opcache)."
+echo "Advanced Webforms $TAG installed."
+
+# PHP-FPM keeps the old PHP in memory when opcache is told not to look for changed files (a common
+# production setting, and one `php -i` on the command line does not show). Until it is reloaded, the
+# site keeps running the old code. Reload it when this user is allowed to, and say so when it is not.
+reload_fpm() {
+	[ "${SKIP_FPM_RELOAD:-}" = 1 ] && return 0
+	local service="${FPM_SERVICE:-php$(php -r 'echo PHP_MAJOR_VERSION . "." . PHP_MINOR_VERSION;')-fpm}"
+	if sudo -n /usr/sbin/service "$service" reload >/dev/null 2>&1 || sudo -n systemctl reload "$service" >/dev/null 2>&1; then
+		echo "Reloaded $service."
+	else
+		echo "Could not reload $service (no permission, or it has another name)." >&2
+		echo "Reload PHP-FPM yourself, or the site keeps running the old build (opcache)." >&2
+	fi
+}
+reload_fpm

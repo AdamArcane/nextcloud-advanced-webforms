@@ -35,9 +35,15 @@ NC_ROOT=/path/to/nextcloud tools/install-release.sh
 ```
 
 `NC_ROOT` is the folder that holds `occ`. The script downloads the latest release (or `VERSION=v0.3.1`),
-replaces `custom_apps/webforms`, and runs `occ upgrade` and `occ app:enable webforms`. Set
-`TOKEN_FILE` to a file holding a read-only GitHub token if the repository is private. Reload
-PHP-FPM afterwards if the old build still shows (opcache).
+replaces `custom_apps/webforms`, runs `occ upgrade` and `occ app:enable webforms`, and then reloads
+PHP-FPM. Set `TOKEN_FILE` to a file holding a read-only GitHub token if the repository is private.
+
+The reload matters: PHP-FPM is often set not to look for changed files (`opcache.validate_timestamps=0`),
+and then the site keeps running the old code until it is reloaded. Checking `php -i` on the command line
+does not show this, because the command line reads a different ini. The script reloads `php<version>-fpm`
+through `sudo -n`, so the user needs permission for it (hosts such as Ploi give the site user exactly
+that). Set `FPM_SERVICE` if the service has another name, or `SKIP_FPM_RELOAD=1` to leave it alone. When
+the reload is not allowed, the script says so and exits normally: reload PHP-FPM yourself.
 
 Nextcloud only loads apps from the folders in the `apps_paths` setting. If a server has no
 `custom_apps` entry, enabling the app fails with "not found on the appstore". The script checks
