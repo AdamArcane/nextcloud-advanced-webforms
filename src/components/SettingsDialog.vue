@@ -40,7 +40,7 @@ const open = defineModel<boolean>('open', { required: true })
 		no-version>
 		<NcAppSettingsSection id="general" :name="t('webforms', 'General')">
 			<p class="af-settings-hint">
-				{{ t('webforms', 'How the app behaves for you. These settings do not affect other people or your forms.') }}
+				{{ t('webforms', 'Only changes how the app works for you.') }}
 			</p>
 			<NcCheckboxRadioSwitch type="switch"
 				:model-value="preferences.openPublishedOnResponses"
@@ -49,13 +49,13 @@ const open = defineModel<boolean>('open', { required: true })
 				{{ t('webforms', 'Open published forms on their responses') }}
 			</NcCheckboxRadioSwitch>
 			<p class="af-settings-hint af-settings-hint--under">
-				{{ t('webforms', 'Applies when you pick a published form that has no unpublished changes. Drafts, closed forms and forms with unpublished changes open in the editor.') }}
+				{{ t('webforms', 'Drafts, closed forms and forms with unpublished changes still open in the editor.') }}
 			</p>
 		</NcAppSettingsSection>
 
 		<NcAppSettingsSection id="new-forms" :name="t('webforms', 'New forms')">
 			<p class="af-settings-hint">
-				{{ t('webforms', 'What a form you create starts with. Forms that already exist, and forms you import, are not changed, and everything can still be changed in each form.') }}
+				{{ t('webforms', 'Applies to forms you create from now on.') }}
 			</p>
 			<h4 class="af-settings-label">
 				{{ t('webforms', 'Label position') }}
@@ -101,13 +101,13 @@ const open = defineModel<boolean>('open', { required: true })
 				{{ t('webforms', 'Ask people to pass the spam check') }}
 			</NcCheckboxRadioSwitch>
 			<p class="af-settings-hint af-settings-hint--under">
-				{{ t('webforms', 'The spam check only runs if the administrator has set one up for the server.') }}
+				{{ t('webforms', 'Only works if an administrator has set up a spam check.') }}
 			</p>
 		</NcAppSettingsSection>
 
 		<NcAppSettingsSection id="responses" :name="t('webforms', 'Responses')">
 			<p class="af-settings-hint">
-				{{ t('webforms', 'How the responses of a form open. You can also change both from the Responses page, and the choice follows you to other devices.') }}
+				{{ t('webforms', 'How responses open, on every device you use.') }}
 			</p>
 			<h4 class="af-settings-label">
 				{{ t('webforms', 'Show responses as') }}
@@ -129,7 +129,7 @@ const open = defineModel<boolean>('open', { required: true })
 
 		<NcAppSettingsSection id="backup" :name="t('webforms', 'Backup')">
 			<p class="af-settings-hint">
-				{{ t('webforms', 'Download every form you own as files you can import again: each form\'s draft and, if it was published, its published version. Responses, uploaded files, links and webhook secrets are not included. Responses are downloaded from each form\'s Responses page.') }}
+				{{ t('webforms', 'Download all your forms as files you can import again, without responses or uploads.') }}
 			</p>
 			<NcButton variant="secondary" :href="formsBackupUrl()" :download="true">
 				{{ t('webforms', 'Download backup of all my forms') }}

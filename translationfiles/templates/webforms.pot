@@ -441,12 +441,12 @@ msgstr ""
 msgid "App only"
 msgstr ""
 
-#: src/AdminApp.vue:94
-msgid "Applies to people who are not logged in. Form owners can turn the check off for a single form. Every form also has a hidden trap field, a minimum fill time and a rate limit."
+#: src/components/SettingsDialog.vue:58
+msgid "Applies to forms you create from now on."
 msgstr ""
 
-#: src/components/SettingsDialog.vue:52
-msgid "Applies when you pick a published form that has no unpublished changes. Drafts, closed forms and forms with unpublished changes open in the editor."
+#: src/AdminApp.vue:94
+msgid "Applies to people who are not logged in. Form owners can turn the check off for a single form. Every form also has a hidden trap field, a minimum fill time and a rate limit."
 msgstr ""
 
 #: src/App.vue:275
@@ -1098,12 +1098,12 @@ msgstr ""
 msgid "Download"
 msgstr ""
 
-#: src/components/SettingsDialog.vue:135
-msgid "Download backup of all my forms"
+#: src/components/SettingsDialog.vue:132
+msgid "Download all your forms as files you can import again, without responses or uploads."
 msgstr ""
 
-#: src/components/SettingsDialog.vue:132
-msgid "Download every form you own as files you can import again: each form's draft and, if it was published, its published version. Responses, uploaded files, links and webhook secrets are not included. Responses are downloaded from each form's Responses page."
+#: src/components/SettingsDialog.vue:135
+msgid "Download backup of all my forms"
 msgstr ""
 
 #: src/components/builder/SharePanel.vue:229
@@ -1121,6 +1121,10 @@ msgstr ""
 #: src/availability.ts:46
 #: src/components/builder/BuilderView.vue:468
 msgid "Draft"
+msgstr ""
+
+#: src/components/SettingsDialog.vue:52
+msgid "Drafts, closed forms and forms with unpublished changes still open in the editor."
 msgstr ""
 
 #: src/components/builder/BuilderCanvas.vue:406
@@ -1571,12 +1575,8 @@ msgstr ""
 msgid "Highest"
 msgstr ""
 
-#: src/components/SettingsDialog.vue:43
-msgid "How the app behaves for you. These settings do not affect other people or your forms."
-msgstr ""
-
 #: src/components/SettingsDialog.vue:110
-msgid "How the responses of a form open. You can also change both from the Responses page, and the choice follows you to other devices."
+msgid "How responses open, on every device you use."
 msgstr ""
 
 #: src/components/SettingsDialog.vue:116
@@ -2250,6 +2250,10 @@ msgstr ""
 msgid "One of the upload settings is not valid."
 msgstr ""
 
+#: src/components/SettingsDialog.vue:43
+msgid "Only changes how the app works for you."
+msgstr ""
+
 #: src/components/builder/FieldProperties.vue:375
 msgid "Only for you, for example what fills this value."
 msgstr ""
@@ -2288,6 +2292,10 @@ msgstr ""
 
 #: src/components/builder/ActionCard.vue:472
 msgid "Only when the answers match"
+msgstr ""
+
+#: src/components/SettingsDialog.vue:104
+msgid "Only works if an administrator has set up a spam check."
 msgstr ""
 
 #: src/components/entries/NoteEditor.vue:68
@@ -3491,10 +3499,6 @@ msgstr ""
 msgid "The spam check could not be loaded."
 msgstr ""
 
-#: src/components/SettingsDialog.vue:104
-msgid "The spam check only runs if the administrator has set one up for the server."
-msgstr ""
-
 #: src/components/render/messages.ts:56
 msgid "The spam check was not passed. Please try again."
 msgstr ""
@@ -3954,10 +3958,6 @@ msgstr ""
 
 #: src/builder/fieldTypeNames.ts:17
 msgid "Website"
-msgstr ""
-
-#: src/components/SettingsDialog.vue:58
-msgid "What a form you create starts with. Forms that already exist, and forms you import, are not changed, and everything can still be changed in each form."
 msgstr ""
 
 #: src/components/admin/PolicyAdmin.vue:150
