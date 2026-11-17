@@ -24,12 +24,13 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { createForm, formExportUrl, importForm, listForms, setFormArchived } from './api/forms.ts'
 import { ApiError } from './api/http.ts'
 import { DEFAULT_PREFERENCES, fetchUserPolicy, fetchUserPreferences, OPEN_POLICY } from './api/settings.ts'
-import type { UserPolicy } from './api/settings.ts'
+import type { UserPolicy, UserPreferences } from './api/settings.ts'
 import { describeError } from './builder/errors.ts'
 import Icon from './components/common/Icon.vue'
 import { icons } from './icons.ts'
 import BuilderView from './components/builder/BuilderView.vue'
 import EntriesView from './components/entries/EntriesView.vue'
+import SettingsDialog from './components/SettingsDialog.vue'
 import { statusText } from './availability.ts'
 import { FORM_STATUS_PUBLISHED } from './types.ts'
 
@@ -39,7 +40,9 @@ const loadFailed = ref(false)
 const creating = ref(false)
 const createFailed = ref(false)
 const policy = ref<UserPolicy>(OPEN_POLICY)
-const openPublishedOnResponses = ref(DEFAULT_PREFERENCES.openPublishedOnResponses)
+const preferences = ref<UserPreferences>({ ...DEFAULT_PREFERENCES })
+const preferencesLoaded = ref(false)
+const settingsOpen = ref(false)
 const importing = ref(false)
 const importError = ref<string | null>(null)
 const importInput = ref<HTMLInputElement | null>(null)
@@ -76,11 +79,11 @@ function open(id: number | null): void {
 
 /**
  * Where a form in the list opens. A published form with nothing left to publish has no editing
- * waiting, so it opens on its responses, unless the user switched that off in Personal settings.
+ * waiting, so it opens on its responses, unless the user switched that off in the settings.
  * A typed or shared `#/f/<id>` address still means the editor.
  */
 function formHash(form: OwnerForm): string {
-	const settled = openPublishedOnResponses.value && form.status === FORM_STATUS_PUBLISHED && form.hasUnpublishedChanges === false
+	const settled = preferences.value.openPublishedOnResponses && form.status === FORM_STATUS_PUBLISHED && form.hasUnpublishedChanges === false
 	return '#/f/' + form.id + (settled ? '/responses' : '')
 }
 
@@ -104,8 +107,9 @@ onMounted(() => {
 	void fetchUserPolicy().then((loadedPolicy) => {
 		policy.value = loadedPolicy
 	})
-	void fetchUserPreferences().then((preferences) => {
-		openPublishedOnResponses.value = preferences.openPublishedOnResponses
+	void fetchUserPreferences().then((loadedPreferences) => {
+		preferences.value = loadedPreferences
+		preferencesLoaded.value = true
 	})
 	void load()
 })
@@ -323,7 +327,21 @@ function hasNewerDraft(form: OwnerForm): boolean {
 					{{ t('webforms', 'Could not create the form.') }}
 				</NcNoteCard>
 			</template>
+			<template #footer>
+				<ul class="app-navigation-entry__settings">
+					<NcAppNavigationItem :name="t('webforms', 'Settings')" @click="settingsOpen = true">
+						<template #icon>
+							<Icon :path="icons.settings" />
+						</template>
+					</NcAppNavigationItem>
+				</ul>
+			</template>
 		</NcAppNavigation>
+
+		<SettingsDialog v-model:open="settingsOpen"
+			:preferences="preferences"
+			:loaded="preferencesLoaded"
+			@saved="(kept) => (preferences = kept)" />
 
 		<EntriesView v-if="selectedId !== null && view === 'responses'"
 			:key="'responses-' + selectedId"

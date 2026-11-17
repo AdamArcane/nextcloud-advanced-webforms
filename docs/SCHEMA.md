@@ -1244,8 +1244,10 @@ of allowed actions allows none, the safe side.
 
 ### 16.1 Personal preferences
 
-Each user has their own preferences under Personal settings, "Advanced Webforms". They are user config,
-so they are removed with the account, and they change nothing about forms or other people.
+Each user has their own preferences, in the app's own Settings: the Settings entry at the bottom of the
+sidebar opens them in a dialog, where a change is saved at once and applies straight away. They are user
+config, so they are removed with the account, and they change nothing about forms or other people. They are
+not under Nextcloud's Personal settings (earlier versions put them there).
 
 | Setting | Default | Meaning |
 | --- | --- | --- |

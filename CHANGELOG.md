@@ -5,6 +5,13 @@
 
 # Changelog
 
+## Unreleased
+
+- Settings inside the app. A "Settings" entry at the bottom of the sidebar opens your preferences in a
+  dialog, like other apps do, instead of sending you to Nextcloud's Personal settings. A change is saved
+  at once and the forms in the list follow it straight away. The "Advanced Webforms" page under Personal
+  settings is gone; your saved choice is kept. See `docs/SCHEMA.md` section 16.1.
+
 ## 0.3.6 - 2026-11-16
 
 - App store listing: a description that matches what the app does now, and six screenshots.

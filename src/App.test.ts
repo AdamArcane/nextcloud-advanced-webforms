@@ -9,7 +9,7 @@ import type { OwnerForm } from './types.ts'
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { listForms } from './api/forms.ts'
-import { fetchUserPreferences } from './api/settings.ts'
+import { fetchUserPreferences, saveUserPreferences } from './api/settings.ts'
 import App from './App.vue'
 import { FORM_STATUS_CLOSED, FORM_STATUS_PUBLISHED, FORM_STATUS_UNPUBLISHED } from './types.ts'
 
@@ -25,7 +25,9 @@ vi.mock('./api/settings.ts', () => ({
 	fetchUserPolicy: () => Promise.resolve({ canCreate: true }),
 	DEFAULT_PREFERENCES: { openPublishedOnResponses: true },
 	fetchUserPreferences: vi.fn(),
+	saveUserPreferences: vi.fn(),
 }))
+vi.mock('@nextcloud/dialogs', () => ({ showError: vi.fn() }))
 
 function form(id: number, status: number, hasUnpublishedChanges: boolean, latestVersionId: number | null = 1): OwnerForm {
 	return { id, title: 'Form ' + id, description: null, status, publicToken: null, latestVersionId, createdAt: 0, updatedAt: 0, hasUnpublishedChanges }
@@ -57,6 +59,29 @@ describe('where a form in the list opens', () => {
 
 		await wrapper.find('a[href="#/f/1/responses"]').trigger('click')
 		expect(window.location.hash).toBe('#/f/1/responses')
+	})
+})
+
+describe('settings in the sidebar', () => {
+	it('opens from the bottom of the sidebar, and a change moves where the forms open at once', async () => {
+		const { wrapper, hrefs } = await mountList(true)
+		expect(hrefs[0]).toBe('#/f/1/responses')
+		expect(wrapper.find('input[type="checkbox"]').exists()).toBe(false)
+
+		const entry = wrapper.findAll('.app-navigation-entry__settings a, .app-navigation-entry__settings button').find((el) => el.text() === 'Settings')
+		expect(entry).toBeDefined()
+		await entry?.trigger('click')
+		await flushPromises()
+		const input = wrapper.find('input[type="checkbox"]')
+		expect((input.element as HTMLInputElement).checked).toBe(true)
+
+		vi.mocked(saveUserPreferences).mockResolvedValue({ openPublishedOnResponses: false })
+		await input.setValue(false)
+		await flushPromises()
+		expect(saveUserPreferences).toHaveBeenCalledWith({ openPublishedOnResponses: false })
+		const after = wrapper.findAll('a').map((link) => link.attributes('href')).filter((href) => href?.startsWith('#/f/'))
+		expect(after).toEqual(['#/f/1', '#/f/2', '#/f/3', '#/f/4'])
+		wrapper.unmount()
 	})
 })
 

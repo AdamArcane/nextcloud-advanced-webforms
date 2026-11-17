@@ -10,5 +10,4 @@ export default createAppConfig({
 	main: resolve(join('src', 'main.ts')),
 	public: resolve(join('src', 'public.ts')),
 	admin: resolve(join('src', 'admin.ts')),
-	personal: resolve(join('src', 'personal.ts')),
 })
