@@ -6,6 +6,7 @@
 <script setup lang="ts">
 import type { OwnerForm } from './types.ts'
 
+import { showError } from '@nextcloud/dialogs'
 import { n, t } from '@nextcloud/l10n'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
@@ -23,7 +24,7 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { createForm, formExportUrl, importForm, listForms, setFormArchived } from './api/forms.ts'
 import { ApiError } from './api/http.ts'
-import { DEFAULT_PREFERENCES, fetchUserPolicy, fetchUserPreferences, OPEN_POLICY } from './api/settings.ts'
+import { DEFAULT_PREFERENCES, fetchUserPolicy, fetchUserPreferences, OPEN_POLICY, saveUserPreferences } from './api/settings.ts'
 import type { UserPolicy, UserPreferences } from './api/settings.ts'
 import { describeError } from './builder/errors.ts'
 import Icon from './components/common/Icon.vue'
@@ -115,6 +116,23 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => window.removeEventListener('hashchange', onHashChange))
+
+/**
+ * Change some preferences: shown at once, saved in the background, and put back if the server says no.
+ * Only the preferences that were changed are touched, so two quick changes cannot undo each other.
+ */
+async function savePreference(patch: Partial<UserPreferences>): Promise<void> {
+	const keys = Object.keys(patch) as (keyof UserPreferences)[]
+	const pick = (from: UserPreferences): Partial<UserPreferences> => Object.fromEntries(keys.map((key) => [key, from[key]]))
+	const previous = pick(preferences.value)
+	preferences.value = { ...preferences.value, ...patch }
+	try {
+		preferences.value = { ...preferences.value, ...pick(await saveUserPreferences(patch)) }
+	} catch {
+		preferences.value = { ...preferences.value, ...previous }
+		showError(t('webforms', 'Could not save the setting.'))
+	}
+}
 
 async function create(): Promise<void> {
 	creating.value = true
@@ -341,15 +359,21 @@ function hasNewerDraft(form: OwnerForm): boolean {
 		<SettingsDialog v-model:open="settingsOpen"
 			:preferences="preferences"
 			:loaded="preferencesLoaded"
-			@saved="(kept) => (preferences = kept)" />
+			@change="savePreference" />
 
-		<EntriesView v-if="selectedId !== null && view === 'responses'"
-			:key="'responses-' + selectedId"
-			:form-id="selectedId"
-			:title="selectedTitle"
-			:entry-id="route.entryId"
-			:statuses="policy.statuses"
-			@seen="onResponsesSeen(selectedId)" />
+		<template v-if="selectedId !== null && view === 'responses'">
+			<!-- Waits for the preferences, so the responses do not open one way and switch to the other. -->
+			<EntriesView v-if="preferencesLoaded"
+				:key="'responses-' + selectedId"
+				:form-id="selectedId"
+				:title="selectedTitle"
+				:entry-id="route.entryId"
+				:statuses="policy.statuses"
+				:responses-view="preferences.responsesView"
+				:responses-summary="preferences.responsesSummary"
+				@preference="savePreference"
+				@seen="onResponsesSeen(selectedId)" />
+		</template>
 
 		<BuilderView v-else-if="selectedId !== null"
 			:key="selectedId"

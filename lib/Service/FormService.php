@@ -42,6 +42,8 @@ use OCA\Webforms\Exception\ValidationException;
 use OCA\Webforms\Forms\DefinitionValidator;
 use OCA\Webforms\Forms\FormBackup;
 use OCA\Webforms\Forms\FormPackage;
+use OCA\Webforms\Forms\NewFormDefaults;
+use OCA\Webforms\Settings\UserPreferences;
 use OCA\Webforms\Forms\JsonShape;
 use OCA\Webforms\Forms\RetiredIds;
 use OCA\Webforms\Forms\Availability;
@@ -81,6 +83,7 @@ class FormService {
 		private readonly ResponseFilesPort $responseFiles,
 		private readonly StatusSettings $statuses,
 		private readonly OwnerImagePort $images,
+		private readonly UserPreferences $preferences,
 	) {
 	}
 
@@ -129,7 +132,11 @@ class FormService {
 		return $form;
 	}
 
-	public function create(string $userId, string $title): Form {
+	/**
+	 * @param bool $withDefaults start from the person's own defaults for new forms (docs/SCHEMA.md section
+	 *        16.1). An import turns this off: the file brings its own settings.
+	 */
+	public function create(string $userId, string $title, bool $withDefaults = true): Form {
 		if (!$this->policy->canCreate($userId)) {
 			// Existing forms keep working: only making new ones (or importing) is limited to the creator groups.
 			throw new ValidationException([['code' => 'create_not_allowed', 'path' => '']]);
@@ -143,10 +150,11 @@ class FormService {
 		$form = new Form();
 		$form->setOwnerId($userId);
 		$form->setTitle($title);
+		$settings = $withDefaults ? NewFormDefaults::settings($this->preferences->forUser($userId)) : [];
 		$form->setDraft($this->encode([
 			'schemaVersion' => DefinitionValidator::SCHEMA_VERSION,
 			'title' => $title,
-			'settings' => new \stdClass(),
+			'settings' => $settings === [] ? new \stdClass() : $settings,
 			'fields' => new \stdClass(),
 			'pages' => [['id' => 'p_1', 'title' => null, 'rows' => []]],
 			'rules' => [],
@@ -226,7 +234,7 @@ class FormService {
 			throw new ValidationException([['code' => 'title_invalid', 'path' => 'definition.title']]);
 		}
 
-		$form = $this->create($userId, trim($title));
+		$form = $this->create($userId, trim($title), false);
 		try {
 			return $this->saveDraft($userId, $form->getId(), $definition);
 		} catch (ValidationException $e) {
