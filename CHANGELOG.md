@@ -7,6 +7,10 @@
 
 ## Unreleased
 
+- The install script (`tools/install-release.sh`) now reloads PHP-FPM after installing, when the user is
+  allowed to, so a server set not to check for changed files does not keep running the old version. It
+  says so when it cannot. See `docs/RELEASING.md`.
+
 - README brought up to date for the app store, with an Administration section. `info.xml` now links the
   documentation, and the repository has a root `LICENSE` file.
 
