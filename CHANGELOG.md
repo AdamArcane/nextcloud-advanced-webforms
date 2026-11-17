@@ -11,6 +11,9 @@
   allowed to, so a server set not to check for changed files does not keep running the old version. It
   says so when it cannot. See `docs/RELEASING.md`.
 
+- README brought up to date for the app store, with an Administration section. `info.xml` now links the
+  documentation, and the repository has a root `LICENSE` file.
+
 ## 0.4.0 - 2026-11-17
 
 - Settings inside the app. A "Settings" entry at the bottom of the sidebar opens your preferences in a

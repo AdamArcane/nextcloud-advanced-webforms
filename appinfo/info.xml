@@ -28,6 +28,12 @@ Forms and responses stay on your server. Requires Nextcloud 35.
 
 	<namespace>Webforms</namespace>
 
+	<documentation>
+		<user>https://github.com/AdamArcane/nextcloud-advanced-webforms#readme</user>
+		<admin>https://github.com/AdamArcane/nextcloud-advanced-webforms#administration</admin>
+		<developer>https://github.com/AdamArcane/nextcloud-advanced-webforms/blob/main/docs/SCHEMA.md</developer>
+	</documentation>
+
 	<category>tools</category>
 	<category>organization</category>
 	<category>workflow</category>

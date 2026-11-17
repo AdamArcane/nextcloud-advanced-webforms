@@ -9,23 +9,24 @@ A form builder for Nextcloud with the features larger form tools have: condition
 grid layouts, multi-page forms, file uploads and after-submit actions. Forms and responses stay
 on your own server.
 
-**Status: early development (0.3.x).** It works and is in use, but expect rough edges and
-changes between releases. It supports **Nextcloud 35 only**, and it is not on the Nextcloud app
-store yet, so you install it from a GitHub release. Please back up before you update.
+It supports **Nextcloud 35 only**. Install it from the Nextcloud app store, or from a GitHub
+release (see [Install](#install)). Please back up before you update.
 
 ## Features
 
 - **Builder.** Drag and drop fields on a 12-column grid with a live preview. Text, long text, email, phone,
-  website, number, date, time, select, radio, checkboxes, file upload, plus headings, paragraphs
-  and dividers. Label position can be
-  above, beside or hidden, for the whole form or per field.
+  website, number, date, time, select, radio, checkboxes, rating, scale, consent, hidden fields,
+  file upload, plus headings, paragraphs, images and dividers. Label position can be
+  above, beside or hidden, for the whole form or per field. Fields can be filled in from the link.
 - **Rules.** Show, hide or require fields based on earlier answers, with nested AND/OR groups.
   Rules run live in the browser and are checked again on the server.
 - **Multi-page forms** with Back and Next. Required fields are checked per page, and pages whose
-  fields are all hidden by rules are skipped.
-- **After-submit actions.** Confirmation message, redirect, email, signed webhooks (HMAC-SHA256) and a
-  row in a Nextcloud Tables table. Emails, webhooks and Tables rows are sent in the background with
-  retries, and each action can have conditions.
+  fields are all hidden by rules are skipped. An optional summary step lets people review their
+  answers before sending, and an optional "continue later" keeps unsent answers in the respondent's
+  own browser (nothing is stored on the server).
+- **After-submit actions.** Confirmation message, redirect, email, signed webhooks (HMAC-SHA256), a
+  row in a Nextcloud Tables table, and a line in a CSV file in your Files. Emails, webhooks, Tables
+  rows and file lines are sent in the background with retries, and each action can have conditions.
 - **Flow.** Submissions, deleted responses, publishing and status changes are Nextcloud events and a
   "Webforms" trigger in Flow, so other apps can react to them.
 - **File uploads.** Per field limits for file count, size and type, and a choice of where files go: a
@@ -36,8 +37,10 @@ store yet, so you install it from a GitHub release. Please back up before you up
 - **Spam protection** for anonymous visitors: a built-in proof-of-work check (default, nothing
   leaves your server), Cloudflare Turnstile, hCaptcha, or none. A hidden trap field, a minimum fill
   time and rate limits are always on.
-- **Responses.** Browse answers, see the delivery log for each email and webhook with a plain
-  explanation of failures, retry failed deliveries, and download a CSV.
+- **Responses.** New responses are marked for you. Browse and filter answers, give each a status and
+  a note, see the delivery log for each email and webhook with a plain
+  explanation of failures, retry failed deliveries, and download a CSV. Settings in the sidebar hold your defaults, and a
+  backup button downloads all your forms.
 - **Versioning.** Published versions are immutable, and each response records the version it was
   submitted against. Drafts autosave.
 - **Import and export** a whole form as a file (definition only: no responses or secrets), and
@@ -45,8 +48,8 @@ store yet, so you install it from a GitHub release. Please back up before you up
 - **Sharing.** Public forms by link (`/apps/webforms/f/<token>`), with an optional custom address, a QR
   code, and code to embed the form in another website. Any user can create forms.
 
-Not included: payments, calculations, PDF generation, theming and custom CSS. Storing responses in
-Nextcloud Tables is a destination, not a storage backend (see the roadmap).
+Not included: payments, calculations, PDF generation, theming and custom CSS. Sending responses to
+Nextcloud Tables is an after-submit action, not a storage backend (see the roadmap).
 
 ## Requirements
 
@@ -56,7 +59,9 @@ Nextcloud Tables is a destination, not a storage backend (see the roadmap).
 
 ## Install
 
-Download `webforms-<version>.tar.gz` from the
+From the app store: open **Apps** in Nextcloud, find **Advanced Webforms** and enable it.
+
+From a GitHub release: download `webforms-<version>.tar.gz` from the
 [releases page](https://github.com/AdamArcane/nextcloud-advanced-webforms/releases), then:
 
 ```bash
@@ -88,7 +93,19 @@ Emails and webhooks are sent by Nextcloud's background jobs, so make sure cron i
 
 Open **Webforms** from the Nextcloud menu, create a form, build it, and publish it. Publishing is
 where the form is validated. The share link is `https://<your server>/index.php/apps/webforms/f/<token>`.
-Administrators pick the spam check for the whole server under Administration settings.
+
+## Administration
+
+Administrators find the server-wide settings under **Administration settings, Webforms**:
+
+- which after-submit actions forms may use (email, webhook, Tables, Files),
+- the spam check for the whole server (built-in proof-of-work by default, Cloudflare Turnstile,
+  hCaptcha, or none),
+- how long responses are kept, limits per form, and who can create forms,
+- the list of response statuses.
+
+Emails and webhooks need Nextcloud cron to be working. Forms and responses are stored in the
+Nextcloud database, and uploaded files in the form owner's Files or in the app's own storage.
 
 ## Documentation
 
