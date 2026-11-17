@@ -5,6 +5,11 @@
 
 # Changelog
 
+## Unreleased
+
+- README brought up to date for the app store, with an Administration section. `info.xml` now links the
+  documentation, and the repository has a root `LICENSE` file.
+
 ## 0.4.0 - 2026-11-17
 
 - Settings inside the app. A "Settings" entry at the bottom of the sidebar opens your preferences in a
