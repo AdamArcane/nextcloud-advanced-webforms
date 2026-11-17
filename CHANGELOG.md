@@ -5,6 +5,27 @@
 
 # Changelog
 
+## 0.4.0 - 2026-11-17
+
+- Settings inside the app. A "Settings" entry at the bottom of the sidebar opens your preferences in a
+  dialog, like other apps do, instead of sending you to Nextcloud's Personal settings. A change is saved
+  at once and the forms in the list follow it straight away. The "Advanced Webforms" page under Personal
+  settings is gone; your saved choice is kept. See `docs/SCHEMA.md` section 16.1.
+
+- Defaults for new forms. Settings has a "New form defaults" section where you pick the label position, accent
+  colour, whether the title shows and whether the spam check is on that every form you create starts
+  with. Existing and imported forms are not changed, and each form can still be changed. See
+  `docs/SCHEMA.md` section 16.1.
+
+- Responses defaults. Whether responses open as a table or as cards, and whether the summary above them is
+  open, are now kept in your account instead of one browser, so they follow you to other devices, and
+  Settings has a "Responses" section for them. A choice you made in a browser before is not carried over.
+
+- Back up all your forms. Settings has a "Backup" section with a button that downloads every form you
+  own, archived ones included, as one zip of the same files "Export draft" and "Export published version"
+  give, with a note on how to bring them back. Responses and uploaded files are not in it. See
+  `docs/SCHEMA.md` section 13.1.
+
 ## 0.3.6 - 2026-11-16
 
 - App store listing: a description that matches what the app does now, and six screenshots.

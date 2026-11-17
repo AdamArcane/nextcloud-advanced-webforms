@@ -45,14 +45,21 @@ const props = withDefaults(defineProps<{
 	entryId?: number | null
 	/** The statuses a response can be given (the administrator's list). */
 	statuses?: readonly ResponseStatus[]
+	/** How responses are laid out and whether the summary is open: the user's preferences (docs/SCHEMA.md 16.1). */
+	responsesView?: 'table' | 'cards'
+	responsesSummary?: boolean
 }>(), {
 	entryId: null,
 	statuses: () => [],
+	responsesView: 'table',
+	responsesSummary: true,
 })
 
 const emit = defineEmits<{
 	/** The owner looked at the list, so this form has no new responses any more. */
 	seen: []
+	/** The person changed how responses are shown. The app keeps it as their preference. */
+	preference: [patch: { responsesView?: 'table' | 'cards', responsesSummary?: boolean }]
 }>()
 
 const PAGE = 50
@@ -114,40 +121,32 @@ async function changeStatus(id: number, status: string | null): Promise<void> {
 }
 
 type ResponsesView = 'table' | 'cards'
-const VIEW_KEY = 'webforms.responsesView'
-function loadView(): ResponsesView {
-	try {
-		return window.localStorage.getItem(VIEW_KEY) === 'cards' ? 'cards' : 'table'
-	} catch {
-		return 'table'
+// The choice is the user's preference, so it follows them to another device. It shows at once and
+// follows the preference when that changes, for example from the Settings dialog.
+const view = ref<ResponsesView>(props.responsesView)
+watch(() => props.responsesView, (value) => {
+	view.value = value
+	if (value === 'cards') {
+		clearSelection()
 	}
-}
-const view = ref<ResponsesView>(loadView())
+})
 function setView(value: ResponsesView): void {
 	view.value = value
 	if (value === 'cards') {
 		clearSelection()
 	}
-	try {
-		window.localStorage.setItem(VIEW_KEY, value)
-	} catch {
-		// Storage can be blocked, the choice then lasts until the page is closed.
-	}
+	emit('preference', { responsesView: value })
 }
 
 const chosenColumns = ref<string[] | null>(loadColumnChoice(props.formId))
 
 // ---- Summary ---------------------------------------------------------------
 
-const SUMMARY_KEY = 'webforms.responsesSummary'
-function loadSummaryOpen(): boolean {
-	try {
-		return window.localStorage.getItem(SUMMARY_KEY) !== 'closed'
-	} catch {
-		return true
-	}
-}
-const summaryOpen = ref(loadSummaryOpen())
+const summaryOpen = ref(props.responsesSummary)
+watch(() => props.responsesSummary, (value) => {
+	summaryOpen.value = value
+	void loadSummary()
+})
 const summary = ref<EntrySummaryData | null>(null)
 const summaryLoading = ref(false)
 const summaryFailed = ref(false)
@@ -179,11 +178,7 @@ async function loadSummary(): Promise<void> {
 
 function toggleSummary(): void {
 	summaryOpen.value = !summaryOpen.value
-	try {
-		window.localStorage.setItem(SUMMARY_KEY, summaryOpen.value ? 'open' : 'closed')
-	} catch {
-		// Storage can be blocked, the choice then lasts until the page is closed.
-	}
+	emit('preference', { responsesSummary: summaryOpen.value })
 	void loadSummary()
 }
 
