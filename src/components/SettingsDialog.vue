@@ -10,8 +10,10 @@ import { showError } from '@nextcloud/dialogs'
 import { t } from '@nextcloud/l10n'
 import NcAppSettingsDialog from '@nextcloud/vue/components/NcAppSettingsDialog'
 import NcAppSettingsSection from '@nextcloud/vue/components/NcAppSettingsSection'
+import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import { ref, watch } from 'vue'
+import { formsBackupUrl } from '../api/forms.ts'
 import { saveUserPreferences } from '../api/settings.ts'
 
 // The signed-in user's own preferences (docs/SCHEMA.md section 16.1), opened from the sidebar. The
@@ -71,6 +73,14 @@ async function setOpenPublishedOnResponses(value: boolean): Promise<void> {
 			<p class="af-settings-hint af-settings-hint--under">
 				{{ t('webforms', 'Applies when you pick a published form that has no unpublished changes. Drafts, closed forms and forms with unpublished changes open in the editor.') }}
 			</p>
+		</NcAppSettingsSection>
+		<NcAppSettingsSection id="backup" :name="t('webforms', 'Backup')">
+			<p class="af-settings-hint">
+				{{ t('webforms', 'Download every form you own as files you can import again: each form\'s draft and, if it was published, its published version. Responses, uploaded files, links and webhook secrets are not included. Responses are downloaded from each form\'s Responses page.') }}
+			</p>
+			<NcButton variant="secondary" :href="formsBackupUrl()" :download="true">
+				{{ t('webforms', 'Download backup of all my forms') }}
+			</NcButton>
 		</NcAppSettingsSection>
 	</NcAppSettingsDialog>
 </template>

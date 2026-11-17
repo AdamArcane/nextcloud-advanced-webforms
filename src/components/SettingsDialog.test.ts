@@ -50,6 +50,13 @@ describe('settings dialog', () => {
 		expect(wrapper.emitted('saved')).toBeUndefined()
 	})
 
+	it('offers a download of every form as a link', () => {
+		const link = mountDialog(true).find('a[href$="/api/v1/backup"]')
+		expect(link.exists()).toBe(true)
+		expect(link.attributes('download')).toBeDefined()
+		expect(link.text()).toContain('Download backup of all my forms')
+	})
+
 	it('keeps the switch off until the preferences have been read', () => {
 		expect(checkbox(mountDialog(true, false)).attributes('disabled')).toBeDefined()
 	})

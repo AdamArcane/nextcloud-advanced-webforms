@@ -40,6 +40,7 @@ use OCA\Webforms\Uploads\UploadRejected;
 use OCA\Webforms\Uploads\UploadService;
 use OCA\Webforms\Exception\ValidationException;
 use OCA\Webforms\Forms\DefinitionValidator;
+use OCA\Webforms\Forms\FormBackup;
 use OCA\Webforms\Forms\FormPackage;
 use OCA\Webforms\Forms\JsonShape;
 use OCA\Webforms\Forms\RetiredIds;
@@ -184,6 +185,30 @@ class FormService {
 			'package' => FormPackage::build($definition, $source, $this->time->getTime()),
 			'filename' => ($slug !== '' ? $slug : 'form') . '.webforms.json',
 		];
+	}
+
+	/**
+	 * Every form the person owns, archived ones too, as one zip of export files (docs/SCHEMA.md section 13.1).
+	 *
+	 * @return array{bytes: string, filename: string}
+	 * @throws \RuntimeException when the zip cannot be made
+	 */
+	public function backup(string $userId): array {
+		$items = [];
+		foreach ($this->forms->findByOwner($userId) as $form) {
+			$published = null;
+			$latestId = $form->getLatestVersionId();
+			if ($latestId !== null) {
+				try {
+					$published = $this->versions->find($latestId)->getDefinitionArray();
+				} catch (NotFoundException) {
+					// A missing version leaves the draft, which is still worth keeping.
+				}
+			}
+			$items[] = ['id' => $form->getId(), 'title' => $form->getTitle(), 'draft' => $form->getDraftDefinition(), 'published' => $published];
+		}
+		$now = $this->time->getTime();
+		return ['bytes' => FormBackup::zip(FormBackup::files($items, $now)), 'filename' => FormBackup::filename($now)];
 	}
 
 	/**

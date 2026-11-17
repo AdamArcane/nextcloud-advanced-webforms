@@ -25,6 +25,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
+use OCP\AppFramework\Http\Attribute\UserRateLimit;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\StreamResponse;
@@ -113,6 +114,25 @@ class FormController extends Controller {
 			$file['filename'],
 			'application/json; charset=utf-8',
 		);
+		$response->addHeader('Cache-Control', 'no-store');
+		return $response;
+	}
+
+	/**
+	 * Download every form the signed-in user owns as one zip of export files. It sits outside
+	 * `/forms/{id}` so it can never be read as a form id.
+	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[UserRateLimit(limit: 5, period: 300)]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/backup')]
+	public function backup(): DataDownloadResponse|JSONResponse {
+		try {
+			$file = $this->service->backup($this->userId());
+		} catch (\RuntimeException) {
+			return new JSONResponse(['error' => 'backup_failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+		$response = new DataDownloadResponse($file['bytes'], $file['filename'], 'application/zip');
 		$response->addHeader('Cache-Control', 'no-store');
 		return $response;
 	}

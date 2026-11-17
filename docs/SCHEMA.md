@@ -1093,6 +1093,24 @@ version**. The forms list has **Import form**.
   `POST /api/v1/forms/import` with `{ "package": <the file's contents> }`, which answers 201 with
   `{ form, errors }` like a draft save.
 
+### 13.1 Backing up all your forms
+
+The app's Settings dialog (section 16.1) has a **Backup** section with a button that downloads every form
+the person owns as one zip, `webforms-backup-YYYY-MM-DD.zip`. It is the per-form export above, done for
+all of them at once, so there is nothing new to import: each file is one `webforms.form` package.
+
+- **What is in it.** For each form a `<id>-<title>.draft.webforms.json`, and a
+  `<id>-<title>.published.webforms.json` when the form has a published version. Archived forms are
+  included. The id keeps forms with the same title apart, and the title part is ASCII, at most 60
+  characters. A `README.txt` says how to restore.
+- **Restoring.** Import form, one file at a time. Each becomes a new draft form and never replaces one.
+- **What is not in it.** The same as a single export (webhook secrets, links, versions, the delivery log),
+  and also responses and uploaded files. Responses have their own download (section 9.1).
+- **Only your own forms,** never ones owned by someone else. A form is read through the same owner check
+  as a single export.
+- **Endpoint.** `GET /api/v1/backup`, any signed-in user, limited to 5 a 5 minutes. It is outside
+  `/forms/{id}` so it cannot be read as a form id. It answers `500 backup_failed` if the zip cannot be made.
+
 ## 14. Nextcloud events (DECISION)
 
 Besides the per-form webhook action (section 7), the app dispatches Nextcloud events, so an

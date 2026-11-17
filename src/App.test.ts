@@ -19,6 +19,7 @@ vi.mock('./api/forms.ts', () => ({
 	importForm: vi.fn(),
 	setFormArchived: vi.fn(),
 	formExportUrl: () => '#',
+	formsBackupUrl: () => '/apps/webforms/api/v1/backup',
 }))
 vi.mock('./api/settings.ts', () => ({
 	OPEN_POLICY: { canCreate: true },

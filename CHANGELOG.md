@@ -12,6 +12,11 @@
   at once and the forms in the list follow it straight away. The "Advanced Webforms" page under Personal
   settings is gone; your saved choice is kept. See `docs/SCHEMA.md` section 16.1.
 
+- Back up all your forms. Settings has a "Backup" section with a button that downloads every form you
+  own, archived ones included, as one zip of the same files "Export draft" and "Export published version"
+  give, with a note on how to bring them back. Responses and uploaded files are not in it. See
+  `docs/SCHEMA.md` section 13.1.
+
 ## 0.3.6 - 2026-11-16
 
 - App store listing: a description that matches what the app does now, and six screenshots.

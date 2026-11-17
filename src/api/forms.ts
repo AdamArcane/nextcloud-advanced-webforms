@@ -173,6 +173,11 @@ export function formExportUrl(id: number, source: ExportSource): string {
 	return generateUrl('/apps/webforms/api/v1/forms/{id}/export', { id }) + '?source=' + source
 }
 
+/** Where the zip of every form the user owns is downloaded (docs/SCHEMA.md section 13.1). Opened as a link. */
+export function formsBackupUrl(): string {
+	return generateUrl('/apps/webforms/api/v1/backup')
+}
+
 /** Create a new draft form from the parsed contents of an export file. Rejects with an ApiError. */
 export function importForm(pkg: unknown): Promise<SaveResult> {
 	return call(axios.post<SaveResult>(url('/forms/import'), { package: pkg }))

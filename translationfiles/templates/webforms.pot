@@ -304,7 +304,7 @@ msgstr ""
 msgid "Advanced"
 msgstr ""
 
-#: src/components/SettingsDialog.vue:58
+#: src/components/SettingsDialog.vue:60
 msgid "Advanced Webforms settings"
 msgstr ""
 
@@ -439,7 +439,7 @@ msgstr ""
 msgid "Applies to people who are not logged in. Form owners can turn the check off for a single form. Every form also has a hidden trap field, a minimum fill time and a rate limit."
 msgstr ""
 
-#: src/components/SettingsDialog.vue:72
+#: src/components/SettingsDialog.vue:74
 msgid "Applies when you pick a published form that has no unpublished changes. Drafts, closed forms and forms with unpublished changes open in the editor."
 msgstr ""
 
@@ -491,6 +491,10 @@ msgstr ""
 
 #: src/components/builder/FormProperties.vue:197
 msgid "Background colour"
+msgstr ""
+
+#: src/components/SettingsDialog.vue:77
+msgid "Backup"
 msgstr ""
 
 #: src/components/builder/FormProperties.vue:260
@@ -855,7 +859,7 @@ msgstr ""
 msgid "Could not save the note."
 msgstr ""
 
-#: src/components/SettingsDialog.vue:49
+#: src/components/SettingsDialog.vue:51
 msgid "Could not save the setting."
 msgstr ""
 
@@ -1080,6 +1084,14 @@ msgstr ""
 
 #: src/components/entries/EntriesView.vue:568
 msgid "Download"
+msgstr ""
+
+#: src/components/SettingsDialog.vue:82
+msgid "Download backup of all my forms"
+msgstr ""
+
+#: src/components/SettingsDialog.vue:79
+msgid "Download every form you own as files you can import again: each form's draft and, if it was published, its published version. Responses, uploaded files, links and webhook secrets are not included. Responses are downloaded from each form's Responses page."
 msgstr ""
 
 #: src/components/builder/SharePanel.vue:229
@@ -1453,7 +1465,7 @@ msgstr ""
 msgid "Full: it takes no more responses."
 msgstr ""
 
-#: src/components/SettingsDialog.vue:61
+#: src/components/SettingsDialog.vue:63
 #: src/components/builder/BuilderView.vue:541
 msgid "General"
 msgstr ""
@@ -1546,7 +1558,7 @@ msgstr ""
 msgid "Highest"
 msgstr ""
 
-#: src/components/SettingsDialog.vue:63
+#: src/components/SettingsDialog.vue:65
 msgid "How the app behaves for you. These settings do not affect other people or your forms."
 msgstr ""
 
@@ -2260,7 +2272,7 @@ msgstr ""
 msgid "Open published form"
 msgstr ""
 
-#: src/components/SettingsDialog.vue:69
+#: src/components/SettingsDialog.vue:71
 msgid "Open published forms on their responses"
 msgstr ""
 
