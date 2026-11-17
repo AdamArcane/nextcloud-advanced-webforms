@@ -5,7 +5,7 @@
 
 # Changelog
 
-## Unreleased
+## 0.4.0 - 2026-11-17
 
 - Settings inside the app. A "Settings" entry at the bottom of the sidebar opens your preferences in a
   dialog, like other apps do, instead of sending you to Nextcloud's Personal settings. A change is saved
