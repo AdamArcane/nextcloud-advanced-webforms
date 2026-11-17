@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-import type { ActionType, ResponseStatus } from '../types.ts'
+import type { ActionType, LabelPosition, ResponseStatus } from '../types.ts'
 
 import axios from '@nextcloud/axios'
 import { url } from './http.ts'
@@ -54,14 +54,35 @@ export async function fetchUserPolicy(): Promise<UserPolicy> {
 	}
 }
 
-/** The signed-in user's own preferences, set under Personal settings. */
+/** How the responses of a form are laid out. */
+export type ResponsesView = 'table' | 'cards'
+
+/** The signed-in user's own preferences, set in the app's Settings dialog (docs/SCHEMA.md section 16.1). */
 export interface UserPreferences {
 	/** Picking a published form with no unpublished changes opens its responses instead of the editor. */
 	openPublishedOnResponses: boolean
+	/** The starting label position of a form the user creates. */
+	newFormLabelPosition: LabelPosition
+	/** The starting accent colour (`#rrggbb`) of a new form. Empty means the Nextcloud colour. */
+	newFormAccentColor: string
+	/** New forms start with their title left off the public page. */
+	newFormHideTitle: boolean
+	/** New forms start with the spam check on. */
+	newFormCaptcha: boolean
+	/** Responses open as a table or as cards. */
+	responsesView: ResponsesView
+	/** The summary above the responses is open. */
+	responsesSummary: boolean
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
 	openPublishedOnResponses: true,
+	newFormLabelPosition: 'above',
+	newFormAccentColor: '',
+	newFormHideTitle: false,
+	newFormCaptcha: true,
+	responsesView: 'table',
+	responsesSummary: true,
 }
 
 export async function fetchUserPreferences(): Promise<UserPreferences> {
@@ -72,7 +93,7 @@ export async function fetchUserPreferences(): Promise<UserPreferences> {
 	}
 }
 
-/** Rejects when the preferences could not be saved. */
-export async function saveUserPreferences(preferences: UserPreferences): Promise<UserPreferences> {
-	return (await axios.put<UserPreferences>(url('/preferences'), preferences)).data
+/** Save some preferences and leave the rest. Resolves with all of them as the server keeps them; rejects when they could not be saved. */
+export async function saveUserPreferences(patch: Partial<UserPreferences>): Promise<UserPreferences> {
+	return { ...DEFAULT_PREFERENCES, ...(await axios.put<UserPreferences>(url('/preferences'), patch)).data }
 }

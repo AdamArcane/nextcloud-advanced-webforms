@@ -1093,6 +1093,24 @@ version**. The forms list has **Import form**.
   `POST /api/v1/forms/import` with `{ "package": <the file's contents> }`, which answers 201 with
   `{ form, errors }` like a draft save.
 
+### 13.1 Backing up all your forms
+
+The app's Settings dialog (section 16.1) has a **Backup** section with a button that downloads every form
+the person owns as one zip, `webforms-backup-YYYY-MM-DD.zip`. It is the per-form export above, done for
+all of them at once, so there is nothing new to import: each file is one `webforms.form` package.
+
+- **What is in it.** For each form a `<id>-<title>.draft.webforms.json`, and a
+  `<id>-<title>.published.webforms.json` when the form has a published version. Archived forms are
+  included. The id keeps forms with the same title apart, and the title part is ASCII, at most 60
+  characters. A `README.txt` says how to restore.
+- **Restoring.** Import form, one file at a time. Each becomes a new draft form and never replaces one.
+- **What is not in it.** The same as a single export (webhook secrets, links, versions, the delivery log),
+  and also responses and uploaded files. Responses have their own download (section 9.1).
+- **Only your own forms,** never ones owned by someone else. A form is read through the same owner check
+  as a single export.
+- **Endpoint.** `GET /api/v1/backup`, any signed-in user, limited to 5 a 5 minutes. It is outside
+  `/forms/{id}` so it cannot be read as a form id. It answers `500 backup_failed` if the zip cannot be made.
+
 ## 14. Nextcloud events (DECISION)
 
 Besides the per-form webhook action (section 7), the app dispatches Nextcloud events, so an
@@ -1244,17 +1262,38 @@ of allowed actions allows none, the safe side.
 
 ### 16.1 Personal preferences
 
-Each user has their own preferences under Personal settings, "Advanced Webforms". They are user config,
-so they are removed with the account, and they change nothing about forms or other people.
+Each user has their own preferences, in the app's own Settings: the Settings entry at the bottom of the
+sidebar opens them in a dialog, where a change is saved at once and applies straight away. They are user
+config, so they are removed with the account, and they change nothing about forms or other people. They are
+not under Nextcloud's Personal settings (earlier versions put them there).
 
-| Setting | Default | Meaning |
+| Setting (key) | Default | Meaning |
 | --- | --- | --- |
-| Open published forms on their responses | on | picking a form in the list opens its responses when the form is published and has no unpublished changes |
+| Open published forms on their responses (`openPublishedOnResponses`) | on | picking a form in the list opens its responses when the form is published and has no unpublished changes |
+| New form defaults: label position (`newFormLabelPosition`) | above | `above`, `inline` or `hidden`: the `labelPosition` a form you create starts with |
+| New form defaults: accent colour (`newFormAccentColor`) | none | `#rrggbb`, or empty for the Nextcloud colour: the `design.accentColor` a new form starts with |
+| New form defaults: leave the title off (`newFormHideTitle`) | off | a new form starts with `hideTitle` on |
+| New form defaults: spam check (`newFormCaptcha`) | on | off makes a new form start with `captcha` off (the server's own spam check still has to be set up, section 10.1) |
+| Show responses as (`responsesView`) | table | `table` or `cards` |
+| Show the summary above responses (`responsesSummary`) | on | whether the summary on the Responses page is open |
 
 - Drafts, closed forms and published forms with unpublished changes always open in the editor, and so
   does the address `#/f/<id>` when it is typed or shared: only the links in the form list change.
-- Endpoints (any signed-in user, own preferences only): `GET` and `PUT /api/v1/preferences` with
-  `openPublishedOnResponses` (boolean).
+- **Defaults for new forms** are copied into the settings of a form when it is created, and only what
+  differs from the built-in behaviour is written, so a person with no defaults gets empty settings as
+  before. They are a starting point: changing a default later changes no existing form, and each form's
+  own settings win. A form made by **Import form** takes everything from its file and no defaults.
+- **Responses** (`responsesView`, `responsesSummary`) are the choices the Responses page used to keep in the
+  browser. They are now kept in the account, so they follow the person to another device. Changing them
+  on the Responses page and in the Settings dialog change the same preference. A choice an earlier
+  version kept in a browser is not carried over.
+- A change is shown at once and saved in the background. If the server refuses, the setting goes back and
+  an error is shown. Only the preferences that were changed are sent, so changing one never rewrites
+  another.
+- Endpoints (any signed-in user, own preferences only): `GET /api/v1/preferences` answers with all of the
+  keys above. `PUT /api/v1/preferences` takes any of them and changes just those; a value that is not one
+  the preference takes, or an unknown key, is refused with `422` and `preference_invalid` and changes
+  nothing.
 
 ### 16.2 Emails from forms
 

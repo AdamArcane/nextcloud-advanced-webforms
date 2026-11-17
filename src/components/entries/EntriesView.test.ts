@@ -107,8 +107,15 @@ function deliveries(rows: Delivery[], total = rows.length): DeliveriesPage {
 	return { total, rows }
 }
 
-function mountView() {
-	return mount(EntriesView, { props: { formId: 7, title: 'Inquiry' }, attachTo: document.body })
+/** How `mountView` lays the responses out unless a test says otherwise. The first group describes the cards. */
+let viewDefault: 'table' | 'cards' = 'table'
+
+afterEach(() => {
+	viewDefault = 'table'
+})
+
+function mountView(props: Record<string, unknown> = {}) {
+	return mount(EntriesView, { props: { formId: 7, title: 'Inquiry', responsesView: viewDefault, ...props }, attachTo: document.body })
 }
 
 /** Opens the Download menu and waits until its links exist: the menu is a popover that opens a moment later. */
@@ -125,7 +132,7 @@ const buttonByText = (wrapper: ReturnType<typeof mountView>, text: string) => wr
 describe('EntriesView', () => {
 	beforeEach(() => {
 		// These tests describe the cards, which stay available as a choice. The table has its own tests.
-		window.localStorage.setItem('webforms.responsesView', 'cards')
+		viewDefault = 'cards'
 		failEntries = false
 		failRetry = false
 		failDelete = false
@@ -514,14 +521,25 @@ describe('EntriesView table and filters', () => {
 		wrapper.unmount()
 	})
 
-	it('remembers the choice of cards over the table', async () => {
-		const wrapper = mountView()
+	it('shows the choice of cards over the table at once and reports it as a preference', async () => {
+		const wrapper = mountView({ responsesView: 'table' })
 		await flushPromises()
+		expect(wrapper.findAllComponents({ name: 'ResponseCard' })).toHaveLength(0)
 		const cards = wrapper.findAll('button').find((b) => b.attributes('aria-label') === 'Cards' || b.text() === 'Cards')
 		expect(cards).toBeDefined()
 		await cards!.trigger('click')
-		expect(window.localStorage.getItem('webforms.responsesView')).toBe('cards')
+		expect(wrapper.emitted('preference')).toEqual([[{ responsesView: 'cards' }]])
 		expect(wrapper.findAllComponents({ name: 'ResponseCard' })).toHaveLength(3)
+		wrapper.unmount()
+	})
+
+	it('follows the preference when it changes elsewhere', async () => {
+		const wrapper = mountView({ responsesView: 'table' })
+		await flushPromises()
+		await wrapper.setProps({ responsesView: 'cards' })
+		expect(wrapper.findAllComponents({ name: 'ResponseCard' })).toHaveLength(3)
+		await wrapper.setProps({ responsesView: 'table' })
+		expect(wrapper.findAllComponents({ name: 'ResponseCard' })).toHaveLength(0)
 		wrapper.unmount()
 	})
 
@@ -820,15 +838,15 @@ describe('EntriesView summary', () => {
 		wrapper.unmount()
 	})
 
-	it('can be closed, stays closed, and then asks for nothing', async () => {
+	it('can be closed and reports it, and then asks for nothing while it stays closed', async () => {
 		const wrapper = mountView()
 		await flushPromises()
 		await summaryButton(wrapper).trigger('click')
 		expect(wrapper.find('.af-summary').exists()).toBe(false)
-		expect(window.localStorage.getItem('webforms.responsesSummary')).toBe('closed')
+		expect(wrapper.emitted('preference')).toEqual([[{ responsesSummary: false }]])
 		wrapper.unmount()
 		summaryMock.mockClear()
-		const again = mountView()
+		const again = mountView({ responsesSummary: false })
 		await flushPromises()
 		expect(again.find('.af-summary').exists()).toBe(false)
 		expect(summaryMock).not.toHaveBeenCalled()
@@ -837,6 +855,18 @@ describe('EntriesView summary', () => {
 		expect(summaryMock).toHaveBeenCalledTimes(1)
 		expect(again.find('.af-summary').exists()).toBe(true)
 		again.unmount()
+	})
+
+	it('opens when the preference changes to open', async () => {
+		const wrapper = mountView({ responsesSummary: false })
+		await flushPromises()
+		expect(wrapper.find('.af-summary').exists()).toBe(false)
+		summaryMock.mockClear()
+		await wrapper.setProps({ responsesSummary: true })
+		await flushPromises()
+		expect(summaryMock).toHaveBeenCalledTimes(1)
+		expect(wrapper.find('.af-summary').exists()).toBe(true)
+		wrapper.unmount()
 	})
 
 	it('is refreshed after a response is deleted', async () => {
@@ -870,11 +900,10 @@ describe('EntriesView new responses, statuses and notes', () => {
 	]
 
 	function mountWith(props: Record<string, unknown> = {}) {
-		return mount(EntriesView, { props: { formId: 7, title: 'Inquiry', statuses: STATUSES, ...props }, attachTo: document.body })
+		return mount(EntriesView, { props: { formId: 7, title: 'Inquiry', statuses: STATUSES, responsesView: 'table', ...props }, attachTo: document.body })
 	}
 
 	beforeEach(() => {
-		window.localStorage.setItem('webforms.responsesView', 'table')
 		failEntries = false
 		failSeen = false
 		failStatus = false
@@ -955,9 +984,8 @@ describe('EntriesView new responses, statuses and notes', () => {
 	})
 
 	it('shows the status on a card as a tag in its own colour', async () => {
-		window.localStorage.setItem('webforms.responsesView', 'cards')
 		listEntriesMock.mockResolvedValue(page([{ ...entry(1), status: 'done' }, entry(2)]))
-		const wrapper = mountWith()
+		const wrapper = mountWith({ responsesView: 'cards' })
 		await flushPromises()
 		const tags = wrapper.findAll('.af-tag')
 		expect(tags).toHaveLength(1)

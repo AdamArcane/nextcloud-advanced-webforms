@@ -57,8 +57,6 @@ Forms and responses stay on your server. Requires Nextcloud 35.
 	<settings>
 		<admin>OCA\Webforms\Settings\AdminSettings</admin>
 		<admin-section>OCA\Webforms\Settings\AdminSection</admin-section>
-		<personal>OCA\Webforms\Settings\PersonalSettings</personal>
-		<personal-section>OCA\Webforms\Settings\PersonalSection</personal-section>
 	</settings>
 
 	<navigations>
