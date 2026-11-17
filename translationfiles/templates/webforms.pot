@@ -2065,7 +2065,7 @@ msgid "New form"
 msgstr ""
 
 #: src/components/SettingsDialog.vue:56
-msgid "New forms"
+msgid "New form defaults"
 msgstr ""
 
 #: src/components/render/FormRenderer.vue:568

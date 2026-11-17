@@ -53,7 +53,7 @@ const open = defineModel<boolean>('open', { required: true })
 			</p>
 		</NcAppSettingsSection>
 
-		<NcAppSettingsSection id="new-forms" :name="t('webforms', 'New forms')">
+		<NcAppSettingsSection id="new-forms" :name="t('webforms', 'New form defaults')">
 			<p class="af-settings-hint">
 				{{ t('webforms', 'Applies to forms you create from now on.') }}
 			</p>

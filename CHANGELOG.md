@@ -12,7 +12,7 @@
   at once and the forms in the list follow it straight away. The "Advanced Webforms" page under Personal
   settings is gone; your saved choice is kept. See `docs/SCHEMA.md` section 16.1.
 
-- Defaults for new forms. Settings has a "New forms" section where you pick the label position, accent
+- Defaults for new forms. Settings has a "New form defaults" section where you pick the label position, accent
   colour, whether the title shows and whether the spam check is on that every form you create starts
   with. Existing and imported forms are not changed, and each form can still be changed. See
   `docs/SCHEMA.md` section 16.1.

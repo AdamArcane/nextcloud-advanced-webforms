@@ -1270,10 +1270,10 @@ not under Nextcloud's Personal settings (earlier versions put them there).
 | Setting (key) | Default | Meaning |
 | --- | --- | --- |
 | Open published forms on their responses (`openPublishedOnResponses`) | on | picking a form in the list opens its responses when the form is published and has no unpublished changes |
-| New forms: label position (`newFormLabelPosition`) | above | `above`, `inline` or `hidden`: the `labelPosition` a form you create starts with |
-| New forms: accent colour (`newFormAccentColor`) | none | `#rrggbb`, or empty for the Nextcloud colour: the `design.accentColor` a new form starts with |
-| New forms: leave the title off (`newFormHideTitle`) | off | a new form starts with `hideTitle` on |
-| New forms: spam check (`newFormCaptcha`) | on | off makes a new form start with `captcha` off (the server's own spam check still has to be set up, section 10.1) |
+| New form defaults: label position (`newFormLabelPosition`) | above | `above`, `inline` or `hidden`: the `labelPosition` a form you create starts with |
+| New form defaults: accent colour (`newFormAccentColor`) | none | `#rrggbb`, or empty for the Nextcloud colour: the `design.accentColor` a new form starts with |
+| New form defaults: leave the title off (`newFormHideTitle`) | off | a new form starts with `hideTitle` on |
+| New form defaults: spam check (`newFormCaptcha`) | on | off makes a new form start with `captcha` off (the server's own spam check still has to be set up, section 10.1) |
 | Show responses as (`responsesView`) | table | `table` or `cards` |
 | Show the summary above responses (`responsesSummary`) | on | whether the summary on the Responses page is open |
 
