@@ -49,6 +49,35 @@ final class Destinations {
 	}
 
 	/**
+	 * The definition without the Files and Tables actions that point nowhere yet: no table chosen, or no file
+	 * path. They reach into nobody's Files or Tables, so checking them for a new owner (docs/SCHEMA.md section
+	 * 22.7) would blame that person for something unfinished. Other actions keep their position in the list.
+	 *
+	 * @param array<string, mixed> $definition
+	 * @return array<string, mixed>
+	 */
+	public static function withoutUnfinished(array $definition): array {
+		if (!is_array($definition['actions'] ?? null)) {
+			return $definition;
+		}
+		foreach ($definition['actions'] as $index => $action) {
+			if (!is_array($action)) {
+				continue;
+			}
+			$type = $action['type'] ?? null;
+			$finished = match ($type) {
+				'tables' => is_int($action['tableId'] ?? null) && $action['tableId'] > 0,
+				'files' => is_string($action['path'] ?? null) && trim($action['path']) !== '',
+				default => true,
+			};
+			if (!$finished) {
+				unset($definition['actions'][$index]);
+			}
+		}
+		return $definition;
+	}
+
+	/**
 	 * The places that are not the same in both: added, removed or changed.
 	 *
 	 * @param array<string, mixed> $before

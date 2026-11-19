@@ -125,4 +125,23 @@ final class DestinationsTest extends TestCase {
 		sort($values);
 		return $values;
 	}
+
+	public function testActionsThatPointNowhereAreLeftOutOfWhatIsCheckedForANewOwner(): void {
+		$cleaned = Destinations::withoutUnfinished([
+			'actions' => [
+				['id' => 'a_mail', 'type' => 'email', 'to' => 'x@example.com'],
+				['id' => 'a_table', 'type' => 'tables', 'tableId' => 0, 'map' => []],
+				['id' => 'a_csv', 'type' => 'files', 'path' => '  '],
+				['id' => 'a_hook', 'type' => 'webhook', 'url' => 'https://example.com/h'],
+				['id' => 'a_table2', 'type' => 'tables', 'tableId' => 12, 'map' => []],
+				['id' => 'a_csv2', 'type' => 'files', 'path' => 'Hiring/answers.csv'],
+			],
+		]);
+		self::assertSame(['a_mail', 'a_hook', 'a_table2', 'a_csv2'], array_column($cleaned['actions'], 'id'));
+		self::assertSame([0, 3, 4, 5], array_keys($cleaned['actions']), 'the others keep their place, so error paths still match');
+	}
+
+	public function testADefinitionWithNoActionsIsUnchanged(): void {
+		self::assertSame(['title' => 'x'], Destinations::withoutUnfinished(['title' => 'x']));
+	}
 }

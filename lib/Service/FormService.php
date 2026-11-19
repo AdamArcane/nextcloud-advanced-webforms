@@ -384,10 +384,10 @@ class FormService {
 	public function destinationErrorsFor(Form $form, string $ownerId): array {
 		$asOwner = clone $form;
 		$asOwner->setOwnerId($ownerId);
-		$definitions = [$form->getDraftDefinition()];
+		$definitions = [Destinations::withoutUnfinished($form->getDraftDefinition())];
 		$latest = $this->versions->findLatest($form->getId());
 		if ($latest !== null) {
-			$definitions[] = $latest->getDefinitionArray();
+			$definitions[] = Destinations::withoutUnfinished($latest->getDefinitionArray());
 		}
 		$errors = [];
 		foreach ($definitions as $definition) {
