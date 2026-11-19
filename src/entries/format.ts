@@ -10,7 +10,7 @@ import type { FormField, StoredFile, VersionDefinition } from '../types.ts'
 
 import { t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import { isInputType } from '../rules/fieldTypes.ts'
+import { isCompositeType, isInputType } from '../rules/fieldTypes.ts'
 
 function optionLabel(field: FormField, value: unknown): string {
 	const raw = typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' ? String(value) : ''
@@ -28,6 +28,12 @@ export function displayAnswer(field: FormField, value: unknown): string {
 	if (field.type === 'file') {
 		return storedFiles(value).map((file) => file.name).join(', ')
 	}
+	if (field.type === 'signature') {
+		return typeof value === 'string' && value !== '' ? t('webforms', '(signature)') : ''
+	}
+	if (typeof value === 'object' && !Array.isArray(value) && isCompositeType(field.type)) {
+		return compositeText(field, value as Record<string, unknown>)
+	}
 	if (Array.isArray(value)) {
 		return value.map((item) => optionLabel(field, item)).join(', ')
 	}
@@ -39,6 +45,31 @@ export function displayAnswer(field: FormField, value: unknown): string {
 		return value.replace('T', ' ')
 	}
 	return optionLabel(field, value)
+}
+
+/** A matrix as `Row: Column; Row: Column`, a date range as `start to end`, a name on one line, an address in commas. */
+function compositeText(field: FormField, value: Record<string, unknown>): string {
+	if (field.type === 'daterange') {
+		return `${String(value.start ?? '')} to ${String(value.end ?? '')}`.trim()
+	}
+	if (field.type === 'matrix') {
+		const lines: string[] = []
+		for (const question of field.questions ?? []) {
+			const answer = value[question.value]
+			if (answer !== undefined && answer !== null && answer !== '') {
+				const picked = Array.isArray(answer) ? answer : [answer]
+				lines.push(`${question.label}: ${picked.map((one) => optionLabel(field, one)).join(', ')}`)
+			}
+		}
+		return lines.join('; ')
+	}
+	const parts = Object.values(value).filter((part): part is string => typeof part === 'string' && part !== '')
+	return parts.join(field.type === 'name' ? ' ' : ', ')
+}
+
+/** A signature answer as a picture address, only when it is the PNG the server stores. */
+export function signatureImage(field: FormField, value: unknown): string | null {
+	return field.type === 'signature' && typeof value === 'string' && /^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(value) ? value : null
 }
 
 /** The files of an upload answer; anything that is not a stored file is ignored. */
@@ -75,6 +106,8 @@ export interface AnswerLine {
 	answered: boolean
 	/** Upload fields: the files, so the page can link to them. Empty for other fields. */
 	files: StoredFile[]
+	/** A signature: the picture, shown instead of text. Null for other fields. */
+	image: string | null
 }
 
 /** Every question of the response's own version with its answer, for the detail view. */
@@ -82,7 +115,7 @@ export function answerLines(definition: VersionDefinition, data: Record<string, 
 	return answerFieldOrder(definition).map((id) => {
 		const field = definition.fields[id]
 		const value = displayAnswer(field, data[id])
-		return { id, label: field.label || id, value, answered: value !== '', files: field.type === 'file' ? storedFiles(data[id]) : [] }
+		return { id, label: field.label || id, value, answered: value !== '', files: field.type === 'file' ? storedFiles(data[id]) : [], image: signatureImage(field, data[id]) }
 	})
 }
 

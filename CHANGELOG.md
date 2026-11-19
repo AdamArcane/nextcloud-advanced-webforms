@@ -7,6 +7,14 @@
 
 ## Unreleased
 
+- Seven new field types. **Slider** (a number on a line), **Colour**, **Date range**, **Name** and
+  **Address** (asked in parts you choose), **Matrix** (a grid with one choice, or several, per question)
+  and **Signature** (drawn with a mouse or finger, shown as a picture in the responses). A required name,
+  address or matrix needs its main parts filled in. Rules can check whether the new fields were answered
+  (and compare a slider or a colour). Downloads and emails read them as plain text. See `docs/SCHEMA.md`
+  section 4.10. A date range can also require the last date to come after the first, or set the fewest and
+  the most days between them.
+
 - Share a form with other accounts and groups. The owner adds people and groups under Sharing, as an
   **Editor** (builds and publishes the form, works with its responses) or a **Reviewer** (reads responses,
   sets statuses and notes, downloads them). Forms shared with you are listed under **Shared with me**, and

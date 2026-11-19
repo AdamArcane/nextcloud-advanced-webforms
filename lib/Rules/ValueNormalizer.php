@@ -37,7 +37,19 @@ final class ValueNormalizer {
 			case FieldType::NUMBER:
 			case FieldType::RATING:
 			case FieldType::SCALE:
+			case FieldType::SLIDER:
 				return self::number($raw);
+			case FieldType::COLOR:
+				return (is_string($raw) && preg_match('/^#[0-9a-fA-F]{6}$/D', $raw) === 1) ? strtolower($raw) : null;
+			case FieldType::SIGNATURE:
+				// Only whether one was drawn matters to a rule.
+				return (is_string($raw) && str_starts_with($raw, 'data:image/png;base64,')) ? true : null;
+			case FieldType::MATRIX:
+			case FieldType::DATE_RANGE:
+			case FieldType::NAME:
+			case FieldType::ADDRESS:
+				// Only whether anything was answered matters to a rule.
+				return (is_array($raw) && $raw !== [] && !array_is_list($raw)) ? true : null;
 			case FieldType::SELECT:
 			case FieldType::RADIO:
 				return (is_string($raw) && $raw !== '' && mb_check_encoding($raw, 'UTF-8')) ? $raw : null;

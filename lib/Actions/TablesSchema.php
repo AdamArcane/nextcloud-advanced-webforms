@@ -50,6 +50,7 @@ final class TablesSchema {
 					? ['type' => 'number', 'subtype' => 'stars']
 					: ['type' => 'number', 'subtype' => '', 'decimals' => 0],
 				FieldType::SCALE => ['type' => 'number', 'subtype' => '', 'decimals' => 0],
+				FieldType::SLIDER => ['type' => 'number', 'subtype' => '', 'decimals' => self::decimals($field['step'] ?? null)],
 				FieldType::CHECKBOX, FieldType::CONSENT => ['type' => 'selection', 'subtype' => 'check'],
 				FieldType::DATETIME => ['type' => 'datetime', 'subtype' => ''],
 				FieldType::DATE => ['type' => 'datetime', 'subtype' => 'date'],

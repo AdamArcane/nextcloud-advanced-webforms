@@ -176,6 +176,10 @@ final class TablesValue {
 		if (is_bool($value)) {
 			return $value ? 'Yes' : 'No';
 		}
+		$type = $field['type'] ?? null;
+		if ($type === FieldType::SIGNATURE || (is_array($value) && is_string($type) && FieldType::isComposite($type))) {
+			return Template::display($field, $value);
+		}
 		if (is_array($value)) {
 			$parts = [];
 			foreach ($value as $one) {

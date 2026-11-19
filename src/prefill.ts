@@ -44,6 +44,13 @@ export function prefillValue(fieldId: string, field: FormField, params: URLSearc
 			return raw.length <= MAX_URL && /^[a-z][a-z0-9+.-]*:/i.test(raw) && !/[\s<>"]/.test(raw) ? raw : undefined
 		case 'number':
 			return number(field, raw)
+		case 'slider':
+			return number({ ...field, min: typeof field.min === 'number' ? field.min : 0, max: typeof field.max === 'number' ? field.max : 100, step: typeof field.step === 'number' ? field.step : 1 }, raw)
+		case 'color': {
+			// A link cannot carry a # easily, so ff8800 works as well as %23ff8800.
+			const hex = raw.startsWith('#') ? raw : '#' + raw
+			return /^#[0-9a-fA-F]{6}$/.test(hex) ? hex.toLowerCase() : undefined
+		}
 		case 'select':
 		case 'radio':
 			return option(field, raw)

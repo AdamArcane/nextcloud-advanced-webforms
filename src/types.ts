@@ -47,6 +47,15 @@ export type FormField = {
 	minLabel?: string
 	maxLabel?: string
 	options?: FieldOption[]
+	/** A matrix: the rows to answer, one per question. Its `options` are the columns (docs/SCHEMA.md 4.10). */
+	questions?: FieldOption[]
+	/** A date range: the fewest and the most whole days from the first date to the last (0 allows one day). */
+	minDays?: number
+	maxDays?: number
+	/** A matrix: tick several columns in a row instead of one. */
+	multiple?: boolean
+	/** A name or an address: which parts to ask for (docs/SCHEMA.md 4.10). */
+	parts?: string[]
 	minSelected?: number
 	maxSelected?: number
 	text?: string

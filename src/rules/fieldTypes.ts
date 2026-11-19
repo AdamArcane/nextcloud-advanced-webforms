@@ -11,6 +11,7 @@ const CHOICE_OPERATORS = ['eq', 'neq', 'in', 'not_in', 'empty', 'not_empty']
 const MULTI_OPERATORS = ['contains', 'not_contains', 'contains_any', 'contains_all', 'contains_none', 'empty', 'not_empty']
 const BOOLEAN_OPERATORS = ['eq', 'neq']
 const FILE_OPERATORS = ['empty', 'not_empty']
+const COLOR_OPERATORS = ['eq', 'neq', 'empty', 'not_empty']
 const ORDERED_OPERATORS = ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'empty', 'not_empty']
 
 /** Input types (they produce a value) mapped to their allowed operators. */
@@ -33,6 +34,13 @@ const OPERATORS = new Map<string, readonly string[]>([
 	['consent', BOOLEAN_OPERATORS],
 	['file', FILE_OPERATORS],
 	['hidden', TEXT_OPERATORS],
+	['matrix', FILE_OPERATORS],
+	['signature', FILE_OPERATORS],
+	['slider', NUMBER_OPERATORS],
+	['color', COLOR_OPERATORS],
+	['daterange', FILE_OPERATORS],
+	['name', FILE_OPERATORS],
+	['address', FILE_OPERATORS],
 ])
 
 export function isInputType(type: string): boolean {
@@ -46,7 +54,30 @@ export function operatorsFor(type: string): readonly string[] {
 
 /** Types whose answer is a number. */
 export function isNumericType(type: string): boolean {
-	return type === 'number' || type === 'rating' || type === 'scale'
+	return type === 'number' || type === 'rating' || type === 'scale' || type === 'slider'
+}
+
+/** Types whose answer is a set of named parts. */
+export function isCompositeType(type: string): boolean {
+	return type === 'matrix' || type === 'daterange' || type === 'name' || type === 'address'
+}
+
+/** The parts a name can have, in the order they are shown, and the ones asked for when none are chosen. */
+export const NAME_PARTS = ['prefix', 'first', 'middle', 'last', 'suffix'] as const
+export const NAME_DEFAULT_PARTS = ['first', 'last'] as const
+/** The parts of an address, in the order they are shown. */
+export const ADDRESS_PARTS = ['street', 'street2', 'city', 'region', 'postal', 'country'] as const
+/** Parts that must be filled when a name or an address is required (lib/Forms/FieldValueValidator.php). */
+export const REQUIRED_PARTS: Record<string, readonly string[]> = {
+	name: ['first', 'last'],
+	address: ['street', 'city', 'postal', 'country'],
+}
+
+/** The parts a name or an address field asks for, in their fixed order. */
+export function partsOf(field: { type: string, parts?: unknown }): string[] {
+	const known: readonly string[] = field.type === 'name' ? NAME_PARTS : ADDRESS_PARTS
+	const chosen: readonly unknown[] = Array.isArray(field.parts) ? field.parts : (field.type === 'name' ? NAME_DEFAULT_PARTS : ADDRESS_PARTS)
+	return known.filter((part) => chosen.includes(part))
 }
 
 /** Types whose answer is ticked or not. */

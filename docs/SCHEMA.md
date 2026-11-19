@@ -262,6 +262,13 @@ Input types (produce a value):
 | `consent` | boolean | a checkbox beside `text` (limited markdown, see 4.5), `required` means must be true, see 4.8 |
 | `file` | list of files | uploaded files, see 4.6 |
 | `hidden` | string | never shown to respondents, see 4.7 |
+| `slider` | number | a number picked by dragging, `min` (default 0), `max` (default 100), `step` (default 1), optional `prefix` and `suffix`, see 4.10 |
+| `color` | string | a colour as `#rrggbb`, stored in lower case, see 4.10 |
+| `daterange` | object | `{start, end}`, two dates `YYYY-MM-DD`, optional `min` and `max`, see 4.10 |
+| `name` | object | a name in parts (`prefix`, `first`, `middle`, `last`, `suffix`), `parts` picks which, see 4.10 |
+| `address` | object | an address in parts (`street`, `street2`, `city`, `region`, `postal`, `country`), `parts` picks which, see 4.10 |
+| `matrix` | object | one answer per row of a grid: `questions` are the rows, `options` the columns, `multiple`, see 4.10 |
+| `signature` | string | a drawn signature as a small PNG in a `data:image/png;base64,` address, see 4.10 |
 
 Display types (no value, cannot be rule sources, can be rule targets):
 
@@ -541,6 +548,53 @@ Other properties: `alt` (up to 255 characters, what the picture shows; empty mar
 `width` (the most room it takes in its cell, as a percentage: 25, 50, 75 or 100, default 100; a
 picture is never stretched past its own size), and `align` as for a paragraph.
 
+### 4.10 Slider, colour, date range, name, address, matrix and signature (DECISION)
+
+Seven input types. All are ordinary fields: they take a label, help text and `required`, are
+validated on the server like every type, and are checked again on publish.
+
+- **`slider`.** A number picked on a line, with a limit and a step like `number` (`min` 0, `max` 100,
+  `step` 1 when left out; `max` must be above `min` and at most 1000 steps away). Stored as a JSON
+  number. It starts unanswered (shown as "Not set") until the handle is moved, and the answer can be
+  taken back. A rule treats it as a number. It has a default value and fills from the address like a
+  `number`.
+- **`color`.** A colour picker. Stored as `#rrggbb` in lower case; the server accepts either case and
+  refuses anything but six hex digits. Rules: `eq`, `neq`, `empty`, `not_empty`. It has a default
+  and fills from the address (`ff8800` or `%23ff8800`).
+- **`daterange`.** A first and a last day, stored as `{"start": "...", "end": "..."}`. Both or neither:
+  one alone is `incomplete_range`, an end before the start is `range_reversed`. `min` and `max` limit
+  both ends, as for `date`. `minDays` and `maxDays` (whole numbers, 0 to 3660) limit the number of days from
+  the first date to the last: 0 for one day, so `minDays: 1` means the last date must come after the first
+  (`range_too_short`) and `maxDays: 7` allows at most a week (`range_too_long`). The form's date pickers
+  already stop people choosing a last date outside those limits.
+- **`name` and `address`.** Asked in parts, each a text of up to 200 characters, stored as an object
+  holding only the parts that were answered, in the order the parts are listed in the table above.
+  `parts` is a list of the parts to ask for: a name defaults to `first` and `last`, an address to all
+  six. Only parts the field asks for are accepted. When the field is required, a name needs `first` and
+  `last` (whichever it asks for), and an address needs `street`, `city`, `postal` and `country`
+  (whichever it asks for); `street2` and `region` are never needed. A part missing then gives
+  `incomplete` (`required` when nothing at all was answered). Browsers can fill the parts themselves.
+- **`matrix`.** A grid: `questions` are the rows and `options` the columns, both lists of
+  `{value, label}` as for choices (value pattern as in 4.3). At most 20 rows and 10 columns. One column
+  per row, or any number when `multiple` is true. Stored as an object from row value to the column
+  value (a list of column values with `multiple`), holding the rows that were answered, in row order.
+  When required, every row needs an answer (`incomplete`).
+- **`signature`.** A pad to draw on with a mouse, finger or pen. Stored as a PNG in a `data:` address.
+  The server decodes it, checks the PNG header and refuses anything over 200,000 characters
+  (`invalid_signature`, `signature_too_large`), so no other kind of file can be stored through it.
+  There is no default and no filling from the address. A draft saved by the respondent in their browser
+  (21) leaves signatures out. Responses show it as a picture on a white background; downloads, emails
+  and Tables show "(signature)" so the picture is never put in text, and free-text search skips it.
+- **Rules.** `name`, `address`, `matrix`, `daterange` and `signature` can only be asked whether they were
+  answered (`empty`, `not_empty`). Anything else about them would be guessing at the respondent's text.
+- **Reading an answer.** Downloads, emails and webhook text read a matrix as `Row: Column; Row: Column`
+  (columns joined with commas under `multiple`), a date range as `start to end`, a name on one line and
+  an address in commas. The webhook body carries the stored objects as they are, and a signature as its `data:` address. A Tables column
+  for any of these is a text column; a slider fills a number column.
+- **Summary** (17.2): a slider is summarised as a number.
+- **Not filled from the address or a default in the builder:** `name`, `address`, `matrix`,
+  `daterange` and `signature` (a draft may still carry a `defaultValue` object that the field accepts).
+
 ## 5. Layout: pages > rows > cells (DECISION)
 
 - `pages`: ordered, 1 to 20. Each page is shown as one step; respondents move
@@ -687,6 +741,8 @@ Comparison semantics (**DECISION**, must be identical in PHP and TypeScript):
 - `number`, `rating`, `scale`: numeric. A non-numeric stored value counts as empty.
 - `date`, `time` and `datetime`: lexical comparison on the normalized string formats above.
 - `checkbox`, `consent`: compares as boolean (`eq` with `true` or `false`).
+- `slider`: numeric, as `number`. `color`: compared in lower case.
+- `name`, `address`, `matrix`, `daterange`, `signature`: only whether anything was answered.
 - Empty means: missing, `null`, empty string after trim, or empty array.
 - A comparison against an empty value is false, except `empty`, `neq`,
   `not_contains`, `not_in`, and `contains_none`, which are true. `contains_all`
@@ -709,6 +765,9 @@ Normalization before comparing (applied to the submitted value and to the rule's
 - `checkbox`, `consent`: a boolean. Any other type counts as empty.
 - `date`, `time`, `datetime`: strings in the formats from section 4.2, anything else counts
   as empty.
+- `slider`: as `number`. `color`: `#` and six hex digits, lowercased, anything else is empty.
+- `name`, `address`, `matrix`, `daterange`: an object with at least one key (a list or an empty object
+  is empty). `signature`: a string starting with `data:image/png;base64,`.
 
 Operators allowed per field type (a rule using any other operator is rejected
 on save, and evaluates to false if it ever reaches the engine):
@@ -716,14 +775,16 @@ on save, and evaluates to false if it ever reaches the engine):
 | field type | operators |
 | --- | --- |
 | `text`, `textarea`, `email`, `phone`, `url` | `eq`, `neq`, `contains`, `not_contains`, `in`, `not_in`, `empty`, `not_empty` |
-| `number`, `rating`, `scale` | `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `not_in`, `empty`, `not_empty` |
+| `number`, `rating`, `scale`, `slider` | `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `not_in`, `empty`, `not_empty` |
 | `select`, `radio` | `eq`, `neq`, `in`, `not_in`, `empty`, `not_empty` |
 | `checkboxes` | `contains`, `not_contains`, `empty`, `not_empty` |
 | `checkbox`, `consent` | `eq`, `neq` |
+| `color` | `eq`, `neq`, `empty`, `not_empty` |
+| `name`, `address`, `matrix`, `daterange`, `signature`, `file` | `empty`, `not_empty` |
 | `date`, `time`, `datetime` | `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `empty`, `not_empty` |
 
 Rule values must fit the source field: for `select`, `radio`, and `checkboxes`
-they must be existing option values, for `number`, `rating` and `scale` a number, for `checkbox` and
+they must be existing option values, for `number`, `rating`, `scale` and `slider` a number, for `color` a `#rrggbb` colour, for `checkbox` and
 `consent` a boolean, for `date`, `time` and `datetime` a valid string. `in` and `not_in` take a
 non-empty list of such values. `empty` and `not_empty` take no value. `all` and
 `any` groups must not be empty.

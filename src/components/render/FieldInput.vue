@@ -6,11 +6,15 @@
 <script setup lang="ts">
 import type { FormField, LabelPosition } from '../../types.ts'
 
-import { n } from '@nextcloud/l10n'
+import { n, t } from '@nextcloud/l10n'
 import { computed } from 'vue'
+import { addDays } from '../../answers.ts'
 import { icons } from '../../icons.ts'
 import { isTemporalType, steps, temporalInputType } from '../../rules/fieldTypes.ts'
 import FileInput from './FileInput.vue'
+import MatrixInput from './MatrixInput.vue'
+import PartsInput from './PartsInput.vue'
+import SignatureInput from './SignatureInput.vue'
 import type { UploadState } from './uploadState.ts'
 import MarkdownText from './MarkdownText.ts'
 import './typography.css'
@@ -59,6 +63,37 @@ const isDisplay = computed(() => ['heading', 'paragraph', 'divider', 'image'].in
 const imageStyle = computed(() => ({ maxWidth: ([25, 50, 75].includes(props.field.width ?? 100) ? props.field.width : 100) + '%' }))
 const isTemporal = computed(() => isTemporalType(props.field.type))
 const isPick = computed(() => props.field.type === 'rating' || props.field.type === 'scale')
+/** Answers with several parts or controls: a fieldset names the whole answer, like a group of options. */
+const isCompound = computed(() => ['matrix', 'daterange', 'name', 'address', 'signature'].includes(props.field.type))
+const rangeValue = computed<{ start: string, end: string }>(() => {
+	const value = props.modelValue
+	const given = typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : {}
+	return { start: typeof given.start === 'string' ? given.start : '', end: typeof given.end === 'string' ? given.end : '' }
+})
+/** The earliest and latest last date, from the first date and the field's own limits. */
+const rangeEndMin = computed(() => {
+	const floor = textLimit(props.field.min)
+	const start = rangeValue.value.start
+	if (start === '') {
+		return floor
+	}
+	const earliest = addDays(start, props.field.minDays ?? 0)
+	return floor !== undefined && floor > earliest ? floor : earliest
+})
+const rangeEndMax = computed(() => {
+	const ceiling = textLimit(props.field.max)
+	const start = rangeValue.value.start
+	if (start === '' || props.field.maxDays === undefined) {
+		return ceiling
+	}
+	const latest = addDays(start, props.field.maxDays)
+	return ceiling !== undefined && ceiling < latest ? ceiling : latest
+})
+const sliderMin = computed(() => (typeof props.field.min === 'number' ? props.field.min : 0))
+const sliderMax = computed(() => (typeof props.field.max === 'number' ? props.field.max : 100))
+const sliderStep = computed(() => (typeof props.field.step === 'number' && props.field.step > 0 ? props.field.step : 1))
+const answered = computed(() => stringValue.value !== '')
+const colorValue = computed(() => (/^#[0-9a-f]{6}$/i.test(stringValue.value) ? stringValue.value : '#000000'))
 const isGroup = computed(() => props.field.type === 'radio' || props.field.type === 'checkboxes' || isPick.value)
 const pickValues = computed(() => (isPick.value ? steps(props.field) : []))
 /** The picked number of a rating or a scale, or null. Kept as text like every typed answer. */
@@ -93,6 +128,10 @@ function onInput(event: Event) {
 /** Pick a number; picking the one already chosen takes the answer back. */
 function pick(value: number) {
 	emit('update:modelValue', picked.value === value ? '' : String(value))
+}
+
+function setRange(key: 'start' | 'end', event: Event) {
+	emit('update:modelValue', { ...rangeValue.value, [key]: (event.target as HTMLInputElement).value })
 }
 
 function onCheckbox(event: Event) {
@@ -210,6 +249,56 @@ function toggleOption(value: string, event: Event) {
 			</div>
 		</fieldset>
 
+		<!-- A matrix, a date range, a name, an address or a signature: one answer in several parts. -->
+		<fieldset v-else-if="isCompound" class="af-group" :aria-describedby="describedBy" :aria-invalid="error ? true : undefined">
+			<legend :class="{ 'af-sr-only': hiddenLabel }">
+				{{ field.label }}<span v-if="required && !hideRequiredIndicator" aria-hidden="true"> *</span>
+			</legend>
+			<p v-if="field.description" :id="domId + '-desc'" class="af-description">
+				{{ field.description }}
+			</p>
+			<MatrixInput v-if="field.type === 'matrix'"
+				:field-id="fieldId"
+				:field="field"
+				:model-value="modelValue"
+				:required="required"
+				@update:model-value="(value) => emit('update:modelValue', value)" />
+			<PartsInput v-else-if="field.type === 'name' || field.type === 'address'"
+				:field-id="fieldId"
+				:field="field"
+				:model-value="modelValue"
+				:invalid="Boolean(error)"
+				@update:model-value="(value) => emit('update:modelValue', value)" />
+			<SignatureInput v-else-if="field.type === 'signature'"
+				:model-value="stringValue"
+				:invalid="Boolean(error)"
+				:required="required"
+				@update:model-value="(value) => emit('update:modelValue', value)" />
+			<div v-else class="af-range">
+				<label>
+					<span class="af-range__label">{{ t('webforms', 'From') }}</span>
+					<input :id="domId"
+						type="date"
+						:value="rangeValue.start"
+						:min="textLimit(field.min)"
+						:max="rangeValue.end !== '' ? rangeValue.end : textLimit(field.max)"
+						:aria-required="required || undefined"
+						:aria-invalid="error ? true : undefined"
+						@input="setRange('start', $event)">
+				</label>
+				<label>
+					<span class="af-range__label">{{ t('webforms', 'To') }}</span>
+					<input type="date"
+						:value="rangeValue.end"
+						:min="rangeEndMin"
+						:max="rangeEndMax"
+						:aria-required="required || undefined"
+						:aria-invalid="error ? true : undefined"
+						@input="setRange('end', $event)">
+				</label>
+			</div>
+		</fieldset>
+
 		<!-- Groups use fieldset and legend so the label names the whole group. -->
 		<fieldset v-else-if="isGroup" class="af-group" :aria-describedby="describedBy" :aria-invalid="error ? true : undefined">
 			<legend :class="{ 'af-sr-only': hiddenLabel }">
@@ -274,6 +363,40 @@ function toggleOption(value: string, event: Event) {
 					{{ option.label }}
 				</option>
 			</select>
+			<div v-else-if="field.type === 'slider'" class="af-slider">
+				<input :id="domId"
+					type="range"
+					class="af-slider__range"
+					:class="{ 'af-slider__range--unset': !answered }"
+					:min="sliderMin"
+					:max="sliderMax"
+					:step="sliderStep"
+					:value="answered ? stringValue : sliderMin"
+					:aria-required="required || undefined"
+					:aria-invalid="error ? true : undefined"
+					:aria-describedby="describedBy"
+					@input="onInput">
+				<output class="af-slider__value" :for="domId">
+					<template v-if="answered">{{ field.prefix }}{{ stringValue }}{{ field.suffix }}</template>
+					<template v-else>{{ t('webforms', 'Not set') }}</template>
+				</output>
+				<button v-if="answered" type="button" class="af-slider__clear" @click="emit('update:modelValue', '')">
+					{{ t('webforms', 'Clear') }}
+				</button>
+			</div>
+			<div v-else-if="field.type === 'color'" class="af-colour">
+				<input :id="domId"
+					type="color"
+					:value="colorValue"
+					:aria-required="required || undefined"
+					:aria-invalid="error ? true : undefined"
+					:aria-describedby="describedBy"
+					@input="onInput">
+				<output class="af-colour__value" :for="domId">{{ answered ? stringValue : t('webforms', 'Not chosen') }}</output>
+				<button v-if="answered" type="button" class="af-slider__clear" @click="emit('update:modelValue', '')">
+					{{ t('webforms', 'Clear') }}
+				</button>
+			</div>
 			<div v-else class="af-input" :class="{ 'af-input--affixed': hasAffix }">
 				<span v-if="field.type === 'number' && field.prefix" class="af-affix" aria-hidden="true">{{ field.prefix }}</span>
 				<input :id="domId"
@@ -293,7 +416,7 @@ function toggleOption(value: string, event: Event) {
 			</div>
 		</template>
 
-		<p v-if="field.description && !isGroup" :id="domId + '-desc'" class="af-description">
+		<p v-if="field.description && !isGroup && !isCompound" :id="domId + '-desc'" class="af-description">
 			{{ field.description }}
 		</p>
 		<p v-if="error" :id="domId + '-err'" class="af-error" role="alert">
@@ -483,6 +606,56 @@ function toggleOption(value: string, event: Event) {
 	margin-top: 4px;
 	color: var(--color-text-maxcontrast);
 	font-size: 0.9em;
+}
+
+.af-range {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 16px;
+}
+
+.af-range label {
+	display: block;
+	flex: 1 1 10rem;
+}
+
+.af-range__label {
+	display: block;
+	margin-bottom: 2px;
+	color: var(--color-text-maxcontrast);
+	font-size: 0.9em;
+}
+
+.af-slider,
+.af-colour {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 16px;
+}
+
+.af-field .af-slider__range {
+	flex: 1 1 12rem;
+	width: auto;
+	min-height: var(--default-clickable-area, 34px);
+	accent-color: var(--color-primary-element);
+}
+
+.af-field .af-slider__range--unset {
+	opacity: 0.55;
+}
+
+.af-slider__value,
+.af-colour__value {
+	min-width: 4rem;
+	font-variant-numeric: tabular-nums;
+}
+
+.af-field .af-colour input[type='color'] {
+	width: 64px;
+	height: var(--default-clickable-area, 34px);
+	padding: 2px;
+	cursor: pointer;
 }
 
 .af-description {

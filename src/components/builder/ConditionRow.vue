@@ -118,6 +118,13 @@ function setList(raw: string | number): void {
 					label="label"
 					@update:model-value="(value: string) => emit('update', { ...leaf, value })" />
 
+				<label v-else-if="type === 'color'" class="af-cond__native">
+					<span>{{ t('webforms', 'Value') }}</span>
+					<input type="color"
+						:value="/^#[0-9a-f]{6}$/i.test(scalarText) ? scalarText : '#ff0000'"
+						@input="setScalar(($event.target as HTMLInputElement).value)">
+				</label>
+
 				<NcTextField v-else-if="kind === 'list'"
 					:model-value="listText"
 					:label="t('webforms', 'Values, separated by commas')"

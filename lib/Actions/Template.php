@@ -182,6 +182,14 @@ final class Template {
 			// Stored files: only their names are ever put in text.
 			return implode(', ', array_map(static fn (mixed $file): string => is_array($file) && is_string($file['name'] ?? null) ? $file['name'] : '', array_values($value)));
 		}
+		$type = $field['type'] ?? null;
+		if ($type === FieldType::SIGNATURE) {
+			// The picture is never put in text; it is read in the responses.
+			return is_string($value) && $value !== '' ? '(signature)' : '';
+		}
+		if (is_array($value) && is_string($type) && FieldType::isComposite($type)) {
+			return self::composite($field, $type, $value);
+		}
 		if (is_array($value)) {
 			return implode(', ', array_map(static fn (mixed $item): string => self::optionLabel($field, $item), array_values($value)));
 		}
@@ -193,6 +201,33 @@ final class Template {
 			return str_replace('T', ' ', $value);
 		}
 		return self::optionLabel($field, $value);
+	}
+
+	/**
+	 * A matrix as `Row: Column; Row: Column`, a date range as `start to end`, a name on one line and an
+	 * address as comma separated parts.
+	 *
+	 * @param array<string, mixed> $field
+	 * @param array<mixed> $value
+	 */
+	private static function composite(array $field, string $type, array $value): string {
+		if ($type === FieldType::DATE_RANGE) {
+			return trim((string)($value['start'] ?? '') . ' to ' . (string)($value['end'] ?? ''));
+		}
+		if ($type === FieldType::MATRIX) {
+			$rows = [];
+			foreach (is_array($field['questions'] ?? null) ? $field['questions'] : [] as $row) {
+				if (!is_array($row) || !is_string($row['value'] ?? null) || !isset($value[$row['value']])) {
+					continue;
+				}
+				$answer = $value[$row['value']];
+				$picked = array_map(static fn (mixed $one): string => self::optionLabel($field, $one), is_array($answer) ? array_values($answer) : [$answer]);
+				$rows[] = (is_string($row['label'] ?? null) ? $row['label'] : $row['value']) . ': ' . implode(', ', $picked);
+			}
+			return implode('; ', $rows);
+		}
+		$parts = array_values(array_filter(array_map(static fn (mixed $part): string => is_scalar($part) ? (string)$part : '', $value), static fn (string $part): bool => $part !== ''));
+		return implode($type === FieldType::NAME ? ' ' : ', ', $parts);
 	}
 
 	/**
