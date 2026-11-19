@@ -516,9 +516,9 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 
 <style scoped>
 .af-action {
-	border: 1px solid var(--color-border);
+	border: 1px solid transparent;
 	border-radius: var(--border-radius-large);
-	background: var(--color-main-background);
+	background: var(--color-background-hover);
 	transition: border-color 0.12s ease;
 }
 
@@ -545,7 +545,7 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 }
 
 .af-action__head:hover {
-	background: var(--color-background-hover);
+	background: var(--color-background-dark);
 }
 
 .af-action__head:focus-visible {
@@ -554,7 +554,8 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 }
 
 .af-action__title {
-	font-weight: bold;
+	font-size: 16px;
+	font-weight: 600;
 }
 
 .af-action__summary {
@@ -600,17 +601,22 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 	display: flex;
 	flex-direction: column;
 	gap: calc(var(--default-grid-baseline) * 3);
-	padding: 0 calc(var(--default-grid-baseline) * 3) calc(var(--default-grid-baseline) * 3);
+	margin: 0 calc(var(--default-grid-baseline) * 3);
+	padding: calc(var(--default-grid-baseline) * 3) 0;
+	border-top: 1px solid var(--color-border);
 }
 
+/* Each part of the body is its own labelled block, set off by a thin line. */
 .af-action__group {
 	display: flex;
 	flex-direction: column;
 	gap: var(--default-grid-baseline);
+	padding-top: calc(var(--default-grid-baseline) * 3);
+	border-top: 1px solid var(--color-border);
 }
 
 .af-action__caption {
-	font-weight: bold;
+	font-weight: 500;
 }
 
 .af-action__hint {
@@ -650,6 +656,8 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 
 .af-action__footer {
 	justify-content: flex-end;
+	padding-top: calc(var(--default-grid-baseline) * 3);
+	border-top: 1px solid var(--color-border);
 }
 
 .af-action__ok {
