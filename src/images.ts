@@ -5,6 +5,7 @@
 
 // Where an image block's picture is loaded from (docs/SCHEMA.md section 4.9). Mirrors lib/Forms/ImageSource.php.
 
+import { getAccess } from './access.ts'
 import { isEmbedded } from './embedded.ts'
 import { url } from './api/http.ts'
 
@@ -43,5 +44,7 @@ export function publicImageUrl(src: string, token: string, fieldId: string, vers
 		return null
 	}
 	// The version makes a newly published picture replace a cached one.
+	const access = getAccess(token)
 	return url('/public/' + encodeURIComponent(token) + (isEmbedded() ? '/embed' : '') + '/image/' + encodeURIComponent(fieldId)) + '?v=' + versionId
+		+ (access === '' ? '' : '&access=' + encodeURIComponent(access))
 }

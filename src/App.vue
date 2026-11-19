@@ -22,7 +22,7 @@ import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { createForm, formExportUrl, importForm, listForms, setFormArchived } from './api/forms.ts'
+import { createForm, duplicateForm, formExportUrl, importForm, listForms, setFormArchived } from './api/forms.ts'
 import { ApiError } from './api/http.ts'
 import { DEFAULT_PREFERENCES, fetchUserPolicy, fetchUserPreferences, OPEN_POLICY, saveUserPreferences } from './api/settings.ts'
 import type { UserPolicy, UserPreferences } from './api/settings.ts'
@@ -205,6 +205,20 @@ function onDeleted(): void {
 	open(null)
 }
 
+const duplicateFailed = ref(false)
+
+/** A new draft with the same content, opened at once so it can be renamed. */
+async function duplicate(form: OwnerForm): Promise<void> {
+	duplicateFailed.value = false
+	try {
+		const { form: copy } = await duplicateForm(form.id, t('webforms', 'Copy of {title}', { title: form.title }))
+		forms.value = [copy, ...forms.value]
+		open(copy.id)
+	} catch {
+		duplicateFailed.value = true
+	}
+}
+
 async function toggleArchived(form: OwnerForm): Promise<void> {
 	archiveError.value = false
 	try {
@@ -269,6 +283,12 @@ function hasNewerDraft(form: OwnerForm): boolean {
 								</template>
 								{{ t('webforms', 'Export published version') }}
 							</NcActionLink>
+							<NcActionButton :disabled="!policy.canCreate" close-after-click @click="duplicate(form)">
+								<template #icon>
+									<Icon :path="icons.copy" :inline="false" />
+								</template>
+								{{ t('webforms', 'Duplicate') }}
+							</NcActionButton>
 							<NcActionButton close-after-click @click="toggleArchived(form)">
 								<template #icon>
 									<Icon :path="icons.archive" :inline="false" />
@@ -335,6 +355,9 @@ function hasNewerDraft(form: OwnerForm): boolean {
 					<NcButton variant="tertiary" @click="load">
 						{{ t('webforms', 'Try again') }}
 					</NcButton>
+				</NcNoteCard>
+				<NcNoteCard v-if="duplicateFailed" type="error">
+					{{ t('webforms', 'Could not duplicate the form.') }}
 				</NcNoteCard>
 				<NcNoteCard v-if="archiveError" type="error">
 					{{ t('webforms', 'Could not change the archive state. Try again.') }}

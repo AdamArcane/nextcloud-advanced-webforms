@@ -87,6 +87,21 @@ class FormController extends Controller {
 		));
 	}
 
+	/**
+	 * A new draft with the same content as this form's draft. `title` names the copy.
+	 */
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/forms/{id}/duplicate')]
+	public function duplicate(int $id, string $title = ''): JSONResponse {
+		return $this->guard(function () use ($id, $title): JSONResponse {
+			$copy = $this->service->duplicateForm($this->userId(), $id, $title);
+			return new JSONResponse([
+				'form' => $this->service->toArray($copy['form'], true),
+				'errors' => $copy['errors'],
+			], Http::STATUS_CREATED);
+		});
+	}
+
 	#[NoAdminRequired]
 	#[FrontpageRoute(verb: 'GET', url: '/api/v1/forms/{id}')]
 	public function show(int $id): JSONResponse {
@@ -194,9 +209,9 @@ class FormController extends Controller {
 	 */
 	#[NoAdminRequired]
 	#[FrontpageRoute(verb: 'PUT', url: '/api/v1/forms/{id}/share')]
-	public function setShare(int $id, ?string $slug = null, bool $embed = false, array $embedOrigins = []): JSONResponse {
+	public function setShare(int $id, ?string $slug = null, bool $embed = false, array $embedOrigins = [], ?string $password = null, bool $removePassword = false): JSONResponse {
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
-			$this->service->toArray($this->service->setShare($this->userId(), $id, $slug, $embed, $embedOrigins)),
+			$this->service->toArray($this->service->setShare($this->userId(), $id, $slug, $embed, $embedOrigins, $password, $removePassword)),
 		));
 	}
 

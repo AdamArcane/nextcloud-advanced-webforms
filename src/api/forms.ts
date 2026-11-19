@@ -79,9 +79,13 @@ export interface ShareOptions {
 	embed: boolean
 	/** Websites allowed to do so. Empty means any. */
 	embedOrigins: string[]
+	/** A new password for the link. Left out, the password stays as it is. */
+	password?: string
+	/** Take the password off the link. */
+	removePassword?: boolean
 }
 
-/** Rejects with an ApiError (status 422) whose `errors` say what is wrong: `slug_invalid`, `slug_reserved`, `slug_taken`, `embed_origins_invalid`. */
+/** Rejects with an ApiError (status 422) whose `errors` say what is wrong: `slug_invalid`, `slug_reserved`, `slug_taken`, `embed_origins_invalid`, `password_too_short`, `password_too_long`. */
 export function setFormShare(id: number, share: ShareOptions): Promise<OwnerForm> {
 	return call(axios.put<OwnerForm>(url('/forms/' + id + '/share'), share))
 }
@@ -176,6 +180,11 @@ export function formExportUrl(id: number, source: ExportSource): string {
 /** Where the zip of every form the user owns is downloaded (docs/SCHEMA.md section 13.1). Opened as a link. */
 export function formsBackupUrl(): string {
 	return generateUrl('/apps/webforms/api/v1/backup')
+}
+
+/** A new draft with the same content as this form's draft. Rejects with an ApiError. */
+export function duplicateForm(id: number, title: string): Promise<SaveResult> {
+	return call(axios.post<SaveResult>(url('/forms/' + id + '/duplicate'), { title }))
 }
 
 /** Create a new draft form from the parsed contents of an export file. Rejects with an ApiError. */

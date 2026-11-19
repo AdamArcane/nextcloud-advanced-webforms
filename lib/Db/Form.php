@@ -29,6 +29,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setPublicToken(?string $publicToken)
  * @method string|null getSlug()
  * @method void setSlug(?string $slug)
+ * @method string|null getLinkPassword()
+ * @method void setLinkPassword(?string $linkPassword)
  * @method int getEmbed()
  * @method void setEmbed(int $embed)
  * @method string|null getEmbedOrigins()
@@ -57,6 +59,8 @@ class Form extends Entity {
 	protected $status = self::STATUS_UNPUBLISHED;
 	protected $publicToken;
 	protected $slug;
+	/** The hash of the password on the public link, or null for none (docs/SCHEMA.md section 18.5). */
+	protected $linkPassword;
 	protected $embed = 0;
 	protected $embedOrigins;
 	protected $latestVersionId;
@@ -75,6 +79,7 @@ class Form extends Entity {
 		$this->addType('status', 'integer');
 		$this->addType('publicToken', 'string');
 		$this->addType('slug', 'string');
+		$this->addType('linkPassword', 'string');
 		$this->addType('embed', 'integer');
 		$this->addType('embedOrigins', 'string');
 		$this->addType('latestVersionId', 'integer');
@@ -86,6 +91,10 @@ class Form extends Entity {
 
 	public function isArchived(): bool {
 		return $this->getArchivedAt() !== null;
+	}
+
+	public function hasLinkPassword(): bool {
+		return $this->getLinkPassword() !== null && $this->getLinkPassword() !== '';
 	}
 
 	/** Whether other websites may show this form in a frame. */

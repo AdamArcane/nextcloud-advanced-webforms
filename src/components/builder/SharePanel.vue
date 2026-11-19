@@ -10,6 +10,7 @@ import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
+import NcPasswordField from '@nextcloud/vue/components/NcPasswordField'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { computed, ref, watch } from 'vue'
@@ -61,13 +62,16 @@ const saving = ref(false)
 const slugError = ref<string | null>(null)
 const originsError = ref<string | null>(null)
 const failed = ref(false)
+const passwordError = ref<string | null>(null)
 
 const slugText = ref(props.form.slug ?? '')
 const originsText = ref((props.form.embedOrigins ?? []).join('\n'))
+const passwordText = ref('')
 watch(() => props.form.id, () => {
 	slugText.value = props.form.slug ?? ''
 	originsText.value = (props.form.embedOrigins ?? []).join('\n')
-	slugError.value = originsError.value = null
+	passwordText.value = ''
+	slugError.value = originsError.value = passwordError.value = null
 })
 
 const slugChanged = computed(() => slugText.value.trim() !== (props.form.slug ?? ''))
@@ -82,7 +86,7 @@ function slugMessage(code: string): string {
 }
 
 /** Save the sharing options, with `patch` over what the form has now. */
-async function save(patch: { slug?: string | null, embed?: boolean, embedOrigins?: string[] }): Promise<boolean> {
+async function save(patch: { slug?: string | null, embed?: boolean, embedOrigins?: string[], password?: string, removePassword?: boolean }): Promise<boolean> {
 	saving.value = true
 	failed.value = false
 	try {
@@ -98,13 +102,19 @@ async function save(patch: { slug?: string | null, embed?: boolean, embedOrigins
 		const errors = error instanceof ApiError && error.status === 422 ? error.errors as unknown as Array<{ code: string, path?: string }> : []
 		const slugProblem = errors.find((one) => one.path === 'slug')
 		const originsProblem = errors.find((one) => one.path === 'embedOrigins')
+		const passwordProblem = errors.find((one) => one.path === 'password')
 		if (slugProblem) {
 			slugError.value = slugMessage(slugProblem.code)
 		}
 		if (originsProblem) {
 			originsError.value = t('webforms', 'Write each website as its address without a path, like https://www.example.com')
 		}
-		failed.value = !slugProblem && !originsProblem
+		if (passwordProblem) {
+			passwordError.value = passwordProblem.code === 'password_too_long'
+				? t('webforms', 'Use at most {max} characters.', { max: MAX_PASSWORD })
+				: t('webforms', 'Use at least {min} characters.', { min: MIN_PASSWORD })
+		}
+		failed.value = !slugProblem && !originsProblem && !passwordProblem
 		return false
 	} finally {
 		saving.value = false
@@ -121,6 +131,27 @@ async function saveSlug(): Promise<void> {
 	if (await save({ slug: slug === '' ? null : slug })) {
 		slugText.value = slug
 	}
+}
+
+// The same limits as the server, so a short one is caught before it is sent (FormService::MIN_LINK_PASSWORD).
+const MIN_PASSWORD = 6
+const MAX_PASSWORD = 200
+
+async function savePassword(): Promise<void> {
+	passwordError.value = null
+	const password = passwordText.value
+	if (password.length < MIN_PASSWORD) {
+		passwordError.value = t('webforms', 'Use at least {min} characters.', { min: MIN_PASSWORD })
+		return
+	}
+	if (await save({ password })) {
+		passwordText.value = ''
+	}
+}
+
+async function removePassword(): Promise<void> {
+	passwordError.value = null
+	await save({ removePassword: true })
 }
 
 function tidy(): void {
@@ -209,6 +240,35 @@ const snippet = computed(() => {
 			{{ form.slug
 				? t('webforms', 'Anyone who guesses this address can open the form. The original link keeps working too. If you change or remove the address, links and QR codes that use it stop working.')
 				: t('webforms', 'Anyone who guesses a custom address can open the form, unlike the random link.') }}
+		</p>
+	</section>
+
+	<section class="af-share">
+		<h3 class="af-share__heading">
+			{{ t('webforms', 'Password') }}
+		</h3>
+		<p class="af-share__hint">
+			{{ form.hasPassword
+				? t('webforms', 'Anyone who opens the link or the custom address is asked for a password first. Enter a new one to change it. Everyone who already got in is asked again.')
+				: t('webforms', 'Ask for a password before the form opens. It applies to the link and to the custom address.') }}
+		</p>
+		<NcPasswordField v-model="passwordText"
+			:label="form.hasPassword ? t('webforms', 'New password') : t('webforms', 'Password')"
+			:error="passwordError !== null"
+			:helper-text="passwordError ?? ''"
+			autocomplete="new-password"
+			maxlength="200"
+			@keydown.enter.prevent="savePassword" />
+		<div class="af-share__row">
+			<NcButton variant="secondary" :disabled="saving || passwordText === ''" @click="savePassword">
+				{{ form.hasPassword ? t('webforms', 'Change password') : t('webforms', 'Set password') }}
+			</NcButton>
+			<NcButton v-if="form.hasPassword" variant="tertiary" :disabled="saving" @click="removePassword">
+				{{ t('webforms', 'Remove password') }}
+			</NcButton>
+		</div>
+		<p class="af-share__hint">
+			{{ t('webforms', 'The password only keeps people out of the form. It does not encrypt the answers, and anyone you give it to can pass it on.') }}
 		</p>
 	</section>
 

@@ -50,6 +50,7 @@ use OCA\Webforms\Forms\Availability;
 use OCA\Webforms\Forms\ShareSettings;
 use OCA\Webforms\Settings\StatusSettings;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\Security\IHasher;
 use OCP\Security\ISecureRandom;
 
 /**
@@ -65,6 +66,9 @@ class FormService {
 	/** Responses one filtered bulk delete may remove. */
 	public const MAX_BULK_MATCHES = 5000;
 	public const MAX_NOTE = 4000;
+	/** The length of a password on a link (docs/SCHEMA.md section 18.5). */
+	public const MIN_LINK_PASSWORD = 6;
+	public const MAX_LINK_PASSWORD = 200;
 
 	public function __construct(
 		private readonly FormMapper $forms,
@@ -84,6 +88,7 @@ class FormService {
 		private readonly StatusSettings $statuses,
 		private readonly OwnerImagePort $images,
 		private readonly UserPreferences $preferences,
+		private readonly IHasher $hasher,
 	) {
 	}
 
@@ -234,7 +239,40 @@ class FormService {
 			throw new ValidationException([['code' => 'title_invalid', 'path' => 'definition.title']]);
 		}
 
-		$form = $this->create($userId, trim($title), false);
+		return $this->createFromDefinition($userId, trim($title), $definition);
+	}
+
+	/**
+	 * A new draft form with the same fields, layout, rules and actions as the draft of one the person
+	 * owns (docs/SCHEMA.md section 13.2). Nothing else comes along: not the responses, the published
+	 * versions, the link, the custom address, the password or the webhook secrets, so the copy is a draft
+	 * that is not shared with anyone until it is published.
+	 *
+	 * @param string $title the name of the copy; empty falls back to "Copy of" and the original name
+	 * @return array{form: Form, errors: list<array{code: string, path: string}>}
+	 * @throws NotFoundException
+	 * @throws ValidationException
+	 */
+	public function duplicateForm(string $userId, int $id, string $title = ''): array {
+		$source = $this->get($userId, $id);
+		$title = trim($title);
+		if ($title === '') {
+			$title = 'Copy of ' . $source->getTitle();
+		}
+		// A copy of a form with a very long title still has to fit.
+		$title = mb_substr($title, 0, 255);
+		$definition = FormPackage::withoutSecrets($source->getDraftDefinition());
+		$definition['title'] = $title;
+		return $this->createFromDefinition($userId, $title, $definition);
+	}
+
+	/**
+	 * @param array<string, mixed> $definition
+	 * @return array{form: Form, errors: list<array{code: string, path: string}>}
+	 * @throws ValidationException
+	 */
+	private function createFromDefinition(string $userId, string $title, array $definition): array {
+		$form = $this->create($userId, $title, false);
 		try {
 			return $this->saveDraft($userId, $form->getId(), $definition);
 		} catch (ValidationException $e) {
@@ -357,10 +395,12 @@ class FormService {
 	 *
 	 * @param string|null $slug the custom address, or null (or empty) for none
 	 * @param array<mixed> $embedOrigins origins allowed to frame the form; empty means any site
+	 * @param string|null $password a new password for the link; null (or empty) leaves it as it is
+	 * @param bool $removePassword take the password off, unless a new one is given
 	 * @throws NotFoundException
 	 * @throws ValidationException
 	 */
-	public function setShare(string $userId, int $id, ?string $slug, bool $embed, array $embedOrigins): Form {
+	public function setShare(string $userId, int $id, ?string $slug, bool $embed, array $embedOrigins, ?string $password = null, bool $removePassword = false): Form {
 		$form = $this->get($userId, $id);
 		$slug = $slug === null ? null : strtolower(trim($slug));
 		if ($slug === '') {
@@ -380,10 +420,25 @@ class FormService {
 		if ($origins === null) {
 			$errors[] = ['code' => 'embed_origins_invalid', 'path' => 'embedOrigins'];
 		}
+		$newPassword = $password === null || $password === '' ? null : $password;
+		if ($newPassword !== null) {
+			$length = mb_strlen($newPassword);
+			if ($length < self::MIN_LINK_PASSWORD) {
+				$errors[] = ['code' => 'password_too_short', 'path' => 'password'];
+			} elseif ($length > self::MAX_LINK_PASSWORD) {
+				$errors[] = ['code' => 'password_too_long', 'path' => 'password'];
+			}
+		}
 		if ($errors !== []) {
 			throw new ValidationException($errors);
 		}
 
+		if ($newPassword !== null) {
+			// Setting a new one also ends every session opened with the old one: the token covers the hash.
+			$form->setLinkPassword($this->hasher->hash($newPassword));
+		} elseif ($removePassword) {
+			$form->setLinkPassword(null);
+		}
 		$form->setSlug($slug);
 		$form->setEmbed($embed ? 1 : 0);
 		$form->setEmbedOrigins($origins === [] ? null : $this->encode($origins));
@@ -943,6 +998,8 @@ class FormService {
 			'status' => $form->getStatus(),
 			'publicToken' => $form->getPublicToken(),
 			'slug' => $form->getSlug(),
+			// Never the password or its hash, only whether there is one.
+			'hasPassword' => $form->hasLinkPassword(),
 			'embed' => $form->isEmbeddable(),
 			'embedOrigins' => $form->getEmbedOriginList(),
 			'latestVersionId' => $form->getLatestVersionId(),

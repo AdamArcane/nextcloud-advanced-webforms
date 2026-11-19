@@ -33,8 +33,8 @@ after-submit action (see the decision below). The work here makes that model com
 
 ## Sharing
 
-Done: custom address, QR code, and embedding in a frame with a list of allowed websites (SCHEMA.md
-section 18). Still open, roughly in order:
+Done: custom address, QR code, embedding in a frame with a list of allowed websites (SCHEMA.md
+section 18), and a password on the link (section 18.5). Still open, roughly in order:
 
 1. A server-wide switch for administrators to forbid embedding.
 2. A plain HTML version of a form, with no script, that takes the look of the website it is pasted
@@ -43,7 +43,7 @@ section 18). Still open, roughly in order:
 3. A button that opens the form in an overlay on the host website.
 4. Regenerating the random link, to revoke one that leaked.
 5. More than one link per form, to tell where a response came from.
-6. A password, and open and close dates, on a link (goes with response limits and scheduling below).
+6. Open and close dates on a link, per link (a form has them for the whole form already).
 
 ## Responses view
 

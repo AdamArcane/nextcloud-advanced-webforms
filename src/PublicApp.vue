@@ -9,10 +9,13 @@ import type { PublicForm } from './types.ts'
 import { t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
+import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
+import NcPasswordField from '@nextcloud/vue/components/NcPasswordField'
 import { onBeforeUnmount, onMounted, ref, useTemplateRef, watchEffect } from 'vue'
-import { ApiError, fetchPublicForm } from './api/public.ts'
+import { clearAccess, setAccess } from './access.ts'
+import { ApiError, fetchPublicForm, unlockPublicForm } from './api/public.ts'
 import { pageBackground } from './design.ts'
 import { reportHeight } from './embedded.ts'
 import FormPage from './components/render/FormPage.vue'
@@ -23,7 +26,7 @@ const props = defineProps<{
 	embed?: boolean
 }>()
 
-type Problem = 'not_found' | 'closed' | 'login_required' | 'failed'
+type Problem = 'not_found' | 'closed' | 'login_required' | 'password_required' | 'failed'
 
 const form = ref<PublicForm | null>(null)
 const problem = ref<Problem | null>(null)
@@ -77,9 +80,42 @@ async function load() {
 			closedReason.value = error.data.reason === 'not_open' || error.data.reason === 'full' ? error.data.reason : 'closed'
 		} else if (error instanceof ApiError && error.status === 401) {
 			problem.value = 'login_required'
+		} else if (error instanceof ApiError && error.status === 403 && error.code === 'password_required') {
+			// A proof kept from an earlier visit may have run out, or the password may have changed.
+			clearAccess(props.token)
+			problem.value = 'password_required'
 		} else {
 			problem.value = 'failed'
 		}
+	}
+}
+
+const password = ref('')
+const unlocking = ref(false)
+const passwordError = ref<string | null>(null)
+
+/** Send the password; with the right one the form loads in place of the question. */
+async function unlock() {
+	if (password.value === '' || unlocking.value) {
+		return
+	}
+	unlocking.value = true
+	passwordError.value = null
+	try {
+		setAccess(props.token, await unlockPublicForm(props.token, password.value))
+		password.value = ''
+		problem.value = null
+		await load()
+	} catch (error) {
+		if (error instanceof ApiError && error.status === 422) {
+			passwordError.value = t('webforms', 'That password is not right.')
+		} else if (error instanceof ApiError && error.status === 429) {
+			passwordError.value = t('webforms', 'Too many attempts. Wait a minute and try again.')
+		} else {
+			passwordError.value = t('webforms', 'The password could not be checked. Please try again.')
+		}
+	} finally {
+		unlocking.value = false
 	}
 }
 
@@ -115,6 +151,22 @@ async function refreshToken() {
 		<NcEmptyContent v-else-if="problem === 'closed'"
 			:name="t('webforms', 'Form closed')"
 			:description="closedMessage ?? t('webforms', 'This form is no longer accepting responses.')" />
+
+		<form v-else-if="problem === 'password_required'"
+			class="af-public__password"
+			@submit.prevent="unlock">
+			<h2>{{ t('webforms', 'This form is protected') }}</h2>
+			<p>{{ t('webforms', 'Enter the password you were given to open it.') }}</p>
+			<NcPasswordField v-model="password"
+				:label="t('webforms', 'Password')"
+				:error="passwordError !== null"
+				:helper-text="passwordError ?? ''"
+				autocomplete="off"
+				maxlength="200" />
+			<NcButton variant="primary" type="submit" :disabled="unlocking || password === ''">
+				{{ t('webforms', 'Open the form') }}
+			</NcButton>
+		</form>
 
 		<NcEmptyContent v-else-if="problem === 'login_required' && embed"
 			:name="t('webforms', 'Login required')"
@@ -154,6 +206,20 @@ async function refreshToken() {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+}
+
+.af-public__password {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	width: 100%;
+	max-width: 360px;
+	margin-top: 10vh;
+}
+
+.af-public__password h2,
+.af-public__password p {
+	margin: 0;
 }
 
 /* In a frame the website around it already gives the form its room. */

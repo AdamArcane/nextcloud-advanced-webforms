@@ -13,6 +13,7 @@ use OCA\Webforms\AppInfo\Application;
 use OCA\Webforms\Exception\FormClosedException;
 use OCA\Webforms\Exception\LoginRequiredException;
 use OCA\Webforms\Exception\NotFoundException;
+use OCA\Webforms\Exception\PasswordRequiredException;
 use OCA\Webforms\Exception\ValidationException;
 use OCA\Webforms\Security\Captcha\CaptchaService;
 use OCA\Webforms\Service\SubmissionService;
@@ -63,9 +64,9 @@ class PublicController extends Controller {
 	#[NoAdminRequired]
 	#[AnonRateLimit(limit: 60, period: 60)]
 	#[FrontpageRoute(verb: 'GET', url: '/api/v1/public/{token}')]
-	public function show(string $token): JSONResponse {
+	public function show(string $token, string $access = ''): JSONResponse {
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
-			$this->service->getPublic($token, $this->userId()),
+			$this->service->getPublic($token, $this->userId(), false, $access),
 		));
 	}
 
@@ -84,12 +85,13 @@ class PublicController extends Controller {
 		string $fillToken = '',
 		string $hp = '',
 		string $captcha = '',
+		string $access = '',
 	): JSONResponse {
 		if (strlen((string)json_encode($values)) > self::MAX_VALUES_BYTES) {
 			return new JSONResponse(['error' => 'too_large'], Http::STATUS_REQUEST_ENTITY_TOO_LARGE);
 		}
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
-			$this->service->submit($token, $this->userId(), $versionId, $values, $fillToken, $hp, $captcha, $this->request->getRemoteAddress()),
+			$this->service->submit($token, $this->userId(), $versionId, $values, $fillToken, $hp, $captcha, $this->request->getRemoteAddress(), false, $access),
 		));
 	}
 
@@ -99,9 +101,9 @@ class PublicController extends Controller {
 	#[AnonRateLimit(limit: 60, period: 60)]
 	#[UserRateLimit(limit: 60, period: 60)]
 	#[FrontpageRoute(verb: 'GET', url: '/api/v1/public/{token}/embed')]
-	public function showEmbedded(string $token): JSONResponse {
+	public function showEmbedded(string $token, string $access = ''): JSONResponse {
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
-			$this->service->getPublic($token, null, true),
+			$this->service->getPublic($token, null, true, $access),
 		));
 	}
 
@@ -121,12 +123,13 @@ class PublicController extends Controller {
 		string $fillToken = '',
 		string $hp = '',
 		string $captcha = '',
+		string $access = '',
 	): JSONResponse {
 		if (strlen((string)json_encode($values)) > self::MAX_VALUES_BYTES) {
 			return new JSONResponse(['error' => 'too_large'], Http::STATUS_REQUEST_ENTITY_TOO_LARGE);
 		}
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
-			$this->service->submit($token, null, $versionId, $values, $fillToken, $hp, $captcha, $this->request->getRemoteAddress(), true),
+			$this->service->submit($token, null, $versionId, $values, $fillToken, $hp, $captcha, $this->request->getRemoteAddress(), true, $access),
 		));
 	}
 
@@ -136,12 +139,35 @@ class PublicController extends Controller {
 	#[AnonRateLimit(limit: 30, period: 60)]
 	#[UserRateLimit(limit: 60, period: 60)]
 	#[FrontpageRoute(verb: 'POST', url: '/api/v1/public/{token}/embed/upload')]
-	public function uploadEmbedded(string $token, int $versionId = 0, string $fieldId = '', string $fillToken = ''): JSONResponse {
+	public function uploadEmbedded(string $token, int $versionId = 0, string $fieldId = '', string $fillToken = '', string $access = ''): JSONResponse {
 		$file = $this->request->getUploadedFile('file');
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
-			$this->service->upload($token, null, $versionId, $fieldId, $fillToken, is_array($file) ? $file : null, true),
+			$this->service->upload($token, null, $versionId, $fieldId, $fillToken, is_array($file) ? $file : null, true, $access),
 			Http::STATUS_CREATED,
 		));
+	}
+
+	/**
+	 * Trade the password of a form's link for an access token (docs/SCHEMA.md section 18.5). Guessing is
+	 * slowed by a tight limit per address; the token it returns is sent with the other public calls.
+	 */
+	#[PublicPage]
+	#[NoAdminRequired]
+	#[AnonRateLimit(limit: 8, period: 60)]
+	#[UserRateLimit(limit: 8, period: 60)]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/public/{token}/unlock')]
+	public function unlock(string $token, string $password = ''): JSONResponse {
+		return $this->guard(fn (): JSONResponse => new JSONResponse(['access' => $this->service->unlock($token, $password)]));
+	}
+
+	#[PublicPage]
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 8, period: 60)]
+	#[UserRateLimit(limit: 8, period: 60)]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/public/{token}/embed/unlock')]
+	public function unlockEmbedded(string $token, string $password = ''): JSONResponse {
+		return $this->guard(fn (): JSONResponse => new JSONResponse(['access' => $this->service->unlock($token, $password, true)]));
 	}
 
 	/**
@@ -170,10 +196,10 @@ class PublicController extends Controller {
 	#[AnonRateLimit(limit: 30, period: 60)]
 	#[UserRateLimit(limit: 60, period: 60)]
 	#[FrontpageRoute(verb: 'POST', url: '/api/v1/public/{token}/upload')]
-	public function upload(string $token, int $versionId = 0, string $fieldId = '', string $fillToken = ''): JSONResponse {
+	public function upload(string $token, int $versionId = 0, string $fieldId = '', string $fillToken = '', string $access = ''): JSONResponse {
 		$file = $this->request->getUploadedFile('file');
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
-			$this->service->upload($token, $this->userId(), $versionId, $fieldId, $fillToken, is_array($file) ? $file : null),
+			$this->service->upload($token, $this->userId(), $versionId, $fieldId, $fillToken, is_array($file) ? $file : null, false, $access),
 			Http::STATUS_CREATED,
 		));
 	}
@@ -187,8 +213,8 @@ class PublicController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 240, period: 60)]
 	#[FrontpageRoute(verb: 'GET', url: '/api/v1/public/{token}/image/{fieldId}')]
-	public function image(string $token, string $fieldId): Response {
-		return $this->sendImage($token, $fieldId, false);
+	public function image(string $token, string $fieldId, string $access = ''): Response {
+		return $this->sendImage($token, $fieldId, false, $access);
 	}
 
 	#[PublicPage]
@@ -196,14 +222,14 @@ class PublicController extends Controller {
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 240, period: 60)]
 	#[FrontpageRoute(verb: 'GET', url: '/api/v1/public/{token}/embed/image/{fieldId}')]
-	public function imageEmbedded(string $token, string $fieldId): Response {
-		return $this->sendImage($token, $fieldId, true);
+	public function imageEmbedded(string $token, string $fieldId, string $access = ''): Response {
+		return $this->sendImage($token, $fieldId, true, $access);
 	}
 
-	private function sendImage(string $token, string $fieldId, bool $embedded): Response {
+	private function sendImage(string $token, string $fieldId, bool $embedded, string $access): Response {
 		try {
-			$source = $this->service->imageSource($token, $embedded ? null : $this->userId(), $fieldId, $embedded);
-		} catch (NotFoundException|FormClosedException|LoginRequiredException) {
+			$source = $this->service->imageSource($token, $embedded ? null : $this->userId(), $fieldId, $embedded, $access);
+		} catch (NotFoundException|FormClosedException|LoginRequiredException|PasswordRequiredException) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		}
 		$mime = ImageSource::mime($source['path']);
@@ -237,6 +263,8 @@ class PublicController extends Controller {
 			return new JSONResponse(['error' => 'closed', 'reason' => $e->getReason(), 'message' => $e->getClosedMessage()], Http::STATUS_GONE);
 		} catch (LoginRequiredException) {
 			return new JSONResponse(['error' => 'login_required'], Http::STATUS_UNAUTHORIZED);
+		} catch (PasswordRequiredException) {
+			return new JSONResponse(['error' => 'password_required'], Http::STATUS_FORBIDDEN);
 		} catch (ValidationException $e) {
 			return new JSONResponse(['error' => 'validation', 'errors' => $e->getErrors()], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}

@@ -20,6 +20,7 @@ use OCA\Webforms\Event\EventPublisher;
 use OCA\Webforms\Exception\FormClosedException;
 use OCA\Webforms\Exception\LoginRequiredException;
 use OCA\Webforms\Exception\NotFoundException;
+use OCA\Webforms\Exception\PasswordRequiredException;
 use OCA\Webforms\Exception\ValidationException;
 use OCA\Webforms\Forms\Availability;
 use OCA\Webforms\Forms\JsonShape;
@@ -28,6 +29,7 @@ use OCA\Webforms\Forms\UploadPolicy;
 use OCA\Webforms\Forms\ImageSource;
 use OCA\Webforms\Rules\FieldType;
 use OCA\Webforms\Security\Captcha\CaptchaService;
+use OCA\Webforms\Security\AccessToken;
 use OCA\Webforms\Security\FillTimeToken;
 use OCA\Webforms\Uploads\UploadRejected;
 use OCA\Webforms\Uploads\UploadService;
@@ -37,6 +39,7 @@ use OCA\Webforms\BackgroundJob\ProcessActionsNowJob;
 use OCA\Webforms\Db\ActionLogMapper;
 use OCP\BackgroundJob\IJobList;
 use OCP\IConfig;
+use OCP\Security\IHasher;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -50,6 +53,7 @@ class SubmissionService {
 	public const NOT_OPEN_MESSAGE = 'This form is not open yet.';
 
 	private readonly FillTimeToken $tokens;
+	private readonly AccessToken $access;
 
 	public function __construct(
 		private readonly FormMapper $forms,
@@ -66,8 +70,11 @@ class SubmissionService {
 		private readonly CaptchaService $captcha,
 		private readonly EventPublisher $events,
 		private readonly PolicyService $policy,
+		private readonly IHasher $hasher,
 	) {
-		$this->tokens = new FillTimeToken($config->getSystemValueString('secret'));
+		$secret = $config->getSystemValueString('secret');
+		$this->tokens = new FillTimeToken($secret);
+		$this->access = new AccessToken($secret);
 	}
 
 	/**
@@ -78,12 +85,13 @@ class SubmissionService {
 	 * @throws NotFoundException unpublished or unknown token
 	 * @throws FormClosedException
 	 * @throws LoginRequiredException
+	 * @throws PasswordRequiredException
 	 */
-	public function getPublic(string $token, ?string $userId, bool $embedded = false): array {
+	public function getPublic(string $token, ?string $userId, bool $embedded = false, string $access = ''): array {
 		$form = $this->findForm($token, $embedded);
 		$userId = $embedded ? null : $userId;
 		$remaining = null;
-		$version = $this->openVersion($form, $userId, $remaining);
+		$version = $this->openVersion($form, $userId, $access, $remaining);
 		$definition = $version->getDefinitionArray();
 		unset($definition['actions']);
 		$captcha = $this->captcha->publicConfig($definition, $userId);
@@ -120,6 +128,7 @@ class SubmissionService {
 	 * @throws NotFoundException
 	 * @throws FormClosedException
 	 * @throws LoginRequiredException
+	 * @throws PasswordRequiredException
 	 * @throws ValidationException field errors use `field` and `code`; form level errors use only `code`
 	 */
 	public function submit(
@@ -132,10 +141,11 @@ class SubmissionService {
 		string $captcha = '',
 		string $remoteIp = '',
 		bool $embedded = false,
+		string $access = '',
 	): array {
 		$form = $this->findForm($token, $embedded);
 		$userId = $embedded ? null : $userId;
-		$latest = $this->openVersion($form, $userId);
+		$latest = $this->openVersion($form, $userId, $access);
 
 		$version = $versionId === $latest->getId() ? $latest : $this->versions->find($versionId);
 		if ($version->getFormId() !== $form->getId()) {
@@ -232,10 +242,10 @@ class SubmissionService {
 	 * @throws LoginRequiredException
 	 * @throws ValidationException
 	 */
-	public function upload(string $token, ?string $userId, int $versionId, string $fieldId, string $fillToken, ?array $file, bool $embedded = false): array {
+	public function upload(string $token, ?string $userId, int $versionId, string $fieldId, string $fillToken, ?array $file, bool $embedded = false, string $access = ''): array {
 		$form = $this->findForm($token, $embedded);
 		$userId = $embedded ? null : $userId;
-		$latest = $this->openVersion($form, $userId);
+		$latest = $this->openVersion($form, $userId, $access);
 		$version = $versionId === $latest->getId() ? $latest : $this->versions->find($versionId);
 		if ($version->getFormId() !== $form->getId()) {
 			throw new NotFoundException();
@@ -316,9 +326,9 @@ class SubmissionService {
 	 * @throws FormClosedException
 	 * @throws LoginRequiredException
 	 */
-	public function imageSource(string $token, ?string $userId, string $fieldId, bool $embedded = false): array {
+	public function imageSource(string $token, ?string $userId, string $fieldId, bool $embedded = false, string $access = ''): array {
 		$form = $this->findForm($token, $embedded);
-		$version = $this->openVersion($form, $embedded ? null : $userId);
+		$version = $this->openVersion($form, $embedded ? null : $userId, $access);
 		$field = $version->getDefinitionArray()['fields'][$fieldId] ?? null;
 		$src = is_array($field) && ($field['type'] ?? null) === FieldType::IMAGE ? ($field['src'] ?? null) : null;
 		$path = is_string($src) && ImageSource::kind($src) === ImageSource::FILES ? ImageSource::filesPath($src) : null;
@@ -326,6 +336,48 @@ class SubmissionService {
 			throw new NotFoundException();
 		}
 		return ['ownerId' => $form->getOwnerId(), 'path' => $path];
+	}
+
+	/**
+	 * Trade the password of a form's link for an access token that opens it for a while
+	 * (docs/SCHEMA.md section 18.5). A form with no password gives an empty token, which it does not need.
+	 *
+	 * @throws NotFoundException unpublished or unknown address
+	 * @throws ValidationException `wrong_password`
+	 */
+	public function unlock(string $token, string $password, bool $embedded = false): string {
+		$form = $this->findForm($token, $embedded);
+		if ($form->getStatus() === Form::STATUS_UNPUBLISHED || $form->getLatestVersionId() === null) {
+			throw new NotFoundException();
+		}
+		$hash = $form->getLinkPassword();
+		if ($hash === null || $hash === '') {
+			return '';
+		}
+		$newHash = '';
+		if ($password === '' || !$this->hasher->verify($password, $hash, $newHash)) {
+			throw new ValidationException([['code' => 'wrong_password']]);
+		}
+		if ($newHash !== '') {
+			// The hashing settings moved on since the password was set. Keep it current, which keeps tokens valid.
+			$form->setLinkPassword($newHash);
+			$this->forms->update($form);
+			$hash = $newHash;
+		}
+		return $this->access->issue($form->getId(), $hash, $this->time->getTime());
+	}
+
+	/**
+	 * @throws PasswordRequiredException
+	 */
+	private function requireAccess(Form $form, string $access): void {
+		$hash = $form->getLinkPassword();
+		if ($hash === null || $hash === '') {
+			return;
+		}
+		if (!$this->access->check($access, $form->getId(), $hash, $this->time->getTime())) {
+			throw new PasswordRequiredException();
+		}
 	}
 
 	private function findForm(string $token, bool $embedded): Form {
@@ -344,11 +396,14 @@ class SubmissionService {
 	 * @throws NotFoundException
 	 * @throws FormClosedException
 	 * @throws LoginRequiredException
+	 * @throws PasswordRequiredException
 	 */
-	private function openVersion(Form $form, ?string $userId, ?int &$remaining = null): \OCA\Webforms\Db\Version {
+	private function openVersion(Form $form, ?string $userId, string $access, ?int &$remaining = null): \OCA\Webforms\Db\Version {
 		if ($form->getStatus() === Form::STATUS_UNPUBLISHED || $form->getLatestVersionId() === null) {
 			throw new NotFoundException();
 		}
+		// Before anything else is said about the form, closed or full included (docs/SCHEMA.md section 18.5).
+		$this->requireAccess($form, $access);
 		$version = $this->versions->find($form->getLatestVersionId());
 		$settings = $version->getDefinitionArray()['settings'] ?? [];
 		$settings = is_array($settings) ? $settings : [];

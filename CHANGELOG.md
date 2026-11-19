@@ -5,6 +5,17 @@
 
 # Changelog
 
+## Unreleased
+
+- Duplicate a form. The menu on each form in the sidebar has **Duplicate**: a new draft with the same fields,
+  layout, rules, actions and settings, opened so it can be renamed. Responses, versions, the link and
+  webhook secrets stay behind. See `docs/SCHEMA.md` section 13.2.
+
+- Password on the public link. Sharing has a **Password** section: with one set, anyone who opens the link,
+  the custom address or an embedded copy is asked for it before seeing anything of the form, even whether it
+  is open. Changing or removing it ends every session at once. Needs a database migration, which runs on
+  upgrade. See `docs/SCHEMA.md` section 18.5.
+
 ## 0.4.1 - 2026-11-17
 
 - The install script (`tools/install-release.sh`) now reloads PHP-FPM after installing, when the user is
