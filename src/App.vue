@@ -31,6 +31,7 @@ import Icon from './components/common/Icon.vue'
 import { icons } from './icons.ts'
 import BuilderView from './components/builder/BuilderView.vue'
 import EntriesView from './components/entries/EntriesView.vue'
+import OverviewView from './components/OverviewView.vue'
 import SettingsDialog from './components/SettingsDialog.vue'
 import { statusText } from './availability.ts'
 import { FORM_STATUS_PUBLISHED } from './types.ts'
@@ -394,9 +395,11 @@ function hasNewerDraft(form: OwnerForm): boolean {
 						</NcButton>
 					</template>
 				</NcEmptyContent>
-				<NcEmptyContent v-else
-					:name="t('webforms', 'Select a form')"
-					:description="t('webforms', 'Choose a form from the list to edit it, or create a new one.')" />
+				<OverviewView v-else
+					:forms="forms"
+					:can-create="policy.canCreate"
+					:creating="creating"
+					@create="create" />
 			</div>
 		</NcAppContent>
 	</NcContent>

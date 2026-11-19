@@ -48,7 +48,7 @@ async function mountList(openPublishedOnResponses: boolean) {
 	])
 	const wrapper = mount(App, { global: { stubs: { BuilderView: true, EntriesView: true, teleport: true } } })
 	await flushPromises()
-	const hrefs = wrapper.findAll('a').map((link) => link.attributes('href')).filter((href) => href?.startsWith('#/f/'))
+	const hrefs = wrapper.findAll('a').filter((link) => !link.element.closest('.af-overview')).map((link) => link.attributes('href')).filter((href) => href?.startsWith('#/f/'))
 	return { wrapper, hrefs }
 }
 
@@ -84,7 +84,7 @@ describe('settings in the sidebar', () => {
 		await input.setValue(false)
 		await flushPromises()
 		expect(saveUserPreferences).toHaveBeenCalledWith({ openPublishedOnResponses: false })
-		const after = wrapper.findAll('a').map((link) => link.attributes('href')).filter((href) => href?.startsWith('#/f/'))
+		const after = wrapper.findAll('a').filter((link) => !link.element.closest('.af-overview')).map((link) => link.attributes('href')).filter((href) => href?.startsWith('#/f/'))
 		expect(after).toEqual(['#/f/1', '#/f/2', '#/f/3', '#/f/4'])
 		wrapper.unmount()
 	})
