@@ -41,6 +41,12 @@ use OCP\AppFramework\Db\Entity;
  * @method void setArchivedAt(?int $archivedAt)
  * @method int|null getResponsesSeenAt()
  * @method void setResponsesSeenAt(?int $responsesSeenAt)
+ * @method int getRevision()
+ * @method void setRevision(int $revision)
+ * @method string|null getDraftSavedBy()
+ * @method void setDraftSavedBy(?string $draftSavedBy)
+ * @method int getDestinationsPending()
+ * @method void setDestinationsPending(int $destinationsPending)
  * @method int getCreatedAt()
  * @method void setCreatedAt(int $createdAt)
  * @method int getUpdatedAt()
@@ -67,6 +73,11 @@ class Form extends Entity {
 	protected $archivedAt;
 	/** When the owner last opened the list of responses. Later responses are new (docs/SCHEMA.md section 20.1). */
 	protected $responsesSeenAt;
+	/** Raised by every draft save; a save must name the revision it started from (docs/SCHEMA.md section 22.6). */
+	protected $revision = 1;
+	protected $draftSavedBy;
+	/** 1 when the form passed to an owner whose Files and Tables it cannot use yet (docs/SCHEMA.md section 22.7). */
+	protected $destinationsPending = 0;
 	protected $createdAt;
 	protected $updatedAt;
 
@@ -85,8 +96,15 @@ class Form extends Entity {
 		$this->addType('latestVersionId', 'integer');
 		$this->addType('archivedAt', 'integer');
 		$this->addType('responsesSeenAt', 'integer');
+		$this->addType('revision', 'integer');
+		$this->addType('draftSavedBy', 'string');
+		$this->addType('destinationsPending', 'integer');
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');
+	}
+
+	public function needsDestinations(): bool {
+		return (int)$this->getDestinationsPending() === 1;
 	}
 
 	public function isArchived(): bool {

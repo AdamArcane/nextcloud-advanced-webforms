@@ -101,6 +101,7 @@ class AdminController extends Controller {
 		int $maxActions = DefinitionValidator::MAX_ACTIONS,
 		array $creatorGroups = [],
 		bool $confirmDelete = false,
+		bool $sharing = true,
 	): JSONResponse {
 		foreach ($actionTypes as $type) {
 			if (!is_string($type) || !in_array($type, DefinitionValidator::ACTION_TYPES, true)) {
@@ -129,7 +130,7 @@ class AdminController extends Controller {
 			}
 		}
 
-		$this->policy->save(array_values($actionTypes), $retentionDays, $maxResponses, $maxActions, array_values($creatorGroups));
+		$this->policy->save(array_values($actionTypes), $retentionDays, $maxResponses, $maxActions, array_values($creatorGroups), $sharing);
 		return new JSONResponse($this->currentPolicy());
 	}
 
@@ -252,6 +253,7 @@ class AdminController extends Controller {
 			'maxActions' => $this->policy->maxActionsPerForm(),
 			'maxActionsCeiling' => DefinitionValidator::MAX_ACTIONS,
 			'creatorGroups' => $groups,
+			'sharing' => $this->policy->sharingEnabled(),
 		];
 	}
 

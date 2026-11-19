@@ -12,6 +12,7 @@ namespace OCA\Webforms\Controller;
 use OCA\Webforms\Actions\Adapter\NextcloudSecrets;
 use OCA\Webforms\AppInfo\Application;
 use OCA\Webforms\Exception\CountChangedException;
+use OCA\Webforms\Exception\DraftConflictException;
 use OCA\Webforms\Exception\ForbiddenException;
 use OCA\Webforms\Exception\NotFoundException;
 use OCA\Webforms\Exception\ValidationException;
@@ -21,6 +22,7 @@ use OCA\Webforms\Service\EntryExportService;
 use OCA\Webforms\Access\Role;
 use OCA\Webforms\Service\FormService;
 use OCA\Webforms\Forms\ImageSource;
+use OCA\Webforms\Forms\JsonShape;
 use OCA\Webforms\Uploads\Ports\OwnerImagePort;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -179,9 +181,13 @@ class FormController extends Controller {
 	 */
 	#[NoAdminRequired]
 	#[FrontpageRoute(verb: 'PUT', url: '/api/v1/forms/{id}/draft')]
-	public function saveDraft(int $id, array $definition = []): JSONResponse {
-		return $this->guard(function () use ($id, $definition): JSONResponse {
-			$saved = $this->service->saveDraft($this->userId(), $id, $definition);
+	public function saveDraft(int $id, array $definition = [], ?int $baseRevision = null): JSONResponse {
+		if ($baseRevision === null) {
+			// An out of date client must not overwrite by accident (docs/SCHEMA.md section 22.6).
+			return new JSONResponse(['error' => 'base_revision_required'], Http::STATUS_BAD_REQUEST);
+		}
+		return $this->guard(function () use ($id, $definition, $baseRevision): JSONResponse {
+			$saved = $this->service->saveDraft($this->userId(), $id, $definition, $baseRevision);
 			return new JSONResponse([
 				'form' => $this->service->toArray($saved['form'], $this->userId(), true),
 				// Not blocking for a draft, but publishing will refuse these.
@@ -555,6 +561,15 @@ class FormController extends Controller {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
 		} catch (ForbiddenException) {
 			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		} catch (DraftConflictException $e) {
+			$stored = $e->getStored();
+			return new JSONResponse([
+				'error' => 'draft_conflict',
+				'revision' => $stored->getRevision(),
+				'draft' => JsonShape::definition($stored->getDraftDefinition()),
+				'savedBy' => $e->getSavedByName(),
+				'savedAt' => $stored->getUpdatedAt(),
+			], Http::STATUS_CONFLICT);
 		} catch (ValidationException $e) {
 			return new JSONResponse(['error' => 'validation', 'errors' => $e->getErrors()], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}

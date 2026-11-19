@@ -15,6 +15,7 @@ use OCA\Webforms\Db\FormShare;
 use OCA\Webforms\Db\FormShareMapper;
 use OCA\Webforms\Exception\NotFoundException;
 use OCA\Webforms\Exception\ValidationException;
+use OCA\Webforms\Settings\PolicySettings;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Collaboration\Collaborators\ISearch;
 use OCP\IGroupManager;
@@ -37,6 +38,7 @@ class CollaboratorService {
 		private readonly IGroupManager $groups,
 		private readonly ISearch $search,
 		private readonly ITimeFactory $time,
+		private readonly PolicySettings $policy,
 	) {
 	}
 
@@ -67,6 +69,11 @@ class CollaboratorService {
 		$form = $this->access->require($userId, $formId, Role::OWNER);
 		$shareType = self::TYPES[$type] ?? null;
 		$errors = [];
+		$existing = $shareType === null ? null : $this->shares->findOne($form->getId(), (int)$shareType, $with);
+		if (!$this->policy->sharingEnabled() && $existing === null) {
+			// Off stops new shares; one that exists may still have its role changed (docs/SCHEMA.md section 22.8).
+			throw new ValidationException([['code' => 'sharing_disabled', 'path' => '']]);
+		}
 		if ($shareType === null) {
 			$errors[] = ['code' => 'share_type_invalid', 'path' => 'type'];
 		}
@@ -137,7 +144,7 @@ class CollaboratorService {
 	public function find(string $userId, int $formId, string $query): array {
 		$form = $this->access->require($userId, $formId, Role::OWNER);
 		$query = trim($query);
-		if ($query === '') {
+		if ($query === '' || !$this->policy->sharingEnabled()) {
 			return [];
 		}
 		$taken = [];

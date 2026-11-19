@@ -182,4 +182,14 @@ describe('what an editor cannot point at in the owner\'s Files and Tables (secti
 		expect(wrapper.text()).toContain('Only the owner of this form can change where files are saved or use Tables')
 		wrapper.unmount()
 	})
+
+describe('a form that passed to a new owner (section 22.7)', () => {
+	it('says it is closed until the places it saves to are checked and published again', async () => {
+		getForm.mockResolvedValue({ ...form('owner', definition()), destinationsPending: true })
+		const wrapper = mount(BuilderView, { props: { formId: 1 }, attachTo: document.body })
+		await flushPromises()
+		expect(wrapper.find('[data-test="destinations-pending"]').text()).toContain('publish to open it again')
+		wrapper.unmount()
+	})
+})
 })

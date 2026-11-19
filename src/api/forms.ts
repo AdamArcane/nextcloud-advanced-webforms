@@ -40,8 +40,21 @@ export interface SaveResult {
 	errors: DefinitionError[]
 }
 
-export function saveDraft(id: number, definition: DraftDefinition): Promise<SaveResult> {
-	return call(axios.put<SaveResult>(url('/forms/' + id + '/draft'), { definition }))
+/**
+ * `baseRevision` is the revision the copy came from or was last saved at. Rejects with an ApiError of status
+ * 409 and code `draft_conflict` when someone else saved since; its `data` is a {@link DraftConflict}.
+ */
+export function saveDraft(id: number, definition: DraftDefinition, baseRevision: number): Promise<SaveResult> {
+	return call(axios.put<SaveResult>(url('/forms/' + id + '/draft'), { definition, baseRevision }))
+}
+
+/** The stored draft that a save ran into (docs/SCHEMA.md section 22.6). */
+export interface DraftConflict {
+	revision: number
+	draft: DraftDefinition
+	/** Display name of who saved it, empty when unknown. */
+	savedBy: string
+	savedAt: number
 }
 
 /** Rejects with an ApiError (status 422) carrying `errors` when the draft is not valid. */
@@ -215,6 +228,15 @@ export async function unshareForm(id: number, shareId: number): Promise<void> {
 /** The person gives up their own access to a form shared with them. */
 export async function leaveForm(id: number): Promise<void> {
 	await call(axios.delete(url('/forms/' + id + '/shares/me')))
+}
+
+/**
+ * The owner hands the form to another account and stays on as an editor (docs/SCHEMA.md section 22.7). Rejects
+ * with an ApiError (422): `transfer_target_invalid`, `transfer_destinations_unavailable` (the places, as
+ * `path`) or `transfer_has_files`.
+ */
+export function transferForm(id: number, to: string): Promise<OwnerForm> {
+	return call(axios.post<OwnerForm>(url('/forms/' + id + '/transfer'), { to }))
 }
 
 /** Accounts and groups to share with, found by what was typed. */

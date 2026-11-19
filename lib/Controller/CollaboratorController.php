@@ -14,6 +14,8 @@ use OCA\Webforms\Exception\ForbiddenException;
 use OCA\Webforms\Exception\NotFoundException;
 use OCA\Webforms\Exception\ValidationException;
 use OCA\Webforms\Service\CollaboratorService;
+use OCA\Webforms\Service\FormService;
+use OCA\Webforms\Service\OwnershipService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\FrontpageRoute;
@@ -31,6 +33,8 @@ class CollaboratorController extends Controller {
 	public function __construct(
 		IRequest $request,
 		private readonly CollaboratorService $service,
+		private readonly OwnershipService $ownership,
+		private readonly FormService $forms,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(Application::APP_ID, $request);
@@ -79,6 +83,19 @@ class CollaboratorController extends Controller {
 	#[FrontpageRoute(verb: 'GET', url: '/api/v1/forms/{id}/sharees')]
 	public function sharees(int $id, string $search = ''): JSONResponse {
 		return $this->guard(fn (): JSONResponse => new JSONResponse(['sharees' => $this->service->find($this->userId(), $id, $search)]));
+	}
+
+	/**
+	 * The owner hands the form to another account (docs/SCHEMA.md section 22.7). They stay on as an editor.
+	 */
+	#[NoAdminRequired]
+	#[UserRateLimit(limit: 10, period: 60)]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/forms/{id}/transfer')]
+	public function transfer(int $id, string $to = ''): JSONResponse {
+		return $this->guard(function () use ($id, $to): JSONResponse {
+			$form = $this->ownership->transfer($this->userId(), $id, $to);
+			return new JSONResponse($this->forms->toArray($form, $this->userId()));
+		});
 	}
 
 	private function userId(): string {

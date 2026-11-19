@@ -28,13 +28,13 @@ vi.mock('../../api/admin.ts', () => ({
 		if (confirmNeeded !== null && !input.confirmDelete) {
 			return new Promise((_resolve, reject) => setTimeout(() => reject(new ApiError(409, 'confirmation_required', [], null, { due: confirmNeeded })), 0))
 		}
-		current = { ...current, actionTypes: input.actionTypes, retentionDays: input.retentionDays, maxResponses: input.maxResponses, maxActions: input.maxActions, creatorGroups: input.creatorGroups.map((id) => ({ id, displayName: id })) }
+		current = { ...current, actionTypes: input.actionTypes, retentionDays: input.retentionDays, maxResponses: input.maxResponses, maxActions: input.maxActions, creatorGroups: input.creatorGroups.map((id) => ({ id, displayName: id })), sharing: input.sharing }
 		return Promise.resolve(current)
 	},
 }))
 
 function policy(extra: Partial<PolicyAdminSettings> = {}): PolicyAdminSettings {
-	return { actionTypes: ALL, allActionTypes: ALL, retentionDays: 0, maxResponses: 0, maxActions: 10, maxActionsCeiling: 10, creatorGroups: [], ...extra }
+	return { actionTypes: ALL, allActionTypes: ALL, retentionDays: 0, maxResponses: 0, maxActions: 10, maxActionsCeiling: 10, creatorGroups: [], sharing: true, ...extra }
 }
 
 async function mountIt() {
@@ -75,7 +75,18 @@ describe('PolicyAdmin', () => {
 		const wrapper = await mountIt()
 		await button(wrapper, 'Save').trigger('click')
 		await flushPromises()
-		expect(saves).toEqual([{ actionTypes: ALL, retentionDays: 0, maxResponses: 0, maxActions: 10, creatorGroups: [], confirmDelete: false }])
+		expect(saves).toEqual([{ actionTypes: ALL, retentionDays: 0, maxResponses: 0, maxActions: 10, creatorGroups: [], sharing: true, confirmDelete: false }])
+	})
+
+	it('shows sharing as on and saves it as off when switched off (docs/SCHEMA.md section 22.8)', async () => {
+		const wrapper = await mountIt()
+		expect(wrapper.text()).toContain('Sharing of forms')
+		const toggle = wrapper.findAll('input[type="checkbox"]').find((box) => box.element.closest('.checkbox-content, label, span')?.textContent?.includes('Owners can share'))!
+		expect((toggle.element as HTMLInputElement).checked).toBe(true)
+		await toggle.setValue(false)
+		await button(wrapper, 'Save').trigger('click')
+		await flushPromises()
+		expect(saves.at(-1)?.sharing).toBe(false)
 	})
 
 	it('shows the retention warning and how many responses would go', async () => {

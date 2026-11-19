@@ -122,9 +122,10 @@ Editor or Reviewer. `FormAccess` is the one place that works out a role, and `Fo
 Role $needs)` has no default role on purpose: every call states what it needs, and
 `tests/Unit/Access/PermissionTableTest.php` holds the permission table (section 22.1) as data, so a new
 public method without a role fails it. Editors cannot change `Destinations` (the owner's Files and Tables,
-section 22.5). Reviewers get `ReadingCopy` of a definition, never the real one. Not yet built: revision
-conflicts for two editors (phase 2), ownership transfer, owner account deletion handling and the server
-setting (phase 3). Not tried on the dev instance with two real accounts yet.
+section 22.5). Reviewers get `ReadingCopy` of a definition, never the real one. Phases 2 and 3 are built: revision conflicts for two editors (`forms.revision`, `baseRevision`, 409
+`draft_conflict`), ownership transfer and a deleted owner's forms passing to an editor (`OwnershipService`,
+`NextOwner`), and the server setting for sharing. Phase 3 and the conflict screen have not been tried on the dev
+instance with two real accounts yet.
 
 ## Gotchas
 

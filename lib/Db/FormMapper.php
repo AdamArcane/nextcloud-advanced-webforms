@@ -13,6 +13,7 @@ use OCA\Webforms\Exception\NotFoundException;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\QBMapper;
 use OCP\DB\Exception;
+use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 
 /**
@@ -35,6 +36,33 @@ class FormMapper extends QBMapper {
 		} catch (DoesNotExistException) {
 			throw new NotFoundException();
 		}
+	}
+
+	/**
+	 * Store the draft fields only if the stored revision is still `$base`, in one statement, so two saves
+	 * can never both win (docs/SCHEMA.md section 22.6). On success the entity carries the new revision.
+	 *
+	 * @throws Exception
+	 */
+	public function updateDraftAt(Form $form, int $base, string $savedBy): bool {
+		$qb = $this->db->getQueryBuilder();
+		$qb->update($this->getTableName())
+			->set('title', $qb->createNamedParameter($form->getTitle()))
+			->set('description', $qb->createNamedParameter($form->getDescription()))
+			->set('draft', $qb->createNamedParameter($form->getDraft()))
+			->set('retired_ids', $qb->createNamedParameter($form->getRetiredIds()))
+			->set('updated_at', $qb->createNamedParameter($form->getUpdatedAt(), IQueryBuilder::PARAM_INT))
+			->set('revision', $qb->createNamedParameter($base + 1, IQueryBuilder::PARAM_INT))
+			->set('draft_saved_by', $qb->createNamedParameter($savedBy))
+			->where($qb->expr()->eq('id', $qb->createNamedParameter($form->getId(), IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->eq('revision', $qb->createNamedParameter($base, IQueryBuilder::PARAM_INT)));
+		if ($qb->executeStatement() !== 1) {
+			return false;
+		}
+		$form->setRevision($base + 1);
+		$form->setDraftSavedBy($savedBy);
+		$form->resetUpdatedFields();
+		return true;
 	}
 
 	/**

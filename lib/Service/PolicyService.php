@@ -90,11 +90,13 @@ class PolicyService {
 	/**
 	 * What the builder needs to know, for the signed-in user.
 	 *
-	 * @return array{canCreate: bool, allowedActionTypes: list<string>, maxActions: int, mail: array<string, mixed>, statuses: list<array{id: string, label: string, color: string}>}
+	 * @return array{canCreate: bool, canShare: bool, allowedActionTypes: list<string>, maxActions: int, mail: array<string, mixed>, statuses: list<array{id: string, label: string, color: string}>}
 	 */
 	public function forUser(string $userId): array {
 		return [
 			'canCreate' => $this->canCreate($userId),
+			// Whether the builder offers the Collaborators section (docs/SCHEMA.md section 22.8).
+			'canShare' => $this->settings->sharingEnabled(),
 			'allowedActionTypes' => $this->settings->allowedActionTypes(),
 			'maxActions' => $this->settings->maxActionsPerForm(),
 			'mail' => $this->mailForUser($this->mail->policy(), $userId),
