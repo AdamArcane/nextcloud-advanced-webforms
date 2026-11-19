@@ -7,6 +7,7 @@
 import type { Collaborator, Sharee } from '../../api/forms.ts'
 
 import { t } from '@nextcloud/l10n'
+import './settings-sections.css'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
@@ -247,22 +248,6 @@ async function remove(share: Collaborator): Promise<void> {
 </template>
 
 <style scoped>
-.af-collab {
-	display: flex;
-	flex-direction: column;
-	align-items: stretch;
-	gap: calc(var(--default-grid-baseline) * 2);
-}
-
-.af-collab__heading {
-	margin: 0;
-	font-size: 14px;
-	font-weight: bold;
-	color: var(--color-text-maxcontrast);
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
-}
-
 .af-collab__hint {
 	margin: 0;
 	color: var(--color-text-maxcontrast);
