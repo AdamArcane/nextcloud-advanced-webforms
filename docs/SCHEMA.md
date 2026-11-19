@@ -1421,8 +1421,8 @@ many match), `grandTotal` (how many the form has), and `truncated`.
 
 - **Free text** looks at what a person sees: answers, a choice by its label (never its internal value),
   an upload by its file names, and the signed-in account. Case is ignored.
-- **`where`** reuses the rules engine, so an owner writes it with the same editor as a rule, with nested
-  all and any groups. Each response is read against its own version of the form. A question that
+- **`where`** reuses the rules engine, with nested all and any groups. The Responses view no longer has a
+  button for it (it was confusing); the API still takes it. Each response is read against its own version of the form. A question that
   response's version never had counts as unanswered, so "is empty" is true for it and "equals" is not.
   A question that no version has any more matches nothing.
 - Dates, respondent and order are answered by the database. Text and `where` need each response read

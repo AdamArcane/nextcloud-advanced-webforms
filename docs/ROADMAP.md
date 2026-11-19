@@ -69,8 +69,13 @@ filter, the selection and the chosen columns, a summary above the table (SCHEMA.
 printed (SCHEMA.md section 20). Still open, roughly in order:
 
 1. ODS export, and a zip of uploaded files.
-2. Clicking a bar in the summary to filter by that answer.
-3. Sharing results with someone who cannot edit the form.
+2. Advanced response filtering: filter responses by what people answered, with nested all and any
+   groups written like rule conditions. The server already takes this (`where`, SCHEMA.md section 17) and
+   the editor was built, then taken out of the Responses view because a bare "Answers" button did not say
+   what it did. It needs a clearer place and wording, for example a "Filter by answer" panel with saved
+   filters.
+3. Clicking a bar in the summary to filter by that answer. Builds on the item above.
+4. Sharing results with someone who cannot edit the form.
 
 Not planned: assigning a response to someone. Forms are not a task tool, and a flow on "Response
 submitted" or "Response status changed" can create a task or a Deck card (SCHEMA.md section 20.5).
@@ -136,8 +141,7 @@ Gap review written against 0.3.x (2026-11-15), from README.md, docs/SCHEMA.md an
   and a count of people who started.
 - **Respondent experience.** Done: a progress indicator on forms with several pages (SCHEMA.md section 5.1). Also done: a review step that lists the answers before sending (SCHEMA.md section 5.2). Still open: per-form language, and a picture inside a question (image blocks, SCHEMA.md section 4.9, are done).
 - **Sharing.** Public link, custom address, QR code and embedding (see Sharing above). Sharing a form with other accounts and groups is designed (see Collaboration above); it is not built yet.
-- **Question types.** Done: rating, scale, consent and date and time (SCHEMA.md section 4.8). Still open:
-  slider, color, date range, and name and address fields. Image blocks are done (SCHEMA.md section 4.9).
+- **Question types.** Done: rating, scale, consent and date and time (SCHEMA.md section 4.8). Also done: slider, colour, date range, name, address, matrix and signature (SCHEMA.md section 4.10). Image blocks are done (SCHEMA.md section 4.9).
 - **Builder.** Touch dragging is not supported.
 - **Rules.** Show, hide and require only. No conditional values or calculated fields.
 - **Actions.** Submit message and redirect are resolved synchronously, so they cannot depend on a background action.

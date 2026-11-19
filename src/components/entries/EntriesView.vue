@@ -5,7 +5,7 @@
 
 <script setup lang="ts">
 import type { EntryFilterState } from '../../entries/filter.ts'
-import type { Delivery, DeliveryStatus, DraftDefinition, EntryRecord, ResponseStatus, VersionDefinition } from '../../types.ts'
+import type { Delivery, DeliveryStatus, EntryRecord, ResponseStatus, VersionDefinition } from '../../types.ts'
 
 import { n, t } from '@nextcloud/l10n'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
@@ -353,13 +353,6 @@ const hasMore = computed(() => entries.value.length < total.value)
 const allColumns = computed(() => responseColumns(versions.value))
 const shownColumns = computed(() => visibleColumns(allColumns.value, chosenColumns.value ?? defaultColumnIds(allColumns.value)))
 
-/** The newest version the listed responses belong to, so the answers filter can offer its questions. */
-const filterDefinition = computed<DraftDefinition | null>(() => {
-	const newest = Object.keys(versions.value).sort((a, b) => Number(b) - Number(a))[0]
-	const definition = newest === undefined ? undefined : versions.value[newest]
-	return definition ? ({ schemaVersion: 1, title: '', settings: {}, rules: [], actions: [], ...definition } as DraftDefinition) : null
-})
-
 function applyFilter(next: EntryFilterState): void {
 	const previous = entryFilter.value
 	entryFilter.value = next
@@ -626,7 +619,6 @@ onMounted(() => {
 			<template v-if="tab === 'responses'">
 				<ResponseFilters v-if="grandTotal > 0 || filtered"
 					:model-value="entryFilter"
-					:definition="filterDefinition"
 					:statuses="statuses"
 					@update:model-value="applyFilter" />
 
@@ -660,8 +652,9 @@ onMounted(() => {
 						{{ t('webforms', 'Searched the first 20,000 responses. There may be more matches, narrow the dates to find them.') }}
 					</NcNoteCard>
 
-					<ResponseSummary v-if="summaryOpen"
-						:form-id="formId"
+					<ResponseSummary :form-id="formId"
+						:open="summaryOpen"
+						@toggle="toggleSummary"
 						:summary="summary"
 						:loading="summaryLoading"
 						:failed="summaryFailed" />
@@ -724,12 +717,6 @@ onMounted(() => {
 								{ value: 'cards', label: t('webforms', 'Cards'), icon: icons.cardView },
 							]"
 							@update:model-value="(value) => setView(value === 'cards' ? 'cards' : 'table')" />
-						<NcButton :variant="summaryOpen ? 'primary' : 'secondary'" :aria-pressed="summaryOpen" @click="toggleSummary">
-							<template #icon>
-								<Icon :path="icons.summary" />
-							</template>
-							{{ t('webforms', 'Summary') }}
-						</NcButton>
 						<span v-if="newOnPage > 0" class="af-entries__newcount" role="status">
 							{{ n('webforms', '%n new since your last visit', '%n new since your last visit', newOnPage) }}
 						</span>

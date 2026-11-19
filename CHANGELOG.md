@@ -7,6 +7,9 @@
 
 ## Unreleased
 
+- Responses: the **Answers** filter button is gone, and the summary has one **Hide summary** or **Show summary**
+  button beside the menu that chooses which cards it shows.
+
 - Seven new field types. **Slider** (a number on a line), **Colour**, **Date range**, **Name** and
   **Address** (asked in parts you choose), **Matrix** (a grid with one choice, or several, per question)
   and **Signature** (drawn with a mouse or finger, shown as a picture in the responses). A required name,
