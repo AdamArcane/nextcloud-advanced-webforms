@@ -1740,3 +1740,206 @@ does not know that anyone has started.
 
 The answers sit readable in the browser for up to 30 days, for anyone who uses that browser profile.
 Leave the setting off for forms that are filled in on shared computers.
+
+## 22. Collaboration (DECISION)
+
+Decided 2026-11-19. A form can be shared with other accounts and groups, so a team can build one form and
+work through its responses together. Today every form has one owner and nobody else can see it.
+
+The form keeps its owner. Collaborators are people who may do some of what the owner may. Everything the
+form does on its own behalf (writing uploads to Files, adding Tables rows, sending as the owner) still
+runs as the owner, as it does now (sections 4.6, 15 and 19).
+
+### 22.1 Roles
+
+Three roles. A person's role on a form is the highest of the roles they hold directly and through any group
+they belong to (section 22.3).
+
+| | Reviewer | Editor | Owner |
+|---|---|---|---|
+| See the form in the list and open it | yes | yes | yes |
+| View, search, filter and export responses, see the summary, open uploaded files | yes | yes | yes |
+| Set a response's status, write its note | yes | yes | yes |
+| Delete responses, single or bulk | no | yes | yes |
+| See the form definition and edit the draft | no | yes | yes |
+| Publish, unpublish, close, reopen, archive, restore | no | yes | yes |
+| Link, custom address, QR code, embedding, link password (section 18) | no | yes | yes |
+| Export the draft or the published version, duplicate the form (section 13.2) | no | yes | yes |
+| See the delivery log and retry a delivery | no | yes | yes |
+| Change a destination in the owner's Files or Tables (section 22.5) | no | no | yes |
+| Create or reveal a webhook secret | no | no | yes |
+| Manage collaborators, transfer ownership | no | no | yes |
+| Delete the form | no | no | yes |
+
+- A **Reviewer never sees the form's workings**: the builder, the settings and the exports are closed to
+  them, and opening `#/f/<id>` takes them to the responses.
+- **The responses calls hand out definitions today.** The list, one response and the summary return the
+  whole definition of each version a response was submitted against, so the page can show answers under
+  their questions ([FormService.php](../lib/Service/FormService.php) `listEntries`, `getEntry`). That includes
+  the actions, with recipient addresses and webhook URLs, upload folders, and a hidden field's note. For a
+  Reviewer these calls return a **reading copy** instead: the title, fields (type, label, help text,
+  options, layout and what the page needs to word an answer), pages and rules, and nothing else. It drops
+  `actions`, `settings`, a file field's `folder` and `storage`, an image's source in Files and a hidden
+  field's `description`. Owners and editors get the full definition as now. The copy is made on the server
+  by one function (`ReadingCopy`). It is a list of what to keep, so a key the definition gains later is
+  left out until someone decides it is safe to show, and a test fails when a top level key of the
+  definition is in neither the kept list nor the dropped one.
+- A duplicate (section 13.2) belongs to the person who made it, who must be allowed to create forms
+  (section 16). Its destinations are checked for them when they publish it, like any new form.
+- Notes were the owner's private notes (section 20). On a shared form they are visible to everyone who can
+  see responses, and the page says so next to the field. Notes already written stay as they are.
+
+### 22.2 Data
+
+- **`advforms_form_shares`** (new): `id`, `form_id`, `share_type` (`0` account, `1` group), `share_with`
+  (account id or group id), `role` (`reviewer` or `editor`), `created_by`, `created_at`. Unique on
+  `(form_id, share_type, share_with)`, indexed on `(share_type, share_with)` for the list. The owner is
+  never a row.
+- **`advforms_form_seen`** (new): `form_id`, `user_id`, `seen_at`, unique on the pair. It replaces
+  `forms.responses_seen_at` (section 20.1), because "new" is now each person's own. The migration copies
+  each form's value into a row for its owner. The old column stays unused for one release and is dropped
+  in the next.
+- **`forms.revision`** (new, integer, starts at 1): raised by every draft save (section 22.6).
+- **`versions.published_by`** (new, nullable): who published the version.
+
+Entries, versions and the delivery log keep pointing at the form id and need no change.
+
+### 22.3 Working out a person's role
+
+`FormAccess::role(string $userId, Form $form): ?Role`, one call, cached for the request:
+
+1. The owner is `owner`.
+2. Otherwise the highest of the person's account share and the shares of every group they belong to
+   (`IGroupManager::getUserGroupIds`).
+3. Otherwise none.
+
+`FormService::get()` is the single place that decides whether someone may touch a form
+([FormService.php](../lib/Service/FormService.php)), so it becomes `get($userId, $id, Role $needs)`. Every
+call site says what it needs, and the table in section 22.1 is the only place permissions are defined.
+
+- **No role at all answers `404`**, the same as a form that does not exist, so it never says a form is there.
+- **A role that is too low answers `403 forbidden`.**
+- **The list** is every form the person owns plus every form shared with them, directly or through a group,
+  in one query. Each item carries `role`, `ownerId` and the owner's display name, and the person's own
+  `newCount`.
+- **An open page loses access** when its next call answers `404` or `403`: the builder or responses page
+  says access was removed and offers the list. Nothing is cached on the server beyond one request.
+
+### 22.4 Sharing screen and API
+
+The builder's sharing area gets a **Collaborators** section, shown to the owner only. People and groups are
+found with Nextcloud's own collaborator search (`OCP\Collaboration\Collaborators\ISearch`, accounts and
+groups only), so the server's sharing restrictions, such as keeping shares within a person's groups, apply
+without any rule of ours. Each row has a role menu (Editor, Reviewer) and a remove button.
+
+- `GET /api/v1/forms/{id}/shares`: the owner and the shares with display names. Owner only.
+- `PUT /api/v1/forms/{id}/shares` with `type`, `with` and `role`: adds the share or changes its role. Owner only.
+  The owner cannot be added, and an unknown account or group is `share_target_invalid`.
+- `DELETE /api/v1/forms/{id}/shares/{shareId}`: removes it. Owner only.
+- `DELETE /api/v1/forms/{id}/shares/me`: a person leaves a form that was shared with them directly. A
+  person who has it only through a group cannot leave it, and the page does not offer to.
+- `GET /api/v1/forms/{id}/sharees?search=`: the collaborator search, limited per user. It is for one form
+  so it can leave out the owner, the person asking and everyone the form is already shared with. Owner
+  only, and available only where section 22.8 allows sharing.
+
+Sharing changes nothing for respondents: the public link, the password and the published version are the
+same. Nobody is told by mail that a form was shared with them in this version (section 22.9).
+
+### 22.5 Where an editor stops: the owner's Files and Tables
+
+Uploads, a picture taken from Files, the Files action and the Tables action all reach into the owner's
+Files or the owner's Tables. If an editor could point one of them at a place only the owner may use, they
+would be using the owner's access. So those are owner only.
+
+The **destination set** of a definition is: every file field whose `storage` is `files` (the default) with
+  its `folder` and who may upload, every image block whose source is in Files, and every action of type
+`files` or `tables` as a whole, so an editor cannot change even its condition. It leaves out fields stored
+in the app (`storage: app`), pictures from a web address, and the other action types.
+
+- **An editor's save that changes the destination set** (a destination added, changed or removed) is
+  refused with `owner_only_destination` and the paths concerned, and nothing of that save is stored. The
+  comparison is against the stored draft, so it cannot be avoided by editing a copy. A form's title is
+  not part of it, although a file field with no folder uses one named after the title: that folder is
+  always under the owner's `Webforms` folder.
+- **The builder** shows those controls as read only for an editor, with a line saying the owner sets them.
+  The Files and Tables actions are not offered to add. A file field an editor adds is kept in the app, and
+  a field that is kept in the owner's Files cannot be deleted by an editor. An editor who needs a new
+  one asks the owner. If a save is refused anyway, the builder says why.
+- **Publishing** still checks every destination for the owner (section 19 and `FormService`), as now.
+  An editor's publish fails with the owner's errors, worded for an editor.
+- **Webhook secrets** are created and revealed by the owner only. A save by an editor keeps an action's
+  existing secret reference.
+- **Uploaded files stay in the owner's Files.** Collaborators reach them through the app (the responses
+  page opens a file as the owner), so a Reviewer needs no access to the folder. If the owner's account goes
+  away the files go with it, unless the folder is in a group folder. The Collaborators section says so
+  when the form has a Files upload field.
+
+### 22.6 Two people editing at once
+
+The builder saves automatically, so without a guard two editors silently overwrite each other.
+
+- Every draft save sends `baseRevision`, the revision the editor's copy was loaded from or last saved at.
+  The server saves only when it equals the stored `revision`, then raises it and returns the new one.
+- **A mismatch answers `409 draft_conflict`** with the stored `revision`, the stored draft and who saved
+  it last. Nothing is stored. A missing `baseRevision` is refused as well, so an out of date client cannot
+  overwrite by accident. This also protects one person with two tabs open.
+- **The builder then stops saving** and shows who changed the form and when, with two choices:
+  **Use their version** (replace the screen, losing the unsaved edits) or **Keep mine** (save over it, by
+  sending the stored revision). A copy of the person's own draft can be downloaded first.
+- **Publishing** publishes the stored draft after the autosave has been flushed (as now). If the flush
+  conflicts, publishing stops with the same choice.
+- Changes that are not part of the draft (status, link settings, the password) are their own calls and do
+  not take the revision. Each is an overwrite of one value, last one wins, and the form's `updatedAt` moves.
+- **Not in this version:** showing who else has the builder open, and merging two edits.
+
+### 22.7 When people go away
+
+- **Ownership transfer.** The owner may hand a form to an editor or any account that may create forms
+  (`POST /api/v1/forms/{id}/transfer` with `to`). The previous owner becomes an editor. The form's destinations
+  (section 22.5) are checked for the new owner, and the transfer is refused with
+  `transfer_destinations_unavailable` when any is not theirs to use. It is also refused with
+  `transfer_has_files` when responses hold files stored in Files, because those sit in the previous
+  owner's Files and the new owner could not open them. Moving the folder first, or deleting those
+  responses, makes it possible.
+- **An owner's account is deleted** (`UserDeletedEvent`). For each of their forms:
+  - If it has editors who are allowed to create forms, ownership passes to the one who was added first. The
+    form is **closed** (section 3.1) when its destinations are not usable for the new owner, so respondents
+    see the closed message and not an upload error, and the builder shows a banner that the destinations
+    need to be set again. Files kept in the deleted account's Files are gone, and the responses
+    show them as missing.
+  - Otherwise the form and its responses are deleted, as today.
+- **A collaborator's account is deleted:** their shares and their `advforms_form_seen` rows are removed.
+  Responses they set a status on keep the status (the id of who changed it is stored as text).
+- **A group is deleted** (`GroupDeletedEvent`): its shares are removed.
+
+### 22.8 Server policy
+
+One new setting in section 16, **Sharing of forms**, on by default. Off, the Collaborators section and
+the sharee search are gone, and existing shares keep working but cannot be added to. Who may create forms
+(section 16) is a separate rule, and someone who may not create forms can still be an editor or reviewer.
+
+### 22.9 Left out on purpose
+
+- **Real time co-editing,** presence indicators and merging, section 22.6.
+- **Mail or Nextcloud notifications** to collaborators, for being added or for a new response. A natural
+  next step on top of the shares: the form's own email action already covers a new response.
+- **Teams (Circles) as a share target,** and a read only Viewer role. Both fit the same table.
+- **Per collaborator limits,** such as editing one page only.
+- **A history of who changed what** beyond who published a version and who set a status.
+
+### 22.10 How it is built
+
+Phase 1 is built (2026-11-19). Not in it yet, and still to come in the later phases: `forms.revision` and
+the conflict screen (phase 2), transfer, the handling of an owner's deleted account and the server setting
+(phase 3). `versions.published_by` is stored when a version is published and is not shown anywhere yet.
+`forms.responses_seen_at` is no longer read.
+
+1. **Access and roles.** The two tables and `FormAccess`, `FormService` and the controllers on the role
+   table, the list query, the per person "new", the Collaborators section, the role badges and a Reviewer
+   who lands on the responses.
+2. **Revision conflicts.** `forms.revision`, `baseRevision` on the draft save, and the conflict screen.
+   Not announced as co-editing before this is in.
+3. **Lifecycle.** Transfer, the account and group listeners, and the server setting.
+
+A table test holds section 22.1 as data and checks every owner call against every role, so a new endpoint
+without a role fails it.

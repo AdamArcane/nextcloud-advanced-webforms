@@ -17,6 +17,7 @@ import { answerLines, entryFileUrl, formatTime, previewLines } from '../../entri
 import { findStatus } from '../../entries/statuses.ts'
 import { formatSize } from '../../uploads.ts'
 import DeliveryRow from './DeliveryRow.vue'
+import { useCanManageResponses } from './permissions.ts'
 import NoteEditor from './NoteEditor.vue'
 import StatusSelect from './StatusSelect.vue'
 import StatusTag from './StatusTag.vue'
@@ -50,6 +51,7 @@ const status = computed(() => findStatus(props.statuses ?? [], props.entry.statu
 const lines = computed(() => answerLines(props.definition, props.entry.data))
 const preview = computed(() => previewLines(props.definition, props.entry.data))
 
+const canManage = useCanManageResponses()
 const deliveries = ref<Delivery[] | null>(null)
 const loading = ref(false)
 const failed = ref(false)
@@ -57,7 +59,8 @@ const retrying = ref<number | null>(null)
 
 // Deliveries are fetched the first time a response is opened, not for the whole list up front.
 watch(() => props.expanded, async (open) => {
-	if (!open || deliveries.value !== null || loading.value) {
+	// A Reviewer may not see the delivery log.
+	if (!open || !canManage || deliveries.value !== null || loading.value) {
 		return
 	}
 	loading.value = true
@@ -131,7 +134,7 @@ async function retry(delivery: Delivery): Promise<void> {
 
 			<NoteEditor :form-id="formId" :entry="entry" @saved="(saved) => emit('updated', saved)" />
 
-			<section class="af-response__deliveries">
+			<section v-if="canManage" class="af-response__deliveries">
 				<h4 class="af-response__heading">
 					{{ t('webforms', 'Emails and webhooks') }}
 				</h4>
@@ -153,7 +156,7 @@ async function retry(delivery: Delivery): Promise<void> {
 
 			<div class="af-response__footer">
 				<span class="af-response__id">{{ t('webforms', 'Response #{id}', { id: entry.id }) }}</span>
-				<NcButton variant="error" @click="emit('delete')">
+				<NcButton v-if="canManage" variant="error" @click="emit('delete')">
 					<template #icon>
 						<Icon :path="icons.delete" />
 					</template>

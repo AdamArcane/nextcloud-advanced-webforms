@@ -9,7 +9,7 @@ import type { OwnerForm } from './types.ts'
 
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
-import { duplicateForm, listForms } from './api/forms.ts'
+import { duplicateForm, leaveForm, listForms } from './api/forms.ts'
 import { fetchUserPreferences, saveUserPreferences } from './api/settings.ts'
 import { showError } from '@nextcloud/dialogs'
 import App from './App.vue'
@@ -19,6 +19,7 @@ vi.mock('./api/forms.ts', () => ({
 	listForms: vi.fn(),
 	createForm: vi.fn(),
 	duplicateForm: vi.fn(),
+	leaveForm: vi.fn(),
 	importForm: vi.fn(),
 	setFormArchived: vi.fn(),
 	formExportUrl: () => '#',
@@ -220,5 +221,131 @@ describe('duplicating a form', () => {
 		await wrapper.findAll('button').filter((el) => el.text() === 'Duplicate')[0].trigger('click')
 		await flushPromises()
 		expect(wrapper.text()).toContain('Could not duplicate the form.')
+	})
+})
+
+function shared(id: number, role: 'editor' | 'reviewer', extra: Partial<OwnerForm> = {}): OwnerForm {
+	return { ...form(id, FORM_STATUS_PUBLISHED, false), title: 'Shared ' + id, role, ownerId: 'olga', ownerName: 'Olga Owner', canLeave: true, ...extra }
+}
+
+const TEAM = () => [
+	{ ...form(1, FORM_STATUS_PUBLISHED, false), role: 'owner' as const },
+	shared(2, 'editor'),
+	shared(3, 'reviewer'),
+]
+
+async function mountTeam(stubs: Record<string, unknown> = {}, preferences: Partial<UserPreferences> = {}) {
+	vi.mocked(fetchUserPreferences).mockResolvedValue({ ...ALL, ...preferences })
+	vi.mocked(listForms).mockResolvedValue(TEAM())
+	const wrapper = mount(App, { global: { stubs: { BuilderView: true, EntriesView: true, teleport: true, ...stubs } } })
+	await flushPromises()
+	return wrapper
+}
+
+describe('forms shared with the person (docs/SCHEMA.md section 22.3)', () => {
+	it('lists them apart under Shared with me, and the person\'s own forms first', async () => {
+		const wrapper = await mountTeam()
+		const text = wrapper.text()
+		expect(text).toContain('Shared with me')
+		expect(text.indexOf('Form 1')).toBeLessThan(text.indexOf('Shared with me'))
+		expect(text.indexOf('Shared with me')).toBeLessThan(text.indexOf('Shared 2'))
+		expect(text.indexOf('Shared 2')).toBeGreaterThan(-1)
+		expect(text.indexOf('Shared 3')).toBeGreaterThan(-1)
+	})
+
+	it('has no Shared with me heading when nothing is shared', async () => {
+		vi.mocked(fetchUserPreferences).mockResolvedValue(ALL)
+		vi.mocked(listForms).mockResolvedValue([{ ...form(1, FORM_STATUS_PUBLISHED, false), role: 'owner' }])
+		const wrapper = mount(App, { global: { stubs: { BuilderView: true, EntriesView: true, teleport: true } } })
+		await flushPromises()
+		expect(wrapper.text()).not.toContain('Shared with me')
+	})
+
+	it('opens a form shared for reading on its responses, whatever the preference says', async () => {
+		const wrapper = await mountTeam({}, { openPublishedOnResponses: false })
+		const hrefs = wrapper.findAll('a').filter((link) => !link.element.closest('.af-overview')).map((link) => link.attributes('href')).filter((href) => href?.startsWith('#/f/'))
+		expect(hrefs).toContain('#/f/3/responses')
+		// An editor still gets the editor under that preference.
+		expect(hrefs).toContain('#/f/2')
+	})
+
+	it('shows a Reviewer the responses even at the address of the editor, with their role', async () => {
+		window.location.hash = '#/f/3'
+		const wrapper = await mountTeam()
+		const entries = wrapper.findComponent({ name: 'EntriesView' })
+		expect(entries.exists()).toBe(true)
+		expect(entries.props('role')).toBe('reviewer')
+		expect(wrapper.findComponent({ name: 'BuilderView' }).exists()).toBe(false)
+		window.location.hash = ''
+	})
+
+	it('shows an editor the editor at that address', async () => {
+		window.location.hash = '#/f/2'
+		const wrapper = await mountTeam()
+		expect(wrapper.findComponent({ name: 'BuilderView' }).exists()).toBe(true)
+		window.location.hash = ''
+	})
+
+	it('waits for the list before choosing between the editor and the responses', async () => {
+		window.location.hash = '#/f/3'
+		vi.mocked(fetchUserPreferences).mockResolvedValue(ALL)
+		vi.mocked(listForms).mockReturnValue(new Promise(() => {}))
+		const wrapper = mount(App, { global: { stubs: { BuilderView: true, EntriesView: true, teleport: true } } })
+		await flushPromises()
+		expect(wrapper.findComponent({ name: 'BuilderView' }).exists()).toBe(false)
+		expect(wrapper.findComponent({ name: 'EntriesView' }).exists()).toBe(false)
+		window.location.hash = ''
+	})
+})
+
+describe('the menu of a form shared with the person', () => {
+	const stubs = {
+		NcAppNavigationItem: { props: ['name'], template: '<li><span>{{ name }}</span><slot /><slot name="actions" /></li>' },
+		NcActionButton: { template: '<button type="button" @click="$emit(\'click\')"><slot /></button>' },
+		NcActionLink: { template: '<a><slot /></a>' },
+	}
+
+	it('offers a Reviewer nothing but leaving, and an editor the usual menu without the owner\'s own tools', async () => {
+		const wrapper = await mountTeam(stubs)
+		const rows = wrapper.findAll('li').filter((row) => row.text().includes('Shared'))
+		const labels = (row: (typeof rows)[number]) => row.findAll('button, a').map((el) => el.text())
+		const reviewer = rows.find((row) => row.text().includes('Shared 3'))!
+		expect(labels(reviewer)).toEqual(['Leave this form'])
+		const editor = rows.find((row) => row.text().includes('Shared 2'))!
+		expect(labels(editor)).toEqual(['Export draft', 'Export published version', 'Duplicate', 'Archive', 'Leave this form'])
+	})
+
+	it('does not offer to leave a form that comes through a group', async () => {
+		vi.mocked(fetchUserPreferences).mockResolvedValue(ALL)
+		vi.mocked(listForms).mockResolvedValue([shared(2, 'editor', { canLeave: false })])
+		const wrapper = mount(App, { global: { stubs: { BuilderView: true, EntriesView: true, teleport: true, ...stubs } } })
+		await flushPromises()
+		expect(wrapper.findAll('button').some((button) => button.text() === 'Leave this form')).toBe(false)
+	})
+
+	it('asks first, then leaves and takes the form out of the list', async () => {
+		vi.mocked(leaveForm).mockResolvedValue(undefined)
+		const wrapper = await mountTeam(stubs)
+		await wrapper.findAll('button').find((button) => button.text() === 'Leave this form')!.trigger('click')
+		await flushPromises()
+		expect(wrapper.text()).toContain('Leave this form?')
+		expect(leaveForm).not.toHaveBeenCalled()
+		await wrapper.findAll('button').find((button) => button.text() === 'Leave form')!.trigger('click')
+		await flushPromises()
+		expect(leaveForm).toHaveBeenCalledTimes(1)
+		expect(wrapper.text()).not.toContain('Shared 2')
+		wrapper.unmount()
+	})
+
+	it('says so when leaving fails and keeps the form in the list', async () => {
+		vi.mocked(leaveForm).mockRejectedValue(new Error('no'))
+		const wrapper = await mountTeam(stubs)
+		await wrapper.findAll('button').find((button) => button.text() === 'Leave this form')!.trigger('click')
+		await flushPromises()
+		await wrapper.findAll('button').find((button) => button.text() === 'Leave form')!.trigger('click')
+		await flushPromises()
+		expect(wrapper.text()).toContain('Could not leave the form.')
+		expect(wrapper.text()).toContain('Shared 2')
+		wrapper.unmount()
 	})
 })

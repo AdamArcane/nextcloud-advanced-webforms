@@ -13,16 +13,18 @@ import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcActionLink from '@nextcloud/vue/components/NcActionLink'
 import NcAppNavigation from '@nextcloud/vue/components/NcAppNavigation'
 import NcAppNavigationItem from '@nextcloud/vue/components/NcAppNavigationItem'
+import NcAppNavigationCaption from '@nextcloud/vue/components/NcAppNavigationCaption'
 import NcAppNavigationList from '@nextcloud/vue/components/NcAppNavigationList'
 import NcAppNavigationNew from '@nextcloud/vue/components/NcAppNavigationNew'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcContent from '@nextcloud/vue/components/NcContent'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcCounterBubble from '@nextcloud/vue/components/NcCounterBubble'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { createForm, duplicateForm, formExportUrl, importForm, listForms, setFormArchived } from './api/forms.ts'
+import { createForm, duplicateForm, formExportUrl, importForm, leaveForm, listForms, setFormArchived } from './api/forms.ts'
 import { ApiError } from './api/http.ts'
 import { DEFAULT_PREFERENCES, fetchUserPolicy, fetchUserPreferences, OPEN_POLICY, saveUserPreferences } from './api/settings.ts'
 import type { UserPolicy, UserPreferences } from './api/settings.ts'
@@ -54,9 +56,44 @@ const view = computed(() => route.value.view)
 // Archived forms stay out of the main list and have their own section below it.
 const activeForms = computed(() => forms.value.filter((form) => form.archivedAt == null))
 const archivedForms = computed(() => forms.value.filter((form) => form.archivedAt != null))
+
+// A form someone else owns is listed apart, under their name (docs/SCHEMA.md section 22.3).
+function isShared(form: OwnerForm): boolean {
+	return form.role !== undefined && form.role !== 'owner'
+}
+
+/** A Reviewer only reads responses; everyone else may open the editor. */
+function canEdit(form: OwnerForm): boolean {
+	return form.role !== 'reviewer'
+}
+
+const navGroups = computed(() => {
+	const shared = activeForms.value.filter(isShared)
+	const groups: Array<{ key: string, caption: string | null, forms: OwnerForm[] }> = [{ key: 'mine', caption: null, forms: activeForms.value.filter((form) => !isShared(form)) }]
+	if (shared.length > 0) {
+		groups.push({ key: 'shared', caption: t('webforms', 'Shared with me'), forms: shared })
+	}
+	return groups
+})
+
+function rowTitle(form: OwnerForm): string | undefined {
+	const parts: string[] = []
+	if (isShared(form)) {
+		parts.push(form.role === 'reviewer'
+			? t('webforms', 'Shared by {owner}, you can read responses', { owner: form.ownerName ?? form.ownerId ?? '' })
+			: t('webforms', 'Shared by {owner}, you can edit', { owner: form.ownerName ?? form.ownerId ?? '' }))
+	}
+	if (hasNewerDraft(form)) {
+		parts.push(t('webforms', 'unpublished changes'))
+	}
+	return parts.length > 0 ? form.title + ' (' + parts.join('; ') + ')' : undefined
+}
 const archiveOpen = ref(false)
 const archiveError = ref(false)
-const selectedTitle = computed(() => forms.value.find((form) => form.id === selectedId.value)?.title ?? '')
+const selectedForm = computed(() => forms.value.find((form) => form.id === selectedId.value))
+const selectedTitle = computed(() => selectedForm.value?.title ?? '')
+// A Reviewer sees the responses wherever the address points: the editor is not theirs.
+const effectiveView = computed<View>(() => (selectedForm.value && !canEdit(selectedForm.value) ? 'responses' : view.value))
 
 // The selected form and screen live in the URL hash, so a reload, the back button and a shared link all work.
 type View = 'edit' | 'settings' | 'responses'
@@ -85,7 +122,8 @@ function open(id: number | null): void {
  * A typed or shared `#/f/<id>` address still means the editor.
  */
 function formHash(form: OwnerForm): string {
-	const settled = preferences.value.openPublishedOnResponses && form.status === FORM_STATUS_PUBLISHED && form.hasUnpublishedChanges === false
+	// A Reviewer has no editor to open.
+	const settled = !canEdit(form) || (preferences.value.openPublishedOnResponses && form.status === FORM_STATUS_PUBLISHED && form.hasUnpublishedChanges === false)
 	return '#/f/' + form.id + (settled ? '/responses' : '')
 }
 
@@ -205,6 +243,27 @@ function onDeleted(): void {
 	open(null)
 }
 
+const leaving = ref<OwnerForm | null>(null)
+const leaveFailed = ref(false)
+
+async function confirmLeave(): Promise<void> {
+	const form = leaving.value
+	leaving.value = null
+	if (!form) {
+		return
+	}
+	leaveFailed.value = false
+	try {
+		await leaveForm(form.id)
+		forms.value = forms.value.filter((one) => one.id !== form.id)
+		if (selectedId.value === form.id) {
+			open(null)
+		}
+	} catch {
+		leaveFailed.value = true
+	}
+}
+
 const duplicateFailed = ref(false)
 
 /** A new draft with the same content, opened at once so it can be renamed. */
@@ -248,15 +307,17 @@ function hasNewerDraft(form: OwnerForm): boolean {
 						<span v-else aria-hidden="true" class="af-new-plus">+</span>
 					</template>
 				</NcAppNavigationNew>
+				<template v-for="group in navGroups" :key="group.key">
+					<NcAppNavigationCaption v-if="group.caption" :name="group.caption" />
 				<NcAppNavigationList>
-					<NcAppNavigationItem v-for="form in activeForms"
+					<NcAppNavigationItem v-for="form in group.forms"
 						:key="form.id"
 						:name="form.title"
 						:active="form.id === selectedId"
 						:href="formHash(form)"
 						:details="statusText(form)"
 						:class="{ 'af-nav--newer': hasNewerDraft(form) }"
-						:title="hasNewerDraft(form) ? t('webforms', '{title} (unpublished changes)', { title: form.title }) : undefined"
+						:title="rowTitle(form)"
 						:aria-description="hasNewerDraft(form) ? t('webforms', 'The draft has changes that are not published yet') : undefined"
 						@click="openForm(form)">
 						<template v-if="(form.newCount ?? 0) > 0" #counter>
@@ -265,8 +326,9 @@ function hasNewerDraft(form: OwnerForm): boolean {
 								:title="n('webforms', '%n new response', '%n new responses', form.newCount ?? 0)"
 								:aria-label="n('webforms', '%n new response', '%n new responses', form.newCount ?? 0)" />
 						</template>
-						<template #actions>
-							<NcActionLink :href="formExportUrl(form.id, 'draft')"
+						<template v-if="canEdit(form) || form.canLeave" #actions>
+							<NcActionLink v-if="canEdit(form)"
+								:href="formExportUrl(form.id, 'draft')"
 								:download="''"
 								close-after-click>
 								<template #icon>
@@ -274,7 +336,7 @@ function hasNewerDraft(form: OwnerForm): boolean {
 								</template>
 								{{ t('webforms', 'Export draft') }}
 							</NcActionLink>
-							<NcActionLink v-if="form.latestVersionId !== null"
+							<NcActionLink v-if="canEdit(form) && form.latestVersionId !== null"
 								:href="formExportUrl(form.id, 'published')"
 								:download="''"
 								close-after-click>
@@ -283,21 +345,28 @@ function hasNewerDraft(form: OwnerForm): boolean {
 								</template>
 								{{ t('webforms', 'Export published version') }}
 							</NcActionLink>
-							<NcActionButton :disabled="!policy.canCreate" close-after-click @click="duplicate(form)">
+							<NcActionButton v-if="canEdit(form)" :disabled="!policy.canCreate" close-after-click @click="duplicate(form)">
 								<template #icon>
 									<Icon :path="icons.copy" :inline="false" />
 								</template>
 								{{ t('webforms', 'Duplicate') }}
 							</NcActionButton>
-							<NcActionButton close-after-click @click="toggleArchived(form)">
+							<NcActionButton v-if="canEdit(form)" close-after-click @click="toggleArchived(form)">
 								<template #icon>
 									<Icon :path="icons.archive" :inline="false" />
 								</template>
 								{{ t('webforms', 'Archive') }}
 							</NcActionButton>
+							<NcActionButton v-if="form.canLeave" close-after-click @click="leaving = form">
+								<template #icon>
+									<Icon :path="icons.close" :inline="false" />
+								</template>
+								{{ t('webforms', 'Leave this form') }}
+							</NcActionButton>
 						</template>
 					</NcAppNavigationItem>
 				</NcAppNavigationList>
+				</template>
 				<NcAppNavigationList v-if="archivedForms.length > 0">
 					<NcAppNavigationItem v-model:open="archiveOpen"
 						:name="t('webforms', 'Archived')"
@@ -311,9 +380,9 @@ function hasNewerDraft(form: OwnerForm): boolean {
 							:key="form.id"
 							:name="form.title"
 							:active="form.id === selectedId"
-							:href="'#/f/' + form.id"
-							@click="open(form.id)">
-							<template #actions>
+							:href="formHash(form)"
+							@click="openForm(form)">
+							<template v-if="canEdit(form)" #actions>
 								<NcActionButton close-after-click @click="toggleArchived(form)">
 									<template #icon>
 										<Icon :path="icons.restore" :inline="false" />
@@ -356,6 +425,9 @@ function hasNewerDraft(form: OwnerForm): boolean {
 						{{ t('webforms', 'Try again') }}
 					</NcButton>
 				</NcNoteCard>
+				<NcNoteCard v-if="leaveFailed" type="error">
+					{{ t('webforms', 'Could not leave the form.') }}
+				</NcNoteCard>
 				<NcNoteCard v-if="duplicateFailed" type="error">
 					{{ t('webforms', 'Could not duplicate the form.') }}
 				</NcNoteCard>
@@ -385,7 +457,13 @@ function hasNewerDraft(form: OwnerForm): boolean {
 			:loaded="preferencesLoaded"
 			@change="savePreference" />
 
-		<template v-if="selectedId !== null && view === 'responses'">
+		<NcAppContent v-if="selectedId !== null && loading">
+			<div class="af-home">
+				<NcLoadingIcon :size="44" />
+			</div>
+		</NcAppContent>
+
+		<template v-else-if="selectedId !== null && effectiveView === 'responses'">
 			<!-- Waits for the preferences, so the responses do not open one way and switch to the other. -->
 			<EntriesView v-if="preferencesLoaded"
 				:key="'responses-' + selectedId"
@@ -395,6 +473,7 @@ function hasNewerDraft(form: OwnerForm): boolean {
 				:statuses="policy.statuses"
 				:responses-view="preferences.responsesView"
 				:responses-summary="preferences.responsesSummary"
+				:role="selectedForm?.role ?? 'owner'"
 				@preference="savePreference"
 				@seen="onResponsesSeen(selectedId)" />
 		</template>
@@ -402,7 +481,7 @@ function hasNewerDraft(form: OwnerForm): boolean {
 		<BuilderView v-else-if="selectedId !== null"
 			:key="selectedId"
 			:form-id="selectedId"
-			:view="view === 'settings' ? 'settings' : 'edit'"
+			:view="effectiveView === 'settings' ? 'settings' : 'edit'"
 			@changed="onChanged"
 			@deleted="onDeleted" />
 
@@ -425,6 +504,15 @@ function hasNewerDraft(form: OwnerForm): boolean {
 					@create="create" />
 			</div>
 		</NcAppContent>
+
+		<NcDialog v-if="leaving"
+			:name="t('webforms', 'Leave this form?')"
+			:message="t('webforms', 'You will no longer see {title} or its responses. The owner can share it with you again.', { title: leaving.title })"
+			:buttons="[
+				{ label: t('webforms', 'Cancel'), variant: 'tertiary', callback: () => { leaving = null } },
+				{ label: t('webforms', 'Leave form'), variant: 'error', callback: confirmLeave },
+			]"
+			@closing="leaving = null" />
 	</NcContent>
 </template>
 

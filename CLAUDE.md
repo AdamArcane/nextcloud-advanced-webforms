@@ -117,6 +117,15 @@ actual translations. Touch dragging is not supported
 (the move buttons in the field panel cover it). Submit message and redirect are resolved
 synchronously; see `docs/SCHEMA.md`.
 
+Collaboration (docs/SCHEMA.md section 22), phase 1 built: forms can be shared with accounts and groups as
+Editor or Reviewer. `FormAccess` is the one place that works out a role, and `FormService::get($userId, $id,
+Role $needs)` has no default role on purpose: every call states what it needs, and
+`tests/Unit/Access/PermissionTableTest.php` holds the permission table (section 22.1) as data, so a new
+public method without a role fails it. Editors cannot change `Destinations` (the owner's Files and Tables,
+section 22.5). Reviewers get `ReadingCopy` of a definition, never the real one. Not yet built: revision
+conflicts for two editors (phase 2), ownership transfer, owner account deletion handling and the server
+setting (phase 3). Not tried on the dev instance with two real accounts yet.
+
 ## Gotchas
 
 - Field ids and option values match `^[a-z][a-z0-9_]{2,31}$` and are immutable;

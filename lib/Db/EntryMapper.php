@@ -201,30 +201,36 @@ class EntryMapper extends QBMapper {
 	}
 
 	/**
-	 * For each of an owner's forms, how many responses arrived after the owner last looked at its list.
-	 * A form with none is left out. One query for the whole forms list.
+	 * Responses each of these forms received since this person last opened them, for the forms that have
+	 * any (docs/SCHEMA.md sections 20.1 and 22.4). A form the person never opened counts them all.
 	 *
-	 * @return array<int, int> form id to count
+	 * @param list<int> $formIds
+	 * @return array<int, int> form id to how many are new
 	 * @throws Exception
 	 */
-	public function countNewByOwner(string $ownerId): array {
-		$qb = $this->db->getQueryBuilder();
-		$qb->select('e.form_id')
-			->addSelect($qb->func()->count('*', 'total'))
-			->from($this->getTableName(), 'e')
-			->innerJoin('e', 'advforms_forms', 'f', $qb->expr()->eq('f.id', 'e.form_id'))
-			->where($qb->expr()->eq('f.owner_id', $qb->createNamedParameter($ownerId)))
-			->andWhere($qb->expr()->orX(
-				$qb->expr()->isNull('f.responses_seen_at'),
-				$qb->expr()->gt('e.submitted_at', 'f.responses_seen_at'),
-			))
-			->groupBy('e.form_id');
+	public function countNewForUser(string $userId, array $formIds): array {
 		$counts = [];
-		$result = $qb->executeQuery();
-		while (($row = $result->fetch()) !== false) {
-			$counts[(int)$row['form_id']] = (int)$row['total'];
+		foreach (array_chunk($formIds, 500) as $chunk) {
+			$qb = $this->db->getQueryBuilder();
+			$qb->select('e.form_id')
+				->addSelect($qb->func()->count('*', 'total'))
+				->from($this->getTableName(), 'e')
+				->leftJoin('e', 'advforms_form_seen', 's', $qb->expr()->andX(
+					$qb->expr()->eq('s.form_id', 'e.form_id'),
+					$qb->expr()->eq('s.user_id', $qb->createNamedParameter($userId)),
+				))
+				->where($qb->expr()->in('e.form_id', $qb->createNamedParameter($chunk, IQueryBuilder::PARAM_INT_ARRAY)))
+				->andWhere($qb->expr()->orX(
+					$qb->expr()->isNull('s.seen_at'),
+					$qb->expr()->gt('e.submitted_at', 's.seen_at'),
+				))
+				->groupBy('e.form_id');
+			$result = $qb->executeQuery();
+			while (($row = $result->fetch()) !== false) {
+				$counts[(int)$row['form_id']] = (int)$row['total'];
+			}
+			$result->closeCursor();
 		}
-		$result->closeCursor();
 		return $counts;
 	}
 

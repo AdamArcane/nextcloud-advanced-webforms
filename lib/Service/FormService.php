@@ -23,14 +23,20 @@ use OCA\Webforms\Event\EventPublisher;
 use OCA\Webforms\Event\FormPublishedEvent;
 use OCA\Webforms\Event\FormStatusChangedEvent;
 use OCA\Webforms\Db\Entry;
+use OCA\Webforms\Access\FormAccess;
+use OCA\Webforms\Access\Role;
 use OCA\Webforms\Db\EntryMapper;
 use OCA\Webforms\Db\Form;
 use OCA\Webforms\Forms\CsvExporter;
 use OCA\Webforms\Forms\EntryFilter;
 use OCA\Webforms\Forms\EntrySummary;
 use OCA\Webforms\Db\FormMapper;
+use OCA\Webforms\Db\FormSeenMapper;
+use OCA\Webforms\Db\FormShare;
+use OCA\Webforms\Db\FormShareMapper;
 use OCA\Webforms\Db\Version;
 use OCA\Webforms\Db\VersionMapper;
+use OCA\Webforms\Exception\ForbiddenException;
 use OCA\Webforms\Exception\NotFoundException;
 use OCA\Webforms\Forms\ImageSource;
 use OCA\Webforms\Forms\UploadPolicy;
@@ -41,10 +47,12 @@ use OCA\Webforms\Uploads\UploadService;
 use OCA\Webforms\Exception\ValidationException;
 use OCA\Webforms\Forms\DefinitionValidator;
 use OCA\Webforms\Forms\FormBackup;
+use OCA\Webforms\Forms\Destinations;
 use OCA\Webforms\Forms\FormPackage;
 use OCA\Webforms\Forms\NewFormDefaults;
 use OCA\Webforms\Settings\UserPreferences;
 use OCA\Webforms\Forms\JsonShape;
+use OCA\Webforms\Forms\ReadingCopy;
 use OCA\Webforms\Forms\RetiredIds;
 use OCA\Webforms\Forms\Availability;
 use OCA\Webforms\Forms\ShareSettings;
@@ -89,6 +97,9 @@ class FormService {
 		private readonly OwnerImagePort $images,
 		private readonly UserPreferences $preferences,
 		private readonly IHasher $hasher,
+		private readonly FormAccess $access,
+		private readonly FormShareMapper $shares,
+		private readonly FormSeenMapper $seen,
 	) {
 	}
 
@@ -100,41 +111,48 @@ class FormService {
 	}
 
 	/**
-	 * The owner's forms as the list shows them, each with whether its draft differs from what is
-	 * published. The published versions are read in one query, not one per form.
+	 * The forms the person can open as the list shows them: their own and the ones shared with them, each
+	 * with their role, and whether its draft differs from what is published (docs/SCHEMA.md section 22.3).
+	 * The published versions and the counts are read in a few queries, not one per form.
 	 *
 	 * @return list<array<string, mixed>>
 	 */
 	public function listForDisplay(string $userId): array {
-		$forms = $this->list($userId);
+		$access = $this->access->accessible($userId);
+		$ids = array_map(static fn (array $item): int => $item['form']->getId(), $access);
 		$versionIds = [];
-		foreach ($forms as $form) {
-			if ($form->getLatestVersionId() !== null) {
-				$versionIds[] = $form->getLatestVersionId();
+		foreach ($access as $item) {
+			if ($item['form']->getLatestVersionId() !== null) {
+				$versionIds[] = $item['form']->getLatestVersionId();
 			}
 		}
 		$versions = $this->versions->findByIds($versionIds);
-		$counts = $this->entries->countByForms(array_map(static fn (Form $form): int => $form->getId(), $forms));
-		$new = $forms === [] ? [] : $this->entries->countNewByOwner($userId);
+		$counts = $this->entries->countByForms($ids);
+		$new = $ids === [] ? [] : $this->entries->countNewForUser($userId, $ids);
+		$seen = $this->seen->forForms($userId, $ids);
+		$names = [];
 		$result = [];
-		foreach ($forms as $form) {
+		foreach ($access as ['form' => $form, 'role' => $role, 'direct' => $direct]) {
 			$latest = $versions[$form->getLatestVersionId() ?? 0] ?? null;
-			$data = $this->describe($form, $latest, $counts[$form->getId()] ?? 0, $new[$form->getId()] ?? 0);
-			$data['hasUnpublishedChanges'] = $latest === null ? true : $this->differs($form, $latest);
+			$names[$form->getOwnerId()] ??= $this->access->displayName($form->getOwnerId());
+			$data = $this->describe($form, $latest, $counts[$form->getId()] ?? 0, $new[$form->getId()] ?? 0, $role, $direct, $seen[$form->getId()] ?? null, $names[$form->getOwnerId()]);
+			if ($role->atLeast(Role::EDITOR)) {
+				$data['hasUnpublishedChanges'] = $latest === null ? true : $this->differs($form, $latest);
+			}
 			$result[] = $data;
 		}
 		return $result;
 	}
 
 	/**
-	 * @throws NotFoundException
+	 * The form, if the person has at least this role on it (docs/SCHEMA.md section 22.3). Every call that
+	 * touches a form says which role it needs, so the table in section 22.1 is the only place that decides.
+	 *
+	 * @throws NotFoundException the person has no role on the form, so it is not there for them
+	 * @throws ForbiddenException they have a lower role than the call needs
 	 */
-	public function get(string $userId, int $id): Form {
-		$form = $this->forms->find($id);
-		if ($form->getOwnerId() !== $userId) {
-			throw new NotFoundException();
-		}
-		return $form;
+	public function get(string $userId, int $id, Role $needs): Form {
+		return $this->access->require($userId, $id, $needs);
 	}
 
 	/**
@@ -180,7 +198,7 @@ class FormService {
 	 * @throws ValidationException
 	 */
 	public function exportForm(string $userId, int $id, string $source): array {
-		$form = $this->get($userId, $id);
+		$form = $this->get($userId, $id, Role::EDITOR);
 		if ($source === FormPackage::SOURCE_PUBLISHED) {
 			$latestId = $form->getLatestVersionId();
 			if ($latestId === null) {
@@ -254,7 +272,7 @@ class FormService {
 	 * @throws ValidationException
 	 */
 	public function duplicateForm(string $userId, int $id, string $title = ''): array {
-		$source = $this->get($userId, $id);
+		$source = $this->get($userId, $id, Role::EDITOR);
 		$title = trim($title);
 		if ($title === '') {
 			$title = 'Copy of ' . $source->getTitle();
@@ -294,7 +312,15 @@ class FormService {
 	 * @throws ValidationException
 	 */
 	public function saveDraft(string $userId, int $id, array $definition): array {
-		$form = $this->get($userId, $id);
+		$form = $this->get($userId, $id, Role::EDITOR);
+		if ($form->getOwnerId() !== $userId) {
+			// Places in the owner's Files and Tables run with the owner's access, so only the owner may change them
+			// (docs/SCHEMA.md section 22.5). The whole save is refused, so nothing half of it is stored.
+			$moved = Destinations::changes($form->getDraftDefinition(), $definition);
+			if ($moved !== []) {
+				throw new ValidationException(array_map(static fn (string $path): array => ['code' => 'owner_only_destination', 'path' => $path], $moved));
+			}
+		}
 
 		$encoded = $this->encode(JsonShape::definition($definition));
 		if (strlen($encoded) > self::MAX_DEFINITION_BYTES) {
@@ -346,7 +372,7 @@ class FormService {
 	 * @throws ValidationException
 	 */
 	public function publish(string $userId, int $id): Form {
-		$form = $this->get($userId, $id);
+		$form = $this->get($userId, $id, Role::EDITOR);
 		$this->refuseIfArchived($form);
 		$draft = $form->getDraftDefinition();
 
@@ -366,6 +392,7 @@ class FormService {
 			$version->setSchemaVersion(DefinitionValidator::SCHEMA_VERSION);
 			$version->setDefinition($encoded);
 			$version->setCreatedAt($this->time->getTime());
+			$version->setPublishedBy($userId);
 			$latest = $this->versions->insert($version);
 		}
 
@@ -401,7 +428,7 @@ class FormService {
 	 * @throws ValidationException
 	 */
 	public function setShare(string $userId, int $id, ?string $slug, bool $embed, array $embedOrigins, ?string $password = null, bool $removePassword = false): Form {
-		$form = $this->get($userId, $id);
+		$form = $this->get($userId, $id, Role::EDITOR);
 		$slug = $slug === null ? null : strtolower(trim($slug));
 		if ($slug === '') {
 			$slug = null;
@@ -462,7 +489,7 @@ class FormService {
 	 * @throws ValidationException
 	 */
 	public function setStatus(string $userId, int $id, int $status): Form {
-		$form = $this->get($userId, $id);
+		$form = $this->get($userId, $id, Role::EDITOR);
 		$this->refuseIfArchived($form);
 		if (!in_array($status, [Form::STATUS_UNPUBLISHED, Form::STATUS_PUBLISHED, Form::STATUS_CLOSED], true)) {
 			throw new ValidationException([['code' => 'status_invalid', 'path' => 'status']]);
@@ -502,7 +529,7 @@ class FormService {
 	 * @throws NotFoundException
 	 */
 	public function setArchived(string $userId, int $id, bool $archived): Form {
-		$form = $this->get($userId, $id);
+		$form = $this->get($userId, $id, Role::EDITOR);
 		if ($form->isArchived() === $archived) {
 			return $form;
 		}
@@ -518,12 +545,14 @@ class FormService {
 	 * @throws NotFoundException
 	 */
 	public function delete(string $userId, int $id): void {
-		$form = $this->get($userId, $id);
+		$form = $this->get($userId, $id, Role::OWNER);
 		$this->deleteUploadedFiles($form);
 		$this->entries->deleteByForm($form->getId());
 		$this->actionLog->deleteByForm($form->getId());
 		$this->secrets->deleteForForm($form->getId());
 		$this->versions->deleteByForm($form->getId());
+		$this->shares->deleteByForm($form->getId());
+		$this->seen->deleteByForm($form->getId());
 		$this->forms->delete($form);
 	}
 
@@ -533,7 +562,8 @@ class FormService {
 	 * @throws NotFoundException
 	 */
 	public function listEntries(string $userId, int $id, int $limit, int $offset, ?EntryFilter $filter = null): array {
-		$form = $this->get($userId, $id);
+		$form = $this->get($userId, $id, Role::REVIEWER);
+		$reading = $this->readsOnly($userId, $form);
 		$limit = max(1, min($limit, self::MAX_PAGE_SIZE));
 		$offset = max(0, $offset);
 
@@ -545,7 +575,7 @@ class FormService {
 			$result[] = self::entryArray($entry);
 			if (!isset($versionDefinitions[$entry->getVersionId()])) {
 				$version = $this->versions->find($entry->getVersionId());
-				$versionDefinitions[$entry->getVersionId()] = JsonShape::definition($version->getDefinitionArray());
+				$versionDefinitions[$entry->getVersionId()] = self::shown($version->getDefinitionArray(), $reading);
 			}
 		}
 
@@ -559,6 +589,19 @@ class FormService {
 			'entries' => $result,
 			'versions' => $versionDefinitions,
 		];
+	}
+
+	/** Whether this person may only read responses, and so gets the reading copy of a definition (section 22.1). */
+	private function readsOnly(string $userId, Form $form): bool {
+		return $this->access->role($userId, $form) === Role::REVIEWER;
+	}
+
+	/**
+	 * @param array<string, mixed> $definition
+	 * @return array<mixed>|\stdClass
+	 */
+	private static function shown(array $definition, bool $readingCopy): array|\stdClass {
+		return JsonShape::definition($readingCopy ? ReadingCopy::of($definition) : $definition);
 	}
 
 	/**
@@ -586,12 +629,12 @@ class FormService {
 	 * @throws NotFoundException
 	 */
 	public function getEntry(string $userId, int $id, int $entryId): array {
-		$form = $this->get($userId, $id);
+		$form = $this->get($userId, $id, Role::REVIEWER);
 		$entry = $this->entries->findInForm($form->getId(), $entryId);
 		$neighbours = $this->entries->neighbours($entry);
 		return [
 			'entry' => self::entryArray($entry),
-			'version' => JsonShape::definition($this->versions->find($entry->getVersionId())->getDefinitionArray()),
+			'version' => self::shown($this->versions->find($entry->getVersionId())->getDefinitionArray(), $this->readsOnly($userId, $form)),
 			'previousId' => $neighbours['previous'],
 			'nextId' => $neighbours['next'],
 		];
@@ -604,10 +647,9 @@ class FormService {
 	 * @throws NotFoundException
 	 */
 	public function markResponsesSeen(string $userId, int $id): ?int {
-		$form = $this->get($userId, $id);
-		$previous = $form->getResponsesSeenAt();
-		$form->setResponsesSeenAt($this->time->getTime());
-		$this->forms->update($form);
+		$form = $this->get($userId, $id, Role::REVIEWER);
+		$previous = $this->seen->get($form->getId(), $userId);
+		$this->seen->set($form->getId(), $userId, $this->time->getTime());
 		return $previous;
 	}
 
@@ -619,7 +661,7 @@ class FormService {
 	 * @throws ValidationException
 	 */
 	public function setEntryStatus(string $userId, int $id, int $entryId, ?string $status): array {
-		$form = $this->get($userId, $id);
+		$form = $this->get($userId, $id, Role::REVIEWER);
 		$this->requireStatus($status);
 		$entry = $this->entries->findInForm($form->getId(), $entryId);
 		$this->changeStatus($form, $entry, $status, $userId);
@@ -637,7 +679,7 @@ class FormService {
 	 * @throws \OCA\Webforms\Exception\CountChangedException
 	 */
 	public function setEntriesStatus(string $userId, int $id, ?string $status, ?array $ids, EntryFilter $filter, int $expected): int {
-		$form = $this->get($userId, $id);
+		$form = $this->get($userId, $id, Role::REVIEWER);
 		$this->requireStatus($status);
 		$changed = 0;
 		foreach ($this->selectEntries($form, $ids, $filter, $expected) as $entry) {
@@ -656,7 +698,7 @@ class FormService {
 	 * @throws ValidationException
 	 */
 	public function setEntryNote(string $userId, int $id, int $entryId, string $note): array {
-		$form = $this->get($userId, $id);
+		$form = $this->get($userId, $id, Role::REVIEWER);
 		$note = trim(str_replace(["\r\n", "\r"], "\n", $note));
 		if (mb_strlen($note) > self::MAX_NOTE) {
 			throw new ValidationException([['code' => 'note_too_long', 'path' => 'note']]);
@@ -733,7 +775,7 @@ class FormService {
 	 * @throws NotFoundException
 	 */
 	public function summarizeEntries(string $userId, int $id, EntryFilter $filter): array {
-		$form = $this->get($userId, $id);
+		$form = $this->get($userId, $id, Role::REVIEWER);
 		$summary = new EntrySummary();
 		/** @var array<int, array{order: list<string>, fields: array<string, array<string, mixed>>}> $versions */
 		$versions = [];
@@ -752,7 +794,7 @@ class FormService {
 	 * @throws NotFoundException
 	 */
 	public function deleteEntry(string $userId, int $id, int $entryId): void {
-		$form = $this->get($userId, $id);
+		$form = $this->get($userId, $id, Role::EDITOR);
 		$this->removeEntry($form, $this->entries->findInForm($form->getId(), $entryId), $userId);
 	}
 
@@ -768,7 +810,7 @@ class FormService {
 	 * @throws \OCA\Webforms\Exception\CountChangedException
 	 */
 	public function deleteEntries(string $userId, int $id, ?array $ids, EntryFilter $filter, int $expected): int {
-		$form = $this->get($userId, $id);
+		$form = $this->get($userId, $id, Role::EDITOR);
 		$entries = $this->selectEntries($form, $ids, $filter, $expected);
 		foreach ($entries as $entry) {
 			$this->removeEntry($form, $entry, $userId);
@@ -803,7 +845,7 @@ class FormService {
 	 * @throws NotFoundException
 	 */
 	public function openEntryFile(string $userId, int $id, int $entryId, string $fieldId, int $index): array {
-		$form = $this->get($userId, $id);
+		$form = $this->get($userId, $id, Role::REVIEWER);
 		$entry = $this->entries->findInForm($form->getId(), $entryId);
 		$fields = self::fieldsOf($this->versions->find($entry->getVersionId())->getDefinitionArray());
 		$data = $entry->getDataArray();
@@ -958,13 +1000,27 @@ class FormService {
 	}
 
 	/**
+	 * One form as this person sees it. A Reviewer gets no draft and nothing about the link, because they
+	 * may only read responses (docs/SCHEMA.md section 22.1).
+	 *
 	 * @return array<string, mixed>
 	 */
-	public function toArray(Form $form, bool $withDraft = false): array {
+	public function toArray(Form $form, string $userId, bool $withDraft = false): array {
+		$role = $this->access->role($userId, $form) ?? Role::REVIEWER;
 		$latestId = $form->getLatestVersionId();
 		$latest = $latestId === null ? null : ($this->versions->findByIds([$latestId])[$latestId] ?? null);
-		$data = $this->describe($form, $latest, $this->entries->countByForm($form->getId()), $this->entries->countNew($form->getId(), $form->getResponsesSeenAt()));
-		if ($withDraft) {
+		$seenAt = $this->seen->get($form->getId(), $userId);
+		$data = $this->describe(
+			$form,
+			$latest,
+			$this->entries->countByForm($form->getId()),
+			$this->entries->countNew($form->getId(), $seenAt),
+			$role,
+			$role !== Role::OWNER && $this->shares->findOne($form->getId(), FormShare::TYPE_USER, $userId) !== null,
+			$seenAt,
+			$this->access->displayName($form->getOwnerId()),
+		);
+		if ($withDraft && $role->atLeast(Role::EDITOR)) {
 			$data['draft'] = JsonShape::definition($form->getDraftDefinition());
 			$data['hasUnpublishedChanges'] = $latest === null ? true : $this->differs($form, $latest);
 			// Ids that cannot be used again, so the builder can say so before the server has to refuse.
@@ -974,13 +1030,14 @@ class FormService {
 	}
 
 	/**
-	 * A form as the owner sees it. `availability` says whether the published form takes responses by
+	 * A form as the person sees it. `availability` says whether the published form takes responses by
 	 * its own limit and dates and the server's cap (docs/SCHEMA.md section 3.1); it is null until the
 	 * form has been published. A closed or archived form takes none whatever it says.
 	 *
+	 * @param bool $direct a share was made with their own account, so they may leave the form
 	 * @return array<string, mixed>
 	 */
-	private function describe(Form $form, ?Version $latest, int $responses, int $newResponses): array {
+	private function describe(Form $form, ?Version $latest, int $responses, int $newResponses, Role $role, bool $direct, ?int $seenAt, string $ownerName): array {
 		$availability = null;
 		if ($latest !== null) {
 			$settings = $latest->getDefinitionArray()['settings'] ?? [];
@@ -991,11 +1048,16 @@ class FormService {
 				$this->policy->settings()->maxResponsesPerForm(),
 			);
 		}
-		return [
+		$data = [
 			'id' => $form->getId(),
 			'title' => $form->getTitle(),
 			'description' => $form->getDescription(),
 			'status' => $form->getStatus(),
+			'role' => $role->key(),
+			'ownerId' => $form->getOwnerId(),
+			'ownerName' => $ownerName,
+			// Only a share made with their own account can be left; one through a group is the group's.
+			'canLeave' => $direct,
 			'publicToken' => $form->getPublicToken(),
 			'slug' => $form->getSlug(),
 			// Never the password or its hash, only whether there is one.
@@ -1007,10 +1069,15 @@ class FormService {
 			'createdAt' => $form->getCreatedAt(),
 			'updatedAt' => $form->getUpdatedAt(),
 			'availability' => $availability,
-			// Responses that arrived since the owner last opened the list (docs/SCHEMA.md section 20.1).
+			// Responses that arrived since this person last opened the list (docs/SCHEMA.md sections 20.1 and 22.4).
 			'newCount' => $newResponses,
-			'responsesSeenAt' => $form->getResponsesSeenAt(),
+			'responsesSeenAt' => $seenAt,
 		];
+		if (!$role->atLeast(Role::EDITOR)) {
+			// How the form is shared and reached is for those who may edit it.
+			unset($data['publicToken'], $data['slug'], $data['hasPassword'], $data['embed'], $data['embedOrigins']);
+		}
+		return $data;
 	}
 
 	private function differs(Form $form, Version $latest): bool {

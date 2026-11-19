@@ -79,6 +79,25 @@ class FormMapper extends QBMapper {
 	}
 
 	/**
+	 * @param list<int> $ids
+	 * @return list<Form>
+	 * @throws Exception
+	 */
+	public function findByIds(array $ids): array {
+		$forms = [];
+		foreach (array_chunk($ids, 500) as $chunk) {
+			$qb = $this->db->getQueryBuilder();
+			$qb->select('*')
+				->from($this->getTableName())
+				->where($qb->expr()->in('id', $qb->createNamedParameter($chunk, \OCP\DB\QueryBuilder\IQueryBuilder::PARAM_INT_ARRAY)));
+			foreach ($this->findEntities($qb) as $form) {
+				$forms[] = $form;
+			}
+		}
+		return $forms;
+	}
+
+	/**
 	 * @return list<Form>
 	 * @throws Exception
 	 */

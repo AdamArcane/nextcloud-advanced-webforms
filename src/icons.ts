@@ -5,6 +5,8 @@
 
 // Only the icons the app uses are imported, so the bundle keeps just those paths.
 import {
+	mdiAccount,
+	mdiAccountMultiple,
 	mdiImageOutline,
 	mdiStar,
 	mdiStarOutline,
@@ -113,6 +115,8 @@ export const icons = {
 	close: mdiClose,
 	copy: mdiContentCopy,
 	delete: mdiDelete,
+	user: mdiAccount,
+	group: mdiAccountMultiple,
 	design: mdiPalette,
 	desktop: mdiMonitor,
 	download: mdiDownload,

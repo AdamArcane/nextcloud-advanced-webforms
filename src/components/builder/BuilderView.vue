@@ -20,6 +20,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ApiError } from '../../api/http.ts'
+import { isDestinationField } from '../../builder/destinations.ts'
 import { fetchUserPolicy, OPEN_POLICY } from '../../api/settings.ts'
 import type { UserPolicy } from '../../api/settings.ts'
 import { deleteForm, getForm, publicFormUrl, publishForm, saveDraft, setFormArchived } from '../../api/forms.ts'
@@ -62,6 +63,12 @@ const errors = ref<DefinitionError[]>([])
 const publishing = ref(false)
 const archiveFailed = ref(false)
 const publishFailed = ref(false)
+
+// The owner may do everything. An editor may not change what reaches into the owner's Files or Tables
+// (docs/SCHEMA.md sections 22.1 and 22.5); a form from an answer that carries no role belongs to the person.
+const isOwner = computed(() => form.value?.role === undefined || form.value.role === 'owner')
+const ownerOnlyNotice = ref(false)
+const hasFilesUploads = computed(() => Object.values(draft.value?.fields ?? {}).some((field) => field.type === 'file' && field.storage !== 'app'))
 
 const selectedId = ref<string | null>(null)
 // On a narrow screen the sidebar covers the canvas, so it opens only once a field is picked.
@@ -149,9 +156,12 @@ async function flush(): Promise<void> {
 		form.value = result.form
 		errors.value = result.errors
 		emit('changed', result.form)
+		ownerOnlyNotice.value = false
 		saveState.value = sentRevision === revision ? 'saved' : 'dirty'
-	} catch {
+	} catch (error) {
 		saveState.value = 'error'
+		// The server refuses an editor's change to what uses the owner's Files or Tables.
+		ownerOnlyNotice.value = error instanceof ApiError && error.errors.some((one) => one.code === 'owner_only_destination')
 	} finally {
 		inFlight = false
 	}
@@ -241,6 +251,15 @@ function select(fieldId: string): void {
 /** The hover toolbar acts on its own field, which becomes the selected one (the delete dialog uses the selection). */
 function onToolbarRemove(fieldId: string): void {
 	selectedId.value = fieldId
+	askRemoveField()
+}
+
+/** Removing a field that uses the owner's Files is a change to where files go, so an editor is told instead. */
+function askRemoveField(): void {
+	if (!isOwner.value && selectedId.value !== null && isDestinationField(draft.value?.fields[selectedId.value])) {
+		ownerOnlyNotice.value = true
+		return
+	}
 	confirmRemoveField.value = true
 }
 
@@ -269,12 +288,21 @@ function onRemovePage(pageId: string): void {
 	}
 }
 
+/** A file field an editor adds is kept in the app: keeping it in the owner's Files would be the owner's to decide. */
+function forRole(definition: DraftDefinition, fieldId: string): DraftDefinition {
+	const field = definition.fields[fieldId]
+	if (isOwner.value || !field || field.type !== 'file') {
+		return definition
+	}
+	return { ...definition, fields: { ...definition.fields, [fieldId]: { ...field, storage: 'app' } } }
+}
+
 function onAdd(type: string, rowIndex: number, pageIndex = 0): void {
 	if (!draft.value) {
 		return
 	}
 	const result = addField(draft.value, type, { kind: 'row', index: rowIndex, page: pageIndex })
-	edit(result.definition)
+	edit(forRole(result.definition, result.fieldId))
 	select(result.fieldId)
 }
 
@@ -287,7 +315,7 @@ function onAddBeside(type: string): void {
 		return
 	}
 	const result = addField(draft.value, type, { kind: 'join', rowId: at.row.id })
-	edit(result.definition)
+	edit(forRole(result.definition, result.fieldId))
 	select(result.fieldId)
 }
 
@@ -517,6 +545,9 @@ async function onDeleteConfirmed(): Promise<void> {
 						{{ t('webforms', 'Restore form') }}
 					</NcButton>
 				</NcNoteCard>
+				<NcNoteCard v-if="ownerOnlyNotice" type="warning">
+					{{ t('webforms', 'Only the owner of this form can change where files are saved or use Tables, because they use the owner\'s Files and Tables. Your other changes are kept on this screen. Ask the owner, or undo the change.') }}
+				</NcNoteCard>
 				<NcNoteCard v-if="archiveFailed" type="error">
 					{{ t('webforms', 'Could not change the archive state. Try again.') }}
 				</NcNoteCard>
@@ -551,6 +582,7 @@ async function onDeleteConfirmed(): Promise<void> {
 						:allowed-types="policy.allowedActionTypes"
 						:max-actions="policy.maxActions"
 						:mail="policy.mail"
+						:owner-only="!isOwner"
 						@change="edit" />
 					<FormProperties v-else
 						:section="settingsTab"
@@ -558,6 +590,8 @@ async function onDeleteConfirmed(): Promise<void> {
 						:share-url="shareUrl"
 						:form="form"
 						:archived="archived"
+						:is-owner="isOwner"
+						:has-files-uploads="hasFilesUploads"
 						@share="onShare"
 						@archive="toggleArchived"
 						@title="onTitle"
@@ -620,6 +654,7 @@ async function onDeleteConfirmed(): Promise<void> {
 				:error-codes="selectedCodes"
 				:retired-ids="form.retiredIds ?? []"
 				:published="form.latestVersionId !== null"
+				:owner-only="!isOwner"
 				@update="onUpdate"
 				@span="onSpan"
 				@move="onMove"
@@ -627,7 +662,7 @@ async function onDeleteConfirmed(): Promise<void> {
 				@duplicate="onDuplicate"
 				@to-page="onToPage"
 				@rename="onRename"
-				@remove="confirmRemoveField = true" />
+				@remove="askRemoveField" />
 			<NcEmptyContent v-else
 				class="af-builder__hint"
 				:name="t('webforms', 'No field selected')"

@@ -8,6 +8,22 @@
 What is planned, in rough order, and what is missing compared with other form builders. For how things
 work see [SCHEMA.md](SCHEMA.md). Nothing here is promised for a date.
 
+## Collaboration
+
+Designed 2026-11-19 and written down in [SCHEMA.md](SCHEMA.md) section 22: share a form with accounts and
+groups as Editor or Reviewer, so a team can work on one form. In this order, each a pull request:
+
+1. **Access and roles (built).** Two new tables, one place that decides a person's role, the list of forms shared
+   with you, "new responses" kept for each person, the Collaborators section and a reading copy of the
+   definition for Reviewers.
+2. **Revision conflicts.** The builder autosaves today with no guard, so two editors overwrite each other.
+   Co-editing is not announced before this is in.
+3. **Lifecycle.** Handing a form to someone else, what happens when an owner's account is deleted, and a
+   server setting for sharing.
+
+Later: notifications to collaborators, Teams as a share target, a read only Viewer role, and a history of
+who changed what.
+
 ## Integrations and storage
 
 Responses always live in the app's own database, and everything that sends them elsewhere is an
@@ -119,7 +135,7 @@ Gap review written against 0.3.x (2026-11-15), from README.md, docs/SCHEMA.md an
   browser (SCHEMA.md section 21). Left out by decision: a link to continue on another device, uploads,
   and a count of people who started.
 - **Respondent experience.** Done: a progress indicator on forms with several pages (SCHEMA.md section 5.1). Also done: a review step that lists the answers before sending (SCHEMA.md section 5.2). Still open: per-form language, and a picture inside a question (image blocks, SCHEMA.md section 4.9, are done).
-- **Sharing.** Public link, custom address, QR code and embedding (see Sharing above). No collaborator or co-editor sharing and no per-user form permissions.
+- **Sharing.** Public link, custom address, QR code and embedding (see Sharing above). Sharing a form with other accounts and groups is designed (see Collaboration above); it is not built yet.
 - **Question types.** Done: rating, scale, consent and date and time (SCHEMA.md section 4.8). Still open:
   slider, color, date range, and name and address fields. Image blocks are done (SCHEMA.md section 4.9).
 - **Builder.** Touch dragging is not supported.

@@ -43,6 +43,8 @@ const props = defineProps<{
 	unreachable: boolean
 	/** An administrator has switched this kind of action off. */
 	switchedOff?: boolean
+	/** An editor, not the owner: actions that reach into the owner's Files or Tables are read only (docs/SCHEMA.md section 22.5). */
+	ownerOnly?: boolean
 	/** The administrator's settings for mail. Left out, everything is allowed and there is no default. */
 	mail?: MailPolicy
 	/** A freshly generated secret to show once, for this action. */
@@ -50,6 +52,9 @@ const props = defineProps<{
 	secretBusy: boolean
 	secretFailed: boolean
 }>()
+
+/** The owner's Files and Tables are the owner's to point at (docs/SCHEMA.md section 22.5). */
+const locked = computed(() => props.ownerOnly === true && (props.action.type === 'files' || props.action.type === 'tables'))
 
 const emit = defineEmits<{
 	update: [action: FormAction]
@@ -290,7 +295,10 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 			<span class="af-action__chevron" :class="{ 'af-action__chevron--open': expanded }" aria-hidden="true" />
 		</button>
 
-		<div v-if="expanded" class="af-action__body">
+		<div v-if="expanded" class="af-action__body" :inert="locked || undefined">
+			<NcNoteCard v-if="locked" type="info">
+				{{ t('webforms', 'Only the owner of this form can change this action, because it uses the owner\'s Files or Tables.') }}
+			</NcNoteCard>
 			<NcNoteCard v-if="visibleErrors.length > 0" type="warning">
 				<p v-for="code in visibleErrors" :key="code">
 					{{ describeError(code) }}
@@ -420,12 +428,14 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 
 			<!-- Tables -->
 			<TablesActionBody v-else-if="action.type === 'tables'"
+				:inert="locked || undefined"
 				:action="tablesAction"
 				:definition="definition"
 				@patch="patch" />
 
 			<!-- CSV file in Files -->
 			<FilesActionBody v-else-if="action.type === 'files'"
+				:inert="locked || undefined"
 				:action="filesAction"
 				@patch="patch" />
 
@@ -493,7 +503,7 @@ const visibleErrors = computed(() => (props.showErrors || touched.value ? props.
 						<Icon :path="ARROW_DOWN" />
 					</template>
 				</NcButton>
-				<NcButton variant="tertiary" @click="emit('remove')">
+				<NcButton variant="tertiary" :disabled="locked" @click="emit('remove')">
 					<template #icon>
 						<Icon :path="TRASH" />
 					</template>
