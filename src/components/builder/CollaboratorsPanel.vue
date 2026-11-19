@@ -5,14 +5,16 @@
 
 <script setup lang="ts">
 import type { Collaborator, Sharee } from '../../api/forms.ts'
+import type { OwnerForm } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { findSharees, listCollaborators, shareForm, unshareForm } from '../../api/forms.ts'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { findSharees, listCollaborators, shareForm, transferForm, unshareForm } from '../../api/forms.ts'
 import { ApiError } from '../../api/http.ts'
 import { icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
@@ -25,6 +27,11 @@ const props = defineProps<{
 	formId: number
 	/** The form has an upload that is kept in the owner's Files, which stays with the owner's account. */
 	hasFilesUploads?: boolean
+}>()
+
+const emit = defineEmits<{
+	/** The form now belongs to someone else, and the person is an editor on it. */
+	transferred: [form: OwnerForm]
 }>()
 
 type Role = 'editor' | 'reviewer'
@@ -139,6 +146,40 @@ async function changeRole(share: Collaborator, role: string): Promise<void> {
 	}
 }
 
+// ---- Handing the form over (docs/SCHEMA.md section 22.7) ------------------
+
+const handOverTo = ref('')
+const confirmHandOver = ref(false)
+const accounts = computed(() => shares.value.filter((share) => share.type === 'user'))
+const handOverName = computed(() => accounts.value.find((share) => share.with === handOverTo.value)?.displayName ?? '')
+
+function handOverFailure(error: unknown): string {
+	const codes = error instanceof ApiError ? error.errors.map((one) => one.code) : []
+	if (codes.includes('transfer_destinations_unavailable')) {
+		return t('webforms', 'This form saves files or rows in places that {name} cannot use. Ask them to check, or change those places first.', { name: handOverName.value })
+	}
+	if (codes.includes('transfer_has_files')) {
+		return t('webforms', 'Some responses have files in your own Files, which would stay behind. Move the folder or delete those responses first.')
+	}
+	if (codes.includes('transfer_target_invalid')) {
+		return t('webforms', '{name} cannot own forms.', { name: handOverName.value })
+	}
+	return t('webforms', 'Could not hand the form over. Please try again.')
+}
+
+async function handOver(): Promise<void> {
+	confirmHandOver.value = false
+	busy.value = true
+	problem.value = null
+	try {
+		emit('transferred', await transferForm(props.formId, handOverTo.value))
+	} catch (error) {
+		problem.value = handOverFailure(error)
+	} finally {
+		busy.value = false
+	}
+}
+
 async function remove(share: Collaborator): Promise<void> {
 	busy.value = true
 	problem.value = null
@@ -236,6 +277,27 @@ async function remove(share: Collaborator): Promise<void> {
 			<NcNoteCard v-if="problem" type="error">
 				{{ problem }}
 			</NcNoteCard>
+			<div v-if="accounts.length > 0" class="af-collab__add" data-test="hand-over">
+				<select v-model="handOverTo" class="af-collab__select" :aria-label="t('webforms', 'Account to hand the form to')">
+					<option value="">
+						{{ t('webforms', 'Hand the form to…') }}
+					</option>
+					<option v-for="share in accounts" :key="share.id" :value="share.with">
+						{{ share.displayName }}
+					</option>
+				</select>
+				<NcButton :disabled="busy || handOverTo === ''" data-test="hand-over-button" @click="confirmHandOver = true">
+					{{ t('webforms', 'Hand over') }}
+				</NcButton>
+			</div>
+			<NcDialog v-if="confirmHandOver"
+				:name="t('webforms', 'Hand this form to {name}?', { name: handOverName })"
+				:message="t('webforms', '{name} becomes the owner. You stay on as an editor, but you can no longer manage who it is shared with, delete it, or change where files and Tables rows go. Only they can give it back.', { name: handOverName })"
+				:buttons="[
+					{ label: t('webforms', 'Cancel'), variant: 'tertiary', callback: () => { confirmHandOver = false } },
+					{ label: t('webforms', 'Hand over'), variant: 'primary', callback: handOver },
+				]"
+				@closing="confirmHandOver = false" />
 			<NcNoteCard v-if="hasFilesUploads" type="info">
 				{{ t('webforms', 'Files uploaded to this form are kept in your own Files. Collaborators open them through the form. If your account is deleted they go with it, unless the folder is a group folder.') }}
 			</NcNoteCard>

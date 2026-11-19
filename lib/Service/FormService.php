@@ -374,6 +374,52 @@ class FormService {
 		return ['form' => $form, 'errors' => array_merge($this->validator->validate($definition), $this->uploadPermissionErrors($form, $definition), $this->imageErrors($form, $definition), $this->responseFileErrors($form, $definition), $this->policy->actionErrors($definition))];
 	}
 
+	/**
+	 * What in this form reaches into Files or Tables that `$ownerId` may not use: the draft and the published
+	 * version, with every check run as that person (docs/SCHEMA.md section 22.7). Used before a form changes
+	 * hands, so nothing here changes the form. Not tied to a role: callers decide who may ask.
+	 *
+	 * @return list<array<string, mixed>>
+	 */
+	public function destinationErrorsFor(Form $form, string $ownerId): array {
+		$asOwner = clone $form;
+		$asOwner->setOwnerId($ownerId);
+		$definitions = [$form->getDraftDefinition()];
+		$latest = $this->versions->findLatest($form->getId());
+		if ($latest !== null) {
+			$definitions[] = $latest->getDefinitionArray();
+		}
+		$errors = [];
+		foreach ($definitions as $definition) {
+			foreach (array_merge($this->uploadPermissionErrors($asOwner, $definition), $this->imageErrors($asOwner, $definition), $this->responseFileErrors($asOwner, $definition), $this->tablesErrors($asOwner, $definition)) as $error) {
+				$errors[$error['code'] . '|' . $error['path']] = $error;
+			}
+		}
+		return array_values($errors);
+	}
+
+	/**
+	 * Whether any response holds a file kept in the owner's Files, which would stay behind with them if the
+	 * form changed hands (docs/SCHEMA.md section 22.7).
+	 */
+	public function holdsFilesInFiles(Form $form): bool {
+		$definitions = [];
+		for ($offset = 0; ; $offset += 200) {
+			$page = $this->entries->findByForm($form->getId(), 200, $offset);
+			foreach ($page as $entry) {
+				$definitions[$entry->getVersionId()] ??= self::fieldsOf($this->versions->find($entry->getVersionId())->getDefinitionArray());
+				foreach (UploadService::storedFiles($definitions[$entry->getVersionId()], $entry->getDataArray()) as $file) {
+					if ($file['storage'] === UploadPolicy::STORAGE_FILES) {
+						return true;
+					}
+				}
+			}
+			if (count($page) < 200) {
+				return false;
+			}
+		}
+	}
+
 	private function conflict(Form $stored): DraftConflictException {
 		$by = $stored->getDraftSavedBy();
 		return new DraftConflictException($stored, $by === null ? '' : $this->access->displayName($by));
@@ -413,6 +459,8 @@ class FormService {
 
 		$form->setLatestVersionId($latest->getId());
 		$form->setStatus(Form::STATUS_PUBLISHED);
+		// Every destination was just checked for the owner, so the form may take responses again.
+		$form->setDestinationsPending(0);
 		if ($form->getPublicToken() === null) {
 			// 36^32 possibilities, so the link cannot be guessed.
 			$form->setPublicToken($this->random->generate(32, ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS));
@@ -511,6 +559,10 @@ class FormService {
 		}
 		if ($status !== Form::STATUS_UNPUBLISHED && $form->getLatestVersionId() === null) {
 			throw new ValidationException([['code' => 'not_published_yet', 'path' => 'status']]);
+		}
+		if ($status === Form::STATUS_PUBLISHED && $form->needsDestinations()) {
+			// Its places in the owner's Files and Tables were never checked for this owner: publishing does it.
+			throw new ValidationException([['code' => 'destinations_pending', 'path' => 'status']]);
 		}
 		$previous = $form->getStatus();
 		$form->setStatus($status);
@@ -1084,6 +1136,7 @@ class FormService {
 			'createdAt' => $form->getCreatedAt(),
 			'updatedAt' => $form->getUpdatedAt(),
 			'revision' => $form->getRevision(),
+			'destinationsPending' => $form->needsDestinations(),
 			'availability' => $availability,
 			// Responses that arrived since this person last opened the list (docs/SCHEMA.md sections 20.1 and 22.4).
 			'newCount' => $newResponses,

@@ -230,6 +230,15 @@ export async function leaveForm(id: number): Promise<void> {
 	await call(axios.delete(url('/forms/' + id + '/shares/me')))
 }
 
+/**
+ * The owner hands the form to another account and stays on as an editor (docs/SCHEMA.md section 22.7). Rejects
+ * with an ApiError (422): `transfer_target_invalid`, `transfer_destinations_unavailable` (the places, as
+ * `path`) or `transfer_has_files`.
+ */
+export function transferForm(id: number, to: string): Promise<OwnerForm> {
+	return call(axios.post<OwnerForm>(url('/forms/' + id + '/transfer'), { to }))
+}
+
 /** Accounts and groups to share with, found by what was typed. */
 export async function findSharees(id: number, search: string): Promise<Sharee[]> {
 	return (await call(axios.get<{ sharees: Sharee[] }>(url('/forms/' + id + '/sharees'), { params: { search } }))).sharees

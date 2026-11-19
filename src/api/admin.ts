@@ -52,6 +52,8 @@ export interface PolicyAdminSettings {
 	maxActions: number
 	maxActionsCeiling: number
 	creatorGroups: PolicyGroup[]
+	/** Forms may be shared with accounts and groups (docs/SCHEMA.md section 22.8). */
+	sharing: boolean
 }
 
 export interface PolicyInput {
@@ -60,6 +62,7 @@ export interface PolicyInput {
 	maxResponses: number
 	maxActions: number
 	creatorGroups: string[]
+	sharing: boolean
 	/** Agree to delete the responses that retention would remove right now. */
 	confirmDelete?: boolean
 }

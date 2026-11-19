@@ -247,6 +247,15 @@ const shareUrl = computed(() => {
 	return address ? publicFormUrl(address) : null
 })
 
+/** The form was handed to someone else: the person is an editor now, and the draft on screen is untouched. */
+function onTransferred(saved: OwnerForm): void {
+	if (!form.value) {
+		return
+	}
+	form.value = { ...form.value, role: saved.role, ownerId: saved.ownerId, ownerName: saved.ownerName, canLeave: saved.canLeave, updatedAt: saved.updatedAt }
+	emit('changed', form.value)
+}
+
 /** The sharing options are saved apart from the draft, so only they are taken from the answer. */
 function onShare(saved: OwnerForm): void {
 	if (!form.value) {
@@ -619,6 +628,11 @@ async function onDeleteConfirmed(): Promise<void> {
 						{{ t('webforms', 'Download my version') }}
 					</NcButton>
 				</NcNoteCard>
+				<NcNoteCard v-if="form?.destinationsPending" type="warning" data-test="destinations-pending">
+					{{ isOwner
+						? t('webforms', 'This form was closed when the previous owner\'s account was deleted, because the places it saves to in Files and Tables are not yet set up for you. Check them, then publish to open it again.')
+						: t('webforms', 'This form is closed because the places it saves to in Files and Tables are not set up for its new owner yet. They need to check them and publish it again.') }}
+				</NcNoteCard>
 				<NcNoteCard v-if="ownerOnlyNotice" type="warning">
 					{{ t('webforms', 'Only the owner of this form can change where files are saved or use Tables, because they use the owner\'s Files and Tables. Your other changes are kept on this screen. Ask the owner, or undo the change.') }}
 				</NcNoteCard>
@@ -665,8 +679,10 @@ async function onDeleteConfirmed(): Promise<void> {
 						:form="form"
 						:archived="archived"
 						:is-owner="isOwner"
+						:can-share="policy.canShare !== false"
 						:has-files-uploads="hasFilesUploads"
 						@share="onShare"
+						@transferred="onTransferred"
 						@archive="toggleArchived"
 						@title="onTitle"
 						@description="onDescription"

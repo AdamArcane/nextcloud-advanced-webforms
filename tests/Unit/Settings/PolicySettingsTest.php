@@ -37,6 +37,7 @@ final class PolicySettingsTest extends TestCase {
 		$this->assertSame(0, $policy->maxResponsesPerForm());
 		$this->assertSame(10, $policy->maxActionsPerForm());
 		$this->assertSame([], $policy->creatorGroups());
+		$this->assertTrue($policy->sharingEnabled());
 	}
 
 	public function testSaveAndReadBack(): void {
@@ -47,6 +48,14 @@ final class PolicySettingsTest extends TestCase {
 		$this->assertSame(500, $policy->maxResponsesPerForm());
 		$this->assertSame(4, $policy->maxActionsPerForm());
 		$this->assertSame(['staff', 'admin'], $policy->creatorGroups());
+	}
+
+	public function testSharingCanBeSwitchedOffAndOnAgain(): void {
+		$policy = new PolicySettings($this->store());
+		$policy->save(['message'], 0, 0, 10, [], false);
+		$this->assertFalse($policy->sharingEnabled());
+		$policy->save(['message'], 0, 0, 10, [], true);
+		$this->assertTrue($policy->sharingEnabled());
 	}
 
 	public function testAllTypesIsStoredAsNothingSoNewTypesStayAllowed(): void {

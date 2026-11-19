@@ -15,8 +15,9 @@ const listCollaborators = vi.hoisted(() => vi.fn())
 const shareForm = vi.hoisted(() => vi.fn())
 const unshareForm = vi.hoisted(() => vi.fn())
 const findSharees = vi.hoisted(() => vi.fn())
+const transferForm = vi.hoisted(() => vi.fn())
 
-vi.mock('../../api/forms.ts', () => ({ listCollaborators, shareForm, unshareForm, findSharees }))
+vi.mock('../../api/forms.ts', () => ({ listCollaborators, shareForm, unshareForm, findSharees, transferForm }))
 
 function share(id: number, patch: Partial<Collaborator> = {}): Collaborator {
 	return { id, type: 'user', with: 'anna', displayName: 'Anna Lee', role: 'editor', createdAt: 1, ...patch }
@@ -134,5 +135,48 @@ describe('who a form is shared with', () => {
 
 	it('says that notes are shared', async () => {
 		expect((await mountPanel()).text()).toContain('Notes on responses can be read by everyone this form is shared with.')
+	})
+
+	describe('handing the form over (docs/SCHEMA.md section 22.7)', () => {
+		async function confirm(wrapper: Awaited<ReturnType<typeof mountPanel>>): Promise<void> {
+			await wrapper.find('[data-test="hand-over"] select').setValue('anna')
+			await wrapper.find('[data-test="hand-over-button"]').trigger('click')
+			await flushPromises()
+			const button = [...document.body.querySelectorAll('button')].find((one) => one.textContent?.trim() === 'Hand over')!
+			button.click()
+			await flushPromises()
+		}
+
+		afterEach(() => {
+			document.body.innerHTML = ''
+		})
+
+		it('offers only accounts, not groups', async () => {
+			const wrapper = await mountPanel()
+			const options = wrapper.findAll('[data-test="hand-over"] option').map((option) => option.text())
+			expect(options).toEqual(['Hand the form to…', 'Anna Lee'])
+		})
+
+		it('asks first, then hands over and tells the builder', async () => {
+			transferForm.mockResolvedValue({ id: 5, role: 'editor', ownerId: 'anna' })
+			const wrapper = await mountPanel()
+			await wrapper.find('[data-test="hand-over"] select').setValue('anna')
+			await wrapper.find('[data-test="hand-over-button"]').trigger('click')
+			await flushPromises()
+			expect(document.body.textContent).toContain('Hand this form to Anna Lee?')
+			expect(transferForm).not.toHaveBeenCalled()
+			;[...document.body.querySelectorAll('button')].find((one) => one.textContent?.trim() === 'Hand over')!.click()
+			await flushPromises()
+			expect(transferForm).toHaveBeenCalledWith(5, 'anna')
+			expect(wrapper.emitted('transferred')).toHaveLength(1)
+		})
+
+		it('says why when responses hold files that would stay behind', async () => {
+			transferForm.mockRejectedValue(new ApiError(422, 'validation', [{ code: 'transfer_has_files' }] as never))
+			const wrapper = await mountPanel()
+			await confirm(wrapper)
+			expect(wrapper.text()).toContain('Some responses have files in your own Files')
+			expect(wrapper.emitted('transferred')).toBeUndefined()
+		})
 	})
 })

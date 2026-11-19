@@ -1903,10 +1903,13 @@ The builder saves automatically, so without a guard two editors silently overwri
   owner's Files and the new owner could not open them. Moving the folder first, or deleting those
   responses, makes it possible.
 - **An owner's account is deleted** (`UserDeletedEvent`). For each of their forms:
-  - If it has editors who are allowed to create forms, ownership passes to the one who was added first. The
+  - If it has editors who are allowed to create forms, ownership passes to the one who was added first
+    (`NextOwner`). Only editors shared with by account count, not those who have it through a group. The
     form is **closed** (section 3.1) when its destinations are not usable for the new owner, so respondents
     see the closed message and not an upload error, and the builder shows a banner that the destinations
-    need to be set again. Files kept in the deleted account's Files are gone, and the responses
+    need to be set again. `forms.destinations_pending` holds that state: reopening with the status
+    control is refused (`destinations_pending`), and publishing, which checks every destination for the new
+    owner, clears it. Files kept in the deleted account's Files are gone, and the responses
     show them as missing.
   - Otherwise the form and its responses are deleted, as today.
 - **A collaborator's account is deleted:** their shares and their `advforms_form_seen` rows are removed.
@@ -1930,11 +1933,17 @@ the sharee search are gone, and existing shares keep working but cannot be added
 
 ### 22.10 How it is built
 
-Phases 1 and 2 are built (2026-11-19). Still to come: transfer, the handling of an owner's deleted account
-and the server setting (phase 3). The revision check is one conditional `UPDATE ... WHERE revision = base`
-(`FormMapper::updateDraftAt`), so two saves can never both win; the service also checks it early so a stale
-save is refused before any validation. Not tried on the dev instance with two real accounts yet. `versions.published_by` is stored when a version is published and is not shown anywhere yet.
-`forms.responses_seen_at` is no longer read.
+All three phases are built (2026-11-20). None of phase 3 has been tried on the dev instance, and the revision
+check (phase 2) has not been tried there with two real accounts.
+
+- **Revisions.** One conditional `UPDATE ... WHERE revision = base` (`FormMapper::updateDraftAt`), so two saves
+  can never both win. The service also checks early, so a stale save is refused before any validation.
+- **Lifecycle.** `OwnershipService` does the transfer and the passing on of a deleted owner's forms. The group
+  and collaborator listeners were built in phase 1. The setting is `PolicySettings::sharingEnabled()` (`canShare` in
+  `GET /settings`, `sharing` in the admin policy). With sharing off the builder hides the Collaborators section,
+  so an owner cannot see or remove existing shares there, though the API still allows removing.
+- `versions.published_by` is stored when a version is published and is not shown anywhere yet.
+  `forms.responses_seen_at` is no longer read.
 
 1. **Access and roles.** The two tables and `FormAccess`, `FormService` and the controllers on the role
    table, the list query, the per person "new", the Collaborators section, the role badges and a Reviewer

@@ -12,6 +12,7 @@ namespace OCA\Webforms\Tests\Unit\Access;
 use OCA\Webforms\Service\ActionLogService;
 use OCA\Webforms\Service\EntryExportService;
 use OCA\Webforms\Service\FormService;
+use OCA\Webforms\Service\OwnershipService;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -43,10 +44,11 @@ final class PermissionTableTest extends TestCase {
 	];
 
 	/** Public methods that do not name a form to act on (they list, create or build from the caller's own data). */
-	private const FORM_SERVICE_OPEN = ['list', 'listForDisplay', 'create', 'importForm', 'backup', 'get', 'toArray'];
+	private const FORM_SERVICE_OPEN = ['list', 'listForDisplay', 'create', 'importForm', 'backup', 'get', 'toArray', 'destinationErrorsFor', 'holdsFilesInFiles'];
 
 	private const ACTION_LOG = ['list' => 'EDITOR', 'retry' => 'EDITOR'];
 	private const EXPORT = ['export' => 'REVIEWER'];
+	private const OWNERSHIP = ['transfer' => 'OWNER'];
 
 	/** Methods that only hand over to one of the methods above, which asks for the role. */
 	private const DELEGATES = [EntryExportService::class . '::csv' => EntryExportService::class . '::export'];
@@ -60,6 +62,9 @@ final class PermissionTableTest extends TestCase {
 		}
 		foreach (self::ACTION_LOG as $method => $role) {
 			yield 'ActionLogService::' . $method => [ActionLogService::class, $method, $role];
+		}
+		foreach (self::OWNERSHIP as $method => $role) {
+			yield 'OwnershipService::' . $method => [OwnershipService::class, $method, $role];
 		}
 		foreach (self::EXPORT as $method => $role) {
 			yield 'EntryExportService::' . $method => [EntryExportService::class, $method, $role];

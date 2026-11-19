@@ -32,6 +32,8 @@ const props = defineProps<{
 	form?: OwnerForm | null
 	/** Whether the person owns the form: only the owner deletes it or decides who it is shared with (docs/SCHEMA.md section 22.1). */
 	isOwner?: boolean
+	/** The administrator allows sharing forms (docs/SCHEMA.md section 22.8). Missing means it does. */
+	canShare?: boolean
 	/** The form has an upload kept in the owner's Files, which the sharing screen warns about. */
 	hasFilesUploads?: boolean
 }>()
@@ -44,6 +46,8 @@ const emit = defineEmits<{
 	delete: []
 	/** The sharing options were saved; this is the form as the server has it now. */
 	share: [form: OwnerForm]
+	/** The form was handed to another account (docs/SCHEMA.md section 22.7). */
+	transferred: [form: OwnerForm]
 }>()
 
 const published = computed(() => (props.form ? availabilityNote(props.form) : null))
@@ -298,9 +302,10 @@ function str(value: string | number): string | undefined {
 			</section>
 		</template>
 
-		<CollaboratorsPanel v-if="section === 'sharing' && form && isOwner !== false"
+		<CollaboratorsPanel v-if="section === 'sharing' && form && isOwner !== false && canShare !== false"
 			:form-id="form.id"
-			:has-files-uploads="hasFilesUploads" />
+			:has-files-uploads="hasFilesUploads"
+			@transferred="(saved: OwnerForm) => emit('transferred', saved)" />
 
 		<SharePanel v-if="section === 'sharing' && form"
 			:form="form"
