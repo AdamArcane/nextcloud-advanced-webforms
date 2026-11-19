@@ -7,6 +7,7 @@
 import type { DraftDefinition, FormDesign, FormSettings, OwnerForm } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
+import './settings-sections.css'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { icons } from '../../icons.ts'
@@ -442,19 +443,8 @@ function str(value: string | number): string | undefined {
 	padding: calc(var(--default-grid-baseline) * 2) calc(var(--default-grid-baseline) * 3) calc(var(--default-grid-baseline) * 6);
 }
 
-.af-form-props__section {
-	display: flex;
-	flex-direction: column;
-	gap: calc(var(--default-grid-baseline) * 2);
-}
-
-.af-form-props__heading {
-	margin: 0;
-	font-size: 14px;
-	font-weight: bold;
-	color: var(--color-text-maxcontrast);
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
+.af-form-props__section > .af-form-props__heading:not(:first-child) {
+	margin-top: calc(var(--default-grid-baseline) * 2);
 }
 
 .af-form-props__color {

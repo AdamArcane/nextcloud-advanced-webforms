@@ -7,6 +7,7 @@
 import type { OwnerForm } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
+import './settings-sections.css'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
@@ -358,24 +359,12 @@ const snippet = computed(() => {
 
 <style scoped>
 .af-share {
-	display: flex;
-	flex-direction: column;
 	align-items: flex-start;
-	gap: calc(var(--default-grid-baseline) * 2);
 }
 
 .af-share > :deep(.input-field),
 .af-share > :deep(.textarea) {
 	width: 100%;
-}
-
-.af-share__heading {
-	margin: 0;
-	font-size: 14px;
-	font-weight: bold;
-	color: var(--color-text-maxcontrast);
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
 }
 
 .af-share__hint {
