@@ -165,7 +165,7 @@ function handOverFailure(error: unknown): string {
 	if (codes.includes('transfer_target_invalid')) {
 		return t('webforms', '{name} cannot own forms.', { name: handOverName.value })
 	}
-	return t('webforms', 'Could not hand the form over. Please try again.')
+	return t('webforms', 'Could not transfer the form. Please try again.')
 }
 
 async function handOver(): Promise<void> {
@@ -275,24 +275,24 @@ async function remove(share: Collaborator): Promise<void> {
 				{{ problem }}
 			</NcNoteCard>
 			<div v-if="accounts.length > 0" class="af-collab__add" data-test="hand-over">
-				<select v-model="handOverTo" class="af-collab__select" :aria-label="t('webforms', 'Account to hand the form to')">
+				<select v-model="handOverTo" class="af-collab__select" :aria-label="t('webforms', 'Account to transfer the form to')">
 					<option value="">
-						{{ t('webforms', 'Hand the form to…') }}
+						{{ t('webforms', 'Transfer form ownership to…') }}
 					</option>
 					<option v-for="share in accounts" :key="share.id" :value="share.with">
 						{{ share.displayName }}
 					</option>
 				</select>
 				<NcButton :disabled="busy || handOverTo === ''" data-test="hand-over-button" @click="confirmHandOver = true">
-					{{ t('webforms', 'Hand over') }}
+					{{ t('webforms', 'Transfer') }}
 				</NcButton>
 			</div>
 			<NcDialog v-if="confirmHandOver"
-				:name="t('webforms', 'Hand this form to {name}?', { name: handOverName })"
+				:name="t('webforms', 'Transfer this form to {name}?', { name: handOverName })"
 				:message="t('webforms', '{name} becomes the owner. You stay on as an editor, but you can no longer manage who it is shared with, delete it, or change where files and Tables rows go. Only they can give it back.', { name: handOverName })"
 				:buttons="[
 					{ label: t('webforms', 'Cancel'), variant: 'tertiary', callback: () => { confirmHandOver = false } },
-					{ label: t('webforms', 'Hand over'), variant: 'primary', callback: handOver },
+					{ label: t('webforms', 'Transfer'), variant: 'primary', callback: handOver },
 				]"
 				@closing="confirmHandOver = false" />
 			<NcNoteCard v-if="hasFilesUploads" type="info">

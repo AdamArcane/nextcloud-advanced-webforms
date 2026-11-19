@@ -142,7 +142,7 @@ describe('who a form is shared with', () => {
 			await wrapper.find('[data-test="hand-over"] select').setValue('anna')
 			await wrapper.find('[data-test="hand-over-button"]').trigger('click')
 			await flushPromises()
-			const button = [...document.body.querySelectorAll('button')].find((one) => one.textContent?.trim() === 'Hand over')!
+			const button = [...document.body.querySelectorAll('button')].find((one) => one.textContent?.trim() === 'Transfer')!
 			button.click()
 			await flushPromises()
 		}
@@ -154,7 +154,7 @@ describe('who a form is shared with', () => {
 		it('offers only accounts, not groups', async () => {
 			const wrapper = await mountPanel()
 			const options = wrapper.findAll('[data-test="hand-over"] option').map((option) => option.text())
-			expect(options).toEqual(['Hand the form to…', 'Anna Lee'])
+			expect(options).toEqual(['Transfer form ownership to…', 'Anna Lee'])
 		})
 
 		it('asks first, then hands over and tells the builder', async () => {
@@ -163,9 +163,9 @@ describe('who a form is shared with', () => {
 			await wrapper.find('[data-test="hand-over"] select').setValue('anna')
 			await wrapper.find('[data-test="hand-over-button"]').trigger('click')
 			await flushPromises()
-			expect(document.body.textContent).toContain('Hand this form to Anna Lee?')
+			expect(document.body.textContent).toContain('Transfer this form to Anna Lee?')
 			expect(transferForm).not.toHaveBeenCalled()
-			;[...document.body.querySelectorAll('button')].find((one) => one.textContent?.trim() === 'Hand over')!.click()
+			;[...document.body.querySelectorAll('button')].find((one) => one.textContent?.trim() === 'Transfer')!.click()
 			await flushPromises()
 			expect(transferForm).toHaveBeenCalledWith(5, 'anna')
 			expect(wrapper.emitted('transferred')).toHaveLength(1)
