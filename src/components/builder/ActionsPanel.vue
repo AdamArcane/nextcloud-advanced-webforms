@@ -14,6 +14,7 @@ import { ACTION_TYPES, addAction, errorActionIndex, MAX_ACTIONS, moveAction, rem
 import { isDestinationAction } from '../../builder/destinations.ts'
 import ActionCard from './ActionCard.vue'
 import AddActionMenu from './AddActionMenu.vue'
+import SettingsCard from './SettingsCard.vue'
 
 const props = defineProps<{
 	definition: DraftDefinition
@@ -101,22 +102,21 @@ async function generateSecret(index: number): Promise<void> {
 
 <template>
 	<div class="af-actions">
-		<p class="af-actions__intro">
-			{{ t('webforms', 'Choose what happens after someone sends the form. Background actions run after the response is saved, so a slow mail server or website never holds up the respondent.') }}
-		</p>
-
-		<div class="af-actions__add">
-			<AddActionMenu :types="choices" :disabled="full" @pick="add" />
-			<p v-if="choices.length === 0" class="af-actions__hint">
-				{{ t('webforms', 'An administrator has switched off every kind of action on this server.') }}
-			</p>
-			<p v-else-if="full" class="af-actions__hint">
-				{{ t('webforms', 'A form can have up to {max} actions.', { max: limit }) }}
-			</p>
-			<p v-else-if="definition.actions.length > 0" class="af-actions__hint">
-				{{ t('webforms', 'If several messages or redirects match, the first one is shown. Everything in the background runs.') }}
-			</p>
-		</div>
+		<SettingsCard :title="t('webforms', 'After someone sends the form')"
+			:description="t('webforms', 'Choose what happens next. Background actions run after the response is saved, so a slow mail server or website never holds up the respondent.')">
+			<div class="af-actions__add">
+				<AddActionMenu :types="choices" :disabled="full" @pick="add" />
+				<p v-if="choices.length === 0" class="af-actions__hint">
+					{{ t('webforms', 'An administrator has switched off every kind of action on this server.') }}
+				</p>
+				<p v-else-if="full" class="af-actions__hint">
+					{{ t('webforms', 'A form can have up to {max} actions.', { max: limit }) }}
+				</p>
+				<p v-else-if="definition.actions.length > 0" class="af-actions__hint">
+					{{ t('webforms', 'If several messages or redirects match, the first one is shown. Everything in the background runs.') }}
+				</p>
+			</div>
+		</SettingsCard>
 
 		<ActionCard v-for="(action, index) in definition.actions"
 			:key="action.id"

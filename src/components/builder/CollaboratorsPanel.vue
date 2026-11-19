@@ -7,6 +7,7 @@
 import type { Collaborator, Sharee } from '../../api/forms.ts'
 
 import { t } from '@nextcloud/l10n'
+import SettingsCard from './SettingsCard.vue'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
@@ -154,13 +155,9 @@ async function remove(share: Collaborator): Promise<void> {
 </script>
 
 <template>
-	<section class="af-collab">
-		<h3 class="af-collab__heading">
-			{{ t('webforms', 'Collaborators') }}
-		</h3>
-		<p class="af-collab__hint">
-			{{ t('webforms', 'An editor builds and publishes the form and works with its responses. A reviewer can only read responses, sort them with statuses and notes, and download them.') }}
-		</p>
+	<SettingsCard :title="t('webforms', 'Collaborators')"
+		:description="t('webforms', 'An editor builds and publishes the form and works with its responses. A reviewer can only read responses, sort them with statuses and notes, and download them.')">
+		<div class="af-collab">
 
 		<NcLoadingIcon v-if="loading" :size="24" />
 		<NcNoteCard v-else-if="loadFailed" type="error">
@@ -243,7 +240,8 @@ async function remove(share: Collaborator): Promise<void> {
 				{{ t('webforms', 'Notes on responses can be read by everyone this form is shared with.') }}
 			</p>
 		</template>
-	</section>
+		</div>
+	</SettingsCard>
 </template>
 
 <style scoped>
@@ -252,15 +250,6 @@ async function remove(share: Collaborator): Promise<void> {
 	flex-direction: column;
 	align-items: stretch;
 	gap: calc(var(--default-grid-baseline) * 2);
-}
-
-.af-collab__heading {
-	margin: 0;
-	font-size: 14px;
-	font-weight: bold;
-	color: var(--color-text-maxcontrast);
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
 }
 
 .af-collab__hint {
