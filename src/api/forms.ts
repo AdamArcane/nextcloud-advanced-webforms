@@ -40,8 +40,21 @@ export interface SaveResult {
 	errors: DefinitionError[]
 }
 
-export function saveDraft(id: number, definition: DraftDefinition): Promise<SaveResult> {
-	return call(axios.put<SaveResult>(url('/forms/' + id + '/draft'), { definition }))
+/**
+ * `baseRevision` is the revision the copy came from or was last saved at. Rejects with an ApiError of status
+ * 409 and code `draft_conflict` when someone else saved since; its `data` is a {@link DraftConflict}.
+ */
+export function saveDraft(id: number, definition: DraftDefinition, baseRevision: number): Promise<SaveResult> {
+	return call(axios.put<SaveResult>(url('/forms/' + id + '/draft'), { definition, baseRevision }))
+}
+
+/** The stored draft that a save ran into (docs/SCHEMA.md section 22.6). */
+export interface DraftConflict {
+	revision: number
+	draft: DraftDefinition
+	/** Display name of who saved it, empty when unknown. */
+	savedBy: string
+	savedAt: number
 }
 
 /** Rejects with an ApiError (status 422) carrying `errors` when the draft is not valid. */

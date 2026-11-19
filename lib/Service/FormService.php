@@ -36,6 +36,7 @@ use OCA\Webforms\Db\FormShare;
 use OCA\Webforms\Db\FormShareMapper;
 use OCA\Webforms\Db\Version;
 use OCA\Webforms\Db\VersionMapper;
+use OCA\Webforms\Exception\DraftConflictException;
 use OCA\Webforms\Exception\ForbiddenException;
 use OCA\Webforms\Exception\NotFoundException;
 use OCA\Webforms\Forms\ImageSource;
@@ -292,7 +293,7 @@ class FormService {
 	private function createFromDefinition(string $userId, string $title, array $definition): array {
 		$form = $this->create($userId, $title, false);
 		try {
-			return $this->saveDraft($userId, $form->getId(), $definition);
+			return $this->saveDraft($userId, $form->getId(), $definition, $form->getRevision());
 		} catch (ValidationException $e) {
 			// Nothing half-made is left behind for a file that is refused.
 			$this->forms->delete($form);
@@ -309,10 +310,16 @@ class FormService {
 	 * @param array<string, mixed> $definition
 	 * @return array{form: Form, errors: list<array{code: string, path: string}>}
 	 * @throws NotFoundException
+	 * @param int $baseRevision the revision the editor's copy was loaded from or last saved at; a save over
+	 *                          any other revision is refused (docs/SCHEMA.md section 22.6)
 	 * @throws ValidationException
+	 * @throws DraftConflictException
 	 */
-	public function saveDraft(string $userId, int $id, array $definition): array {
+	public function saveDraft(string $userId, int $id, array $definition, int $baseRevision): array {
 		$form = $this->get($userId, $id, Role::EDITOR);
+		if ($form->getRevision() !== $baseRevision) {
+			throw $this->conflict($form);
+		}
 		if ($form->getOwnerId() !== $userId) {
 			// Places in the owner's Files and Tables run with the owner's access, so only the owner may change them
 			// (docs/SCHEMA.md section 22.5). The whole save is refused, so nothing half of it is stored.
@@ -359,9 +366,17 @@ class FormService {
 		$form->setDraft($encoded);
 		$form->setRetiredIds($this->encode($retired));
 		$form->setUpdatedAt($this->time->getTime());
-		$form = $this->forms->update($form);
+		if (!$this->forms->updateDraftAt($form, $baseRevision, $userId)) {
+			// Someone saved between the check above and this write.
+			throw $this->conflict($this->forms->find($id));
+		}
 
 		return ['form' => $form, 'errors' => array_merge($this->validator->validate($definition), $this->uploadPermissionErrors($form, $definition), $this->imageErrors($form, $definition), $this->responseFileErrors($form, $definition), $this->policy->actionErrors($definition))];
+	}
+
+	private function conflict(Form $stored): DraftConflictException {
+		$by = $stored->getDraftSavedBy();
+		return new DraftConflictException($stored, $by === null ? '' : $this->access->displayName($by));
 	}
 
 	/**
@@ -1068,6 +1083,7 @@ class FormService {
 			'archivedAt' => $form->getArchivedAt(),
 			'createdAt' => $form->getCreatedAt(),
 			'updatedAt' => $form->getUpdatedAt(),
+			'revision' => $form->getRevision(),
 			'availability' => $availability,
 			// Responses that arrived since this person last opened the list (docs/SCHEMA.md sections 20.1 and 22.4).
 			'newCount' => $newResponses,

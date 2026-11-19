@@ -23,6 +23,7 @@ import { ApiError } from '../../api/http.ts'
 import { isDestinationField } from '../../builder/destinations.ts'
 import { fetchUserPolicy, OPEN_POLICY } from '../../api/settings.ts'
 import type { UserPolicy } from '../../api/settings.ts'
+import type { DraftConflict } from '../../api/forms.ts'
 import { deleteForm, getForm, publicFormUrl, publishForm, saveDraft, setFormArchived } from '../../api/forms.ts'
 import { addField, addPage, dropField, duplicateField, dropRow, resizeField, type DropTarget, moveFieldToPage, locateField, movePage, removePage, setPageTitle, moveField, removeField, setSpan, updateField } from '../../builder/definition.ts'
 import { describeError, groupErrors, withoutUnstarted } from '../../builder/errors.ts'
@@ -50,7 +51,7 @@ const emit = defineEmits<{
 	deleted: []
 }>()
 
-type SaveState = 'saved' | 'dirty' | 'saving' | 'error'
+type SaveState = 'saved' | 'dirty' | 'saving' | 'error' | 'conflict'
 
 const form = ref<OwnerForm | null>(null)
 const policy = ref<UserPolicy>(OPEN_POLICY)
@@ -68,6 +69,10 @@ const publishFailed = ref(false)
 // (docs/SCHEMA.md sections 22.1 and 22.5); a form from an answer that carries no role belongs to the person.
 const isOwner = computed(() => form.value?.role === undefined || form.value.role === 'owner')
 const ownerOnlyNotice = ref(false)
+// Set when someone else saved the draft first (docs/SCHEMA.md section 22.6). Saving stops until the person chooses.
+const conflict = ref<DraftConflict | null>(null)
+// The revision this copy came from or was last saved at.
+let baseRevision = 1
 const hasFilesUploads = computed(() => Object.values(draft.value?.fields ?? {}).some((field) => field.type === 'file' && field.storage !== 'app'))
 
 const selectedId = ref<string | null>(null)
@@ -102,6 +107,7 @@ onMounted(async () => {
 	try {
 		const loaded = await getForm(props.formId)
 		form.value = loaded
+		baseRevision = loaded.revision ?? 1
 		draft.value = normalize(loaded.draft as DraftDefinition)
 		frozenIds = loaded.latestVersionId !== null ? new Set(Object.keys(draft.value.fields)) : new Set()
 	} catch {
@@ -138,6 +144,9 @@ let inFlight = false
 function edit(next: DraftDefinition): void {
 	draft.value = next
 	revision++
+	if (saveState.value === 'conflict') {
+		return
+	}
 	saveState.value = 'dirty'
 	clearTimeout(timer)
 	timer = setTimeout(() => void flush(), SAVE_DELAY_MS)
@@ -145,20 +154,26 @@ function edit(next: DraftDefinition): void {
 
 async function flush(): Promise<void> {
 	clearTimeout(timer)
-	if (inFlight || draft.value === null || saveState.value === 'saved') {
+	if (inFlight || draft.value === null || saveState.value === 'saved' || saveState.value === 'conflict') {
 		return
 	}
 	inFlight = true
 	saveState.value = 'saving'
 	const sentRevision = revision
 	try {
-		const result = await saveDraft(props.formId, draft.value)
+		const result = await saveDraft(props.formId, draft.value, baseRevision)
+		baseRevision = result.form.revision ?? baseRevision + 1
 		form.value = result.form
 		errors.value = result.errors
 		emit('changed', result.form)
 		ownerOnlyNotice.value = false
 		saveState.value = sentRevision === revision ? 'saved' : 'dirty'
 	} catch (error) {
+		if (error instanceof ApiError && error.status === 409 && error.code === 'draft_conflict') {
+			conflict.value = error.data as unknown as DraftConflict
+			saveState.value = 'conflict'
+			return
+		}
 		saveState.value = 'error'
 		// The server refuses an editor's change to what uses the owner's Files or Tables.
 		ownerOnlyNotice.value = error instanceof ApiError && error.errors.some((one) => one.code === 'owner_only_destination')
@@ -170,8 +185,51 @@ async function flush(): Promise<void> {
 	}
 }
 
+/** Replace the screen with the version that was saved first. The unsaved edits are lost. */
+async function useTheirVersion(): Promise<void> {
+	clearTimeout(timer)
+	try {
+		const loaded = await getForm(props.formId)
+		form.value = loaded
+		baseRevision = loaded.revision ?? conflict.value?.revision ?? baseRevision
+		draft.value = normalize(loaded.draft as DraftDefinition)
+		errors.value = []
+		conflict.value = null
+		saveState.value = 'saved'
+		emit('changed', loaded)
+	} catch {
+		// The conflict stays on screen, so the person can try again.
+	}
+}
+
+/** Save over the other version, by naming the stored revision as the one this copy started from. */
+async function keepMine(): Promise<void> {
+	if (!conflict.value) {
+		return
+	}
+	baseRevision = conflict.value.revision
+	conflict.value = null
+	saveState.value = 'dirty'
+	await flush()
+}
+
+/** A copy of the person's own draft, so choosing the other version loses nothing for good. */
+function downloadMine(): void {
+	if (!draft.value) {
+		return
+	}
+	const link = document.createElement('a')
+	link.href = URL.createObjectURL(new Blob([JSON.stringify(draft.value, null, 2)], { type: 'application/json' }))
+	link.download = 'my-version.json'
+	link.click()
+	URL.revokeObjectURL(link.href)
+}
+
+const conflictWhen = computed(() => (conflict.value ? new Date(conflict.value.savedAt * 1000).toLocaleString() : ''))
+
 const saveLabel = computed(() => {
 	switch (saveState.value) {
+		case 'conflict': return t('webforms', 'Not saved')
 		case 'saving': return t('webforms', 'Saving…')
 		case 'dirty': return t('webforms', 'Unsaved changes')
 		case 'error': return t('webforms', 'Could not save')
@@ -198,7 +256,7 @@ function onShare(saved: OwnerForm): void {
 	emit('changed', form.value)
 }
 const hasChanges = computed(() => form.value?.hasUnpublishedChanges !== false)
-const canPublish = computed(() => !publishing.value && !archived.value && saveState.value !== 'error' && (hasChanges.value || !published.value))
+const canPublish = computed(() => !publishing.value && !archived.value && saveState.value !== 'error' && saveState.value !== 'conflict' && (hasChanges.value || !published.value))
 
 async function publish(): Promise<void> {
 	publishing.value = true
@@ -208,7 +266,7 @@ async function publish(): Promise<void> {
 		if (saveState.value === 'dirty') {
 			await flush()
 		}
-		if (saveState.value === 'error') {
+		if (saveState.value === 'error' || saveState.value === 'conflict') {
 			return
 		}
 		form.value = await publishForm(props.formId)
@@ -543,6 +601,22 @@ async function onDeleteConfirmed(): Promise<void> {
 							<Icon :path="icons.restore" />
 						</template>
 						{{ t('webforms', 'Restore form') }}
+					</NcButton>
+				</NcNoteCard>
+				<NcNoteCard v-if="conflict" type="warning" data-test="draft-conflict">
+					<p>
+						{{ conflict.savedBy
+							? t('webforms', '{name} changed this form at {when}. Your changes are not saved yet.', { name: conflict.savedBy, when: conflictWhen })
+							: t('webforms', 'This form was changed at {when}, in another window or by someone else. Your changes are not saved yet.', { when: conflictWhen }) }}
+					</p>
+					<NcButton variant="primary" data-test="conflict-use-theirs" @click="useTheirVersion">
+						{{ t('webforms', 'Use their version') }}
+					</NcButton>
+					<NcButton data-test="conflict-keep-mine" @click="keepMine">
+						{{ t('webforms', 'Keep mine') }}
+					</NcButton>
+					<NcButton variant="tertiary" data-test="conflict-download" @click="downloadMine">
+						{{ t('webforms', 'Download my version') }}
 					</NcButton>
 				</NcNoteCard>
 				<NcNoteCard v-if="ownerOnlyNotice" type="warning">

@@ -1800,6 +1800,7 @@ they belong to (section 22.3).
   each form's value into a row for its owner. The old column stays unused for one release and is dropped
   in the next.
 - **`forms.revision`** (new, integer, starts at 1): raised by every draft save (section 22.6).
+- **`forms.draft_saved_by`** (new, nullable): who made the last draft save, for the conflict screen.
 - **`versions.published_by`** (new, nullable): who published the version.
 
 Entries, versions and the delivery log keep pointing at the form id and need no change.
@@ -1929,9 +1930,10 @@ the sharee search are gone, and existing shares keep working but cannot be added
 
 ### 22.10 How it is built
 
-Phase 1 is built (2026-11-19). Not in it yet, and still to come in the later phases: `forms.revision` and
-the conflict screen (phase 2), transfer, the handling of an owner's deleted account and the server setting
-(phase 3). `versions.published_by` is stored when a version is published and is not shown anywhere yet.
+Phases 1 and 2 are built (2026-11-19). Still to come: transfer, the handling of an owner's deleted account
+and the server setting (phase 3). The revision check is one conditional `UPDATE ... WHERE revision = base`
+(`FormMapper::updateDraftAt`), so two saves can never both win; the service also checks it early so a stale
+save is refused before any validation. Not tried on the dev instance with two real accounts yet. `versions.published_by` is stored when a version is published and is not shown anywhere yet.
 `forms.responses_seen_at` is no longer read.
 
 1. **Access and roles.** The two tables and `FormAccess`, `FormService` and the controllers on the role

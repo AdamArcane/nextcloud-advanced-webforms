@@ -300,6 +300,8 @@ export interface OwnerForm {
 	newCount?: number
 	createdAt: number
 	updatedAt: number
+	/** Raised by every draft save; a save names the one it started from (docs/SCHEMA.md section 22.6). */
+	revision?: number
 	draft?: DraftDefinition
 	hasUnpublishedChanges?: boolean
 	/** Field ids that can no longer be used because a published field had them. */
