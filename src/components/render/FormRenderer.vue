@@ -22,6 +22,7 @@ import CaptchaField from './CaptchaField.vue'
 import FieldInput from './FieldInput.vue'
 import { prefillValue } from '../../prefill.ts'
 import { clearProgress, isKept, packProgress, readProgress, restoreProgress, writeProgress } from '../../progress.ts'
+import { isComplete, startingParts } from '../../answers.ts'
 import { buildReview, isUnanswered } from '../../review.ts'
 import { messageFor } from './messages.ts'
 import { createUploadState } from './uploadState.ts'
@@ -60,6 +61,11 @@ function initialValue(id: string, field: FormField): unknown {
 			return Array.isArray(fallback) ? [...fallback] : []
 		case 'file':
 			return []
+		case 'matrix':
+		case 'daterange':
+		case 'name':
+		case 'address':
+			return startingParts(field)
 		default:
 			return typeof fallback === 'string' || typeof fallback === 'number' ? String(fallback) : ''
 	}
@@ -283,9 +289,14 @@ function checkRequired(ids: Iterable<string>): boolean {
 	let ok = true
 	for (const id of ids) {
 		const field = fields.value[id]
-		if (visible.value.has(id) && isInputType(field.type) && required.value.has(id) && isUnanswered(field, values[id])) {
-			fieldErrors[id] = messageFor('required')
-			ok = false
+		if (visible.value.has(id) && isInputType(field.type) && required.value.has(id)) {
+			if (isUnanswered(field, values[id])) {
+				fieldErrors[id] = messageFor('required')
+				ok = false
+			} else if (!isComplete(field, values[id])) {
+				fieldErrors[id] = messageFor('incomplete')
+				ok = false
+			}
 		}
 	}
 	return ok

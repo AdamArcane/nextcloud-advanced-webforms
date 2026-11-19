@@ -40,8 +40,21 @@ export interface SaveResult {
 	errors: DefinitionError[]
 }
 
-export function saveDraft(id: number, definition: DraftDefinition): Promise<SaveResult> {
-	return call(axios.put<SaveResult>(url('/forms/' + id + '/draft'), { definition }))
+/**
+ * `baseRevision` is the revision the copy came from or was last saved at. Rejects with an ApiError of status
+ * 409 and code `draft_conflict` when someone else saved since; its `data` is a {@link DraftConflict}.
+ */
+export function saveDraft(id: number, definition: DraftDefinition, baseRevision: number): Promise<SaveResult> {
+	return call(axios.put<SaveResult>(url('/forms/' + id + '/draft'), { definition, baseRevision }))
+}
+
+/** The stored draft that a save ran into (docs/SCHEMA.md section 22.6). */
+export interface DraftConflict {
+	revision: number
+	draft: DraftDefinition
+	/** Display name of who saved it, empty when unknown. */
+	savedBy: string
+	savedAt: number
 }
 
 /** Rejects with an ApiError (status 422) carrying `errors` when the draft is not valid. */
@@ -79,9 +92,13 @@ export interface ShareOptions {
 	embed: boolean
 	/** Websites allowed to do so. Empty means any. */
 	embedOrigins: string[]
+	/** A new password for the link. Left out, the password stays as it is. */
+	password?: string
+	/** Take the password off the link. */
+	removePassword?: boolean
 }
 
-/** Rejects with an ApiError (status 422) whose `errors` say what is wrong: `slug_invalid`, `slug_reserved`, `slug_taken`, `embed_origins_invalid`. */
+/** Rejects with an ApiError (status 422) whose `errors` say what is wrong: `slug_invalid`, `slug_reserved`, `slug_taken`, `embed_origins_invalid`, `password_too_short`, `password_too_long`. */
 export function setFormShare(id: number, share: ShareOptions): Promise<OwnerForm> {
 	return call(axios.put<OwnerForm>(url('/forms/' + id + '/share'), share))
 }
@@ -176,6 +193,60 @@ export function formExportUrl(id: number, source: ExportSource): string {
 /** Where the zip of every form the user owns is downloaded (docs/SCHEMA.md section 13.1). Opened as a link. */
 export function formsBackupUrl(): string {
 	return generateUrl('/apps/webforms/api/v1/backup')
+}
+
+export interface Collaborator {
+	id: number
+	type: 'user' | 'group'
+	/** The account or group id. */
+	with: string
+	displayName: string
+	role: 'editor' | 'reviewer'
+	createdAt: number
+}
+
+export interface Sharee {
+	type: 'user' | 'group'
+	with: string
+	label: string
+}
+
+/** Who a form is shared with. Owner only. */
+export async function listCollaborators(id: number): Promise<{ owner: { id: string, displayName: string }, shares: Collaborator[] }> {
+	return call(axios.get(url('/forms/' + id + '/shares')))
+}
+
+/** Share with an account or group, or change the role of a share. Rejects with an ApiError (422): `share_target_invalid`, `share_is_owner`. */
+export function shareForm(id: number, type: 'user' | 'group', withWhom: string, role: 'editor' | 'reviewer'): Promise<Collaborator> {
+	return call(axios.put<Collaborator>(url('/forms/' + id + '/shares'), { type, with: withWhom, role }))
+}
+
+export async function unshareForm(id: number, shareId: number): Promise<void> {
+	await call(axios.delete(url('/forms/' + id + '/shares/' + shareId)))
+}
+
+/** The person gives up their own access to a form shared with them. */
+export async function leaveForm(id: number): Promise<void> {
+	await call(axios.delete(url('/forms/' + id + '/shares/me')))
+}
+
+/**
+ * The owner hands the form to another account and stays on as an editor (docs/SCHEMA.md section 22.7). Rejects
+ * with an ApiError (422): `transfer_target_invalid`, `transfer_destinations_unavailable` (the places, as
+ * `path`) or `transfer_has_files`.
+ */
+export function transferForm(id: number, to: string): Promise<OwnerForm> {
+	return call(axios.post<OwnerForm>(url('/forms/' + id + '/transfer'), { to }))
+}
+
+/** Accounts and groups to share with, found by what was typed. */
+export async function findSharees(id: number, search: string): Promise<Sharee[]> {
+	return (await call(axios.get<{ sharees: Sharee[] }>(url('/forms/' + id + '/sharees'), { params: { search } }))).sharees
+}
+
+/** A new draft with the same content as this form's draft. Rejects with an ApiError. */
+export function duplicateForm(id: number, title: string): Promise<SaveResult> {
+	return call(axios.post<SaveResult>(url('/forms/' + id + '/duplicate'), { title }))
 }
 
 /** Create a new draft form from the parsed contents of an export file. Rejects with an ApiError. */

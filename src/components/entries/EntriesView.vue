@@ -5,7 +5,7 @@
 
 <script setup lang="ts">
 import type { EntryFilterState } from '../../entries/filter.ts'
-import type { Delivery, DeliveryStatus, DraftDefinition, EntryRecord, ResponseStatus, VersionDefinition } from '../../types.ts'
+import type { Delivery, DeliveryStatus, EntryRecord, ResponseStatus, VersionDefinition } from '../../types.ts'
 
 import { n, t } from '@nextcloud/l10n'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
@@ -18,7 +18,7 @@ import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import { icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
 import { bulkDeleteEntries, bulkSetEntryStatus, deleteEntry, exportUrl, fetchEntrySummary, listDeliveries, listEntries, markEntriesSeen, retryDelivery, setEntryStatus } from '../../api/forms.ts'
@@ -34,6 +34,7 @@ import SegmentedControl from '../builder/SegmentedControl.vue'
 import DeliveryRow from './DeliveryRow.vue'
 import ResponseCard from './ResponseCard.vue'
 import ResponseFilters from './ResponseFilters.vue'
+import { CAN_MANAGE_RESPONSES } from './permissions.ts'
 import ResponsePage from './ResponsePage.vue'
 import ResponseSummary from './ResponseSummary.vue'
 import ResponsesTable from './ResponsesTable.vue'
@@ -48,12 +49,18 @@ const props = withDefaults(defineProps<{
 	/** How responses are laid out and whether the summary is open: the user's preferences (docs/SCHEMA.md 16.1). */
 	responsesView?: 'table' | 'cards'
 	responsesSummary?: boolean
+	/** The person's role on the form. A Reviewer cannot delete responses or see the delivery log. */
+	role?: 'owner' | 'editor' | 'reviewer'
 }>(), {
 	entryId: null,
 	statuses: () => [],
 	responsesView: 'table',
 	responsesSummary: true,
+	role: 'owner',
 })
+
+const canManage = props.role !== 'reviewer'
+provide(CAN_MANAGE_RESPONSES, canManage)
 
 const emit = defineEmits<{
 	/** The owner looked at the list, so this form has no new responses any more. */
@@ -346,13 +353,6 @@ const hasMore = computed(() => entries.value.length < total.value)
 const allColumns = computed(() => responseColumns(versions.value))
 const shownColumns = computed(() => visibleColumns(allColumns.value, chosenColumns.value ?? defaultColumnIds(allColumns.value)))
 
-/** The newest version the listed responses belong to, so the answers filter can offer its questions. */
-const filterDefinition = computed<DraftDefinition | null>(() => {
-	const newest = Object.keys(versions.value).sort((a, b) => Number(b) - Number(a))[0]
-	const definition = newest === undefined ? undefined : versions.value[newest]
-	return definition ? ({ schemaVersion: 1, title: '', settings: {}, rules: [], actions: [], ...definition } as DraftDefinition) : null
-})
-
 function applyFilter(next: EntryFilterState): void {
 	const previous = entryFilter.value
 	entryFilter.value = next
@@ -426,6 +426,9 @@ const failedCount = ref(0)
 let deliveriesLoaded = false
 
 async function refreshFailedCount(): Promise<void> {
+	if (!canManage) {
+		return
+	}
 	try {
 		failedCount.value = (await listDeliveries(props.formId, { status: 'failed', limit: 1 })).total
 	} catch {
@@ -595,7 +598,8 @@ onMounted(() => {
 		</div>
 
 		<div v-else class="af-entries__body">
-			<SegmentedControl :model-value="tab"
+			<SegmentedControl v-if="canManage"
+				:model-value="tab"
 				class="af-entries__tabs"
 				:group-label="t('webforms', 'What to show')"
 				:options="[
@@ -615,7 +619,6 @@ onMounted(() => {
 			<template v-if="tab === 'responses'">
 				<ResponseFilters v-if="grandTotal > 0 || filtered"
 					:model-value="entryFilter"
-					:definition="filterDefinition"
 					:statuses="statuses"
 					@update:model-value="applyFilter" />
 
@@ -649,7 +652,9 @@ onMounted(() => {
 						{{ t('webforms', 'Searched the first 20,000 responses. There may be more matches, narrow the dates to find them.') }}
 					</NcNoteCard>
 
-					<ResponseSummary v-if="summaryOpen"
+					<ResponseSummary :form-id="formId"
+						:open="summaryOpen"
+						@toggle="toggleSummary"
 						:summary="summary"
 						:loading="summaryLoading"
 						:failed="summaryFailed" />
@@ -691,7 +696,7 @@ onMounted(() => {
 								{{ statusLabel(status) }}
 							</option>
 						</select>
-						<NcButton variant="error" :disabled="tooManySelected || bulkBusy" @click="confirmBulk = true">
+						<NcButton v-if="canManage" variant="error" :disabled="tooManySelected || bulkBusy" @click="confirmBulk = true">
 							<template #icon>
 								<NcLoadingIcon v-if="bulkBusy" :size="20" />
 								<Icon v-else :path="icons.delete" />
@@ -712,12 +717,6 @@ onMounted(() => {
 								{ value: 'cards', label: t('webforms', 'Cards'), icon: icons.cardView },
 							]"
 							@update:model-value="(value) => setView(value === 'cards' ? 'cards' : 'table')" />
-						<NcButton :variant="summaryOpen ? 'primary' : 'secondary'" :aria-pressed="summaryOpen" @click="toggleSummary">
-							<template #icon>
-								<Icon :path="icons.summary" />
-							</template>
-							{{ t('webforms', 'Summary') }}
-						</NcButton>
 						<span v-if="newOnPage > 0" class="af-entries__newcount" role="status">
 							{{ n('webforms', '%n new since your last visit', '%n new since your last visit', newOnPage) }}
 						</span>

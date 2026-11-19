@@ -10,6 +10,7 @@ import type { Move } from '../../builder/definition.ts'
 import { getFilePickerBuilder } from '@nextcloud/dialogs'
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import { isDestinationField } from '../../builder/destinations.ts'
 import { icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
@@ -20,7 +21,8 @@ import { computed, ref, watch } from 'vue'
 import { allowedSpans, canMove, locateField, MAX_FIELDS, SPANS } from '../../builder/definition.ts'
 import { describeError } from '../../builder/errors.ts'
 import { IMAGE_MIMES, isFilesImage, isRemoteImage } from '../../images.ts'
-import { isTemporalType, steps, temporalInputType } from '../../rules/fieldTypes.ts'
+import { ADDRESS_PARTS, NAME_PARTS, isTemporalType, partsOf, steps, temporalInputType } from '../../rules/fieldTypes.ts'
+import { partLabel } from '../../partLabels.ts'
 import { fieldIdProblem } from '../../builder/fieldId.ts'
 import { DEFAULT_ACCEPT, DEFAULT_MAX_FILES, DEFAULT_MAX_SIZE_MB, UPLOAD_GROUPS } from '../../uploads.ts'
 import { renderedLabelPosition, requestedLabelPosition, supportsInline } from '../../layout/labelPosition.ts'
@@ -37,6 +39,8 @@ const props = defineProps<{
 	retiredIds?: string[]
 	/** Whether the form has been published, which makes an id change visible to receivers. */
 	published?: boolean
+	/** An editor, not the owner: the parts that reach into the owner's Files are read only (docs/SCHEMA.md section 22.5). */
+	ownerOnly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -61,8 +65,8 @@ const consentText = computed(() => field.value?.text ?? '')
 const consentHelp = t('webforms', 'Shown beside the checkbox. Basic markdown works, so you can link to your terms: [terms](https://example.com/terms).')
 const isHidden = computed(() => type.value === 'hidden')
 const hasLabel = computed(() => !isDisplay.value && !isHidden.value)
-/** Every input field except uploads has a default and can be filled from the link (docs/SCHEMA.md 4.7). */
-const canPrefill = computed(() => !isDisplay.value && type.value !== 'file')
+/** Every input field except uploads, signatures and fields made of several parts has a default and can be filled from the link (docs/SCHEMA.md 4.7). */
+const canPrefill = computed(() => !isDisplay.value && !['file', 'signature', 'matrix', 'daterange', 'name', 'address'].includes(type.value))
 const prefillOff = computed(() => props.definition.settings.prefill === false)
 const copied = ref(false)
 
@@ -205,6 +209,29 @@ function setPickRange(patch: { min?: number, max?: number }): void {
 	const value = next.defaultValue
 	const keep = typeof value === 'number' && steps(next).includes(value)
 	emit('update', keep || value === undefined ? patch : { ...patch, defaultValue: undefined })
+}
+
+/** The input type that edits a date limit: a date range limits dates like a date does. */
+const limitInput = computed(() => (type.value === 'daterange' ? 'date' : temporalInputType(type.value)))
+const hasLimits = computed(() => ['text', 'textarea', 'number', 'date', 'time', 'datetime', 'rating', 'scale', 'slider', 'daterange', 'name', 'address', 'matrix'].includes(type.value) || hasOptions.value)
+const limitsHeading = computed(() => {
+	if (hasOptions.value) {
+		return t('webforms', 'Options')
+	}
+	if (type.value === 'matrix') {
+		return t('webforms', 'Questions and answers')
+	}
+	return type.value === 'name' || type.value === 'address' ? t('webforms', 'Parts') : t('webforms', 'Limits')
+})
+const allParts = computed(() => (type.value === 'name' ? NAME_PARTS : ADDRESS_PARTS))
+
+/** Ask for a part or leave it out. At least one stays, and the parts keep their fixed order. */
+function togglePart(part: string, on: boolean): void {
+	const chosen = partsOf(field.value)
+	const next = allParts.value.filter((entry) => (entry === part ? on : chosen.includes(entry)))
+	if (next.length > 0) {
+		emit('update', { parts: next })
+	}
 }
 
 function setRows(value: string | number): void {
@@ -422,11 +449,12 @@ const moves: { move: Move, label: string, icon: string }[] = [
 
 			<template v-else-if="type === 'image'">
 				<NcTextField :model-value="field.src ?? ''"
+					:disabled="ownerOnly && isDestinationField(field)"
 					:label="t('webforms', 'Picture')"
 					:helper-text="imageHelp"
 					:placeholder="imagePlaceholder"
 					@update:model-value="(value: string | number) => emit('update', { src: String(value).trim() })" />
-				<NcButton variant="secondary" @click="pickImage">
+				<NcButton variant="secondary" :disabled="ownerOnly" @click="pickImage">
 					<template #icon>
 						<Icon :path="icons.storageFiles" />
 					</template>
@@ -505,7 +533,8 @@ const moves: { move: Move, label: string, icon: string }[] = [
 			<h3 class="af-props__heading">
 				{{ t('webforms', 'Who can upload') }}
 			</h3>
-			<SegmentedControl :model-value="field.audience ?? 'anyone'"
+			<SegmentedControl :inert="(ownerOnly && uploadStorage === 'files') || undefined"
+				:model-value="field.audience ?? 'anyone'"
 				:group-label="t('webforms', 'Who can upload')"
 				:options="[
 					{ value: 'anyone', label: t('webforms', 'Anyone'), icon: icons.audienceAnyone },
@@ -521,7 +550,11 @@ const moves: { move: Move, label: string, icon: string }[] = [
 			<h3 class="af-props__heading">
 				{{ t('webforms', 'Where files are saved') }}
 			</h3>
-			<SegmentedControl :model-value="uploadStorage"
+			<NcNoteCard v-if="ownerOnly" type="info">
+				{{ t('webforms', 'Only the owner of this form can change where files are saved, because it uses the owner\'s Files.') }}
+			</NcNoteCard>
+			<SegmentedControl :inert="ownerOnly || undefined"
+				:model-value="uploadStorage"
 				:group-label="t('webforms', 'Where files are saved')"
 				:options="[
 					{ value: 'files', label: t('webforms', 'Your Files'), icon: icons.storageFiles },
@@ -530,10 +563,11 @@ const moves: { move: Move, label: string, icon: string }[] = [
 				@update:model-value="(value) => emit('update', { storage: value === 'app' ? 'app' : undefined })" />
 			<template v-if="uploadStorage === 'files'">
 				<NcTextField :model-value="field.folder ?? ''"
+					:disabled="ownerOnly"
 					:label="t('webforms', 'Folder')"
 					:placeholder="t('webforms', 'Webforms/<form title>')"
 					@update:model-value="(value: string | number) => text('folder', value)" />
-				<NcButton variant="secondary" @click="pickFolder">
+				<NcButton variant="secondary" :disabled="ownerOnly" @click="pickFolder">
 					{{ t('webforms', 'Choose folder') }}
 				</NcButton>
 				<p class="af-props__hint">
@@ -545,13 +579,42 @@ const moves: { move: Move, label: string, icon: string }[] = [
 			</p>
 		</section>
 
-		<section v-if="['text', 'textarea', 'number', 'date', 'time', 'datetime', 'rating', 'scale'].includes(type) || hasOptions" class="af-props__section">
+		<section v-if="hasLimits" class="af-props__section">
 			<h3 class="af-props__heading">
-				{{ hasOptions ? t('webforms', 'Options') : t('webforms', 'Limits') }}
+				{{ limitsHeading }}
 			</h3>
 			<OptionsEditor v-if="hasOptions"
 				:options="field.options ?? []"
 				@update:options="(options) => emit('update', { options })" />
+			<template v-if="type === 'matrix'">
+				<span class="af-props__caption">{{ t('webforms', 'Questions (the rows)') }}</span>
+				<OptionsEditor :options="field.questions ?? []"
+					@update:options="(questions) => emit('update', { questions })" />
+				<span class="af-props__caption">{{ t('webforms', 'Answers (the columns)') }}</span>
+				<OptionsEditor :options="field.options ?? []"
+					@update:options="(options) => emit('update', { options })" />
+				<NcCheckboxRadioSwitch type="switch"
+					:model-value="field.multiple === true"
+					@update:model-value="(value: boolean) => emit('update', { multiple: value ? true : undefined })">
+					{{ t('webforms', 'Allow several answers in a row') }}
+				</NcCheckboxRadioSwitch>
+				<p class="af-props__hint">
+					{{ t('webforms', 'When required, every question needs an answer.') }}
+				</p>
+			</template>
+			<template v-if="type === 'name' || type === 'address'">
+				<NcCheckboxRadioSwitch v-for="part in allParts"
+					:key="part"
+					:model-value="partsOf(field).includes(part)"
+					@update:model-value="(on: boolean) => togglePart(part, on)">
+					{{ partLabel(part) }}
+				</NcCheckboxRadioSwitch>
+				<p class="af-props__hint">
+					{{ type === 'name'
+						? t('webforms', 'When required, the first and last name must be filled in.')
+						: t('webforms', 'When required, street, city, postal code and country must be filled in. Address line 2 and region are always optional.') }}
+				</p>
+			</template>
 			<template v-if="type === 'text' || type === 'textarea'">
 				<NcTextField :model-value="field.minLength === undefined ? '' : String(field.minLength)"
 					type="number"
@@ -602,11 +665,11 @@ const moves: { move: Move, label: string, icon: string }[] = [
 					:placeholder="t('webforms', 'Very likely')"
 					@update:model-value="(value: string | number) => text('maxLabel', String(value).slice(0, 50))" />
 			</template>
-			<template v-if="isTemporalType(type)">
+			<template v-if="isTemporalType(type) || type === 'daterange'">
 				<div class="af-props__group">
 					<label class="af-props__caption" for="af-props-min">{{ type === 'time' ? t('webforms', 'Earliest time') : t('webforms', 'Earliest date') }}</label>
 					<input id="af-props-min"
-						:type="temporalInputType(type)"
+						:type="limitInput"
 						:value="typeof field.min === 'string' ? field.min : ''"
 						:max="typeof field.max === 'string' ? field.max : undefined"
 						@change="text('min', ($event.target as HTMLInputElement).value)">
@@ -614,11 +677,25 @@ const moves: { move: Move, label: string, icon: string }[] = [
 				<div class="af-props__group">
 					<label class="af-props__caption" for="af-props-max">{{ type === 'time' ? t('webforms', 'Latest time') : t('webforms', 'Latest date') }}</label>
 					<input id="af-props-max"
-						:type="temporalInputType(type)"
+						:type="limitInput"
 						:value="typeof field.max === 'string' ? field.max : ''"
 						:min="typeof field.min === 'string' ? field.min : undefined"
 						@change="text('max', ($event.target as HTMLInputElement).value)">
 				</div>
+			</template>
+			<template v-if="type === 'daterange'">
+				<NcTextField :model-value="field.minDays === undefined ? '' : String(field.minDays)"
+					type="number"
+					min="0"
+					:label="t('webforms', 'Fewest days between the dates')"
+					:helper-text="t('webforms', '1 means the last date must be after the first. 0 allows the same day.')"
+					@update:model-value="(value: string | number) => number('minDays', value)" />
+				<NcTextField :model-value="field.maxDays === undefined ? '' : String(field.maxDays)"
+					type="number"
+					min="0"
+					:label="t('webforms', 'Most days between the dates')"
+					:helper-text="t('webforms', 'For example 7 for at most a week. Leave empty for no limit.')"
+					@update:model-value="(value: string | number) => number('maxDays', value)" />
 			</template>
 			<div v-if="type === 'radio' || type === 'checkboxes'" class="af-props__group">
 				<span class="af-props__caption">{{ t('webforms', 'Columns') }}</span>
@@ -628,7 +705,7 @@ const moves: { move: Move, label: string, icon: string }[] = [
 					icon-only
 					@update:model-value="(value) => emit('update', { columns: Number(value) > 1 ? Number(value) : undefined })" />
 			</div>
-			<template v-if="type === 'number'">
+			<template v-if="type === 'number' || type === 'slider'">
 				<NcTextField :model-value="field.prefix ?? ''"
 					:label="t('webforms', 'Text before the number')"
 					:placeholder="t('webforms', '$')"

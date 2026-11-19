@@ -11,8 +11,10 @@ import { t } from '@nextcloud/l10n'
 import { computed, ref } from 'vue'
 import { createWebhookSecret } from '../../api/forms.ts'
 import { ACTION_TYPES, addAction, errorActionIndex, MAX_ACTIONS, moveAction, removeAction, unreachableResponseActions, updateAction } from '../../builder/actions.ts'
+import { isDestinationAction } from '../../builder/destinations.ts'
 import ActionCard from './ActionCard.vue'
 import AddActionMenu from './AddActionMenu.vue'
+import SettingsCard from './SettingsCard.vue'
 
 const props = defineProps<{
 	definition: DraftDefinition
@@ -26,6 +28,8 @@ const props = defineProps<{
 	maxActions?: number
 	/** The administrator's settings for mail, so an email action can say what applies. */
 	mail?: MailPolicy
+	/** An editor, not the owner: actions that use the owner's Files or Tables cannot be added or changed (docs/SCHEMA.md section 22.5). */
+	ownerOnly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -41,7 +45,7 @@ const secretFailedId = ref<string | null>(null)
 const unreachable = computed(() => new Set(unreachableResponseActions(props.definition)))
 const limit = computed(() => Math.min(MAX_ACTIONS, props.maxActions ?? MAX_ACTIONS))
 const full = computed(() => props.definition.actions.length >= limit.value)
-const choices = computed(() => ACTION_TYPES.filter((type) => props.allowedTypes === undefined || props.allowedTypes.includes(type)))
+const choices = computed(() => ACTION_TYPES.filter((type) => props.allowedTypes === undefined || props.allowedTypes.includes(type)).filter((type) => !props.ownerOnly || !isDestinationAction({ type })))
 /** Actions of a type the server has since switched off: they stay visible so they can be removed. */
 const switchedOff = computed(() => new Set(props.definition.actions.filter((action) => props.allowedTypes !== undefined && !props.allowedTypes.includes(action.type)).map((action) => action.id)))
 
@@ -98,22 +102,21 @@ async function generateSecret(index: number): Promise<void> {
 
 <template>
 	<div class="af-actions">
-		<p class="af-actions__intro">
-			{{ t('webforms', 'Choose what happens after someone sends the form. Background actions run after the response is saved, so a slow mail server or website never holds up the respondent.') }}
-		</p>
-
-		<div class="af-actions__add">
-			<AddActionMenu :types="choices" :disabled="full" @pick="add" />
-			<p v-if="choices.length === 0" class="af-actions__hint">
-				{{ t('webforms', 'An administrator has switched off every kind of action on this server.') }}
-			</p>
-			<p v-else-if="full" class="af-actions__hint">
-				{{ t('webforms', 'A form can have up to {max} actions.', { max: limit }) }}
-			</p>
-			<p v-else-if="definition.actions.length > 0" class="af-actions__hint">
-				{{ t('webforms', 'If several messages or redirects match, the first one is shown. Everything in the background runs.') }}
-			</p>
-		</div>
+		<SettingsCard :title="t('webforms', 'After someone sends the form')"
+			:description="t('webforms', 'Choose what happens next. Background actions run after the response is saved, so a slow mail server or website never holds up the respondent.')">
+			<div class="af-actions__add">
+				<AddActionMenu :types="choices" :disabled="full" @pick="add" />
+				<p v-if="choices.length === 0" class="af-actions__hint">
+					{{ t('webforms', 'An administrator has switched off every kind of action on this server.') }}
+				</p>
+				<p v-else-if="full" class="af-actions__hint">
+					{{ t('webforms', 'A form can have up to {max} actions.', { max: limit }) }}
+				</p>
+				<p v-else-if="definition.actions.length > 0" class="af-actions__hint">
+					{{ t('webforms', 'If several messages or redirects match, the first one is shown. Everything in the background runs.') }}
+				</p>
+			</div>
+		</SettingsCard>
 
 		<ActionCard v-for="(action, index) in definition.actions"
 			:key="action.id"
@@ -126,6 +129,7 @@ async function generateSecret(index: number): Promise<void> {
 			:show-errors="showErrors"
 			:unreachable="unreachable.has(action.id)"
 			:switched-off="switchedOff.has(action.id)"
+			:owner-only="ownerOnly"
 			:mail="mail"
 			:revealed-secret="revealed?.actionId === action.id ? revealed.secret : null"
 			:secret-busy="secretBusyId === action.id"

@@ -37,6 +37,20 @@ final class FieldType {
 	public const FILE = 'file';
 	/** Never shown to respondents; filled from its default or the address (docs/SCHEMA.md section 4.7). */
 	public const HIDDEN = 'hidden';
+	/** One answer per row of a grid of choices (docs/SCHEMA.md section 4.10). */
+	public const MATRIX = 'matrix';
+	/** A drawn signature, stored as a small PNG (docs/SCHEMA.md section 4.10). */
+	public const SIGNATURE = 'signature';
+	/** A number picked by dragging a handle along a line. */
+	public const SLIDER = 'slider';
+	/** A colour, `#rrggbb`. */
+	public const COLOR = 'color';
+	/** A first and a last date, `{start, end}`. */
+	public const DATE_RANGE = 'daterange';
+	/** A person's name in parts, such as first and last. */
+	public const NAME = 'name';
+	/** A postal address in parts. */
+	public const ADDRESS = 'address';
 
 	public const HEADING = 'heading';
 	public const PARAGRAPH = 'paragraph';
@@ -51,6 +65,7 @@ final class FieldType {
 	private const BOOLEAN_OPERATORS = ['eq', 'neq'];
 	/** Upload fields hold a list of uploaded files: a rule can only ask whether any were added. */
 	private const FILE_OPERATORS = ['empty', 'not_empty'];
+	private const COLOR_OPERATORS = ['eq', 'neq', 'empty', 'not_empty'];
 	private const ORDERED_OPERATORS = ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'empty', 'not_empty'];
 
 	/**
@@ -77,6 +92,13 @@ final class FieldType {
 		self::CONSENT => self::BOOLEAN_OPERATORS,
 		self::FILE => self::FILE_OPERATORS,
 		self::HIDDEN => self::TEXT_OPERATORS,
+		self::MATRIX => self::FILE_OPERATORS,
+		self::SIGNATURE => self::FILE_OPERATORS,
+		self::SLIDER => self::NUMBER_OPERATORS,
+		self::COLOR => self::COLOR_OPERATORS,
+		self::DATE_RANGE => self::FILE_OPERATORS,
+		self::NAME => self::FILE_OPERATORS,
+		self::ADDRESS => self::FILE_OPERATORS,
 	];
 
 	/** @var list<string> */
@@ -88,12 +110,17 @@ final class FieldType {
 
 	/** Types whose answer is a number. */
 	public static function isNumeric(string $type): bool {
-		return $type === self::NUMBER || $type === self::RATING || $type === self::SCALE;
+		return $type === self::NUMBER || $type === self::RATING || $type === self::SCALE || $type === self::SLIDER;
 	}
 
 	/** Types whose answer is ticked or not. */
 	public static function isBoolean(string $type): bool {
 		return $type === self::CHECKBOX || $type === self::CONSENT;
+	}
+
+	/** Types whose answer is a set of named parts, an array with text keys. */
+	public static function isComposite(string $type): bool {
+		return in_array($type, [self::MATRIX, self::DATE_RANGE, self::NAME, self::ADDRESS], true);
 	}
 
 	public static function isDisplay(string $type): bool {

@@ -262,6 +262,13 @@ Input types (produce a value):
 | `consent` | boolean | a checkbox beside `text` (limited markdown, see 4.5), `required` means must be true, see 4.8 |
 | `file` | list of files | uploaded files, see 4.6 |
 | `hidden` | string | never shown to respondents, see 4.7 |
+| `slider` | number | a number picked by dragging, `min` (default 0), `max` (default 100), `step` (default 1), optional `prefix` and `suffix`, see 4.10 |
+| `color` | string | a colour as `#rrggbb`, stored in lower case, see 4.10 |
+| `daterange` | object | `{start, end}`, two dates `YYYY-MM-DD`, optional `min` and `max`, see 4.10 |
+| `name` | object | a name in parts (`prefix`, `first`, `middle`, `last`, `suffix`), `parts` picks which, see 4.10 |
+| `address` | object | an address in parts (`street`, `street2`, `city`, `region`, `postal`, `country`), `parts` picks which, see 4.10 |
+| `matrix` | object | one answer per row of a grid: `questions` are the rows, `options` the columns, `multiple`, see 4.10 |
+| `signature` | string | a drawn signature as a small PNG in a `data:image/png;base64,` address, see 4.10 |
 
 Display types (no value, cannot be rule sources, can be rule targets):
 
@@ -541,6 +548,53 @@ Other properties: `alt` (up to 255 characters, what the picture shows; empty mar
 `width` (the most room it takes in its cell, as a percentage: 25, 50, 75 or 100, default 100; a
 picture is never stretched past its own size), and `align` as for a paragraph.
 
+### 4.10 Slider, colour, date range, name, address, matrix and signature (DECISION)
+
+Seven input types. All are ordinary fields: they take a label, help text and `required`, are
+validated on the server like every type, and are checked again on publish.
+
+- **`slider`.** A number picked on a line, with a limit and a step like `number` (`min` 0, `max` 100,
+  `step` 1 when left out; `max` must be above `min` and at most 1000 steps away). Stored as a JSON
+  number. It starts unanswered (shown as "Not set") until the handle is moved, and the answer can be
+  taken back. A rule treats it as a number. It has a default value and fills from the address like a
+  `number`.
+- **`color`.** A colour picker. Stored as `#rrggbb` in lower case; the server accepts either case and
+  refuses anything but six hex digits. Rules: `eq`, `neq`, `empty`, `not_empty`. It has a default
+  and fills from the address (`ff8800` or `%23ff8800`).
+- **`daterange`.** A first and a last day, stored as `{"start": "...", "end": "..."}`. Both or neither:
+  one alone is `incomplete_range`, an end before the start is `range_reversed`. `min` and `max` limit
+  both ends, as for `date`. `minDays` and `maxDays` (whole numbers, 0 to 3660) limit the number of days from
+  the first date to the last: 0 for one day, so `minDays: 1` means the last date must come after the first
+  (`range_too_short`) and `maxDays: 7` allows at most a week (`range_too_long`). The form's date pickers
+  already stop people choosing a last date outside those limits.
+- **`name` and `address`.** Asked in parts, each a text of up to 200 characters, stored as an object
+  holding only the parts that were answered, in the order the parts are listed in the table above.
+  `parts` is a list of the parts to ask for: a name defaults to `first` and `last`, an address to all
+  six. Only parts the field asks for are accepted. When the field is required, a name needs `first` and
+  `last` (whichever it asks for), and an address needs `street`, `city`, `postal` and `country`
+  (whichever it asks for); `street2` and `region` are never needed. A part missing then gives
+  `incomplete` (`required` when nothing at all was answered). Browsers can fill the parts themselves.
+- **`matrix`.** A grid: `questions` are the rows and `options` the columns, both lists of
+  `{value, label}` as for choices (value pattern as in 4.3). At most 20 rows and 10 columns. One column
+  per row, or any number when `multiple` is true. Stored as an object from row value to the column
+  value (a list of column values with `multiple`), holding the rows that were answered, in row order.
+  When required, every row needs an answer (`incomplete`).
+- **`signature`.** A pad to draw on with a mouse, finger or pen. Stored as a PNG in a `data:` address.
+  The server decodes it, checks the PNG header and refuses anything over 200,000 characters
+  (`invalid_signature`, `signature_too_large`), so no other kind of file can be stored through it.
+  There is no default and no filling from the address. A draft saved by the respondent in their browser
+  (21) leaves signatures out. Responses show it as a picture on a white background; downloads, emails
+  and Tables show "(signature)" so the picture is never put in text, and free-text search skips it.
+- **Rules.** `name`, `address`, `matrix`, `daterange` and `signature` can only be asked whether they were
+  answered (`empty`, `not_empty`). Anything else about them would be guessing at the respondent's text.
+- **Reading an answer.** Downloads, emails and webhook text read a matrix as `Row: Column; Row: Column`
+  (columns joined with commas under `multiple`), a date range as `start to end`, a name on one line and
+  an address in commas. The webhook body carries the stored objects as they are, and a signature as its `data:` address. A Tables column
+  for any of these is a text column; a slider fills a number column.
+- **Summary** (17.2): a slider is summarised as a number.
+- **Not filled from the address or a default in the builder:** `name`, `address`, `matrix`,
+  `daterange` and `signature` (a draft may still carry a `defaultValue` object that the field accepts).
+
 ## 5. Layout: pages > rows > cells (DECISION)
 
 - `pages`: ordered, 1 to 20. Each page is shown as one step; respondents move
@@ -687,6 +741,8 @@ Comparison semantics (**DECISION**, must be identical in PHP and TypeScript):
 - `number`, `rating`, `scale`: numeric. A non-numeric stored value counts as empty.
 - `date`, `time` and `datetime`: lexical comparison on the normalized string formats above.
 - `checkbox`, `consent`: compares as boolean (`eq` with `true` or `false`).
+- `slider`: numeric, as `number`. `color`: compared in lower case.
+- `name`, `address`, `matrix`, `daterange`, `signature`: only whether anything was answered.
 - Empty means: missing, `null`, empty string after trim, or empty array.
 - A comparison against an empty value is false, except `empty`, `neq`,
   `not_contains`, `not_in`, and `contains_none`, which are true. `contains_all`
@@ -709,6 +765,9 @@ Normalization before comparing (applied to the submitted value and to the rule's
 - `checkbox`, `consent`: a boolean. Any other type counts as empty.
 - `date`, `time`, `datetime`: strings in the formats from section 4.2, anything else counts
   as empty.
+- `slider`: as `number`. `color`: `#` and six hex digits, lowercased, anything else is empty.
+- `name`, `address`, `matrix`, `daterange`: an object with at least one key (a list or an empty object
+  is empty). `signature`: a string starting with `data:image/png;base64,`.
 
 Operators allowed per field type (a rule using any other operator is rejected
 on save, and evaluates to false if it ever reaches the engine):
@@ -716,14 +775,16 @@ on save, and evaluates to false if it ever reaches the engine):
 | field type | operators |
 | --- | --- |
 | `text`, `textarea`, `email`, `phone`, `url` | `eq`, `neq`, `contains`, `not_contains`, `in`, `not_in`, `empty`, `not_empty` |
-| `number`, `rating`, `scale` | `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `not_in`, `empty`, `not_empty` |
+| `number`, `rating`, `scale`, `slider` | `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `not_in`, `empty`, `not_empty` |
 | `select`, `radio` | `eq`, `neq`, `in`, `not_in`, `empty`, `not_empty` |
 | `checkboxes` | `contains`, `not_contains`, `empty`, `not_empty` |
 | `checkbox`, `consent` | `eq`, `neq` |
+| `color` | `eq`, `neq`, `empty`, `not_empty` |
+| `name`, `address`, `matrix`, `daterange`, `signature`, `file` | `empty`, `not_empty` |
 | `date`, `time`, `datetime` | `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `empty`, `not_empty` |
 
 Rule values must fit the source field: for `select`, `radio`, and `checkboxes`
-they must be existing option values, for `number`, `rating` and `scale` a number, for `checkbox` and
+they must be existing option values, for `number`, `rating`, `scale` and `slider` a number, for `color` a `#rrggbb` colour, for `checkbox` and
 `consent` a boolean, for `date`, `time` and `datetime` a valid string. `in` and `not_in` take a
 non-empty list of such values. `empty` and `not_empty` take no value. `all` and
 `any` groups must not be empty.
@@ -1111,6 +1172,24 @@ all of them at once, so there is nothing new to import: each file is one `webfor
 - **Endpoint.** `GET /api/v1/backup`, any signed-in user, limited to 5 a 5 minutes. It is outside
   `/forms/{id}` so it cannot be read as a form id. It answers `500 backup_failed` if the zip cannot be made.
 
+### 13.2 Duplicating a form
+
+The menu on each form in the sidebar has **Duplicate**. It makes a new draft form from the draft of the one
+chosen, named "Copy of <title>", and opens it so it can be renamed.
+
+- **What comes along.** The draft definition: fields, layout, pages, rules, actions and settings.
+- **What does not.** Responses, published versions, the delivery log, the public link, the custom address,
+  embedding, the password on the link (section 18.5), and webhook secrets. It is the same set as an export
+  file, so the copy is a draft that is shared with nobody until it is published, and a copied webhook
+  action asks for its secret again.
+- **Who may.** Anyone who may create forms (section 16), for a form they own. A form that belongs to someone
+  else answers `404`, like every other call. The copy counts as a new form for any limit on forms.
+- **Archived and closed forms** can be copied too: only the draft is read.
+- **Endpoint.** `POST /api/v1/forms/{id}/duplicate` with an optional `title` (255 characters at most, longer
+  is cut), answering `201` with `{ form, errors }` like an import. `errors` are the draft's structural
+  warnings, which block publishing and not saving. It goes through the same creation and draft save as an
+  import, so a refused definition leaves no half-made form behind.
+
 ## 14. Nextcloud events (DECISION)
 
 Besides the per-form webhook action (section 7), the app dispatches Nextcloud events, so an
@@ -1342,8 +1421,8 @@ many match), `grandTotal` (how many the form has), and `truncated`.
 
 - **Free text** looks at what a person sees: answers, a choice by its label (never its internal value),
   an upload by its file names, and the signed-in account. Case is ignored.
-- **`where`** reuses the rules engine, so an owner writes it with the same editor as a rule, with nested
-  all and any groups. Each response is read against its own version of the form. A question that
+- **`where`** reuses the rules engine, with nested all and any groups. The Responses view no longer has a
+  button for it (it was confusing); the API still takes it. Each response is read against its own version of the form. A question that
   response's version never had counts as unanswered, so "is empty" is true for it and "equals" is not.
   A question that no version has any more matches nothing.
 - Dates, respondent and order are answered by the database. Text and `where` need each response read
@@ -1417,7 +1496,8 @@ answers what the matching responses add up to:
 
 How a form reaches people: its link, a custom address, a QR code, and a frame on another website. These
 options belong to the form, not to a published version. They are columns on `advforms_forms`, they are
-saved with `PUT /api/v1/forms/{id}/share` (`slug`, `embed`, `embedOrigins`) and take effect at once,
+saved with `PUT /api/v1/forms/{id}/share` (`slug`, `embed`, `embedOrigins`, and the password in
+section 18.5) and take effect at once,
 without publishing. They are not part of the definition, so they are not in an export file and an
 imported form starts without them.
 
@@ -1480,6 +1560,34 @@ leading `*.` for subdomains (`embed_origins_invalid` otherwise). An empty list a
   browser does not allow that, the frame itself goes there.
 - **Not done yet.** A server-wide switch for administrators to forbid embedding, and a form rendered
   as plain HTML with no script (ROADMAP.md).
+
+### 18.5 Password on the link
+
+A form can ask for a password before it opens. It applies to the link and the custom address alike, and
+to the embed routes.
+
+- **Storing.** The hash of the password (Nextcloud's `IHasher`) is in `advforms_forms.link_password`, null
+  for none. The password and the hash are never returned: the owner API only says `hasPassword`. It is not
+  in the draft, so it is not in an export file, a backup or a duplicate (section 13.2).
+- **Setting.** `PUT /api/v1/forms/{id}/share` takes `password` (6 to 200 characters, `password_too_short`
+  and `password_too_long` otherwise) and `removePassword`. Leaving both out keeps the password as it is, so
+  the other sharing options can be saved without sending it. A new `password` wins over `removePassword`.
+  A password can be set before the first publish.
+- **Opening.** The public page loads as usual. The form call answers `403 password_required` with no form
+  content. `POST /api/v1/public/{token}/unlock` (and `/embed/unlock`) takes `password` and answers
+  `{ "access": "<token>" }`, or `422 wrong_password`. It is limited to 8 a minute per address and per user.
+- **Access token.** A signed token (`AccessToken`): the form id, when it stops working (12 hours), and a
+  fingerprint of the stored hash, under an HMAC with the server secret. It is sent as the `access` parameter
+  with the form, submit, upload and image calls, in the body or the query. It is not a cookie, because a
+  form in a frame on another website gets none. Setting a new password or removing it makes every token
+  issued before stop working. The page keeps it in memory and in the tab's session storage.
+- **Where it is checked.** In `SubmissionService::openVersion`, right after the form is known to be
+  published, so before anything about the form is said: a protected form that is closed, full or not open yet
+  shows only the password question. An unpublished form is `404` first, with or without a password.
+- **What it is not.** It keeps people out of the form. It does not encrypt answers, it does not make people
+  who have it unique, and anyone given it can pass it on. Guessing is slowed by the limit above, not
+  stopped, so it needs a password worth guessing. The builder says so where it is set.
+- **Login and password** are independent: a form can ask for both.
 
 ## 19. Files action (DECISION)
 
@@ -1693,3 +1801,217 @@ does not know that anyone has started.
 
 The answers sit readable in the browser for up to 30 days, for anyone who uses that browser profile.
 Leave the setting off for forms that are filled in on shared computers.
+
+## 22. Collaboration (DECISION)
+
+Decided 2026-11-19. A form can be shared with other accounts and groups, so a team can build one form and
+work through its responses together. Today every form has one owner and nobody else can see it.
+
+The form keeps its owner. Collaborators are people who may do some of what the owner may. Everything the
+form does on its own behalf (writing uploads to Files, adding Tables rows, sending as the owner) still
+runs as the owner, as it does now (sections 4.6, 15 and 19).
+
+### 22.1 Roles
+
+Three roles. A person's role on a form is the highest of the roles they hold directly and through any group
+they belong to (section 22.3).
+
+| | Reviewer | Editor | Owner |
+|---|---|---|---|
+| See the form in the list and open it | yes | yes | yes |
+| View, search, filter and export responses, see the summary, open uploaded files | yes | yes | yes |
+| Set a response's status, write its note | yes | yes | yes |
+| Delete responses, single or bulk | no | yes | yes |
+| See the form definition and edit the draft | no | yes | yes |
+| Publish, unpublish, close, reopen, archive, restore | no | yes | yes |
+| Link, custom address, QR code, embedding, link password (section 18) | no | yes | yes |
+| Export the draft or the published version, duplicate the form (section 13.2) | no | yes | yes |
+| See the delivery log and retry a delivery | no | yes | yes |
+| Change a destination in the owner's Files or Tables (section 22.5) | no | no | yes |
+| Create or reveal a webhook secret | no | no | yes |
+| Manage collaborators, transfer ownership | no | no | yes |
+| Delete the form | no | no | yes |
+
+- A **Reviewer never sees the form's workings**: the builder, the settings and the exports are closed to
+  them, and opening `#/f/<id>` takes them to the responses.
+- **The responses calls hand out definitions today.** The list, one response and the summary return the
+  whole definition of each version a response was submitted against, so the page can show answers under
+  their questions ([FormService.php](../lib/Service/FormService.php) `listEntries`, `getEntry`). That includes
+  the actions, with recipient addresses and webhook URLs, upload folders, and a hidden field's note. For a
+  Reviewer these calls return a **reading copy** instead: the title, fields (type, label, help text,
+  options, layout and what the page needs to word an answer), pages and rules, and nothing else. It drops
+  `actions`, `settings`, a file field's `folder` and `storage`, an image's source in Files and a hidden
+  field's `description`. Owners and editors get the full definition as now. The copy is made on the server
+  by one function (`ReadingCopy`). It is a list of what to keep, so a key the definition gains later is
+  left out until someone decides it is safe to show, and a test fails when a top level key of the
+  definition is in neither the kept list nor the dropped one.
+- A duplicate (section 13.2) belongs to the person who made it, who must be allowed to create forms
+  (section 16). Its destinations are checked for them when they publish it, like any new form.
+- Notes were the owner's private notes (section 20). On a shared form they are visible to everyone who can
+  see responses, and the page says so next to the field. Notes already written stay as they are.
+
+### 22.2 Data
+
+- **`advforms_form_shares`** (new): `id`, `form_id`, `share_type` (`0` account, `1` group), `share_with`
+  (account id or group id), `role` (`reviewer` or `editor`), `created_by`, `created_at`. Unique on
+  `(form_id, share_type, share_with)`, indexed on `(share_type, share_with)` for the list. The owner is
+  never a row.
+- **`advforms_form_seen`** (new): `form_id`, `user_id`, `seen_at`, unique on the pair. It replaces
+  `forms.responses_seen_at` (section 20.1), because "new" is now each person's own. The migration copies
+  each form's value into a row for its owner. The old column stays unused for one release and is dropped
+  in the next.
+- **`forms.revision`** (new, integer, starts at 1): raised by every draft save (section 22.6).
+- **`forms.draft_saved_by`** (new, nullable): who made the last draft save, for the conflict screen.
+- **`versions.published_by`** (new, nullable): who published the version.
+
+Entries, versions and the delivery log keep pointing at the form id and need no change.
+
+### 22.3 Working out a person's role
+
+`FormAccess::role(string $userId, Form $form): ?Role`, one call, cached for the request:
+
+1. The owner is `owner`.
+2. Otherwise the highest of the person's account share and the shares of every group they belong to
+   (`IGroupManager::getUserGroupIds`).
+3. Otherwise none.
+
+`FormService::get()` is the single place that decides whether someone may touch a form
+([FormService.php](../lib/Service/FormService.php)), so it becomes `get($userId, $id, Role $needs)`. Every
+call site says what it needs, and the table in section 22.1 is the only place permissions are defined.
+
+- **No role at all answers `404`**, the same as a form that does not exist, so it never says a form is there.
+- **A role that is too low answers `403 forbidden`.**
+- **The list** is every form the person owns plus every form shared with them, directly or through a group,
+  in one query. Each item carries `role`, `ownerId` and the owner's display name, and the person's own
+  `newCount`.
+- **An open page loses access** when its next call answers `404` or `403`: the builder or responses page
+  says access was removed and offers the list. Nothing is cached on the server beyond one request.
+
+### 22.4 Sharing screen and API
+
+The builder's sharing area gets a **Collaborators** section, shown to the owner only. People and groups are
+found with Nextcloud's own collaborator search (`OCP\Collaboration\Collaborators\ISearch`, accounts and
+groups only), so the server's sharing restrictions, such as keeping shares within a person's groups, apply
+without any rule of ours. Each row has a role menu (Editor, Reviewer) and a remove button.
+
+- `GET /api/v1/forms/{id}/shares`: the owner and the shares with display names. Owner only.
+- `PUT /api/v1/forms/{id}/shares` with `type`, `with` and `role`: adds the share or changes its role. Owner only.
+  The owner cannot be added, and an unknown account or group is `share_target_invalid`.
+- `DELETE /api/v1/forms/{id}/shares/{shareId}`: removes it. Owner only.
+- `DELETE /api/v1/forms/{id}/shares/me`: a person leaves a form that was shared with them directly. A
+  person who has it only through a group cannot leave it, and the page does not offer to.
+- `GET /api/v1/forms/{id}/sharees?search=`: the collaborator search, limited per user. It is for one form
+  so it can leave out the owner, the person asking and everyone the form is already shared with. Owner
+  only, and available only where section 22.8 allows sharing.
+
+Sharing changes nothing for respondents: the public link, the password and the published version are the
+same. Nobody is told by mail that a form was shared with them in this version (section 22.9).
+
+### 22.5 Where an editor stops: the owner's Files and Tables
+
+Uploads, a picture taken from Files, the Files action and the Tables action all reach into the owner's
+Files or the owner's Tables. If an editor could point one of them at a place only the owner may use, they
+would be using the owner's access. So those are owner only.
+
+The **destination set** of a definition is: every file field whose `storage` is `files` (the default) with
+  its `folder` and who may upload, every image block whose source is in Files, and every action of type
+`files` or `tables` as a whole, so an editor cannot change even its condition. It leaves out fields stored
+in the app (`storage: app`), pictures from a web address, and the other action types.
+
+- **An editor's save that changes the destination set** (a destination added, changed or removed) is
+  refused with `owner_only_destination` and the paths concerned, and nothing of that save is stored. The
+  comparison is against the stored draft, so it cannot be avoided by editing a copy. A form's title is
+  not part of it, although a file field with no folder uses one named after the title: that folder is
+  always under the owner's `Webforms` folder.
+- **The builder** shows those controls as read only for an editor, with a line saying the owner sets them.
+  The Files and Tables actions are not offered to add. A file field an editor adds is kept in the app, and
+  a field that is kept in the owner's Files cannot be deleted by an editor. An editor who needs a new
+  one asks the owner. If a save is refused anyway, the builder says why.
+- **Publishing** still checks every destination for the owner (section 19 and `FormService`), as now.
+  An editor's publish fails with the owner's errors, worded for an editor.
+- **Webhook secrets** are created and revealed by the owner only. A save by an editor keeps an action's
+  existing secret reference.
+- **Uploaded files stay in the owner's Files.** Collaborators reach them through the app (the responses
+  page opens a file as the owner), so a Reviewer needs no access to the folder. If the owner's account goes
+  away the files go with it, unless the folder is in a group folder. The Collaborators section says so
+  when the form has a Files upload field.
+
+### 22.6 Two people editing at once
+
+The builder saves automatically, so without a guard two editors silently overwrite each other.
+
+- Every draft save sends `baseRevision`, the revision the editor's copy was loaded from or last saved at.
+  The server saves only when it equals the stored `revision`, then raises it and returns the new one.
+- **A mismatch answers `409 draft_conflict`** with the stored `revision`, the stored draft and who saved
+  it last. Nothing is stored. A missing `baseRevision` is refused as well, so an out of date client cannot
+  overwrite by accident. This also protects one person with two tabs open.
+- **The builder then stops saving** and shows who changed the form and when, with two choices:
+  **Use their version** (replace the screen, losing the unsaved edits) or **Keep mine** (save over it, by
+  sending the stored revision). A copy of the person's own draft can be downloaded first.
+- **Publishing** publishes the stored draft after the autosave has been flushed (as now). If the flush
+  conflicts, publishing stops with the same choice.
+- Changes that are not part of the draft (status, link settings, the password) are their own calls and do
+  not take the revision. Each is an overwrite of one value, last one wins, and the form's `updatedAt` moves.
+- **Not in this version:** showing who else has the builder open, and merging two edits.
+
+### 22.7 When people go away
+
+- **Ownership transfer.** The owner may hand a form to an editor or any account that may create forms
+  (`POST /api/v1/forms/{id}/transfer` with `to`). The previous owner becomes an editor. The form's destinations
+  (section 22.5) are checked for the new owner, and the transfer is refused with
+  `transfer_destinations_unavailable` when any is not theirs to use. It is also refused with
+  `transfer_has_files` when responses hold files stored in Files, because those sit in the previous
+  owner's Files and the new owner could not open them. Moving the folder first, or deleting those
+  responses, makes it possible.
+- **An owner's account is deleted** (`UserDeletedEvent`). For each of their forms:
+  - If it has editors who are allowed to create forms, ownership passes to the one who was added first
+    (`NextOwner`). Only editors shared with by account count, not those who have it through a group. The
+    form is **closed** (section 3.1) when its destinations are not usable for the new owner, so respondents
+    see the closed message and not an upload error, and the builder shows a banner that the destinations
+    need to be set again. `forms.destinations_pending` holds that state: reopening with the status
+    control is refused (`destinations_pending`), and publishing, which checks every destination for the new
+    owner, clears it. Files kept in the deleted account's Files are gone, and the responses
+    show them as missing.
+  - Otherwise the form and its responses are deleted, as today.
+- **A collaborator's account is deleted:** their shares and their `advforms_form_seen` rows are removed.
+  Responses they set a status on keep the status (the id of who changed it is stored as text).
+- **A group is deleted** (`GroupDeletedEvent`): its shares are removed.
+
+### 22.8 Server policy
+
+One new setting in section 16, **Sharing of forms**, on by default. Off, the Collaborators section and
+the sharee search are gone, and existing shares keep working but cannot be added to. Who may create forms
+(section 16) is a separate rule, and someone who may not create forms can still be an editor or reviewer.
+
+### 22.9 Left out on purpose
+
+- **Real time co-editing,** presence indicators and merging, section 22.6.
+- **Mail or Nextcloud notifications** to collaborators, for being added or for a new response. A natural
+  next step on top of the shares: the form's own email action already covers a new response.
+- **Teams (Circles) as a share target,** and a read only Viewer role. Both fit the same table.
+- **Per collaborator limits,** such as editing one page only.
+- **A history of who changed what** beyond who published a version and who set a status.
+
+### 22.10 How it is built
+
+All three phases are built (2026-11-20). None of phase 3 has been tried on the dev instance, and the revision
+check (phase 2) has not been tried there with two real accounts.
+
+- **Revisions.** One conditional `UPDATE ... WHERE revision = base` (`FormMapper::updateDraftAt`), so two saves
+  can never both win. The service also checks early, so a stale save is refused before any validation.
+- **Lifecycle.** `OwnershipService` does the transfer and the passing on of a deleted owner's forms. The group
+  and collaborator listeners were built in phase 1. The setting is `PolicySettings::sharingEnabled()` (`canShare` in
+  `GET /settings`, `sharing` in the admin policy). With sharing off the builder hides the Collaborators section,
+  so an owner cannot see or remove existing shares there, though the API still allows removing.
+- `versions.published_by` is stored when a version is published and is not shown anywhere yet.
+  `forms.responses_seen_at` is no longer read.
+
+1. **Access and roles.** The two tables and `FormAccess`, `FormService` and the controllers on the role
+   table, the list query, the per person "new", the Collaborators section, the role badges and a Reviewer
+   who lands on the responses.
+2. **Revision conflicts.** `forms.revision`, `baseRevision` on the draft save, and the conflict screen.
+   Not announced as co-editing before this is in.
+3. **Lifecycle.** Transfer, the account and group listeners, and the server setting.
+
+A table test holds section 22.1 as data and checks every owner call against every role, so a new endpoint
+without a role fails it.

@@ -8,6 +8,22 @@
 What is planned, in rough order, and what is missing compared with other form builders. For how things
 work see [SCHEMA.md](SCHEMA.md). Nothing here is promised for a date.
 
+## Collaboration
+
+Designed 2026-11-19 and written down in [SCHEMA.md](SCHEMA.md) section 22: share a form with accounts and
+groups as Editor or Reviewer, so a team can work on one form. In this order, each a pull request:
+
+1. **Access and roles (built).** Two new tables, one place that decides a person's role, the list of forms shared
+   with you, "new responses" kept for each person, the Collaborators section and a reading copy of the
+   definition for Reviewers.
+2. **Revision conflicts.** The builder autosaves today with no guard, so two editors overwrite each other.
+   Co-editing is not announced before this is in.
+3. **Lifecycle.** Handing a form to someone else, what happens when an owner's account is deleted, and a
+   server setting for sharing.
+
+Later: notifications to collaborators, Teams as a share target, a read only Viewer role, and a history of
+who changed what.
+
 ## Integrations and storage
 
 Responses always live in the app's own database, and everything that sends them elsewhere is an
@@ -33,8 +49,8 @@ after-submit action (see the decision below). The work here makes that model com
 
 ## Sharing
 
-Done: custom address, QR code, and embedding in a frame with a list of allowed websites (SCHEMA.md
-section 18). Still open, roughly in order:
+Done: custom address, QR code, embedding in a frame with a list of allowed websites (SCHEMA.md
+section 18), and a password on the link (section 18.5). Still open, roughly in order:
 
 1. A server-wide switch for administrators to forbid embedding.
 2. A plain HTML version of a form, with no script, that takes the look of the website it is pasted
@@ -43,7 +59,7 @@ section 18). Still open, roughly in order:
 3. A button that opens the form in an overlay on the host website.
 4. Regenerating the random link, to revoke one that leaked.
 5. More than one link per form, to tell where a response came from.
-6. A password, and open and close dates, on a link (goes with response limits and scheduling below).
+6. Open and close dates on a link, per link (a form has them for the whole form already).
 
 ## Responses view
 
@@ -53,8 +69,13 @@ filter, the selection and the chosen columns, a summary above the table (SCHEMA.
 printed (SCHEMA.md section 20). Still open, roughly in order:
 
 1. ODS export, and a zip of uploaded files.
-2. Clicking a bar in the summary to filter by that answer.
-3. Sharing results with someone who cannot edit the form.
+2. Advanced response filtering: filter responses by what people answered, with nested all and any
+   groups written like rule conditions. The server already takes this (`where`, SCHEMA.md section 17) and
+   the editor was built, then taken out of the Responses view because a bare "Answers" button did not say
+   what it did. It needs a clearer place and wording, for example a "Filter by answer" panel with saved
+   filters.
+3. Clicking a bar in the summary to filter by that answer. Builds on the item above.
+4. Sharing results with someone who cannot edit the form.
 
 Not planned: assigning a response to someone. Forms are not a task tool, and a flow on "Response
 submitted" or "Response status changed" can create a task or a Deck card (SCHEMA.md section 20.5).
@@ -119,9 +140,8 @@ Gap review written against 0.3.x (2026-11-15), from README.md, docs/SCHEMA.md an
   browser (SCHEMA.md section 21). Left out by decision: a link to continue on another device, uploads,
   and a count of people who started.
 - **Respondent experience.** Done: a progress indicator on forms with several pages (SCHEMA.md section 5.1). Also done: a review step that lists the answers before sending (SCHEMA.md section 5.2). Still open: per-form language, and a picture inside a question (image blocks, SCHEMA.md section 4.9, are done).
-- **Sharing.** Public link, custom address, QR code and embedding (see Sharing above). No collaborator or co-editor sharing and no per-user form permissions.
-- **Question types.** Done: rating, scale, consent and date and time (SCHEMA.md section 4.8). Still open:
-  slider, color, date range, and name and address fields. Image blocks are done (SCHEMA.md section 4.9).
+- **Sharing.** Public link, custom address, QR code and embedding (see Sharing above). Sharing a form with other accounts and groups is designed (see Collaboration above); it is not built yet.
+- **Question types.** Done: rating, scale, consent and date and time (SCHEMA.md section 4.8). Also done: slider, colour, date range, name, address, matrix and signature (SCHEMA.md section 4.10). Image blocks are done (SCHEMA.md section 4.9).
 - **Builder.** Touch dragging is not supported.
 - **Rules.** Show, hide and require only. No conditional values or calculated fields.
 - **Actions.** Submit message and redirect are resolved synchronously, so they cannot depend on a background action.

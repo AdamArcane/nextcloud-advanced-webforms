@@ -11,6 +11,8 @@ import { url } from './http.ts'
 /** What the administrator's policy means for the signed-in user (docs/SCHEMA.md section 16). */
 export interface UserPolicy {
 	canCreate: boolean
+	/** Forms may be shared with other accounts and groups (docs/SCHEMA.md section 22.8). Missing means they may. */
+	canShare?: boolean
 	allowedActionTypes: ActionType[]
 	maxActions: number
 	mail: MailPolicy

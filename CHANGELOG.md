@@ -5,6 +5,36 @@
 
 # Changelog
 
+## 0.4.2 - 2026-11-19
+
+- Responses: the **Answers** filter button is gone, and the summary has one **Hide summary** or **Show summary**
+  button beside the menu that chooses which cards it shows.
+
+- Seven new field types. **Slider** (a number on a line), **Colour**, **Date range**, **Name** and
+  **Address** (asked in parts you choose), **Matrix** (a grid with one choice, or several, per question)
+  and **Signature** (drawn with a mouse or finger, shown as a picture in the responses). A required name,
+  address or matrix needs its main parts filled in. Rules can check whether the new fields were answered
+  (and compare a slider or a colour). Downloads and emails read them as plain text. See `docs/SCHEMA.md`
+  section 4.10. A date range can also require the last date to come after the first, or set the fewest and
+  the most days between them.
+
+- Share a form with other accounts and groups. The owner adds people and groups under Sharing, as an
+  **Editor** (builds and publishes the form, works with its responses) or a **Reviewer** (reads responses,
+  sets statuses and notes, downloads them). Forms shared with you are listed under **Shared with me**, and
+  "new responses" is now counted for each person. Editors cannot change where files are saved or use the
+  Tables and Files actions, because those use the owner's Files and Tables. Reviewers never see the
+  form's actions, settings or upload folders. Co-editing is not recommended until the next step, which
+  stops two editors overwriting each other. Needs a database migration. See `docs/SCHEMA.md` section 22.
+
+- Duplicate a form. The menu on each form in the sidebar has **Duplicate**: a new draft with the same fields,
+  layout, rules, actions and settings, opened so it can be renamed. Responses, versions, the link and
+  webhook secrets stay behind. See `docs/SCHEMA.md` section 13.2.
+
+- Password on the public link. Sharing has a **Password** section: with one set, anyone who opens the link,
+  the custom address or an embedded copy is asked for it before seeing anything of the form, even whether it
+  is open. Changing or removing it ends every session at once. Needs a database migration, which runs on
+  upgrade. See `docs/SCHEMA.md` section 18.5.
+
 ## 0.4.1 - 2026-11-17
 
 - The install script (`tools/install-release.sh`) now reloads PHP-FPM after installing, when the user is

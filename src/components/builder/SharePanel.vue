@@ -10,6 +10,7 @@ import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
+import NcPasswordField from '@nextcloud/vue/components/NcPasswordField'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { computed, ref, watch } from 'vue'
@@ -20,6 +21,8 @@ import { copyText } from '../../share/clipboard.ts'
 import { autoHeightSnippet, iframeSnippet, parseOrigins, slugLooksValid, tidySlug } from '../../share/embed.ts'
 import { qrPng, qrSvg, saveBlob } from '../../share/qr.ts'
 import Icon from '../common/Icon.vue'
+import SettingsCard from './SettingsCard.vue'
+import SettingsRow from './SettingsRow.vue'
 
 /**
  * How a form is shared (docs/SCHEMA.md section 18): its link, a custom address, a QR code, and the
@@ -61,13 +64,16 @@ const saving = ref(false)
 const slugError = ref<string | null>(null)
 const originsError = ref<string | null>(null)
 const failed = ref(false)
+const passwordError = ref<string | null>(null)
 
 const slugText = ref(props.form.slug ?? '')
 const originsText = ref((props.form.embedOrigins ?? []).join('\n'))
+const passwordText = ref('')
 watch(() => props.form.id, () => {
 	slugText.value = props.form.slug ?? ''
 	originsText.value = (props.form.embedOrigins ?? []).join('\n')
-	slugError.value = originsError.value = null
+	passwordText.value = ''
+	slugError.value = originsError.value = passwordError.value = null
 })
 
 const slugChanged = computed(() => slugText.value.trim() !== (props.form.slug ?? ''))
@@ -82,7 +88,7 @@ function slugMessage(code: string): string {
 }
 
 /** Save the sharing options, with `patch` over what the form has now. */
-async function save(patch: { slug?: string | null, embed?: boolean, embedOrigins?: string[] }): Promise<boolean> {
+async function save(patch: { slug?: string | null, embed?: boolean, embedOrigins?: string[], password?: string, removePassword?: boolean }): Promise<boolean> {
 	saving.value = true
 	failed.value = false
 	try {
@@ -98,13 +104,19 @@ async function save(patch: { slug?: string | null, embed?: boolean, embedOrigins
 		const errors = error instanceof ApiError && error.status === 422 ? error.errors as unknown as Array<{ code: string, path?: string }> : []
 		const slugProblem = errors.find((one) => one.path === 'slug')
 		const originsProblem = errors.find((one) => one.path === 'embedOrigins')
+		const passwordProblem = errors.find((one) => one.path === 'password')
 		if (slugProblem) {
 			slugError.value = slugMessage(slugProblem.code)
 		}
 		if (originsProblem) {
 			originsError.value = t('webforms', 'Write each website as its address without a path, like https://www.example.com')
 		}
-		failed.value = !slugProblem && !originsProblem
+		if (passwordProblem) {
+			passwordError.value = passwordProblem.code === 'password_too_long'
+				? t('webforms', 'Use at most {max} characters.', { max: MAX_PASSWORD })
+				: t('webforms', 'Use at least {min} characters.', { min: MIN_PASSWORD })
+		}
+		failed.value = !slugProblem && !originsProblem && !passwordProblem
 		return false
 	} finally {
 		saving.value = false
@@ -121,6 +133,27 @@ async function saveSlug(): Promise<void> {
 	if (await save({ slug: slug === '' ? null : slug })) {
 		slugText.value = slug
 	}
+}
+
+// The same limits as the server, so a short one is caught before it is sent (FormService::MIN_LINK_PASSWORD).
+const MIN_PASSWORD = 6
+const MAX_PASSWORD = 200
+
+async function savePassword(): Promise<void> {
+	passwordError.value = null
+	const password = passwordText.value
+	if (password.length < MIN_PASSWORD) {
+		passwordError.value = t('webforms', 'Use at least {min} characters.', { min: MIN_PASSWORD })
+		return
+	}
+	if (await save({ password })) {
+		passwordText.value = ''
+	}
+}
+
+async function removePassword(): Promise<void> {
+	passwordError.value = null
+	await save({ removePassword: true })
 }
 
 function tidy(): void {
@@ -166,158 +199,158 @@ const snippet = computed(() => {
 </script>
 
 <template>
-	<section class="af-share">
-		<h3 class="af-share__heading">
-			{{ t('webforms', 'Public link') }}
-		</h3>
-		<template v-if="link">
-			<NcTextField :model-value="link"
-				:label="t('webforms', 'Public link')"
-				readonly
-				@focus="($event.target as HTMLInputElement).select()" />
-			<NcButton variant="secondary" @click="copy('link', link)">
-				<template #icon>
-					<Icon :path="icons.copy" />
-				</template>
-				{{ copied === 'link' ? t('webforms', 'Copied') : t('webforms', 'Copy link') }}
-			</NcButton>
-		</template>
-		<p v-else class="af-share__hint">
-			{{ t('webforms', 'Publish the form to get a link you can share.') }}
-		</p>
-	</section>
+	<SettingsCard :title="t('webforms', 'Public link')"
+		:description="t('webforms', 'Share this link, a custom address or a QR code to let people open the form.')">
+		<SettingsRow :label="t('webforms', 'Link')">
+			<template v-if="link">
+				<NcTextField :model-value="link"
+					:label="t('webforms', 'Public link')"
+					label-outside
+					readonly
+					@focus="($event.target as HTMLInputElement).select()" />
+				<NcButton variant="secondary" @click="copy('link', link)">
+					<template #icon>
+						<Icon :path="icons.copy" />
+					</template>
+					{{ copied === 'link' ? t('webforms', 'Copied') : t('webforms', 'Copy link') }}
+				</NcButton>
+			</template>
+			<p v-else class="af-share__hint">
+				{{ t('webforms', 'Publish the form to get a link you can share.') }}
+			</p>
+		</SettingsRow>
 
-	<section class="af-share">
-		<h3 class="af-share__heading">
-			{{ t('webforms', 'Custom address') }}
-		</h3>
-		<p class="af-share__hint">
-			{{ t('webforms', 'A short address that is easy to read out or print. It comes after {base}', { base: baseUrl }) }}
-		</p>
-		<NcTextField v-model="slugText"
-			:label="t('webforms', 'Custom address')"
-			:placeholder="t('webforms', 'for example: contact')"
-			:error="slugError !== null"
-			:helper-text="slugError ?? ''"
-			maxlength="64"
-			@blur="tidy"
-			@keydown.enter.prevent="saveSlug" />
-		<NcButton variant="secondary" :disabled="saving || !slugChanged" @click="saveSlug">
-			{{ slugText.trim() === '' && form.slug ? t('webforms', 'Remove address') : t('webforms', 'Save address') }}
-		</NcButton>
-		<p class="af-share__hint">
-			{{ form.slug
+		<SettingsRow :label="t('webforms', 'Custom address')"
+			:hint="form.slug
 				? t('webforms', 'Anyone who guesses this address can open the form. The original link keeps working too. If you change or remove the address, links and QR codes that use it stop working.')
-				: t('webforms', 'Anyone who guesses a custom address can open the form, unlike the random link.') }}
-		</p>
-	</section>
-
-	<section v-if="link && qrImage" class="af-share">
-		<h3 class="af-share__heading">
-			{{ t('webforms', 'QR code') }}
-		</h3>
-		<img class="af-share__qr"
-			:src="qrImage"
-			:alt="t('webforms', 'QR code for the public link')"
-			width="180"
-			height="180">
-		<div class="af-share__row">
-			<NcButton variant="secondary" @click="downloadPng">
-				<template #icon>
-					<Icon :path="icons.download" />
-				</template>
-				{{ t('webforms', 'Download PNG') }}
+				: t('webforms', 'Anyone who guesses a custom address can open the form, unlike the random link.')">
+			<p class="af-share__hint">
+				{{ t('webforms', 'A short address that is easy to read out or print. It comes after {base}', { base: baseUrl }) }}
+			</p>
+			<NcTextField v-model="slugText"
+				:label="t('webforms', 'Custom address')"
+				label-outside
+				:placeholder="t('webforms', 'for example: contact')"
+				:error="slugError !== null"
+				:helper-text="slugError ?? ''"
+				maxlength="64"
+				@blur="tidy"
+				@keydown.enter.prevent="saveSlug" />
+			<NcButton variant="secondary" :disabled="saving || !slugChanged" @click="saveSlug">
+				{{ slugText.trim() === '' && form.slug ? t('webforms', 'Remove address') : t('webforms', 'Save address') }}
 			</NcButton>
-			<NcButton variant="secondary" @click="downloadSvg">
-				<template #icon>
-					<Icon :path="icons.download" />
-				</template>
-				{{ t('webforms', 'Download SVG') }}
-			</NcButton>
-		</div>
-		<p class="af-share__hint">
-			{{ t('webforms', 'The code holds the link above. It is made in your browser.') }}
-		</p>
-	</section>
+		</SettingsRow>
 
-	<section class="af-share">
-		<h3 class="af-share__heading">
-			{{ t('webforms', 'Embed in a website') }}
-		</h3>
-		<NcCheckboxRadioSwitch type="switch"
-			:model-value="form.embed === true"
-			:disabled="saving"
-			@update:model-value="(value: boolean) => save({ embed: value })">
-			{{ t('webforms', 'Allow other websites to show this form in a frame') }}
-		</NcCheckboxRadioSwitch>
+		<SettingsRow :label="t('webforms', 'Password')"
+			:hint="t('webforms', 'The password only keeps people out of the form. It does not encrypt the answers, and anyone you give it to can pass it on.')">
+			<p class="af-share__hint">
+				{{ form.hasPassword
+					? t('webforms', 'Anyone who opens the link or the custom address is asked for a password first. Enter a new one to change it. Everyone who already got in is asked again.')
+					: t('webforms', 'Ask for a password before the form opens. It applies to the link and to the custom address.') }}
+			</p>
+			<NcPasswordField v-model="passwordText"
+				:label="form.hasPassword ? t('webforms', 'New password') : t('webforms', 'Password')"
+				label-outside
+				:error="passwordError !== null"
+				:helper-text="passwordError ?? ''"
+				autocomplete="new-password"
+				maxlength="200"
+				@keydown.enter.prevent="savePassword" />
+			<div class="af-share__row">
+				<NcButton variant="secondary" :disabled="saving || passwordText === ''" @click="savePassword">
+					{{ form.hasPassword ? t('webforms', 'Change password') : t('webforms', 'Set password') }}
+				</NcButton>
+				<NcButton v-if="form.hasPassword" variant="tertiary" :disabled="saving" @click="removePassword">
+					{{ t('webforms', 'Remove password') }}
+				</NcButton>
+			</div>
+		</SettingsRow>
+
+		<SettingsRow v-if="link && qrImage"
+			:label="t('webforms', 'QR code')"
+			:hint="t('webforms', 'The code holds the link above. It is made in your browser.')">
+			<img class="af-share__qr"
+				:src="qrImage"
+				:alt="t('webforms', 'QR code for the public link')"
+				width="180"
+				height="180">
+			<div class="af-share__row">
+				<NcButton variant="secondary" @click="downloadPng">
+					<template #icon>
+						<Icon :path="icons.download" />
+					</template>
+					{{ t('webforms', 'Download PNG') }}
+				</NcButton>
+				<NcButton variant="secondary" @click="downloadSvg">
+					<template #icon>
+						<Icon :path="icons.download" />
+					</template>
+					{{ t('webforms', 'Download SVG') }}
+				</NcButton>
+			</div>
+		</SettingsRow>
+	</SettingsCard>
+
+	<SettingsCard :title="t('webforms', 'Embed in a website')"
+		:description="t('webforms', 'Show the form in a frame on another website.')">
+		<SettingsRow>
+			<NcCheckboxRadioSwitch type="switch"
+				:model-value="form.embed === true"
+				:disabled="saving"
+				@update:model-value="(value: boolean) => save({ embed: value })">
+				{{ t('webforms', 'Allow other websites to show this form in a frame') }}
+			</NcCheckboxRadioSwitch>
+		</SettingsRow>
 		<template v-if="form.embed === true">
 			<NcNoteCard v-if="requireLogin" type="warning">
 				{{ t('webforms', 'This form requires a login. An embedded form is always anonymous, so visitors will be asked to open the form on its own page.') }}
 			</NcNoteCard>
-			<NcTextArea v-model="originsText"
-				:label="t('webforms', 'Allowed websites (one per line)')"
-				:placeholder="'https://www.example.com'"
-				:error="originsError !== null"
-				:helper-text="originsError ?? ''"
-				rows="3" />
-			<NcButton variant="secondary" :disabled="saving || !originsChanged" @click="saveOrigins">
-				{{ t('webforms', 'Save websites') }}
-			</NcButton>
-			<p class="af-share__hint">
-				{{ (form.embedOrigins ?? []).length === 0
+			<SettingsRow :label="t('webforms', 'Allowed websites')"
+				:hint="(form.embedOrigins ?? []).length === 0
 					? t('webforms', 'No websites listed: any website may embed this form.')
-					: t('webforms', 'Only the listed websites may embed this form.') }}
-			</p>
-
-			<template v-if="embedUrl">
-				<NcCheckboxRadioSwitch v-model="fitHeight" type="switch">
-					{{ t('webforms', 'Fit the height to the form (adds a short script)') }}
-				</NcCheckboxRadioSwitch>
-				<NcTextArea :model-value="snippet"
-					:label="fitHeight ? t('webforms', 'Embed code (HTML and script)') : t('webforms', 'Embed code (HTML only, fixed height)')"
-					class="af-share__code"
-					readonly
-					:rows="fitHeight ? 8 : 3"
-					@focus="($event.target as HTMLTextAreaElement).select()" />
-				<NcButton variant="secondary" @click="copy('code', snippet)">
-					<template #icon>
-						<Icon :path="icons.copy" />
-					</template>
-					{{ copied === 'code' ? t('webforms', 'Copied') : t('webforms', 'Copy code') }}
+					: t('webforms', 'Only the listed websites may embed this form.')">
+				<NcTextArea v-model="originsText"
+					:label="t('webforms', 'Allowed websites (one per line)')"
+					label-outside
+					:placeholder="'https://www.example.com'"
+					:error="originsError !== null"
+					:helper-text="originsError ?? ''"
+					rows="3" />
+				<NcButton variant="secondary" :disabled="saving || !originsChanged" @click="saveOrigins">
+					{{ t('webforms', 'Save websites') }}
 				</NcButton>
-			</template>
-			<p v-else class="af-share__hint">
-				{{ t('webforms', 'Publish the form to get the code.') }}
-			</p>
+			</SettingsRow>
+			<SettingsRow :label="t('webforms', 'Embed code')">
+				<template v-if="embedUrl">
+					<NcCheckboxRadioSwitch v-model="fitHeight" type="switch">
+						{{ t('webforms', 'Fit the height to the form (adds a short script)') }}
+					</NcCheckboxRadioSwitch>
+					<NcTextArea :model-value="snippet"
+						:label="fitHeight ? t('webforms', 'Embed code (HTML and script)') : t('webforms', 'Embed code (HTML only, fixed height)')"
+						label-outside
+						class="af-share__code"
+						readonly
+						:rows="fitHeight ? 8 : 3"
+						@focus="($event.target as HTMLTextAreaElement).select()" />
+					<NcButton variant="secondary" @click="copy('code', snippet)">
+						<template #icon>
+							<Icon :path="icons.copy" />
+						</template>
+						{{ copied === 'code' ? t('webforms', 'Copied') : t('webforms', 'Copy code') }}
+					</NcButton>
+				</template>
+				<p v-else class="af-share__hint">
+					{{ t('webforms', 'Publish the form to get the code.') }}
+				</p>
+			</SettingsRow>
 		</template>
 		<NcNoteCard v-if="failed" type="error">
 			{{ t('webforms', 'The sharing options could not be saved. Please try again.') }}
 		</NcNoteCard>
-	</section>
+	</SettingsCard>
 </template>
 
 <style scoped>
-.af-share {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	gap: calc(var(--default-grid-baseline) * 2);
-}
-
-.af-share > :deep(.input-field),
-.af-share > :deep(.textarea) {
-	width: 100%;
-}
-
-.af-share__heading {
-	margin: 0;
-	font-size: 14px;
-	font-weight: bold;
-	color: var(--color-text-maxcontrast);
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
-}
-
 .af-share__hint {
 	margin: 0;
 	color: var(--color-text-maxcontrast);

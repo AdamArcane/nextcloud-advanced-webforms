@@ -17,6 +17,7 @@ import { answerLines, entryFileUrl, formatTime, previewLines } from '../../entri
 import { findStatus } from '../../entries/statuses.ts'
 import { formatSize } from '../../uploads.ts'
 import DeliveryRow from './DeliveryRow.vue'
+import { useCanManageResponses } from './permissions.ts'
 import NoteEditor from './NoteEditor.vue'
 import StatusSelect from './StatusSelect.vue'
 import StatusTag from './StatusTag.vue'
@@ -50,6 +51,7 @@ const status = computed(() => findStatus(props.statuses ?? [], props.entry.statu
 const lines = computed(() => answerLines(props.definition, props.entry.data))
 const preview = computed(() => previewLines(props.definition, props.entry.data))
 
+const canManage = useCanManageResponses()
 const deliveries = ref<Delivery[] | null>(null)
 const loading = ref(false)
 const failed = ref(false)
@@ -57,7 +59,8 @@ const retrying = ref<number | null>(null)
 
 // Deliveries are fetched the first time a response is opened, not for the whole list up front.
 watch(() => props.expanded, async (open) => {
-	if (!open || deliveries.value !== null || loading.value) {
+	// A Reviewer may not see the delivery log.
+	if (!open || !canManage || deliveries.value !== null || loading.value) {
 		return
 	}
 	loading.value = true
@@ -113,7 +116,7 @@ async function retry(delivery: Delivery): Promise<void> {
 			<dl class="af-response__answers">
 				<div v-for="line in lines" :key="line.id" class="af-response__row">
 					<dt>{{ line.label }}</dt>
-					<dd :class="{ 'af-response__none': !line.answered }"><ul v-if="line.files.length > 0" class="af-response__files"><li v-for="(file, index) in line.files" :key="index"><a :href="entryFileUrl(formId, entry.id, line.id, index)" download>{{ file.name }}</a><span class="af-response__size">{{ formatSize(file.size) }}</span></li></ul><template v-else>{{ line.answered ? line.value : '—' }}</template></dd>
+					<dd :class="{ 'af-response__none': !line.answered }"><img v-if="line.image" :src="line.image" class="af-response__signature" :alt="t('webforms', 'Signature')"><ul v-else-if="line.files.length > 0" class="af-response__files"><li v-for="(file, index) in line.files" :key="index"><a :href="entryFileUrl(formId, entry.id, line.id, index)" download>{{ file.name }}</a><span class="af-response__size">{{ formatSize(file.size) }}</span></li></ul><template v-else>{{ line.answered ? line.value : '—' }}</template></dd>
 				</div>
 			</dl>
 
@@ -131,7 +134,7 @@ async function retry(delivery: Delivery): Promise<void> {
 
 			<NoteEditor :form-id="formId" :entry="entry" @saved="(saved) => emit('updated', saved)" />
 
-			<section class="af-response__deliveries">
+			<section v-if="canManage" class="af-response__deliveries">
 				<h4 class="af-response__heading">
 					{{ t('webforms', 'Emails and webhooks') }}
 				</h4>
@@ -153,7 +156,7 @@ async function retry(delivery: Delivery): Promise<void> {
 
 			<div class="af-response__footer">
 				<span class="af-response__id">{{ t('webforms', 'Response #{id}', { id: entry.id }) }}</span>
-				<NcButton variant="error" @click="emit('delete')">
+				<NcButton v-if="canManage" variant="error" @click="emit('delete')">
 					<template #icon>
 						<Icon :path="icons.delete" />
 					</template>
@@ -165,6 +168,16 @@ async function retry(delivery: Delivery): Promise<void> {
 </template>
 
 <style scoped>
+.af-response__signature {
+	display: block;
+	max-width: 300px;
+	width: 100%;
+	/* The ink is dark, so it sits on white in any theme. */
+	background: #fff;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-small, 4px);
+}
+
 .af-response {
 	border: 1px solid var(--color-border);
 	border-radius: var(--border-radius-large);

@@ -67,6 +67,8 @@ export function defaultOp(type: string): string {
 		case 'number':
 		case 'rating':
 		case 'scale':
+		case 'slider':
+		case 'color':
 		case 'checkbox':
 		case 'consent':
 			return 'eq'
@@ -92,6 +94,10 @@ function defaultScalar(field: FormField | undefined): unknown {
 			return 1
 		case 'scale':
 			return field.min === 0 ? 0 : 1
+		case 'slider':
+			return typeof field.min === 'number' ? field.min : 0
+		case 'color':
+			return '#ff0000'
 		default:
 			return ''
 	}

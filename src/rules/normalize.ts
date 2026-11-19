@@ -11,6 +11,7 @@ import type { NormalizedValue } from './types.ts'
 const NUMBER_PATTERN = /^-?\d+(\.\d+)?$/
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 const TIME_PATTERN = /^\d{2}:\d{2}$/
+const COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/
 const DATETIME_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/
 
 /**
@@ -30,7 +31,18 @@ export function normalize(type: string, raw: unknown): NormalizedValue {
 		case 'number':
 		case 'rating':
 		case 'scale':
+		case 'slider':
 			return normalizeNumber(raw)
+		case 'color':
+			return typeof raw === 'string' && COLOR_PATTERN.test(raw) ? raw.toLowerCase() : null
+		case 'signature':
+			return typeof raw === 'string' && raw.startsWith('data:image/png;base64,') ? true : null
+		case 'matrix':
+		case 'daterange':
+		case 'name':
+		case 'address':
+			// Only whether anything was answered matters to a rule.
+			return typeof raw === 'object' && raw !== null && !Array.isArray(raw) && Object.keys(raw).length > 0 ? true : null
 		case 'select':
 		case 'radio':
 			return typeof raw === 'string' && raw !== '' ? raw : null

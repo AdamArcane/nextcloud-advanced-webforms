@@ -42,7 +42,7 @@ final class EntrySummary {
 			$type = is_array($field) ? (string)($field['type'] ?? '') : '';
 			$kind = match ($type) {
 				FieldType::SELECT, FieldType::RADIO, FieldType::CHECKBOXES => 'choice',
-				FieldType::NUMBER, FieldType::RATING, FieldType::SCALE => 'number',
+				FieldType::NUMBER, FieldType::RATING, FieldType::SCALE, FieldType::SLIDER => 'number',
 				FieldType::CHECKBOX, FieldType::CONSENT => 'yesno',
 				default => null,
 			};

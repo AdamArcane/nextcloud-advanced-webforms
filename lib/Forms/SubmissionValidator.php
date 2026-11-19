@@ -69,6 +69,12 @@ final class SubmissionValidator {
 				continue;
 			}
 
+			// A required name, address or matrix must have all its needed parts, not just one.
+			if ($value !== null && isset($required[$id]) && !FieldValueValidator::isComplete($field, $value)) {
+				$errors[] = ['field' => $id, 'code' => 'incomplete'];
+				continue;
+			}
+
 			if ($value !== null) {
 				$data[$id] = $value;
 			}

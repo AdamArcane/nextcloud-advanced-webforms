@@ -191,6 +191,10 @@ final class EntryFilter {
 	 * @return list<string>
 	 */
 	private static function texts(array $field, mixed $value): array {
+		if (($field['type'] ?? null) === FieldType::SIGNATURE) {
+			// A picture as text: searching it would match noise.
+			return [];
+		}
 		$values = is_array($value) ? $value : [$value];
 		$texts = [];
 		foreach ($values as $one) {

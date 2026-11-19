@@ -8,16 +8,23 @@ import type { UserPreferences } from './api/settings.ts'
 import type { OwnerForm } from './types.ts'
 
 import { flushPromises, mount } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
-import { listForms } from './api/forms.ts'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { duplicateForm, leaveForm, listForms } from './api/forms.ts'
 import { fetchUserPreferences, saveUserPreferences } from './api/settings.ts'
 import { showError } from '@nextcloud/dialogs'
 import App from './App.vue'
 import { FORM_STATUS_CLOSED, FORM_STATUS_PUBLISHED, FORM_STATUS_UNPUBLISHED } from './types.ts'
 
+// Which sections are open is kept in the browser, so each test starts with nothing remembered.
+beforeEach(() => {
+	window.localStorage.clear()
+})
+
 vi.mock('./api/forms.ts', () => ({
 	listForms: vi.fn(),
 	createForm: vi.fn(),
+	duplicateForm: vi.fn(),
+	leaveForm: vi.fn(),
 	importForm: vi.fn(),
 	setFormArchived: vi.fn(),
 	formExportUrl: () => '#',
@@ -48,7 +55,7 @@ async function mountList(openPublishedOnResponses: boolean) {
 	])
 	const wrapper = mount(App, { global: { stubs: { BuilderView: true, EntriesView: true, teleport: true } } })
 	await flushPromises()
-	const hrefs = wrapper.findAll('a').map((link) => link.attributes('href')).filter((href) => href?.startsWith('#/f/'))
+	const hrefs = wrapper.findAll('a').filter((link) => !link.element.closest('.af-overview')).map((link) => link.attributes('href')).filter((href) => href?.startsWith('#/f/'))
 	return { wrapper, hrefs }
 }
 
@@ -84,7 +91,7 @@ describe('settings in the sidebar', () => {
 		await input.setValue(false)
 		await flushPromises()
 		expect(saveUserPreferences).toHaveBeenCalledWith({ openPublishedOnResponses: false })
-		const after = wrapper.findAll('a').map((link) => link.attributes('href')).filter((href) => href?.startsWith('#/f/'))
+		const after = wrapper.findAll('a').filter((link) => !link.element.closest('.af-overview')).map((link) => link.attributes('href')).filter((href) => href?.startsWith('#/f/'))
 		expect(after).toEqual(['#/f/1', '#/f/2', '#/f/3', '#/f/4'])
 		wrapper.unmount()
 	})
@@ -174,6 +181,228 @@ describe('new responses in the forms list', () => {
 		await flushPromises()
 		expect(wrapper.findAll('[aria-label$="new responses"]')).toHaveLength(0)
 		window.location.hash = ''
+		wrapper.unmount()
+	})
+})
+
+/** The sidebar rows with their menu items always in the page, since the real menu only renders once it is opened. */
+async function mountWithMenus() {
+	vi.mocked(fetchUserPreferences).mockResolvedValue(ALL)
+	vi.mocked(listForms).mockResolvedValue([form(1, FORM_STATUS_PUBLISHED, false), form(2, FORM_STATUS_UNPUBLISHED, true, null)])
+	const wrapper = mount(App, {
+		global: {
+			stubs: {
+				BuilderView: true,
+				EntriesView: true,
+				teleport: true,
+				NcAppNavigationItem: { template: '<li><slot /><slot name="actions" /></li>' },
+				NcActionButton: { template: '<button type="button" @click="$emit(\'click\')"><slot /></button>' },
+				NcActionLink: { template: '<a><slot /></a>' },
+			},
+		},
+	})
+	await flushPromises()
+	return wrapper
+}
+
+describe('duplicating a form', () => {
+	it('asks for a copy named after the original, adds it to the list and opens it', async () => {
+		const wrapper = await mountWithMenus()
+		const copy = { ...form(9, FORM_STATUS_UNPUBLISHED, true, null), title: 'Copy of Form 1' }
+		vi.mocked(duplicateForm).mockResolvedValue({ form: copy, errors: [] })
+		window.location.hash = ''
+		const actions = wrapper.findAll('button').filter((el) => el.text() === 'Duplicate')
+		// One per form in the list, the first form first.
+		expect(actions).toHaveLength(2)
+		await actions[0].trigger('click')
+		await flushPromises()
+		expect(duplicateForm).toHaveBeenCalledWith(1, 'Copy of Form 1')
+		expect(window.location.hash).toBe('#/f/9')
+	})
+
+	it('says so when the copy could not be made', async () => {
+		const wrapper = await mountWithMenus()
+		vi.mocked(duplicateForm).mockRejectedValue(new Error('no'))
+		await wrapper.findAll('button').filter((el) => el.text() === 'Duplicate')[0].trigger('click')
+		await flushPromises()
+		expect(wrapper.text()).toContain('Could not duplicate the form.')
+	})
+})
+
+function shared(id: number, role: 'editor' | 'reviewer', extra: Partial<OwnerForm> = {}): OwnerForm {
+	return { ...form(id, FORM_STATUS_PUBLISHED, false), title: 'Shared ' + id, role, ownerId: 'olga', ownerName: 'Olga Owner', canLeave: true, ...extra }
+}
+
+const TEAM = () => [
+	{ ...form(1, FORM_STATUS_PUBLISHED, false), role: 'owner' as const },
+	shared(2, 'editor'),
+	shared(3, 'reviewer'),
+]
+
+async function mountTeam(stubs: Record<string, unknown> = {}, preferences: Partial<UserPreferences> = {}) {
+	vi.mocked(fetchUserPreferences).mockResolvedValue({ ...ALL, ...preferences })
+	vi.mocked(listForms).mockResolvedValue(TEAM())
+	const wrapper = mount(App, { global: { stubs: { BuilderView: true, EntriesView: true, teleport: true, ...stubs } } })
+	await flushPromises()
+	return wrapper
+}
+
+describe('forms shared with the person (docs/SCHEMA.md section 22.3)', () => {
+	it('lists them apart under Shared with me, and the person\'s own forms first', async () => {
+		const wrapper = await mountTeam()
+		const text = wrapper.text()
+		expect(text).toContain('Shared with me')
+		expect(text.indexOf('Form 1')).toBeLessThan(text.indexOf('Shared with me'))
+		expect(text.indexOf('Shared with me')).toBeLessThan(text.indexOf('Shared 2'))
+		expect(text.indexOf('Shared 2')).toBeGreaterThan(-1)
+		expect(text.indexOf('Shared 3')).toBeGreaterThan(-1)
+	})
+
+	it('puts a My forms heading above the person\'s own forms, with an icon on each heading and none on the forms', async () => {
+		const wrapper = await mountTeam()
+		const text = wrapper.text()
+		expect(text.indexOf('My forms')).toBeLessThan(text.indexOf('Form 1'))
+		expect(text.indexOf('My forms')).toBeLessThan(text.indexOf('Shared with me'))
+		const rows = wrapper.findAll('.app-navigation-entry')
+		const heading = (name: string) => rows.find((row) => row.find('.app-navigation-entry-link').text().startsWith(name))!
+		expect(heading('My forms').find('.app-navigation-entry-icon svg').exists()).toBe(true)
+		expect(heading('Shared with me').find('.app-navigation-entry-icon svg').exists()).toBe(true)
+		expect(heading('Form 1').find('.app-navigation-entry-icon svg').exists()).toBe(false)
+	})
+
+	it('opens and closes a section by clicking its heading, not only the caret', async () => {
+		const wrapper = await mountTeam()
+		const link = () => wrapper.findAll('.app-navigation-entry-link').find((one) => one.text().startsWith('Shared with me'))!
+		expect(link().attributes('aria-expanded')).toBe('true')
+		await link().trigger('click')
+		await flushPromises()
+		expect(link().attributes('aria-expanded')).toBe('false')
+		await link().trigger('click')
+		await flushPromises()
+		expect(link().attributes('aria-expanded')).toBe('true')
+		const mine = wrapper.findAll('.app-navigation-entry-link').find((one) => one.text().startsWith('My forms'))!
+		await mine.trigger('click')
+		await flushPromises()
+		expect(mine.attributes('aria-expanded')).toBe('false')
+		expect(link().attributes('aria-expanded')).toBe('true')
+	})
+
+	it('remembers which sections were closed when the page is opened again', async () => {
+		const first = await mountTeam()
+		await first.findAll('.app-navigation-entry-link').find((one) => one.text().startsWith('Shared with me'))!.trigger('click')
+		await flushPromises()
+		first.unmount()
+		const second = await mountTeam()
+		const state = (name: string) => second.findAll('.app-navigation-entry-link').find((one) => one.text().startsWith(name))!.attributes('aria-expanded')
+		expect(state('Shared with me')).toBe('false')
+		expect(state('My forms')).toBe('true')
+	})
+
+	it('opens and closes Archived the same way', async () => {
+		vi.mocked(fetchUserPreferences).mockResolvedValue(ALL)
+		vi.mocked(listForms).mockResolvedValue([{ ...form(1, FORM_STATUS_PUBLISHED, false), role: 'owner' }, { ...form(2, FORM_STATUS_PUBLISHED, false), title: 'Old one', archivedAt: 5 }])
+		const wrapper = mount(App, { global: { stubs: { BuilderView: true, EntriesView: true, teleport: true } } })
+		await flushPromises()
+		const link = () => wrapper.findAll('.app-navigation-entry-link').find((one) => one.text().startsWith('Archived'))!
+		expect(link().attributes('aria-expanded')).toBe('false')
+		await link().trigger('click')
+		await flushPromises()
+		expect(link().attributes('aria-expanded')).toBe('true')
+	})
+
+	it('has no Shared with me heading when nothing is shared', async () => {
+		vi.mocked(fetchUserPreferences).mockResolvedValue(ALL)
+		vi.mocked(listForms).mockResolvedValue([{ ...form(1, FORM_STATUS_PUBLISHED, false), role: 'owner' }])
+		const wrapper = mount(App, { global: { stubs: { BuilderView: true, EntriesView: true, teleport: true } } })
+		await flushPromises()
+		expect(wrapper.text()).not.toContain('Shared with me')
+	})
+
+	it('opens a form shared for reading on its responses, whatever the preference says', async () => {
+		const wrapper = await mountTeam({}, { openPublishedOnResponses: false })
+		const hrefs = wrapper.findAll('a').filter((link) => !link.element.closest('.af-overview')).map((link) => link.attributes('href')).filter((href) => href?.startsWith('#/f/'))
+		expect(hrefs).toContain('#/f/3/responses')
+		// An editor still gets the editor under that preference.
+		expect(hrefs).toContain('#/f/2')
+	})
+
+	it('shows a Reviewer the responses even at the address of the editor, with their role', async () => {
+		window.location.hash = '#/f/3'
+		const wrapper = await mountTeam()
+		const entries = wrapper.findComponent({ name: 'EntriesView' })
+		expect(entries.exists()).toBe(true)
+		expect(entries.props('role')).toBe('reviewer')
+		expect(wrapper.findComponent({ name: 'BuilderView' }).exists()).toBe(false)
+		window.location.hash = ''
+	})
+
+	it('shows an editor the editor at that address', async () => {
+		window.location.hash = '#/f/2'
+		const wrapper = await mountTeam()
+		expect(wrapper.findComponent({ name: 'BuilderView' }).exists()).toBe(true)
+		window.location.hash = ''
+	})
+
+	it('waits for the list before choosing between the editor and the responses', async () => {
+		window.location.hash = '#/f/3'
+		vi.mocked(fetchUserPreferences).mockResolvedValue(ALL)
+		vi.mocked(listForms).mockReturnValue(new Promise(() => {}))
+		const wrapper = mount(App, { global: { stubs: { BuilderView: true, EntriesView: true, teleport: true } } })
+		await flushPromises()
+		expect(wrapper.findComponent({ name: 'BuilderView' }).exists()).toBe(false)
+		expect(wrapper.findComponent({ name: 'EntriesView' }).exists()).toBe(false)
+		window.location.hash = ''
+	})
+})
+
+describe('the menu of a form shared with the person', () => {
+	const stubs = {
+		NcAppNavigationItem: { props: ['name'], template: '<li><span>{{ name }}</span><slot /><slot name="actions" /></li>' },
+		NcActionButton: { template: '<button type="button" @click="$emit(\'click\')"><slot /></button>' },
+		NcActionLink: { template: '<a><slot /></a>' },
+	}
+
+	it('offers a Reviewer nothing but leaving, and an editor the usual menu without the owner\'s own tools', async () => {
+		const wrapper = await mountTeam(stubs)
+		const rows = wrapper.findAll('li').filter((row) => row.text().includes('Shared'))
+		const labels = (row: (typeof rows)[number]) => row.findAll('button, a').map((el) => el.text())
+		const reviewer = rows.find((row) => row.text().startsWith('Shared 3'))!
+		expect(labels(reviewer)).toEqual(['Leave this form'])
+		const editor = rows.find((row) => row.text().startsWith('Shared 2'))!
+		expect(labels(editor)).toEqual(['Export draft', 'Export published version', 'Duplicate', 'Archive', 'Leave this form'])
+	})
+
+	it('does not offer to leave a form that comes through a group', async () => {
+		vi.mocked(fetchUserPreferences).mockResolvedValue(ALL)
+		vi.mocked(listForms).mockResolvedValue([shared(2, 'editor', { canLeave: false })])
+		const wrapper = mount(App, { global: { stubs: { BuilderView: true, EntriesView: true, teleport: true, ...stubs } } })
+		await flushPromises()
+		expect(wrapper.findAll('button').some((button) => button.text() === 'Leave this form')).toBe(false)
+	})
+
+	it('asks first, then leaves and takes the form out of the list', async () => {
+		vi.mocked(leaveForm).mockResolvedValue(undefined)
+		const wrapper = await mountTeam(stubs)
+		await wrapper.findAll('button').find((button) => button.text() === 'Leave this form')!.trigger('click')
+		await flushPromises()
+		expect(wrapper.text()).toContain('Leave this form?')
+		expect(leaveForm).not.toHaveBeenCalled()
+		await wrapper.findAll('button').find((button) => button.text() === 'Leave form')!.trigger('click')
+		await flushPromises()
+		expect(leaveForm).toHaveBeenCalledTimes(1)
+		expect(wrapper.text()).not.toContain('Shared 2')
+		wrapper.unmount()
+	})
+
+	it('says so when leaving fails and keeps the form in the list', async () => {
+		vi.mocked(leaveForm).mockRejectedValue(new Error('no'))
+		const wrapper = await mountTeam(stubs)
+		await wrapper.findAll('button').find((button) => button.text() === 'Leave this form')!.trigger('click')
+		await flushPromises()
+		await wrapper.findAll('button').find((button) => button.text() === 'Leave form')!.trigger('click')
+		await flushPromises()
+		expect(wrapper.text()).toContain('Could not leave the form.')
+		expect(wrapper.text()).toContain('Shared 2')
 		wrapper.unmount()
 	})
 })

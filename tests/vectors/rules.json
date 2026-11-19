@@ -4922,6 +4922,556 @@
         ],
         "required": []
       }
-    }
+    },
+      {
+        "name": "slider: at least",
+        "fields": {
+          "f_src": {
+            "type": "slider",
+            "label": "L"
+          },
+          "f_more": {
+            "type": "text",
+            "label": "L"
+          }
+        },
+        "rules": [
+          {
+            "id": "r1",
+            "effect": "show",
+            "targets": [
+              "f_more"
+            ],
+            "when": {
+              "all": [
+                {
+                  "field": "f_src",
+                  "op": "gte",
+                  "value": 50
+                }
+              ]
+            }
+          }
+        ],
+        "values": {
+          "f_src": 50
+        },
+        "expect": {
+          "visible": [
+            "f_more",
+            "f_src"
+          ],
+          "required": []
+        }
+      },
+      {
+        "name": "slider: below",
+        "fields": {
+          "f_src": {
+            "type": "slider",
+            "label": "L"
+          },
+          "f_more": {
+            "type": "text",
+            "label": "L"
+          }
+        },
+        "rules": [
+          {
+            "id": "r1",
+            "effect": "show",
+            "targets": [
+              "f_more"
+            ],
+            "when": {
+              "all": [
+                {
+                  "field": "f_src",
+                  "op": "gte",
+                  "value": 50
+                }
+              ]
+            }
+          }
+        ],
+        "values": {
+          "f_src": 49
+        },
+        "expect": {
+          "visible": [
+            "f_src"
+          ],
+          "required": []
+        }
+      },
+      {
+        "name": "color: equal ignores case",
+        "fields": {
+          "f_src": {
+            "type": "color",
+            "label": "L"
+          },
+          "f_more": {
+            "type": "text",
+            "label": "L"
+          }
+        },
+        "rules": [
+          {
+            "id": "r1",
+            "effect": "show",
+            "targets": [
+              "f_more"
+            ],
+            "when": {
+              "all": [
+                {
+                  "field": "f_src",
+                  "op": "eq",
+                  "value": "#FF0000"
+                }
+              ]
+            }
+          }
+        ],
+        "values": {
+          "f_src": "#ff0000"
+        },
+        "expect": {
+          "visible": [
+            "f_more",
+            "f_src"
+          ],
+          "required": []
+        }
+      },
+      {
+        "name": "color: another colour",
+        "fields": {
+          "f_src": {
+            "type": "color",
+            "label": "L"
+          },
+          "f_more": {
+            "type": "text",
+            "label": "L"
+          }
+        },
+        "rules": [
+          {
+            "id": "r1",
+            "effect": "show",
+            "targets": [
+              "f_more"
+            ],
+            "when": {
+              "all": [
+                {
+                  "field": "f_src",
+                  "op": "eq",
+                  "value": "#ff0000"
+                }
+              ]
+            }
+          }
+        ],
+        "values": {
+          "f_src": "#00ff00"
+        },
+        "expect": {
+          "visible": [
+            "f_src"
+          ],
+          "required": []
+        }
+      },
+      {
+        "name": "color: not a colour is empty",
+        "fields": {
+          "f_src": {
+            "type": "color",
+            "label": "L"
+          },
+          "f_more": {
+            "type": "text",
+            "label": "L"
+          }
+        },
+        "rules": [
+          {
+            "id": "r1",
+            "effect": "show",
+            "targets": [
+              "f_more"
+            ],
+            "when": {
+              "all": [
+                {
+                  "field": "f_src",
+                  "op": "not_empty"
+                }
+              ]
+            }
+          }
+        ],
+        "values": {
+          "f_src": "red"
+        },
+        "expect": {
+          "visible": [
+            "f_src"
+          ],
+          "required": []
+        }
+      },
+      {
+        "name": "signature: drawn",
+        "fields": {
+          "f_src": {
+            "type": "signature",
+            "label": "L"
+          },
+          "f_more": {
+            "type": "text",
+            "label": "L"
+          }
+        },
+        "rules": [
+          {
+            "id": "r1",
+            "effect": "show",
+            "targets": [
+              "f_more"
+            ],
+            "when": {
+              "all": [
+                {
+                  "field": "f_src",
+                  "op": "not_empty"
+                }
+              ]
+            }
+          }
+        ],
+        "values": {
+          "f_src": "data:image/png;base64,AAAA"
+        },
+        "expect": {
+          "visible": [
+            "f_more",
+            "f_src"
+          ],
+          "required": []
+        }
+      },
+      {
+        "name": "signature: not a picture is empty",
+        "fields": {
+          "f_src": {
+            "type": "signature",
+            "label": "L"
+          },
+          "f_more": {
+            "type": "text",
+            "label": "L"
+          }
+        },
+        "rules": [
+          {
+            "id": "r1",
+            "effect": "show",
+            "targets": [
+              "f_more"
+            ],
+            "when": {
+              "all": [
+                {
+                  "field": "f_src",
+                  "op": "empty"
+                }
+              ]
+            }
+          }
+        ],
+        "values": {
+          "f_src": "hello"
+        },
+        "expect": {
+          "visible": [
+            "f_more",
+            "f_src"
+          ],
+          "required": []
+        }
+      },
+      {
+        "name": "matrix: answered",
+        "fields": {
+          "f_src": {
+            "type": "matrix",
+            "label": "L",
+            "rows": [
+              {
+                "value": "food",
+                "label": "F"
+              }
+            ],
+            "options": [
+              {
+                "value": "good",
+                "label": "G"
+              }
+            ]
+          },
+          "f_more": {
+            "type": "text",
+            "label": "L"
+          }
+        },
+        "rules": [
+          {
+            "id": "r1",
+            "effect": "show",
+            "targets": [
+              "f_more"
+            ],
+            "when": {
+              "all": [
+                {
+                  "field": "f_src",
+                  "op": "not_empty"
+                }
+              ]
+            }
+          }
+        ],
+        "values": {
+          "f_src": {
+            "food": "good"
+          }
+        },
+        "expect": {
+          "visible": [
+            "f_more",
+            "f_src"
+          ],
+          "required": []
+        }
+      },
+      {
+        "name": "matrix: nothing answered",
+        "fields": {
+          "f_src": {
+            "type": "matrix",
+            "label": "L",
+            "rows": [
+              {
+                "value": "food",
+                "label": "F"
+              }
+            ],
+            "options": [
+              {
+                "value": "good",
+                "label": "G"
+              }
+            ]
+          },
+          "f_more": {
+            "type": "text",
+            "label": "L"
+          }
+        },
+        "rules": [
+          {
+            "id": "r1",
+            "effect": "show",
+            "targets": [
+              "f_more"
+            ],
+            "when": {
+              "all": [
+                {
+                  "field": "f_src",
+                  "op": "not_empty"
+                }
+              ]
+            }
+          }
+        ],
+        "values": {
+          "f_src": {}
+        },
+        "expect": {
+          "visible": [
+            "f_src"
+          ],
+          "required": []
+        }
+      },
+      {
+        "name": "daterange: answered",
+        "fields": {
+          "f_src": {
+            "type": "daterange",
+            "label": "L"
+          },
+          "f_more": {
+            "type": "text",
+            "label": "L"
+          }
+        },
+        "rules": [
+          {
+            "id": "r1",
+            "effect": "show",
+            "targets": [
+              "f_more"
+            ],
+            "when": {
+              "all": [
+                {
+                  "field": "f_src",
+                  "op": "not_empty"
+                }
+              ]
+            }
+          }
+        ],
+        "values": {
+          "f_src": {
+            "start": "2026-01-01",
+            "end": "2026-01-02"
+          }
+        },
+        "expect": {
+          "visible": [
+            "f_more",
+            "f_src"
+          ],
+          "required": []
+        }
+      },
+      {
+        "name": "name: empty",
+        "fields": {
+          "f_src": {
+            "type": "name",
+            "label": "L"
+          },
+          "f_more": {
+            "type": "text",
+            "label": "L"
+          }
+        },
+        "rules": [
+          {
+            "id": "r1",
+            "effect": "show",
+            "targets": [
+              "f_more"
+            ],
+            "when": {
+              "all": [
+                {
+                  "field": "f_src",
+                  "op": "empty"
+                }
+              ]
+            }
+          }
+        ],
+        "values": {},
+        "expect": {
+          "visible": [
+            "f_more",
+            "f_src"
+          ],
+          "required": []
+        }
+      },
+      {
+        "name": "address: answered",
+        "fields": {
+          "f_src": {
+            "type": "address",
+            "label": "L"
+          },
+          "f_more": {
+            "type": "text",
+            "label": "L"
+          }
+        },
+        "rules": [
+          {
+            "id": "r1",
+            "effect": "show",
+            "targets": [
+              "f_more"
+            ],
+            "when": {
+              "all": [
+                {
+                  "field": "f_src",
+                  "op": "not_empty"
+                }
+              ]
+            }
+          }
+        ],
+        "values": {
+          "f_src": {
+            "city": "Oslo"
+          }
+        },
+        "expect": {
+          "visible": [
+            "f_more",
+            "f_src"
+          ],
+          "required": []
+        }
+      },
+      {
+        "name": "address: a list is not an answer",
+        "fields": {
+          "f_src": {
+            "type": "address",
+            "label": "L"
+          },
+          "f_more": {
+            "type": "text",
+            "label": "L"
+          }
+        },
+        "rules": [
+          {
+            "id": "r1",
+            "effect": "show",
+            "targets": [
+              "f_more"
+            ],
+            "when": {
+              "all": [
+                {
+                  "field": "f_src",
+                  "op": "not_empty"
+                }
+              ]
+            }
+          }
+        ],
+        "values": {
+          "f_src": [
+            "Oslo"
+          ]
+        },
+        "expect": {
+          "visible": [
+            "f_src"
+          ],
+          "required": []
+        }
+      }
   ]
 }

@@ -83,6 +83,13 @@ appending and adding a column to an existing header were tried on the dev instan
 Lock keys for `ILockingProvider` must stay under 64 characters (hash them): the database provider
 cuts longer keys and then never releases them.
 
+Slider, colour, date range, name, address, matrix and signature (docs/SCHEMA.md section 4.10): seven input
+types. Composite answers (`name`, `address`, `matrix`, `daterange`) are objects, so rules only ask whether they
+were answered; a required one must be complete (`FieldValueValidator::isComplete`, error `incomplete`). The matrix
+rows are `questions` (`rows` is the textarea's line count). A signature is a validated PNG data address kept out
+of text (exports, search, saved progress). Unit and component tests pass; not yet tried in a real browser or on
+the dev instance (drawing with touch, the matrix on a phone, the responses view of a signature).
+
 Hidden fields, defaults and prefill (docs/SCHEMA.md section 4.7): a `hidden` field type, a default
 value control for every input field, and the link filling fields by field id unless `settings.prefill`
 is false. Prefill is read in the browser only (`src/prefill.ts`); the server validates submitted values
@@ -116,6 +123,16 @@ Phase 7 so far: security pass done (account deletion now cleans up forms and res
 actual translations. Touch dragging is not supported
 (the move buttons in the field panel cover it). Submit message and redirect are resolved
 synchronously; see `docs/SCHEMA.md`.
+
+Collaboration (docs/SCHEMA.md section 22), phase 1 built: forms can be shared with accounts and groups as
+Editor or Reviewer. `FormAccess` is the one place that works out a role, and `FormService::get($userId, $id,
+Role $needs)` has no default role on purpose: every call states what it needs, and
+`tests/Unit/Access/PermissionTableTest.php` holds the permission table (section 22.1) as data, so a new
+public method without a role fails it. Editors cannot change `Destinations` (the owner's Files and Tables,
+section 22.5). Reviewers get `ReadingCopy` of a definition, never the real one. Phases 2 and 3 are built: revision conflicts for two editors (`forms.revision`, `baseRevision`, 409
+`draft_conflict`), ownership transfer and a deleted owner's forms passing to an editor (`OwnershipService`,
+`NextOwner`), and the server setting for sharing. Phase 3 and the conflict screen have not been tried on the dev
+instance with two real accounts yet.
 
 ## Gotchas
 

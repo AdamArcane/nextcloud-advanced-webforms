@@ -38,6 +38,8 @@ export const FIELD_TYPES: readonly FieldTypeInfo[] = [
 	{ type: 'phone', label: 'Phone', group: 'text' },
 	{ type: 'url', label: 'Website', group: 'text' },
 	{ type: 'number', label: 'Number', group: 'text' },
+	{ type: 'name', label: 'Name', group: 'text' },
+	{ type: 'address', label: 'Address', group: 'text' },
 	{ type: 'select', label: 'Dropdown', group: 'choice' },
 	{ type: 'radio', label: 'Single choice', group: 'choice' },
 	{ type: 'checkboxes', label: 'Multiple choice', group: 'choice' },
@@ -45,10 +47,15 @@ export const FIELD_TYPES: readonly FieldTypeInfo[] = [
 	{ type: 'consent', label: 'Consent', group: 'choice' },
 	{ type: 'rating', label: 'Rating', group: 'choice' },
 	{ type: 'scale', label: 'Scale', group: 'choice' },
+	{ type: 'slider', label: 'Slider', group: 'choice' },
+	{ type: 'matrix', label: 'Matrix', group: 'choice' },
+	{ type: 'color', label: 'Colour', group: 'choice' },
 	{ type: 'date', label: 'Date', group: 'datetime' },
 	{ type: 'time', label: 'Time', group: 'datetime' },
 	{ type: 'datetime', label: 'Date and time', group: 'datetime' },
+	{ type: 'daterange', label: 'Date range', group: 'datetime' },
 	{ type: 'file', label: 'File upload', group: 'advanced' },
+	{ type: 'signature', label: 'Signature', group: 'advanced' },
 	{ type: 'hidden', label: 'Hidden value', group: 'advanced' },
 	{ type: 'heading', label: 'Heading', group: 'content', display: true },
 	{ type: 'paragraph', label: 'Paragraph', group: 'content', display: true },
@@ -120,6 +127,28 @@ export function defaultField(type: string, optionValue: () => string): FormField
 			return { type, label, required: false, max: 5 }
 		case 'scale':
 			return { type, label, required: false, min: 1, max: 5 }
+		case 'slider':
+			return { type, label, required: false, min: 0, max: 100, step: 1 }
+		case 'name':
+			return { type, label, required: false, parts: ['first', 'last'] }
+		case 'address':
+			return { type, label, required: false, parts: ['street', 'street2', 'city', 'region', 'postal', 'country'] }
+		case 'matrix':
+			return {
+				type,
+				label,
+				required: false,
+				multiple: false,
+				questions: [
+					{ value: optionValue(), label: 'Question 1' },
+					{ value: optionValue(), label: 'Question 2' },
+				],
+				options: [
+					{ value: optionValue(), label: 'Poor' },
+					{ value: optionValue(), label: 'Good' },
+					{ value: optionValue(), label: 'Excellent' },
+				],
+			}
 		case 'consent':
 			// Agreeing is the point, so it starts as required.
 			return { type, label, required: true, text: 'I agree to the terms.' }

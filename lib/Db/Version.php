@@ -22,6 +22,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setSchemaVersion(int $schemaVersion)
  * @method string getDefinition()
  * @method void setDefinition(string $definition)
+ * @method string|null getPublishedBy()
+ * @method void setPublishedBy(?string $publishedBy)
  * @method int getCreatedAt()
  * @method void setCreatedAt(int $createdAt)
  */
@@ -30,6 +32,8 @@ class Version extends Entity {
 	protected $versionNumber;
 	protected $schemaVersion;
 	protected $definition;
+	/** Who published it, or null for a version from before this was kept. */
+	protected $publishedBy;
 	protected $createdAt;
 
 	public function __construct() {
@@ -37,6 +41,7 @@ class Version extends Entity {
 		$this->addType('versionNumber', 'integer');
 		$this->addType('schemaVersion', 'integer');
 		$this->addType('definition', 'string');
+		$this->addType('publishedBy', 'string');
 		$this->addType('createdAt', 'integer');
 	}
 

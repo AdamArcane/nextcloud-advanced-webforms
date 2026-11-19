@@ -20,8 +20,10 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ApiError } from '../../api/http.ts'
+import { isDestinationField } from '../../builder/destinations.ts'
 import { fetchUserPolicy, OPEN_POLICY } from '../../api/settings.ts'
 import type { UserPolicy } from '../../api/settings.ts'
+import type { DraftConflict } from '../../api/forms.ts'
 import { deleteForm, getForm, publicFormUrl, publishForm, saveDraft, setFormArchived } from '../../api/forms.ts'
 import { addField, addPage, dropField, duplicateField, dropRow, resizeField, type DropTarget, moveFieldToPage, locateField, movePage, removePage, setPageTitle, moveField, removeField, setSpan, updateField } from '../../builder/definition.ts'
 import { describeError, groupErrors, withoutUnstarted } from '../../builder/errors.ts'
@@ -49,7 +51,7 @@ const emit = defineEmits<{
 	deleted: []
 }>()
 
-type SaveState = 'saved' | 'dirty' | 'saving' | 'error'
+type SaveState = 'saved' | 'dirty' | 'saving' | 'error' | 'conflict'
 
 const form = ref<OwnerForm | null>(null)
 const policy = ref<UserPolicy>(OPEN_POLICY)
@@ -62,6 +64,16 @@ const errors = ref<DefinitionError[]>([])
 const publishing = ref(false)
 const archiveFailed = ref(false)
 const publishFailed = ref(false)
+
+// The owner may do everything. An editor may not change what reaches into the owner's Files or Tables
+// (docs/SCHEMA.md sections 22.1 and 22.5); a form from an answer that carries no role belongs to the person.
+const isOwner = computed(() => form.value?.role === undefined || form.value.role === 'owner')
+const ownerOnlyNotice = ref(false)
+// Set when someone else saved the draft first (docs/SCHEMA.md section 22.6). Saving stops until the person chooses.
+const conflict = ref<DraftConflict | null>(null)
+// The revision this copy came from or was last saved at.
+let baseRevision = 1
+const hasFilesUploads = computed(() => Object.values(draft.value?.fields ?? {}).some((field) => field.type === 'file' && field.storage !== 'app'))
 
 const selectedId = ref<string | null>(null)
 // On a narrow screen the sidebar covers the canvas, so it opens only once a field is picked.
@@ -95,6 +107,7 @@ onMounted(async () => {
 	try {
 		const loaded = await getForm(props.formId)
 		form.value = loaded
+		baseRevision = loaded.revision ?? 1
 		draft.value = normalize(loaded.draft as DraftDefinition)
 		frozenIds = loaded.latestVersionId !== null ? new Set(Object.keys(draft.value.fields)) : new Set()
 	} catch {
@@ -131,6 +144,9 @@ let inFlight = false
 function edit(next: DraftDefinition): void {
 	draft.value = next
 	revision++
+	if (saveState.value === 'conflict') {
+		return
+	}
 	saveState.value = 'dirty'
 	clearTimeout(timer)
 	timer = setTimeout(() => void flush(), SAVE_DELAY_MS)
@@ -138,20 +154,29 @@ function edit(next: DraftDefinition): void {
 
 async function flush(): Promise<void> {
 	clearTimeout(timer)
-	if (inFlight || draft.value === null || saveState.value === 'saved') {
+	if (inFlight || draft.value === null || saveState.value === 'saved' || saveState.value === 'conflict') {
 		return
 	}
 	inFlight = true
 	saveState.value = 'saving'
 	const sentRevision = revision
 	try {
-		const result = await saveDraft(props.formId, draft.value)
+		const result = await saveDraft(props.formId, draft.value, baseRevision)
+		baseRevision = result.form.revision ?? baseRevision + 1
 		form.value = result.form
 		errors.value = result.errors
 		emit('changed', result.form)
+		ownerOnlyNotice.value = false
 		saveState.value = sentRevision === revision ? 'saved' : 'dirty'
-	} catch {
+	} catch (error) {
+		if (error instanceof ApiError && error.status === 409 && error.code === 'draft_conflict') {
+			conflict.value = error.data as unknown as DraftConflict
+			saveState.value = 'conflict'
+			return
+		}
 		saveState.value = 'error'
+		// The server refuses an editor's change to what uses the owner's Files or Tables.
+		ownerOnlyNotice.value = error instanceof ApiError && error.errors.some((one) => one.code === 'owner_only_destination')
 	} finally {
 		inFlight = false
 	}
@@ -160,8 +185,51 @@ async function flush(): Promise<void> {
 	}
 }
 
+/** Replace the screen with the version that was saved first. The unsaved edits are lost. */
+async function useTheirVersion(): Promise<void> {
+	clearTimeout(timer)
+	try {
+		const loaded = await getForm(props.formId)
+		form.value = loaded
+		baseRevision = loaded.revision ?? conflict.value?.revision ?? baseRevision
+		draft.value = normalize(loaded.draft as DraftDefinition)
+		errors.value = []
+		conflict.value = null
+		saveState.value = 'saved'
+		emit('changed', loaded)
+	} catch {
+		// The conflict stays on screen, so the person can try again.
+	}
+}
+
+/** Save over the other version, by naming the stored revision as the one this copy started from. */
+async function keepMine(): Promise<void> {
+	if (!conflict.value) {
+		return
+	}
+	baseRevision = conflict.value.revision
+	conflict.value = null
+	saveState.value = 'dirty'
+	await flush()
+}
+
+/** A copy of the person's own draft, so choosing the other version loses nothing for good. */
+function downloadMine(): void {
+	if (!draft.value) {
+		return
+	}
+	const link = document.createElement('a')
+	link.href = URL.createObjectURL(new Blob([JSON.stringify(draft.value, null, 2)], { type: 'application/json' }))
+	link.download = 'my-version.json'
+	link.click()
+	URL.revokeObjectURL(link.href)
+}
+
+const conflictWhen = computed(() => (conflict.value ? new Date(conflict.value.savedAt * 1000).toLocaleString() : ''))
+
 const saveLabel = computed(() => {
 	switch (saveState.value) {
+		case 'conflict': return t('webforms', 'Not saved')
 		case 'saving': return t('webforms', 'Saving…')
 		case 'dirty': return t('webforms', 'Unsaved changes')
 		case 'error': return t('webforms', 'Could not save')
@@ -179,6 +247,15 @@ const shareUrl = computed(() => {
 	return address ? publicFormUrl(address) : null
 })
 
+/** The form was handed to someone else: the person is an editor now, and the draft on screen is untouched. */
+function onTransferred(saved: OwnerForm): void {
+	if (!form.value) {
+		return
+	}
+	form.value = { ...form.value, role: saved.role, ownerId: saved.ownerId, ownerName: saved.ownerName, canLeave: saved.canLeave, updatedAt: saved.updatedAt }
+	emit('changed', form.value)
+}
+
 /** The sharing options are saved apart from the draft, so only they are taken from the answer. */
 function onShare(saved: OwnerForm): void {
 	if (!form.value) {
@@ -188,7 +265,7 @@ function onShare(saved: OwnerForm): void {
 	emit('changed', form.value)
 }
 const hasChanges = computed(() => form.value?.hasUnpublishedChanges !== false)
-const canPublish = computed(() => !publishing.value && !archived.value && saveState.value !== 'error' && (hasChanges.value || !published.value))
+const canPublish = computed(() => !publishing.value && !archived.value && saveState.value !== 'error' && saveState.value !== 'conflict' && (hasChanges.value || !published.value))
 
 async function publish(): Promise<void> {
 	publishing.value = true
@@ -198,7 +275,7 @@ async function publish(): Promise<void> {
 		if (saveState.value === 'dirty') {
 			await flush()
 		}
-		if (saveState.value === 'error') {
+		if (saveState.value === 'error' || saveState.value === 'conflict') {
 			return
 		}
 		form.value = await publishForm(props.formId)
@@ -241,6 +318,15 @@ function select(fieldId: string): void {
 /** The hover toolbar acts on its own field, which becomes the selected one (the delete dialog uses the selection). */
 function onToolbarRemove(fieldId: string): void {
 	selectedId.value = fieldId
+	askRemoveField()
+}
+
+/** Removing a field that uses the owner's Files is a change to where files go, so an editor is told instead. */
+function askRemoveField(): void {
+	if (!isOwner.value && selectedId.value !== null && isDestinationField(draft.value?.fields[selectedId.value])) {
+		ownerOnlyNotice.value = true
+		return
+	}
 	confirmRemoveField.value = true
 }
 
@@ -269,12 +355,21 @@ function onRemovePage(pageId: string): void {
 	}
 }
 
+/** A file field an editor adds is kept in the app: keeping it in the owner's Files would be the owner's to decide. */
+function forRole(definition: DraftDefinition, fieldId: string): DraftDefinition {
+	const field = definition.fields[fieldId]
+	if (isOwner.value || !field || field.type !== 'file') {
+		return definition
+	}
+	return { ...definition, fields: { ...definition.fields, [fieldId]: { ...field, storage: 'app' } } }
+}
+
 function onAdd(type: string, rowIndex: number, pageIndex = 0): void {
 	if (!draft.value) {
 		return
 	}
 	const result = addField(draft.value, type, { kind: 'row', index: rowIndex, page: pageIndex })
-	edit(result.definition)
+	edit(forRole(result.definition, result.fieldId))
 	select(result.fieldId)
 }
 
@@ -287,7 +382,7 @@ function onAddBeside(type: string): void {
 		return
 	}
 	const result = addField(draft.value, type, { kind: 'join', rowId: at.row.id })
-	edit(result.definition)
+	edit(forRole(result.definition, result.fieldId))
 	select(result.fieldId)
 }
 
@@ -517,6 +612,30 @@ async function onDeleteConfirmed(): Promise<void> {
 						{{ t('webforms', 'Restore form') }}
 					</NcButton>
 				</NcNoteCard>
+				<NcNoteCard v-if="conflict" type="warning" data-test="draft-conflict">
+					<p>
+						{{ conflict.savedBy
+							? t('webforms', '{name} changed this form at {when}. Your changes are not saved yet.', { name: conflict.savedBy, when: conflictWhen })
+							: t('webforms', 'This form was changed at {when}, in another window or by someone else. Your changes are not saved yet.', { when: conflictWhen }) }}
+					</p>
+					<NcButton variant="primary" data-test="conflict-use-theirs" @click="useTheirVersion">
+						{{ t('webforms', 'Use their version') }}
+					</NcButton>
+					<NcButton data-test="conflict-keep-mine" @click="keepMine">
+						{{ t('webforms', 'Keep mine') }}
+					</NcButton>
+					<NcButton variant="tertiary" data-test="conflict-download" @click="downloadMine">
+						{{ t('webforms', 'Download my version') }}
+					</NcButton>
+				</NcNoteCard>
+				<NcNoteCard v-if="form?.destinationsPending" type="warning" data-test="destinations-pending">
+					{{ isOwner
+						? t('webforms', 'This form was closed when the previous owner\'s account was deleted, because the places it saves to in Files and Tables are not yet set up for you. Check them, then publish to open it again.')
+						: t('webforms', 'This form is closed because the places it saves to in Files and Tables are not set up for its new owner yet. They need to check them and publish it again.') }}
+				</NcNoteCard>
+				<NcNoteCard v-if="ownerOnlyNotice" type="warning">
+					{{ t('webforms', 'Only the owner of this form can change where files are saved or use Tables, because they use the owner\'s Files and Tables. Your other changes are kept on this screen. Ask the owner, or undo the change.') }}
+				</NcNoteCard>
 				<NcNoteCard v-if="archiveFailed" type="error">
 					{{ t('webforms', 'Could not change the archive state. Try again.') }}
 				</NcNoteCard>
@@ -551,6 +670,7 @@ async function onDeleteConfirmed(): Promise<void> {
 						:allowed-types="policy.allowedActionTypes"
 						:max-actions="policy.maxActions"
 						:mail="policy.mail"
+						:owner-only="!isOwner"
 						@change="edit" />
 					<FormProperties v-else
 						:section="settingsTab"
@@ -558,7 +678,11 @@ async function onDeleteConfirmed(): Promise<void> {
 						:share-url="shareUrl"
 						:form="form"
 						:archived="archived"
+						:is-owner="isOwner"
+						:can-share="policy.canShare !== false"
+						:has-files-uploads="hasFilesUploads"
 						@share="onShare"
+						@transferred="onTransferred"
 						@archive="toggleArchived"
 						@title="onTitle"
 						@description="onDescription"
@@ -620,6 +744,7 @@ async function onDeleteConfirmed(): Promise<void> {
 				:error-codes="selectedCodes"
 				:retired-ids="form.retiredIds ?? []"
 				:published="form.latestVersionId !== null"
+				:owner-only="!isOwner"
 				@update="onUpdate"
 				@span="onSpan"
 				@move="onMove"
@@ -627,7 +752,7 @@ async function onDeleteConfirmed(): Promise<void> {
 				@duplicate="onDuplicate"
 				@to-page="onToPage"
 				@rename="onRename"
-				@remove="confirmRemoveField = true" />
+				@remove="askRemoveField" />
 			<NcEmptyContent v-else
 				class="af-builder__hint"
 				:name="t('webforms', 'No field selected')"

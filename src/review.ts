@@ -8,8 +8,9 @@
 import type { LayoutPage } from './layout/visibleLayout.ts'
 import type { FormField } from './types.ts'
 
+import { hasParts } from './answers.ts'
 import { displayAnswer } from './entries/format.ts'
-import { isBooleanType, isInputType } from './rules/fieldTypes.ts'
+import { isBooleanType, isCompositeType, isInputType } from './rules/fieldTypes.ts'
 
 export interface ReviewItem {
 	id: string
@@ -37,6 +38,9 @@ export interface Review {
 export function isUnanswered(field: FormField, value: unknown): boolean {
 	if (isBooleanType(field.type)) {
 		return value !== true
+	}
+	if (isCompositeType(field.type)) {
+		return !hasParts(value)
 	}
 	if (Array.isArray(value)) {
 		return value.length === 0

@@ -19,6 +19,7 @@ import { icons } from '../../icons.ts'
 import { formatSize } from '../../uploads.ts'
 import Icon from '../common/Icon.vue'
 import DeliveryRow from './DeliveryRow.vue'
+import { useCanManageResponses } from './permissions.ts'
 import NoteEditor from './NoteEditor.vue'
 import StatusSelect from './StatusSelect.vue'
 
@@ -44,6 +45,7 @@ const missing = ref(false)
 const failed = ref(false)
 const statusBusy = ref(false)
 const statusFailed = ref(false)
+const canManage = useCanManageResponses()
 const deliveries = ref<Delivery[] | null>(null)
 const deliveriesFailed = ref(false)
 const retrying = ref<number | null>(null)
@@ -82,6 +84,10 @@ async function load(): Promise<void> {
 		if (mine === request) {
 			loading.value = false
 		}
+	}
+	// A Reviewer may not see the delivery log.
+	if (!canManage) {
+		return
 	}
 	try {
 		const rows = (await listDeliveries(props.formId, { entryId: props.entryId, limit: 50 })).rows
@@ -203,7 +209,7 @@ function print(): void {
 				<dl class="af-page__answers">
 					<div v-for="line in lines" :key="line.id" class="af-page__row">
 						<dt>{{ line.label }}</dt>
-						<dd :class="{ 'af-page__none': !line.answered }"><ul v-if="line.files.length > 0" class="af-page__files"><li v-for="(file, index) in line.files" :key="index"><a :href="entryFileUrl(formId, detail.entry.id, line.id, index)" download>{{ file.name }}</a><span class="af-page__size">{{ formatSize(file.size) }}</span></li></ul><template v-else>{{ line.answered ? line.value : t('webforms', 'Not answered') }}</template></dd>
+						<dd :class="{ 'af-page__none': !line.answered }"><img v-if="line.image" :src="line.image" class="af-page__signature" :alt="t('webforms', 'Signature')"><ul v-else-if="line.files.length > 0" class="af-page__files"><li v-for="(file, index) in line.files" :key="index"><a :href="entryFileUrl(formId, detail.entry.id, line.id, index)" download>{{ file.name }}</a><span class="af-page__size">{{ formatSize(file.size) }}</span></li></ul><template v-else>{{ line.answered ? line.value : t('webforms', 'Not answered') }}</template></dd>
 					</div>
 				</dl>
 				<p v-if="lines.length === 0" class="af-page__none">
@@ -228,7 +234,7 @@ function print(): void {
 
 				<NoteEditor :form-id="formId" :entry="detail.entry" @saved="apply" />
 
-				<section class="af-page__block">
+				<section v-if="canManage" class="af-page__block">
 					<h4 class="af-page__heading">
 						{{ t('webforms', 'Emails and webhooks') }}
 					</h4>
@@ -253,6 +259,16 @@ function print(): void {
 </template>
 
 <style scoped>
+.af-page__signature {
+	display: block;
+	max-width: 300px;
+	width: 100%;
+	/* The ink is dark, so it sits on white in any theme. */
+	background: #fff;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-small, 4px);
+}
+
 .af-page {
 	display: flex;
 	flex-direction: column;

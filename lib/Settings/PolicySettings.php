@@ -28,6 +28,7 @@ class PolicySettings {
 	private const MAX_RESPONSES = 'policy_max_responses';
 	private const MAX_ACTIONS = 'policy_max_actions';
 	private const CREATOR_GROUPS = 'policy_creator_groups';
+	private const SHARING = 'policy_sharing';
 
 	public function __construct(
 		private readonly ConfigStore $config,
@@ -72,10 +73,19 @@ class PolicySettings {
 	}
 
 	/**
+	 * Whether forms may be shared with other accounts and groups (docs/SCHEMA.md section 22.8). On unless
+	 * switched off. Off stops new shares and the search for people; shares that exist keep working.
+	 */
+	public function sharingEnabled(): bool {
+		return $this->config->get(self::SHARING) !== '0';
+	}
+
+	/**
 	 * @param list<string> $actionTypes
 	 * @param list<string> $creatorGroups
 	 */
-	public function save(array $actionTypes, int $retentionDays, int $maxResponses, int $maxActions, array $creatorGroups): void {
+	public function save(array $actionTypes, int $retentionDays, int $maxResponses, int $maxActions, array $creatorGroups, bool $sharing = true): void {
+		$this->config->set(self::SHARING, $sharing ? '1' : '0');
 		$types = array_values(array_intersect(DefinitionValidator::ACTION_TYPES, $actionTypes));
 		// "All" is stored as nothing, so a type added in a later version is allowed unless switched off.
 		$this->config->set(self::ACTION_TYPES, count($types) === count(DefinitionValidator::ACTION_TYPES) ? '' : json_encode($types, JSON_THROW_ON_ERROR));

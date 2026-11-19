@@ -11,7 +11,8 @@ import { computed } from 'vue'
 import { describeError } from '../../builder/errors.ts'
 import { fieldTypeName } from '../../builder/fieldTypeNames.ts'
 import { fieldTypeIcon, icons } from '../../icons.ts'
-import { steps } from '../../rules/fieldTypes.ts'
+import { partLabel } from '../../partLabels.ts'
+import { partsOf, steps } from '../../rules/fieldTypes.ts'
 import { ownerImageUrl } from '../../images.ts'
 import Icon from '../common/Icon.vue'
 import MarkdownText from '../render/MarkdownText.ts'
@@ -135,6 +136,34 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 						<span>{{ field.minLabel }}</span>
 						<span>{{ field.maxLabel }}</span>
 					</span>
+				</span>
+				<span v-else-if="field.type === 'slider'" class="af-card__slider" aria-hidden="true">
+					<span class="af-card__track"><span class="af-card__thumb" /></span>
+					<span>{{ field.prefix }}{{ field.min ?? 0 }} to {{ field.max ?? 100 }}{{ field.suffix }}</span>
+				</span>
+				<span v-else-if="field.type === 'color'" class="af-card__fake af-card__fake--colour" aria-hidden="true">
+					<span class="af-card__swatch" :style="{ background: typeof field.defaultValue === 'string' ? field.defaultValue : undefined }" />
+				</span>
+				<span v-else-if="field.type === 'daterange'" class="af-card__parts" aria-hidden="true">
+					<span class="af-card__fake"><span class="af-card__placeholder">{{ t('webforms', 'From') }}</span></span>
+					<span class="af-card__fake"><span class="af-card__placeholder">{{ t('webforms', 'To') }}</span></span>
+				</span>
+				<span v-else-if="field.type === 'name' || field.type === 'address'" class="af-card__parts" aria-hidden="true">
+					<span v-for="part in partsOf(field)" :key="part" class="af-card__fake"><span class="af-card__placeholder">{{ partLabel(part) }}</span></span>
+				</span>
+				<span v-else-if="field.type === 'matrix'" class="af-card__matrix" aria-hidden="true">
+					<span class="af-card__matrixrow">
+						<span class="af-card__matrixlabel" />
+						<span v-for="column in (field.options ?? []).slice(0, 5)" :key="column.value" class="af-card__matrixhead">{{ column.label }}</span>
+					</span>
+					<span v-for="question in (field.questions ?? []).slice(0, 3)" :key="question.value" class="af-card__matrixrow">
+						<span class="af-card__matrixlabel">{{ question.label }}</span>
+						<span v-for="column in (field.options ?? []).slice(0, 5)" :key="column.value" class="af-card__dot" :class="{ 'af-card__dot--square': field.multiple === true }" />
+					</span>
+					<span v-if="(field.questions ?? []).length > 3" class="af-card__more">+{{ (field.questions ?? []).length - 3 }}</span>
+				</span>
+				<span v-else-if="field.type === 'signature'" class="af-card__fake af-card__fake--signature" aria-hidden="true">
+					<span class="af-card__placeholder">{{ t('webforms', 'Sign here') }}</span>
 				</span>
 				<span v-else-if="field.type === 'hidden'" class="af-card__upload af-card__upload--hidden">
 					<Icon :path="fieldTypeIcon('hidden')" :size="18" />
@@ -342,6 +371,87 @@ const title = computed(() => props.field.label || props.field.text || typeLabel.
 	display: flex;
 	gap: 2px;
 	color: var(--color-border-maxcontrast, var(--color-border-dark));
+}
+
+.af-card__slider {
+	display: flex;
+	align-items: center;
+	gap: calc(var(--default-grid-baseline) * 3);
+	min-height: var(--default-clickable-area);
+	color: var(--color-text-maxcontrast);
+}
+
+.af-card__track {
+	position: relative;
+	flex: 1;
+	height: 4px;
+	border-radius: 2px;
+	background: var(--color-border-maxcontrast);
+}
+
+.af-card__thumb {
+	position: absolute;
+	top: 50%;
+	left: 40%;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background: var(--color-primary-element);
+	transform: translate(-50%, -50%);
+}
+
+.af-card__fake--colour {
+	justify-content: flex-start;
+	width: 96px;
+}
+
+.af-card__swatch {
+	width: 40px;
+	height: 18px;
+	border-radius: 4px;
+	border: 1px solid var(--color-border-maxcontrast);
+	background: linear-gradient(90deg, #e53935, #fdd835, #43a047, #1e88e5, #8e24aa);
+}
+
+.af-card__fake--signature {
+	min-height: 72px;
+	justify-content: center;
+	align-items: flex-end;
+	padding-bottom: 8px;
+}
+
+.af-card__parts {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+	gap: calc(var(--default-grid-baseline) * 2);
+}
+
+.af-card__matrix {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.af-card__matrixrow {
+	display: flex;
+	align-items: center;
+	gap: calc(var(--default-grid-baseline) * 2);
+}
+
+.af-card__matrixlabel {
+	flex: 0 0 30%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.af-card__matrixhead {
+	flex: 1;
+	overflow: hidden;
+	color: var(--color-text-maxcontrast);
+	font-size: 0.85em;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .af-card__scale {

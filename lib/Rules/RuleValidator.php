@@ -211,6 +211,7 @@ final class RuleValidator {
 			case FieldType::NUMBER:
 			case FieldType::RATING:
 			case FieldType::SCALE:
+			case FieldType::SLIDER:
 				return is_int($value) || (is_float($value) && is_finite($value));
 			case FieldType::SELECT:
 			case FieldType::RADIO:
@@ -222,6 +223,7 @@ final class RuleValidator {
 			case FieldType::DATETIME:
 			case FieldType::DATE:
 			case FieldType::TIME:
+			case FieldType::COLOR:
 				return ValueNormalizer::normalize($type, $value) !== null;
 			default:
 				return false;

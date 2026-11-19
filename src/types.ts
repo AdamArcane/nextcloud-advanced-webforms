@@ -47,6 +47,15 @@ export type FormField = {
 	minLabel?: string
 	maxLabel?: string
 	options?: FieldOption[]
+	/** A matrix: the rows to answer, one per question. Its `options` are the columns (docs/SCHEMA.md 4.10). */
+	questions?: FieldOption[]
+	/** A date range: the fewest and the most whole days from the first date to the last (0 allows one day). */
+	minDays?: number
+	maxDays?: number
+	/** A matrix: tick several columns in a row instead of one. */
+	multiple?: boolean
+	/** A name or an address: which parts to ask for (docs/SCHEMA.md 4.10). */
+	parts?: string[]
 	minSelected?: number
 	maxSelected?: number
 	text?: string
@@ -267,15 +276,27 @@ export interface FormAvailability {
 	responses: number
 }
 
+/** What a person may do with a form (docs/SCHEMA.md section 22.1). */
+export type FormRole = 'owner' | 'editor' | 'reviewer'
+
 /** A form as the owner API returns it. `draft` is only present on single-form calls. */
 export interface OwnerForm {
 	id: number
+	/** The person's role on it. Missing means they own it, as in answers from before sharing existed. */
+	role?: FormRole
+	/** Who owns it, for a form that was shared with the person. */
+	ownerId?: string
+	ownerName?: string
+	/** The person may give up their access: it was shared with their own account, not through a group. */
+	canLeave?: boolean
 	title: string
 	description: string | null
 	status: number
 	publicToken: string | null
 	/** A custom address that leads to the form beside its token. */
 	slug?: string | null
+	/** Whether the public link asks for a password. The password itself never leaves the server. */
+	hasPassword?: boolean
 	/** Whether other websites may show the form in a frame, and which (empty means any). */
 	embed?: boolean
 	embedOrigins?: string[]
@@ -288,6 +309,10 @@ export interface OwnerForm {
 	newCount?: number
 	createdAt: number
 	updatedAt: number
+	/** Raised by every draft save; a save names the one it started from (docs/SCHEMA.md section 22.6). */
+	revision?: number
+	/** The form passed to an owner whose Files and Tables it cannot use yet, so it is closed until published again (docs/SCHEMA.md section 22.7). */
+	destinationsPending?: boolean
 	draft?: DraftDefinition
 	hasUnpublishedChanges?: boolean
 	/** Field ids that can no longer be used because a published field had them. */

@@ -796,7 +796,7 @@ describe('EntriesView summary', () => {
 		document.body.innerHTML = ''
 	})
 
-	const summaryButton = (wrapper: ReturnType<typeof mountView>) => wrapper.findAll('button').find((b) => b.text() === 'Summary')!
+	const summaryButton = (wrapper: ReturnType<typeof mountView>) => wrapper.findAll('button').find((b) => /^(Hide|Show) summary$/.test(b.text()))!
 
 	it('shows responses over time, counts per choice and number figures above the table', async () => {
 		const wrapper = mountView()
@@ -841,31 +841,33 @@ describe('EntriesView summary', () => {
 	it('can be closed and reports it, and then asks for nothing while it stays closed', async () => {
 		const wrapper = mountView()
 		await flushPromises()
+		expect(summaryButton(wrapper).text()).toBe('Hide summary')
 		await summaryButton(wrapper).trigger('click')
-		expect(wrapper.find('.af-summary').exists()).toBe(false)
+		expect(wrapper.find('.af-timeline').exists()).toBe(false)
+		expect(summaryButton(wrapper).text()).toBe('Show summary')
 		expect(wrapper.emitted('preference')).toEqual([[{ responsesSummary: false }]])
 		wrapper.unmount()
 		summaryMock.mockClear()
 		const again = mountView({ responsesSummary: false })
 		await flushPromises()
-		expect(again.find('.af-summary').exists()).toBe(false)
+		expect(again.find('.af-timeline').exists()).toBe(false)
 		expect(summaryMock).not.toHaveBeenCalled()
 		await summaryButton(again).trigger('click')
 		await flushPromises()
 		expect(summaryMock).toHaveBeenCalledTimes(1)
-		expect(again.find('.af-summary').exists()).toBe(true)
+		expect(again.find('.af-timeline').exists()).toBe(true)
 		again.unmount()
 	})
 
 	it('opens when the preference changes to open', async () => {
 		const wrapper = mountView({ responsesSummary: false })
 		await flushPromises()
-		expect(wrapper.find('.af-summary').exists()).toBe(false)
+		expect(wrapper.find('.af-timeline').exists()).toBe(false)
 		summaryMock.mockClear()
 		await wrapper.setProps({ responsesSummary: true })
 		await flushPromises()
 		expect(summaryMock).toHaveBeenCalledTimes(1)
-		expect(wrapper.find('.af-summary').exists()).toBe(true)
+		expect(wrapper.find('.af-timeline').exists()).toBe(true)
 		wrapper.unmount()
 	})
 
