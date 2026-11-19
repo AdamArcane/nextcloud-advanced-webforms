@@ -5,24 +5,19 @@
 
 <script setup lang="ts">
 import type { EntryFilterState, Respondent } from '../../entries/filter.ts'
-import type { DraftDefinition, ResponseStatus } from '../../types.ts'
+import type { ResponseStatus } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { defaultLeaf, makeGroup, sourceFields } from '../../builder/rules.ts'
 import { isFilterActive, NO_STATUS, rangeInvalid } from '../../entries/filter.ts'
 import { statusLabel } from '../../entries/statuses.ts'
 import { icons } from '../../icons.ts'
-import ConditionGroup from '../builder/ConditionGroup.vue'
 import Icon from '../common/Icon.vue'
 
 const props = defineProps<{
 	modelValue: EntryFilterState
-	/** The newest version of the form, whose questions the answers filter can use. Null until responses load. */
-	definition: DraftDefinition | null
 	/** The statuses a response can be given. None hides the status filter. */
 	statuses?: readonly ResponseStatus[]
 }>()
@@ -35,8 +30,6 @@ const DEBOUNCE_MS = 300
 
 const text = ref(props.modelValue.text)
 let timer: ReturnType<typeof setTimeout> | null = null
-const answersOpen = ref(props.modelValue.where !== null)
-const noForbidden: ReadonlySet<string> = new Set()
 
 // Typing waits for a pause before it asks the server, everything else applies at once.
 watch(text, (value) => {
@@ -56,7 +49,6 @@ onBeforeUnmount(() => {
 	}
 })
 
-const sources = computed(() => (props.definition ? sourceFields(props.definition) : []))
 const active = computed(() => isFilterActive(props.modelValue))
 const badRange = computed(() => rangeInvalid(props.modelValue))
 
@@ -70,22 +62,8 @@ function update(changes: Partial<EntryFilterState>): void {
 	emit('update:modelValue', { ...props.modelValue, ...changes })
 }
 
-function toggleAnswers(): void {
-	if (answersOpen.value) {
-		answersOpen.value = false
-		update({ where: null })
-		return
-	}
-	answersOpen.value = true
-	const first = sources.value[0]
-	if (props.definition && first && props.modelValue.where === null) {
-		update({ where: makeGroup('all', [defaultLeaf(props.definition, first.id)]) })
-	}
-}
-
 function clear(): void {
 	text.value = ''
-	answersOpen.value = false
 	emit('update:modelValue', { text: '', from: '', to: '', respondent: 'any', where: null, statuses: [], sort: props.modelValue.sort })
 }
 </script>
@@ -144,16 +122,6 @@ function clear(): void {
 				</select>
 			</label>
 
-			<NcButton :variant="answersOpen ? 'primary' : 'secondary'"
-				:disabled="sources.length === 0"
-				:aria-pressed="answersOpen"
-				@click="toggleAnswers">
-				<template #icon>
-					<Icon :path="icons.filter" />
-				</template>
-				{{ t('webforms', 'Answers') }}
-			</NcButton>
-
 			<NcButton v-if="active" variant="tertiary" @click="clear">
 				{{ t('webforms', 'Clear filters') }}
 			</NcButton>
@@ -162,22 +130,6 @@ function clear(): void {
 		<p v-if="badRange" class="af-filters__error">
 			{{ t('webforms', 'The end date is before the start date.') }}
 		</p>
-
-		<div v-if="answersOpen && definition && modelValue.where" class="af-filters__answers">
-			<p class="af-filters__hint">
-				{{ t('webforms', 'Only responses whose answers match. This works like the conditions on rules.') }}
-			</p>
-			<ConditionGroup :node="modelValue.where"
-				:depth="1"
-				:definition="definition"
-				:sources="sources"
-				:forbidden="noForbidden"
-				:removable="false"
-				@update="(node) => update({ where: node })" />
-			<NcNoteCard v-if="sources.length === 0" type="info">
-				{{ t('webforms', 'This form has no questions to filter on.') }}
-			</NcNoteCard>
-		</div>
 	</div>
 </template>
 
@@ -212,21 +164,6 @@ function clear(): void {
 .af-filters__field select {
 	min-height: var(--default-clickable-area);
 	margin: 0;
-}
-
-.af-filters__answers {
-	display: flex;
-	flex-direction: column;
-	gap: var(--default-grid-baseline);
-	padding: calc(var(--default-grid-baseline) * 2);
-	border: 1px solid var(--color-border);
-	border-radius: var(--border-radius-large);
-}
-
-.af-filters__hint {
-	margin: 0;
-	color: var(--color-text-maxcontrast);
-	font-size: 13px;
 }
 
 .af-filters__error {
