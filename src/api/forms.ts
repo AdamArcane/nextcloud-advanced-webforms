@@ -182,6 +182,46 @@ export function formsBackupUrl(): string {
 	return generateUrl('/apps/webforms/api/v1/backup')
 }
 
+export interface Collaborator {
+	id: number
+	type: 'user' | 'group'
+	/** The account or group id. */
+	with: string
+	displayName: string
+	role: 'editor' | 'reviewer'
+	createdAt: number
+}
+
+export interface Sharee {
+	type: 'user' | 'group'
+	with: string
+	label: string
+}
+
+/** Who a form is shared with. Owner only. */
+export async function listCollaborators(id: number): Promise<{ owner: { id: string, displayName: string }, shares: Collaborator[] }> {
+	return call(axios.get(url('/forms/' + id + '/shares')))
+}
+
+/** Share with an account or group, or change the role of a share. Rejects with an ApiError (422): `share_target_invalid`, `share_is_owner`. */
+export function shareForm(id: number, type: 'user' | 'group', withWhom: string, role: 'editor' | 'reviewer'): Promise<Collaborator> {
+	return call(axios.put<Collaborator>(url('/forms/' + id + '/shares'), { type, with: withWhom, role }))
+}
+
+export async function unshareForm(id: number, shareId: number): Promise<void> {
+	await call(axios.delete(url('/forms/' + id + '/shares/' + shareId)))
+}
+
+/** The person gives up their own access to a form shared with them. */
+export async function leaveForm(id: number): Promise<void> {
+	await call(axios.delete(url('/forms/' + id + '/shares/me')))
+}
+
+/** Accounts and groups to share with, found by what was typed. */
+export async function findSharees(id: number, search: string): Promise<Sharee[]> {
+	return (await call(axios.get<{ sharees: Sharee[] }>(url('/forms/' + id + '/sharees'), { params: { search } }))).sharees
+}
+
 /** A new draft with the same content as this form's draft. Rejects with an ApiError. */
 export function duplicateForm(id: number, title: string): Promise<SaveResult> {
 	return call(axios.post<SaveResult>(url('/forms/' + id + '/duplicate'), { title }))

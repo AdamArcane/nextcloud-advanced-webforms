@@ -18,6 +18,7 @@ import { computed } from 'vue'
 import { availabilityNote, fromLocalInput, toLocalInput } from '../../availability.ts'
 import { DEFAULT_ACCENT, DEFAULT_BACKGROUND_COLOR, safeColor } from '../../design.ts'
 import SegmentedControl from './SegmentedControl.vue'
+import CollaboratorsPanel from './CollaboratorsPanel.vue'
 import SharePanel from './SharePanel.vue'
 
 const props = defineProps<{
@@ -29,6 +30,10 @@ const props = defineProps<{
 	archived?: boolean
 	/** The form as the server has it: the sharing options saved apart from the draft, and what the published form is doing now. */
 	form?: OwnerForm | null
+	/** Whether the person owns the form: only the owner deletes it or decides who it is shared with (docs/SCHEMA.md section 22.1). */
+	isOwner?: boolean
+	/** The form has an upload kept in the owner's Files, which the sharing screen warns about. */
+	hasFilesUploads?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -293,6 +298,10 @@ function str(value: string | number): string | undefined {
 			</section>
 		</template>
 
+		<CollaboratorsPanel v-if="section === 'sharing' && form && isOwner !== false"
+			:form-id="form.id"
+			:has-files-uploads="hasFilesUploads" />
+
 		<SharePanel v-if="section === 'sharing' && form"
 			:form="form"
 			:require-login="definition.settings.requireLogin === true"
@@ -414,7 +423,7 @@ function str(value: string | number): string | undefined {
 			</NcButton>
 		</section>
 
-		<section v-if="section === 'general'" class="af-form-props__section">
+		<section v-if="section === 'general' && isOwner !== false" class="af-form-props__section">
 			<NcButton variant="error" @click="emit('delete')">
 				<template #icon>
 					<Icon :path="icons.delete" />

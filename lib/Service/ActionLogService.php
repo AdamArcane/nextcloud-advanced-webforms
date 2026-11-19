@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\Webforms\Service;
 
+use OCA\Webforms\Access\Role;
 use OCA\Webforms\BackgroundJob\ProcessActionsNowJob;
 use OCA\Webforms\Db\ActionLog;
 use OCA\Webforms\Db\ActionLogMapper;
@@ -43,7 +44,7 @@ class ActionLogService {
 	 * @throws ValidationException
 	 */
 	public function list(string $userId, int $formId, ?string $status, ?int $entryId, int $limit, int $offset): array {
-		$form = $this->forms->get($userId, $formId);
+		$form = $this->forms->get($userId, $formId, Role::EDITOR);
 		if ($status !== null && !in_array($status, self::STATUSES, true)) {
 			throw new ValidationException([['code' => 'status_invalid', 'path' => 'status']]);
 		}
@@ -67,7 +68,7 @@ class ActionLogService {
 	 * @throws ValidationException
 	 */
 	public function retry(string $userId, int $formId, int $logId): array {
-		$form = $this->forms->get($userId, $formId);
+		$form = $this->forms->get($userId, $formId, Role::EDITOR);
 		$row = $this->log->findInForm($form->getId(), $logId);
 		if ($row->getStatus() !== ActionLog::STATUS_FAILED) {
 			throw new ValidationException([['code' => 'not_failed', 'path' => 'status']]);

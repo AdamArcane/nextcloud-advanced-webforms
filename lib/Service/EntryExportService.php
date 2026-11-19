@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\Webforms\Service;
 
+use OCA\Webforms\Access\Role;
 use OCA\Webforms\Db\Entry;
 use OCA\Webforms\Db\VersionMapper;
 use OCA\Webforms\Exception\NotFoundException;
@@ -44,7 +45,7 @@ class EntryExportService {
 	 * @throws NotFoundException
 	 */
 	public function export(string $userId, int $formId, EntryFilter $filter, ?array $ids, ?array $columnIds, string $format): array {
-		$form = $this->forms->get($userId, $formId);
+		$form = $this->forms->get($userId, $formId, Role::REVIEWER);
 
 		if ($ids !== null) {
 			$entries = $this->query->byIds($form->getId(), array_slice($ids, 0, self::MAX_ROWS));

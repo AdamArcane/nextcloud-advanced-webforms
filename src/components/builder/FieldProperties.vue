@@ -10,6 +10,7 @@ import type { Move } from '../../builder/definition.ts'
 import { getFilePickerBuilder } from '@nextcloud/dialogs'
 import { t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import { isDestinationField } from '../../builder/destinations.ts'
 import { icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
@@ -37,6 +38,8 @@ const props = defineProps<{
 	retiredIds?: string[]
 	/** Whether the form has been published, which makes an id change visible to receivers. */
 	published?: boolean
+	/** An editor, not the owner: the parts that reach into the owner's Files are read only (docs/SCHEMA.md section 22.5). */
+	ownerOnly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -422,11 +425,12 @@ const moves: { move: Move, label: string, icon: string }[] = [
 
 			<template v-else-if="type === 'image'">
 				<NcTextField :model-value="field.src ?? ''"
+					:disabled="ownerOnly && isDestinationField(field)"
 					:label="t('webforms', 'Picture')"
 					:helper-text="imageHelp"
 					:placeholder="imagePlaceholder"
 					@update:model-value="(value: string | number) => emit('update', { src: String(value).trim() })" />
-				<NcButton variant="secondary" @click="pickImage">
+				<NcButton variant="secondary" :disabled="ownerOnly" @click="pickImage">
 					<template #icon>
 						<Icon :path="icons.storageFiles" />
 					</template>
@@ -505,7 +509,8 @@ const moves: { move: Move, label: string, icon: string }[] = [
 			<h3 class="af-props__heading">
 				{{ t('webforms', 'Who can upload') }}
 			</h3>
-			<SegmentedControl :model-value="field.audience ?? 'anyone'"
+			<SegmentedControl :inert="(ownerOnly && uploadStorage === 'files') || undefined"
+				:model-value="field.audience ?? 'anyone'"
 				:group-label="t('webforms', 'Who can upload')"
 				:options="[
 					{ value: 'anyone', label: t('webforms', 'Anyone'), icon: icons.audienceAnyone },
@@ -521,7 +526,11 @@ const moves: { move: Move, label: string, icon: string }[] = [
 			<h3 class="af-props__heading">
 				{{ t('webforms', 'Where files are saved') }}
 			</h3>
-			<SegmentedControl :model-value="uploadStorage"
+			<NcNoteCard v-if="ownerOnly" type="info">
+				{{ t('webforms', 'Only the owner of this form can change where files are saved, because it uses the owner\'s Files.') }}
+			</NcNoteCard>
+			<SegmentedControl :inert="ownerOnly || undefined"
+				:model-value="uploadStorage"
 				:group-label="t('webforms', 'Where files are saved')"
 				:options="[
 					{ value: 'files', label: t('webforms', 'Your Files'), icon: icons.storageFiles },
@@ -530,10 +539,11 @@ const moves: { move: Move, label: string, icon: string }[] = [
 				@update:model-value="(value) => emit('update', { storage: value === 'app' ? 'app' : undefined })" />
 			<template v-if="uploadStorage === 'files'">
 				<NcTextField :model-value="field.folder ?? ''"
+					:disabled="ownerOnly"
 					:label="t('webforms', 'Folder')"
 					:placeholder="t('webforms', 'Webforms/<form title>')"
 					@update:model-value="(value: string | number) => text('folder', value)" />
-				<NcButton variant="secondary" @click="pickFolder">
+				<NcButton variant="secondary" :disabled="ownerOnly" @click="pickFolder">
 					{{ t('webforms', 'Choose folder') }}
 				</NcButton>
 				<p class="af-props__hint">

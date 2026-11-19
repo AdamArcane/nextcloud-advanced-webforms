@@ -13,7 +13,7 @@ work see [SCHEMA.md](SCHEMA.md). Nothing here is promised for a date.
 Designed 2026-11-19 and written down in [SCHEMA.md](SCHEMA.md) section 22: share a form with accounts and
 groups as Editor or Reviewer, so a team can work on one form. In this order, each a pull request:
 
-1. **Access and roles.** Two new tables, one place that decides a person's role, the list of forms shared
+1. **Access and roles (built).** Two new tables, one place that decides a person's role, the list of forms shared
    with you, "new responses" kept for each person, the Collaborators section and a reading copy of the
    definition for Reviewers.
 2. **Revision conflicts.** The builder autosaves today with no guard, so two editors overwrite each other.

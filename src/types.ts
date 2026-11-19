@@ -267,9 +267,19 @@ export interface FormAvailability {
 	responses: number
 }
 
+/** What a person may do with a form (docs/SCHEMA.md section 22.1). */
+export type FormRole = 'owner' | 'editor' | 'reviewer'
+
 /** A form as the owner API returns it. `draft` is only present on single-form calls. */
 export interface OwnerForm {
 	id: number
+	/** The person's role on it. Missing means they own it, as in answers from before sharing existed. */
+	role?: FormRole
+	/** Who owns it, for a form that was shared with the person. */
+	ownerId?: string
+	ownerName?: string
+	/** The person may give up their access: it was shared with their own account, not through a group. */
+	canLeave?: boolean
 	title: string
 	description: string | null
 	status: number

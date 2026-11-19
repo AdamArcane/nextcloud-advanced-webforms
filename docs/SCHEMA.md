@@ -1781,8 +1781,9 @@ they belong to (section 22.3).
   options, layout and what the page needs to word an answer), pages and rules, and nothing else. It drops
   `actions`, `settings`, a file field's `folder` and `storage`, an image's source in Files and a hidden
   field's `description`. Owners and editors get the full definition as now. The copy is made on the server
-  by one function, with a test that fails when a new definition key is not listed as either kept or dropped,
-  so a future key cannot leak by default.
+  by one function (`ReadingCopy`). It is a list of what to keep, so a key the definition gains later is
+  left out until someone decides it is safe to show, and a test fails when a top level key of the
+  definition is in neither the kept list nor the dropped one.
 - A duplicate (section 13.2) belongs to the person who made it, who must be allowed to create forms
   (section 16). Its destinations are checked for them when they publish it, like any new form.
 - Notes were the owner's private notes (section 20). On a shared form they are visible to everyone who can
@@ -1837,8 +1838,9 @@ without any rule of ours. Each row has a role menu (Editor, Reviewer) and a remo
 - `DELETE /api/v1/forms/{id}/shares/{shareId}`: removes it. Owner only.
 - `DELETE /api/v1/forms/{id}/shares/me`: a person leaves a form that was shared with them directly. A
   person who has it only through a group cannot leave it, and the page does not offer to.
-- `GET /api/v1/sharees?search=`: the collaborator search, limited per user. Available only where section
-  22.8 allows sharing.
+- `GET /api/v1/forms/{id}/sharees?search=`: the collaborator search, limited per user. It is for one form
+  so it can leave out the owner, the person asking and everyone the form is already shared with. Owner
+  only, and available only where section 22.8 allows sharing.
 
 Sharing changes nothing for respondents: the public link, the password and the published version are the
 same. Nobody is told by mail that a form was shared with them in this version (section 22.9).
@@ -1849,17 +1851,20 @@ Uploads, a picture taken from Files, the Files action and the Tables action all 
 Files or the owner's Tables. If an editor could point one of them at a place only the owner may use, they
 would be using the owner's access. So those are owner only.
 
-The **destination set** of a definition is: every file field whose `storage` is `files` with its `folder`,
-every image block whose source is in Files, every action of type `files` or `tables` with its target. It
-leaves out fields stored in the app (`storage: app`), pictures from a web address, and the other action
-types.
+The **destination set** of a definition is: every file field whose `storage` is `files` (the default) with
+  its `folder` and who may upload, every image block whose source is in Files, and every action of type
+`files` or `tables` as a whole, so an editor cannot change even its condition. It leaves out fields stored
+in the app (`storage: app`), pictures from a web address, and the other action types.
 
 - **An editor's save that changes the destination set** (a destination added, changed or removed) is
-  refused with `owner_only_destination` and the paths concerned. Everything else in the same save is
-  stored. The comparison is on the stored draft, so it cannot be avoided by editing a copy.
-- **The builder** shows those controls as read only for an editor, with a line saying the owner sets them,
-  and does not offer the file field type with Files storage or the Files and Tables actions to add. An
-  editor who needs a new one asks the owner.
+  refused with `owner_only_destination` and the paths concerned, and nothing of that save is stored. The
+  comparison is against the stored draft, so it cannot be avoided by editing a copy. A form's title is
+  not part of it, although a file field with no folder uses one named after the title: that folder is
+  always under the owner's `Webforms` folder.
+- **The builder** shows those controls as read only for an editor, with a line saying the owner sets them.
+  The Files and Tables actions are not offered to add. A file field an editor adds is kept in the app, and
+  a field that is kept in the owner's Files cannot be deleted by an editor. An editor who needs a new
+  one asks the owner. If a save is refused anyway, the builder says why.
 - **Publishing** still checks every destination for the owner (section 19 and `FormService`), as now.
   An editor's publish fails with the owner's errors, worded for an editor.
 - **Webhook secrets** are created and revealed by the owner only. A save by an editor keeps an action's
@@ -1923,6 +1928,11 @@ the sharee search are gone, and existing shares keep working but cannot be added
 - **A history of who changed what** beyond who published a version and who set a status.
 
 ### 22.10 How it is built
+
+Phase 1 is built (2026-11-19). Not in it yet, and still to come in the later phases: `forms.revision` and
+the conflict screen (phase 2), transfer, the handling of an owner's deleted account and the server setting
+(phase 3). `versions.published_by` is stored when a version is published and is not shown anywhere yet.
+`forms.responses_seen_at` is no longer read.
 
 1. **Access and roles.** The two tables and `FormAccess`, `FormService` and the controllers on the role
    table, the list query, the per person "new", the Collaborators section, the role badges and a Reviewer

@@ -18,7 +18,7 @@ import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import { icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
 import { bulkDeleteEntries, bulkSetEntryStatus, deleteEntry, exportUrl, fetchEntrySummary, listDeliveries, listEntries, markEntriesSeen, retryDelivery, setEntryStatus } from '../../api/forms.ts'
@@ -34,6 +34,7 @@ import SegmentedControl from '../builder/SegmentedControl.vue'
 import DeliveryRow from './DeliveryRow.vue'
 import ResponseCard from './ResponseCard.vue'
 import ResponseFilters from './ResponseFilters.vue'
+import { CAN_MANAGE_RESPONSES } from './permissions.ts'
 import ResponsePage from './ResponsePage.vue'
 import ResponseSummary from './ResponseSummary.vue'
 import ResponsesTable from './ResponsesTable.vue'
@@ -48,12 +49,18 @@ const props = withDefaults(defineProps<{
 	/** How responses are laid out and whether the summary is open: the user's preferences (docs/SCHEMA.md 16.1). */
 	responsesView?: 'table' | 'cards'
 	responsesSummary?: boolean
+	/** The person's role on the form. A Reviewer cannot delete responses or see the delivery log. */
+	role?: 'owner' | 'editor' | 'reviewer'
 }>(), {
 	entryId: null,
 	statuses: () => [],
 	responsesView: 'table',
 	responsesSummary: true,
+	role: 'owner',
 })
+
+const canManage = props.role !== 'reviewer'
+provide(CAN_MANAGE_RESPONSES, canManage)
 
 const emit = defineEmits<{
 	/** The owner looked at the list, so this form has no new responses any more. */
@@ -426,6 +433,9 @@ const failedCount = ref(0)
 let deliveriesLoaded = false
 
 async function refreshFailedCount(): Promise<void> {
+	if (!canManage) {
+		return
+	}
 	try {
 		failedCount.value = (await listDeliveries(props.formId, { status: 'failed', limit: 1 })).total
 	} catch {
@@ -595,7 +605,8 @@ onMounted(() => {
 		</div>
 
 		<div v-else class="af-entries__body">
-			<SegmentedControl :model-value="tab"
+			<SegmentedControl v-if="canManage"
+				:model-value="tab"
 				class="af-entries__tabs"
 				:group-label="t('webforms', 'What to show')"
 				:options="[
@@ -691,7 +702,7 @@ onMounted(() => {
 								{{ statusLabel(status) }}
 							</option>
 						</select>
-						<NcButton variant="error" :disabled="tooManySelected || bulkBusy" @click="confirmBulk = true">
+						<NcButton v-if="canManage" variant="error" :disabled="tooManySelected || bulkBusy" @click="confirmBulk = true">
 							<template #icon>
 								<NcLoadingIcon v-if="bulkBusy" :size="20" />
 								<Icon v-else :path="icons.delete" />

@@ -7,6 +7,14 @@
 
 ## Unreleased
 
+- Share a form with other accounts and groups. The owner adds people and groups under Sharing, as an
+  **Editor** (builds and publishes the form, works with its responses) or a **Reviewer** (reads responses,
+  sets statuses and notes, downloads them). Forms shared with you are listed under **Shared with me**, and
+  "new responses" is now counted for each person. Editors cannot change where files are saved or use the
+  Tables and Files actions, because those use the owner's Files and Tables. Reviewers never see the
+  form's actions, settings or upload folders. Co-editing is not recommended until the next step, which
+  stops two editors overwriting each other. Needs a database migration. See `docs/SCHEMA.md` section 22.
+
 - Duplicate a form. The menu on each form in the sidebar has **Duplicate**: a new draft with the same fields,
   layout, rules, actions and settings, opened so it can be renamed. Responses, versions, the link and
   webhook secrets stay behind. See `docs/SCHEMA.md` section 13.2.

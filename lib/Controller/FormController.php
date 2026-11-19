@@ -12,11 +12,13 @@ namespace OCA\Webforms\Controller;
 use OCA\Webforms\Actions\Adapter\NextcloudSecrets;
 use OCA\Webforms\AppInfo\Application;
 use OCA\Webforms\Exception\CountChangedException;
+use OCA\Webforms\Exception\ForbiddenException;
 use OCA\Webforms\Exception\NotFoundException;
 use OCA\Webforms\Exception\ValidationException;
 use OCA\Webforms\Service\ActionLogService;
 use OCA\Webforms\Forms\EntryFilter;
 use OCA\Webforms\Service\EntryExportService;
+use OCA\Webforms\Access\Role;
 use OCA\Webforms\Service\FormService;
 use OCA\Webforms\Forms\ImageSource;
 use OCA\Webforms\Uploads\Ports\OwnerImagePort;
@@ -82,7 +84,7 @@ class FormController extends Controller {
 	#[FrontpageRoute(verb: 'POST', url: '/api/v1/forms')]
 	public function create(string $title = ''): JSONResponse {
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
-			$this->service->toArray($this->service->create($this->userId(), $title), true),
+			$this->service->toArray($this->service->create($this->userId(), $title), $this->userId(), true),
 			Http::STATUS_CREATED,
 		));
 	}
@@ -96,7 +98,7 @@ class FormController extends Controller {
 		return $this->guard(function () use ($id, $title): JSONResponse {
 			$copy = $this->service->duplicateForm($this->userId(), $id, $title);
 			return new JSONResponse([
-				'form' => $this->service->toArray($copy['form'], true),
+				'form' => $this->service->toArray($copy['form'], $this->userId(), true),
 				'errors' => $copy['errors'],
 			], Http::STATUS_CREATED);
 		});
@@ -106,7 +108,7 @@ class FormController extends Controller {
 	#[FrontpageRoute(verb: 'GET', url: '/api/v1/forms/{id}')]
 	public function show(int $id): JSONResponse {
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
-			$this->service->toArray($this->service->get($this->userId(), $id), true),
+			$this->service->toArray($this->service->get($this->userId(), $id, Role::REVIEWER), $this->userId(), true),
 		));
 	}
 
@@ -121,6 +123,8 @@ class FormController extends Controller {
 			$file = $this->service->exportForm($this->userId(), $id, $source);
 		} catch (NotFoundException) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		} catch (ForbiddenException) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		} catch (ValidationException $e) {
 			return new JSONResponse(['error' => 'validation', 'errors' => $e->getErrors()], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
@@ -163,7 +167,7 @@ class FormController extends Controller {
 		return $this->guard(function () use ($package): JSONResponse {
 			$imported = $this->service->importForm($this->userId(), $package);
 			return new JSONResponse([
-				'form' => $this->service->toArray($imported['form'], true),
+				'form' => $this->service->toArray($imported['form'], $this->userId(), true),
 				// Not blocking for a draft, but publishing will refuse these.
 				'errors' => $imported['errors'],
 			], Http::STATUS_CREATED);
@@ -179,7 +183,7 @@ class FormController extends Controller {
 		return $this->guard(function () use ($id, $definition): JSONResponse {
 			$saved = $this->service->saveDraft($this->userId(), $id, $definition);
 			return new JSONResponse([
-				'form' => $this->service->toArray($saved['form'], true),
+				'form' => $this->service->toArray($saved['form'], $this->userId(), true),
 				// Not blocking for a draft, but publishing will refuse these.
 				'errors' => $saved['errors'],
 			]);
@@ -190,7 +194,7 @@ class FormController extends Controller {
 	#[FrontpageRoute(verb: 'POST', url: '/api/v1/forms/{id}/publish')]
 	public function publish(int $id): JSONResponse {
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
-			$this->service->toArray($this->service->publish($this->userId(), $id), true),
+			$this->service->toArray($this->service->publish($this->userId(), $id), $this->userId(), true),
 		));
 	}
 
@@ -198,7 +202,7 @@ class FormController extends Controller {
 	#[FrontpageRoute(verb: 'PUT', url: '/api/v1/forms/{id}/status')]
 	public function setStatus(int $id, int $status = -1): JSONResponse {
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
-			$this->service->toArray($this->service->setStatus($this->userId(), $id, $status)),
+			$this->service->toArray($this->service->setStatus($this->userId(), $id, $status), $this->userId()),
 		));
 	}
 
@@ -211,7 +215,7 @@ class FormController extends Controller {
 	#[FrontpageRoute(verb: 'PUT', url: '/api/v1/forms/{id}/share')]
 	public function setShare(int $id, ?string $slug = null, bool $embed = false, array $embedOrigins = [], ?string $password = null, bool $removePassword = false): JSONResponse {
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
-			$this->service->toArray($this->service->setShare($this->userId(), $id, $slug, $embed, $embedOrigins, $password, $removePassword)),
+			$this->service->toArray($this->service->setShare($this->userId(), $id, $slug, $embed, $embedOrigins, $password, $removePassword), $this->userId()),
 		));
 	}
 
@@ -219,7 +223,7 @@ class FormController extends Controller {
 	#[FrontpageRoute(verb: 'PUT', url: '/api/v1/forms/{id}/archived')]
 	public function setArchived(int $id, bool $archived = false): JSONResponse {
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
-			$this->service->toArray($this->service->setArchived($this->userId(), $id, $archived)),
+			$this->service->toArray($this->service->setArchived($this->userId(), $id, $archived), $this->userId()),
 		));
 	}
 
@@ -321,6 +325,8 @@ class FormController extends Controller {
 			$file = $this->export->export($this->userId(), $id, $filter, $idList, $columnList, $format);
 		} catch (NotFoundException) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		} catch (ForbiddenException) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 		$response = new DataDownloadResponse($file['body'], $file['filename'], $file['mime']);
 		$response->addHeader('Cache-Control', 'no-store');
@@ -475,6 +481,8 @@ class FormController extends Controller {
 			$file = $this->service->openEntryFile($this->userId(), $id, $entryId, $fieldId, $index);
 		} catch (NotFoundException) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		} catch (ForbiddenException) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 		$response = new StreamResponse($file['stream']);
 		$ascii = preg_replace('/[^A-Za-z0-9._-]+/', '_', $file['name']) ?? 'file';
@@ -516,7 +524,7 @@ class FormController extends Controller {
 	#[FrontpageRoute(verb: 'POST', url: '/api/v1/forms/{id}/webhook-secret')]
 	public function createWebhookSecret(int $id, string $ref = ''): JSONResponse {
 		return $this->guard(function () use ($id, $ref): JSONResponse {
-			$form = $this->service->get($this->userId(), $id);
+			$form = $this->service->get($this->userId(), $id, Role::OWNER);
 			$response = new JSONResponse($this->secrets->generate($form->getId(), $ref === '' ? null : $ref), Http::STATUS_CREATED);
 			$response->addHeader('Cache-Control', 'no-store');
 			return $response;
@@ -527,7 +535,7 @@ class FormController extends Controller {
 	#[FrontpageRoute(verb: 'GET', url: '/api/v1/forms/{id}/webhook-secret/{ref}')]
 	public function webhookSecretExists(int $id, string $ref): JSONResponse {
 		return $this->guard(function () use ($id, $ref): JSONResponse {
-			$form = $this->service->get($this->userId(), $id);
+			$form = $this->service->get($this->userId(), $id, Role::EDITOR);
 			return new JSONResponse(['exists' => $this->secrets->exists($form->getId(), $ref)]);
 		});
 	}
@@ -545,6 +553,8 @@ class FormController extends Controller {
 			return $action();
 		} catch (NotFoundException) {
 			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		} catch (ForbiddenException) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		} catch (ValidationException $e) {
 			return new JSONResponse(['error' => 'validation', 'errors' => $e->getErrors()], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
