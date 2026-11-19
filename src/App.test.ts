@@ -8,12 +8,17 @@ import type { UserPreferences } from './api/settings.ts'
 import type { OwnerForm } from './types.ts'
 
 import { flushPromises, mount } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { duplicateForm, leaveForm, listForms } from './api/forms.ts'
 import { fetchUserPreferences, saveUserPreferences } from './api/settings.ts'
 import { showError } from '@nextcloud/dialogs'
 import App from './App.vue'
 import { FORM_STATUS_CLOSED, FORM_STATUS_PUBLISHED, FORM_STATUS_UNPUBLISHED } from './types.ts'
+
+// Which sections are open is kept in the browser, so each test starts with nothing remembered.
+beforeEach(() => {
+	window.localStorage.clear()
+})
 
 vi.mock('./api/forms.ts', () => ({
 	listForms: vi.fn(),
@@ -253,6 +258,58 @@ describe('forms shared with the person (docs/SCHEMA.md section 22.3)', () => {
 		expect(text.indexOf('Shared 3')).toBeGreaterThan(-1)
 	})
 
+	it('puts a My forms heading above the person\'s own forms, with an icon on each heading and none on the forms', async () => {
+		const wrapper = await mountTeam()
+		const text = wrapper.text()
+		expect(text.indexOf('My forms')).toBeLessThan(text.indexOf('Form 1'))
+		expect(text.indexOf('My forms')).toBeLessThan(text.indexOf('Shared with me'))
+		const rows = wrapper.findAll('.app-navigation-entry')
+		const heading = (name: string) => rows.find((row) => row.find('.app-navigation-entry-link').text().startsWith(name))!
+		expect(heading('My forms').find('.app-navigation-entry-icon svg').exists()).toBe(true)
+		expect(heading('Shared with me').find('.app-navigation-entry-icon svg').exists()).toBe(true)
+		expect(heading('Form 1').find('.app-navigation-entry-icon svg').exists()).toBe(false)
+	})
+
+	it('opens and closes a section by clicking its heading, not only the caret', async () => {
+		const wrapper = await mountTeam()
+		const link = () => wrapper.findAll('.app-navigation-entry-link').find((one) => one.text().startsWith('Shared with me'))!
+		expect(link().attributes('aria-expanded')).toBe('true')
+		await link().trigger('click')
+		await flushPromises()
+		expect(link().attributes('aria-expanded')).toBe('false')
+		await link().trigger('click')
+		await flushPromises()
+		expect(link().attributes('aria-expanded')).toBe('true')
+		const mine = wrapper.findAll('.app-navigation-entry-link').find((one) => one.text().startsWith('My forms'))!
+		await mine.trigger('click')
+		await flushPromises()
+		expect(mine.attributes('aria-expanded')).toBe('false')
+		expect(link().attributes('aria-expanded')).toBe('true')
+	})
+
+	it('remembers which sections were closed when the page is opened again', async () => {
+		const first = await mountTeam()
+		await first.findAll('.app-navigation-entry-link').find((one) => one.text().startsWith('Shared with me'))!.trigger('click')
+		await flushPromises()
+		first.unmount()
+		const second = await mountTeam()
+		const state = (name: string) => second.findAll('.app-navigation-entry-link').find((one) => one.text().startsWith(name))!.attributes('aria-expanded')
+		expect(state('Shared with me')).toBe('false')
+		expect(state('My forms')).toBe('true')
+	})
+
+	it('opens and closes Archived the same way', async () => {
+		vi.mocked(fetchUserPreferences).mockResolvedValue(ALL)
+		vi.mocked(listForms).mockResolvedValue([{ ...form(1, FORM_STATUS_PUBLISHED, false), role: 'owner' }, { ...form(2, FORM_STATUS_PUBLISHED, false), title: 'Old one', archivedAt: 5 }])
+		const wrapper = mount(App, { global: { stubs: { BuilderView: true, EntriesView: true, teleport: true } } })
+		await flushPromises()
+		const link = () => wrapper.findAll('.app-navigation-entry-link').find((one) => one.text().startsWith('Archived'))!
+		expect(link().attributes('aria-expanded')).toBe('false')
+		await link().trigger('click')
+		await flushPromises()
+		expect(link().attributes('aria-expanded')).toBe('true')
+	})
+
 	it('has no Shared with me heading when nothing is shared', async () => {
 		vi.mocked(fetchUserPreferences).mockResolvedValue(ALL)
 		vi.mocked(listForms).mockResolvedValue([{ ...form(1, FORM_STATUS_PUBLISHED, false), role: 'owner' }])
@@ -309,9 +366,9 @@ describe('the menu of a form shared with the person', () => {
 		const wrapper = await mountTeam(stubs)
 		const rows = wrapper.findAll('li').filter((row) => row.text().includes('Shared'))
 		const labels = (row: (typeof rows)[number]) => row.findAll('button, a').map((el) => el.text())
-		const reviewer = rows.find((row) => row.text().includes('Shared 3'))!
+		const reviewer = rows.find((row) => row.text().startsWith('Shared 3'))!
 		expect(labels(reviewer)).toEqual(['Leave this form'])
-		const editor = rows.find((row) => row.text().includes('Shared 2'))!
+		const editor = rows.find((row) => row.text().startsWith('Shared 2'))!
 		expect(labels(editor)).toEqual(['Export draft', 'Export published version', 'Duplicate', 'Archive', 'Leave this form'])
 	})
 
