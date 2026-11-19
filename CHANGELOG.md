@@ -5,7 +5,7 @@
 
 # Changelog
 
-## Unreleased
+## 0.4.2 - 2026-11-19
 
 - Responses: the **Answers** filter button is gone, and the summary has one **Hide summary** or **Show summary**
   button beside the menu that chooses which cards it shows.
