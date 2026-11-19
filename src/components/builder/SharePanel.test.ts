@@ -136,3 +136,52 @@ describe('sharing a form', () => {
 		expect(wrapper.text()).toContain('An embedded form is always anonymous')
 	})
 })
+
+describe('the password on the link', () => {
+	function passwordInput(wrapper: ReturnType<typeof mount>) {
+		return wrapper.find('input[type="password"]')
+	}
+
+	it('sets a password and leaves the other options as they are', async () => {
+		setFormShare.mockResolvedValue(form({ hasPassword: true }))
+		const wrapper = mount(SharePanel, { props: { form: form({ slug: 'contact' }) } })
+		await passwordInput(wrapper).setValue('correct horse')
+		await button(wrapper, 'Set password')!.trigger('click')
+		await flushPromises()
+		expect(setFormShare).toHaveBeenCalledWith(7, { slug: 'contact', embed: false, embedOrigins: [], password: 'correct horse' })
+		expect((passwordInput(wrapper).element as HTMLInputElement).value).toBe('')
+	})
+
+	it('does not send a password the server would refuse as too short', async () => {
+		const wrapper = mount(SharePanel, { props: { form: form() } })
+		await passwordInput(wrapper).setValue('abc')
+		await button(wrapper, 'Set password')!.trigger('click')
+		await flushPromises()
+		expect(setFormShare).not.toHaveBeenCalled()
+		expect(wrapper.text()).toContain('Use at least 6 characters.')
+	})
+
+	it('shows the server answer for a password it refuses', async () => {
+		setFormShare.mockRejectedValue(new ApiError(422, 'validation', [{ code: 'password_too_long', path: 'password' }] as never))
+		const wrapper = mount(SharePanel, { props: { form: form() } })
+		await passwordInput(wrapper).setValue('a long enough one')
+		await button(wrapper, 'Set password')!.trigger('click')
+		await flushPromises()
+		expect(wrapper.text()).toContain('Use at most 200 characters.')
+	})
+
+	it('offers to change or remove a password that is set, and removes it', async () => {
+		setFormShare.mockResolvedValue(form({ hasPassword: false }))
+		const wrapper = mount(SharePanel, { props: { form: form({ hasPassword: true }) } })
+		expect(button(wrapper, 'Change password')).toBeDefined()
+		await button(wrapper, 'Remove password')!.trigger('click')
+		await flushPromises()
+		expect(setFormShare).toHaveBeenCalledWith(7, { slug: null, embed: false, embedOrigins: [], removePassword: true })
+	})
+
+	it('has no remove button when there is no password', () => {
+		const wrapper = mount(SharePanel, { props: { form: form() } })
+		expect(button(wrapper, 'Remove password')).toBeUndefined()
+		expect(button(wrapper, 'Set password')).toBeDefined()
+	})
+})

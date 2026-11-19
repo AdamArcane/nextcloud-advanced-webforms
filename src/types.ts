@@ -276,6 +276,8 @@ export interface OwnerForm {
 	publicToken: string | null
 	/** A custom address that leads to the form beside its token. */
 	slug?: string | null
+	/** Whether the public link asks for a password. The password itself never leaves the server. */
+	hasPassword?: boolean
 	/** Whether other websites may show the form in a frame, and which (empty means any). */
 	embed?: boolean
 	embedOrigins?: string[]

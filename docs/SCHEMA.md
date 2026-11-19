@@ -1111,6 +1111,24 @@ all of them at once, so there is nothing new to import: each file is one `webfor
 - **Endpoint.** `GET /api/v1/backup`, any signed-in user, limited to 5 a 5 minutes. It is outside
   `/forms/{id}` so it cannot be read as a form id. It answers `500 backup_failed` if the zip cannot be made.
 
+### 13.2 Duplicating a form
+
+The menu on each form in the sidebar has **Duplicate**. It makes a new draft form from the draft of the one
+chosen, named "Copy of <title>", and opens it so it can be renamed.
+
+- **What comes along.** The draft definition: fields, layout, pages, rules, actions and settings.
+- **What does not.** Responses, published versions, the delivery log, the public link, the custom address,
+  embedding, the password on the link (section 18.5), and webhook secrets. It is the same set as an export
+  file, so the copy is a draft that is shared with nobody until it is published, and a copied webhook
+  action asks for its secret again.
+- **Who may.** Anyone who may create forms (section 16), for a form they own. A form that belongs to someone
+  else answers `404`, like every other call. The copy counts as a new form for any limit on forms.
+- **Archived and closed forms** can be copied too: only the draft is read.
+- **Endpoint.** `POST /api/v1/forms/{id}/duplicate` with an optional `title` (255 characters at most, longer
+  is cut), answering `201` with `{ form, errors }` like an import. `errors` are the draft's structural
+  warnings, which block publishing and not saving. It goes through the same creation and draft save as an
+  import, so a refused definition leaves no half-made form behind.
+
 ## 14. Nextcloud events (DECISION)
 
 Besides the per-form webhook action (section 7), the app dispatches Nextcloud events, so an
@@ -1417,7 +1435,8 @@ answers what the matching responses add up to:
 
 How a form reaches people: its link, a custom address, a QR code, and a frame on another website. These
 options belong to the form, not to a published version. They are columns on `advforms_forms`, they are
-saved with `PUT /api/v1/forms/{id}/share` (`slug`, `embed`, `embedOrigins`) and take effect at once,
+saved with `PUT /api/v1/forms/{id}/share` (`slug`, `embed`, `embedOrigins`, and the password in
+section 18.5) and take effect at once,
 without publishing. They are not part of the definition, so they are not in an export file and an
 imported form starts without them.
 
@@ -1480,6 +1499,34 @@ leading `*.` for subdomains (`embed_origins_invalid` otherwise). An empty list a
   browser does not allow that, the frame itself goes there.
 - **Not done yet.** A server-wide switch for administrators to forbid embedding, and a form rendered
   as plain HTML with no script (ROADMAP.md).
+
+### 18.5 Password on the link
+
+A form can ask for a password before it opens. It applies to the link and the custom address alike, and
+to the embed routes.
+
+- **Storing.** The hash of the password (Nextcloud's `IHasher`) is in `advforms_forms.link_password`, null
+  for none. The password and the hash are never returned: the owner API only says `hasPassword`. It is not
+  in the draft, so it is not in an export file, a backup or a duplicate (section 13.2).
+- **Setting.** `PUT /api/v1/forms/{id}/share` takes `password` (6 to 200 characters, `password_too_short`
+  and `password_too_long` otherwise) and `removePassword`. Leaving both out keeps the password as it is, so
+  the other sharing options can be saved without sending it. A new `password` wins over `removePassword`.
+  A password can be set before the first publish.
+- **Opening.** The public page loads as usual. The form call answers `403 password_required` with no form
+  content. `POST /api/v1/public/{token}/unlock` (and `/embed/unlock`) takes `password` and answers
+  `{ "access": "<token>" }`, or `422 wrong_password`. It is limited to 8 a minute per address and per user.
+- **Access token.** A signed token (`AccessToken`): the form id, when it stops working (12 hours), and a
+  fingerprint of the stored hash, under an HMAC with the server secret. It is sent as the `access` parameter
+  with the form, submit, upload and image calls, in the body or the query. It is not a cookie, because a
+  form in a frame on another website gets none. Setting a new password or removing it makes every token
+  issued before stop working. The page keeps it in memory and in the tab's session storage.
+- **Where it is checked.** In `SubmissionService::openVersion`, right after the form is known to be
+  published, so before anything about the form is said: a protected form that is closed, full or not open yet
+  shows only the password question. An unpublished form is `404` first, with or without a password.
+- **What it is not.** It keeps people out of the form. It does not encrypt answers, it does not make people
+  who have it unique, and anyone given it can pass it on. Guessing is slowed by the limit above, not
+  stopped, so it needs a password worth guessing. The builder says so where it is set.
+- **Login and password** are independent: a form can ask for both.
 
 ## 19. Files action (DECISION)
 

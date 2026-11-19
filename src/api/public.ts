@@ -7,6 +7,7 @@ import type { PublicForm, SubmitResult } from '../types.ts'
 import type { PowChallenge } from '../captcha/pow.ts'
 
 import axios from '@nextcloud/axios'
+import { getAccess } from '../access.ts'
 import { isEmbedded } from '../embedded.ts'
 import { toApiError, url } from './http.ts'
 
@@ -17,14 +18,28 @@ export { ApiError } from './http.ts'
  * The address of a call for one form. An embedded form uses the `embed` routes, which work without the
  * session cookie a browser will not send from a frame on another website.
  */
-function formUrl(token: string, action: '' | '/submit' | '/upload'): string {
+function formUrl(token: string, action: '' | '/submit' | '/upload' | '/unlock'): string {
 	return url('/public/' + encodeURIComponent(token) + (isEmbedded() ? '/embed' : '') + action)
 }
 
 export async function fetchPublicForm(token: string): Promise<PublicForm> {
 	try {
-		const response = await axios.get<PublicForm>(formUrl(token, ''))
+		const access = getAccess(token)
+		const response = await axios.get<PublicForm>(formUrl(token, ''), access === '' ? undefined : { params: { access } })
 		return response.data
+	} catch (error) {
+		throw toApiError(error)
+	}
+}
+
+/**
+ * Trade the password of a form's link for an access token. Rejects with an ApiError: status 422 and
+ * code `wrong_password` for a wrong one, 429 when tried too often.
+ */
+export async function unlockPublicForm(token: string, password: string): Promise<string> {
+	try {
+		const response = await axios.post<{ access: string }>(formUrl(token, '/unlock'), { password })
+		return response.data.access
 	} catch (error) {
 		throw toApiError(error)
 	}
@@ -41,7 +56,7 @@ export interface SubmitBody {
 
 export async function submitPublicForm(token: string, body: SubmitBody): Promise<SubmitResult> {
 	try {
-		const response = await axios.post<SubmitResult>(formUrl(token, '/submit'), body)
+		const response = await axios.post<SubmitResult>(formUrl(token, '/submit'), { ...body, access: getAccess(token) })
 		return response.data
 	} catch (error) {
 		throw toApiError(error)
@@ -66,6 +81,7 @@ export async function uploadPublicFile(
 	body.append('versionId', String(context.versionId))
 	body.append('fieldId', fieldId)
 	body.append('fillToken', context.fillToken)
+	body.append('access', getAccess(token))
 	body.append('file', file)
 	try {
 		const response = await axios.post<UploadedFile>(formUrl(token, '/upload'), body, {

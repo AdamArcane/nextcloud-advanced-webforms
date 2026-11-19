@@ -9,7 +9,7 @@ import type { OwnerForm } from './types.ts'
 
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
-import { listForms } from './api/forms.ts'
+import { duplicateForm, listForms } from './api/forms.ts'
 import { fetchUserPreferences, saveUserPreferences } from './api/settings.ts'
 import { showError } from '@nextcloud/dialogs'
 import App from './App.vue'
@@ -18,6 +18,7 @@ import { FORM_STATUS_CLOSED, FORM_STATUS_PUBLISHED, FORM_STATUS_UNPUBLISHED } fr
 vi.mock('./api/forms.ts', () => ({
 	listForms: vi.fn(),
 	createForm: vi.fn(),
+	duplicateForm: vi.fn(),
 	importForm: vi.fn(),
 	setFormArchived: vi.fn(),
 	formExportUrl: () => '#',
@@ -175,5 +176,49 @@ describe('new responses in the forms list', () => {
 		expect(wrapper.findAll('[aria-label$="new responses"]')).toHaveLength(0)
 		window.location.hash = ''
 		wrapper.unmount()
+	})
+})
+
+/** The sidebar rows with their menu items always in the page, since the real menu only renders once it is opened. */
+async function mountWithMenus() {
+	vi.mocked(fetchUserPreferences).mockResolvedValue(ALL)
+	vi.mocked(listForms).mockResolvedValue([form(1, FORM_STATUS_PUBLISHED, false), form(2, FORM_STATUS_UNPUBLISHED, true, null)])
+	const wrapper = mount(App, {
+		global: {
+			stubs: {
+				BuilderView: true,
+				EntriesView: true,
+				teleport: true,
+				NcAppNavigationItem: { template: '<li><slot /><slot name="actions" /></li>' },
+				NcActionButton: { template: '<button type="button" @click="$emit(\'click\')"><slot /></button>' },
+				NcActionLink: { template: '<a><slot /></a>' },
+			},
+		},
+	})
+	await flushPromises()
+	return wrapper
+}
+
+describe('duplicating a form', () => {
+	it('asks for a copy named after the original, adds it to the list and opens it', async () => {
+		const wrapper = await mountWithMenus()
+		const copy = { ...form(9, FORM_STATUS_UNPUBLISHED, true, null), title: 'Copy of Form 1' }
+		vi.mocked(duplicateForm).mockResolvedValue({ form: copy, errors: [] })
+		window.location.hash = ''
+		const actions = wrapper.findAll('button').filter((el) => el.text() === 'Duplicate')
+		// One per form in the list, the first form first.
+		expect(actions).toHaveLength(2)
+		await actions[0].trigger('click')
+		await flushPromises()
+		expect(duplicateForm).toHaveBeenCalledWith(1, 'Copy of Form 1')
+		expect(window.location.hash).toBe('#/f/9')
+	})
+
+	it('says so when the copy could not be made', async () => {
+		const wrapper = await mountWithMenus()
+		vi.mocked(duplicateForm).mockRejectedValue(new Error('no'))
+		await wrapper.findAll('button').filter((el) => el.text() === 'Duplicate')[0].trigger('click')
+		await flushPromises()
+		expect(wrapper.text()).toContain('Could not duplicate the form.')
 	})
 })
