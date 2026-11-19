@@ -13,7 +13,6 @@ import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcActionLink from '@nextcloud/vue/components/NcActionLink'
 import NcAppNavigation from '@nextcloud/vue/components/NcAppNavigation'
 import NcAppNavigationItem from '@nextcloud/vue/components/NcAppNavigationItem'
-import NcAppNavigationCaption from '@nextcloud/vue/components/NcAppNavigationCaption'
 import NcAppNavigationList from '@nextcloud/vue/components/NcAppNavigationList'
 import NcAppNavigationNew from '@nextcloud/vue/components/NcAppNavigationNew'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -23,7 +22,7 @@ import NcCounterBubble from '@nextcloud/vue/components/NcCounterBubble'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { createForm, duplicateForm, formExportUrl, importForm, leaveForm, listForms, setFormArchived } from './api/forms.ts'
 import { ApiError } from './api/http.ts'
 import { DEFAULT_PREFERENCES, fetchUserPolicy, fetchUserPreferences, OPEN_POLICY, saveUserPreferences } from './api/settings.ts'
@@ -31,6 +30,7 @@ import type { UserPolicy, UserPreferences } from './api/settings.ts'
 import { describeError } from './builder/errors.ts'
 import Icon from './components/common/Icon.vue'
 import { icons } from './icons.ts'
+import { loadNavOpen, saveNavOpen } from './navState.ts'
 import BuilderView from './components/builder/BuilderView.vue'
 import EntriesView from './components/entries/EntriesView.vue'
 import OverviewView from './components/OverviewView.vue'
@@ -69,9 +69,9 @@ function canEdit(form: OwnerForm): boolean {
 
 const navGroups = computed(() => {
 	const shared = activeForms.value.filter(isShared)
-	const groups: Array<{ key: string, caption: string | null, forms: OwnerForm[] }> = [{ key: 'mine', caption: null, forms: activeForms.value.filter((form) => !isShared(form)) }]
+	const groups: Array<{ key: string, caption: string, icon: string, forms: OwnerForm[] }> = [{ key: 'mine', caption: t('webforms', 'My forms'), icon: icons.tabForm, forms: activeForms.value.filter((form) => !isShared(form)) }]
 	if (shared.length > 0) {
-		groups.push({ key: 'shared', caption: t('webforms', 'Shared with me'), forms: shared })
+		groups.push({ key: 'shared', caption: t('webforms', 'Shared with me'), icon: icons.share, forms: shared })
 	}
 	return groups
 })
@@ -88,7 +88,11 @@ function rowTitle(form: OwnerForm): string | undefined {
 	}
 	return parts.length > 0 ? form.title + ' (' + parts.join('; ') + ')' : undefined
 }
-const archiveOpen = ref(false)
+// Which sections are open, remembered in this browser. My forms and Shared with me start open, Archived closed.
+const savedOpen = loadNavOpen()
+const archiveOpen = ref(savedOpen.archived === true)
+const sectionOpen = reactive<Record<string, boolean>>(Object.fromEntries(Object.entries(savedOpen).filter(([key]) => key !== 'archived')))
+watch([sectionOpen, archiveOpen], () => saveNavOpen({ ...sectionOpen, archived: archiveOpen.value }))
 const archiveError = ref(false)
 const selectedForm = computed(() => forms.value.find((form) => form.id === selectedId.value))
 const selectedTitle = computed(() => selectedForm.value?.title ?? '')
@@ -307,9 +311,18 @@ function hasNewerDraft(form: OwnerForm): boolean {
 						<span v-else aria-hidden="true" class="af-new-plus">+</span>
 					</template>
 				</NcAppNavigationNew>
-				<template v-for="group in navGroups" :key="group.key">
-					<NcAppNavigationCaption v-if="group.caption" :name="group.caption" />
-				<NcAppNavigationList>
+				<NcAppNavigationList v-for="group in navGroups" :key="group.key">
+					<!-- The whole heading opens and closes the section, not only the caret. -->
+					<NcAppNavigationItem :open="sectionOpen[group.key] !== false"
+						:name="group.caption"
+						:allow-collapse="true"
+						:counter-number="group.forms.length"
+						:force-display-actions="false"
+						@click="sectionOpen[group.key] = sectionOpen[group.key] === false"
+						@update:open="(value: boolean) => { sectionOpen[group.key] = value }">
+						<template #icon>
+							<Icon :path="group.icon" />
+						</template>
 					<NcAppNavigationItem v-for="form in group.forms"
 						:key="form.id"
 						:name="form.title"
@@ -365,11 +378,12 @@ function hasNewerDraft(form: OwnerForm): boolean {
 							</NcActionButton>
 						</template>
 					</NcAppNavigationItem>
+					</NcAppNavigationItem>
 				</NcAppNavigationList>
-				</template>
 				<NcAppNavigationList v-if="archivedForms.length > 0">
 					<NcAppNavigationItem v-model:open="archiveOpen"
 						:name="t('webforms', 'Archived')"
+						@click="archiveOpen = !archiveOpen"
 						:allow-collapse="true"
 						:counter-number="archivedForms.length"
 						:force-display-actions="false">
@@ -401,14 +415,6 @@ function hasNewerDraft(form: OwnerForm): boolean {
 						</NcAppNavigationItem>
 					</NcAppNavigationItem>
 				</NcAppNavigationList>
-				<NcAppNavigationItem :name="t('webforms', 'Import form')"
-					:disabled="importing || !policy.canCreate"
-					@click="pickImportFile">
-					<template #icon>
-						<NcLoadingIcon v-if="importing" :size="20" />
-						<Icon v-else :path="icons.import" />
-					</template>
-				</NcAppNavigationItem>
 				<input ref="importInput"
 					type="file"
 					accept=".json,application/json"
@@ -443,6 +449,14 @@ function hasNewerDraft(form: OwnerForm): boolean {
 			</template>
 			<template #footer>
 				<ul class="app-navigation-entry__settings">
+					<NcAppNavigationItem :name="t('webforms', 'Import form')"
+						:disabled="importing || !policy.canCreate"
+						@click="pickImportFile">
+						<template #icon>
+							<NcLoadingIcon v-if="importing" :size="20" />
+							<Icon v-else :path="icons.import" />
+						</template>
+					</NcAppNavigationItem>
 					<NcAppNavigationItem :name="t('webforms', 'Settings')" @click="settingsOpen = true">
 						<template #icon>
 							<Icon :path="icons.settings" />
