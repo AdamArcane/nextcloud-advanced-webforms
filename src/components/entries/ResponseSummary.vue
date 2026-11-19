@@ -7,16 +7,32 @@
 import type { EntrySummaryData, SummaryField } from '../../entries/summary.ts'
 
 import { n, t } from '@nextcloud/l10n'
+import NcActionCheckbox from '@nextcloud/vue/components/NcActionCheckbox'
+import NcActions from '@nextcloud/vue/components/NcActions'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, ref, watch } from 'vue'
+import { icons } from '../../icons.ts'
 import { barRows, bucketLabel, columnHeights, formatNumber } from '../../entries/summary.ts'
+import { TIMELINE_CARD, loadHiddenCards, saveHiddenCards, toggleCard } from '../../entries/summaryChoice.ts'
+import Icon from '../common/Icon.vue'
 
 const props = defineProps<{
+	formId: number
 	summary: EntrySummaryData | null
 	loading: boolean
 	failed: boolean
 }>()
+
+/** What this person chose not to see on the summary of this form (kept in their browser). */
+const hidden = ref<string[]>(loadHiddenCards(props.formId))
+const isShown = (id: string) => !hidden.value.includes(id)
+const shownFields = computed(() => (props.summary?.fields ?? []).filter((field) => isShown(field.id)))
+
+function setShown(id: string, shown: boolean): void {
+	hidden.value = toggleCard(hidden.value, id, shown)
+	saveHiddenCards(props.formId, hidden.value)
+}
 
 const buckets = computed(() => props.summary?.timeline.buckets ?? [])
 const unit = computed(() => props.summary?.timeline.unit ?? 'day')
@@ -64,8 +80,30 @@ function isBars(field: SummaryField): field is Exclude<SummaryField, { kind: 'nu
 				{{ t('webforms', 'This summary covers the first 20,000 responses. Narrow the dates to summarise the rest.') }}
 			</NcNoteCard>
 
+			<div v-if="buckets.length > 0 || summary.fields.length > 0" class="af-summary__toolbar">
+				<NcActions :name="t('webforms', 'Choose what to show')" :aria-label="t('webforms', 'Choose what to show')">
+					<template #icon>
+						<Icon :path="icons.columns" />
+					</template>
+					<NcActionCheckbox v-if="buckets.length > 0"
+						:model-value="isShown(TIMELINE_CARD)"
+						@update:model-value="(on: boolean) => setShown(TIMELINE_CARD, on)">
+						{{ t('webforms', 'Responses over time') }}
+					</NcActionCheckbox>
+					<NcActionCheckbox v-for="field in summary.fields"
+						:key="field.id"
+						:model-value="isShown(field.id)"
+						@update:model-value="(on: boolean) => setShown(field.id, on)">
+						{{ field.label }}
+					</NcActionCheckbox>
+				</NcActions>
+			</div>
+			<p v-if="hidden.length > 0 && shownFields.length === 0 && !(buckets.length > 0 && isShown(TIMELINE_CARD))" class="af-summary__sub">
+				{{ t('webforms', 'Everything is hidden. Use the menu above to show something.') }}
+			</p>
+
 			<!-- Responses over time -->
-			<div v-if="buckets.length > 0" class="af-summary__card af-summary__card--wide">
+			<div v-if="buckets.length > 0 && isShown(TIMELINE_CARD)" class="af-summary__card af-summary__card--wide">
 				<h3 class="af-summary__title">
 					{{ unit === 'month' ? t('webforms', 'Responses per month') : t('webforms', 'Responses per day') }}
 				</h3>
@@ -124,7 +162,7 @@ function isBars(field: SummaryField): field is Exclude<SummaryField, { kind: 'nu
 			</div>
 
 			<!-- One card per question that can be counted -->
-			<div v-for="field in summary.fields" :key="field.id" class="af-summary__card">
+			<div v-for="field in shownFields" :key="field.id" class="af-summary__card">
 				<h3 class="af-summary__title">
 					{{ field.label }}
 				</h3>
@@ -177,6 +215,12 @@ function isBars(field: SummaryField): field is Exclude<SummaryField, { kind: 'nu
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
 	gap: calc(var(--default-grid-baseline) * 3);
+}
+
+.af-summary__toolbar {
+	display: flex;
+	justify-content: flex-end;
+	grid-column: 1 / -1;
 }
 
 .af-summary__loading {

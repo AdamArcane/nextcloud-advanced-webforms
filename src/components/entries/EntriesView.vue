@@ -661,6 +661,7 @@ onMounted(() => {
 					</NcNoteCard>
 
 					<ResponseSummary v-if="summaryOpen"
+						:form-id="formId"
 						:summary="summary"
 						:loading="summaryLoading"
 						:failed="summaryFailed" />
