@@ -189,4 +189,45 @@ class SubmissionValidatorTest extends TestCase {
 		$this->assertSame(['f_up:invalid_type'], $this->errorKeys($this->validateUpload([], ['f_up' => 'x'])));
 		$this->assertSame(['f_up:required'], $this->errorKeys($this->validateUpload(['required' => true], ['f_up' => []])));
 	}
+
+	/**
+	 * @param array<string, mixed> $fields
+	 * @param array<string, mixed> $payload
+	 * @return list<string>
+	 */
+	private function partsErrors(array $fields, array $payload): array {
+		$definition = ['fields' => $fields, 'rules' => []];
+		return $this->errorKeys((new SubmissionValidator())->validate($definition, $payload));
+	}
+
+	public function testRequiredNameNeedsFirstAndLast(): void {
+		$fields = ['f_who' => ['type' => 'name', 'label' => 'Name', 'required' => true]];
+		$this->assertSame(['f_who:incomplete'], $this->partsErrors($fields, ['f_who' => ['first' => 'Ada']]));
+		$this->assertSame(['f_who:required'], $this->partsErrors($fields, ['f_who' => ['first' => '', 'last' => '']]));
+		$this->assertSame([], $this->partsErrors($fields, ['f_who' => ['first' => 'Ada', 'last' => 'Lovelace']]));
+	}
+
+	public function testOptionalNameMayBeHalfFilled(): void {
+		$fields = ['f_who' => ['type' => 'name', 'label' => 'Name']];
+		$this->assertSame([], $this->partsErrors($fields, ['f_who' => ['first' => 'Ada']]));
+	}
+
+	public function testRequiredAddressAsksOnlyForThePartsItShows(): void {
+		$fields = ['f_where' => ['type' => 'address', 'label' => 'Where', 'required' => true, 'parts' => ['street', 'city']]];
+		$this->assertSame([], $this->partsErrors($fields, ['f_where' => ['street' => 'Main 1', 'city' => 'Oslo']]));
+		$this->assertSame(['f_where:incomplete'], $this->partsErrors($fields, ['f_where' => ['city' => 'Oslo']]));
+	}
+
+	public function testRequiredMatrixNeedsEveryRow(): void {
+		$fields = ['f_grid' => ['type' => 'matrix', 'label' => 'Grid', 'required' => true,
+			'questions' => [['value' => 'food', 'label' => 'Food'], ['value' => 'staff', 'label' => 'Staff']],
+			'options' => [['value' => 'good', 'label' => 'Good'], ['value' => 'bad', 'label' => 'Bad']]]];
+		$this->assertSame(['f_grid:incomplete'], $this->partsErrors($fields, ['f_grid' => ['food' => 'good']]));
+		$this->assertSame([], $this->partsErrors($fields, ['f_grid' => ['food' => 'good', 'staff' => 'bad']]));
+	}
+
+	public function testRequiredSignatureAndColourNeedAnAnswer(): void {
+		$fields = ['f_sign' => ['type' => 'signature', 'label' => 'Sign', 'required' => true], 'f_col' => ['type' => 'color', 'label' => 'Colour', 'required' => true]];
+		$this->assertSame(['f_col:required', 'f_sign:required'], $this->partsErrors($fields, ['f_sign' => '', 'f_col' => '']));
+	}
 }

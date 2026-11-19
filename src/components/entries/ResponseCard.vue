@@ -116,7 +116,7 @@ async function retry(delivery: Delivery): Promise<void> {
 			<dl class="af-response__answers">
 				<div v-for="line in lines" :key="line.id" class="af-response__row">
 					<dt>{{ line.label }}</dt>
-					<dd :class="{ 'af-response__none': !line.answered }"><ul v-if="line.files.length > 0" class="af-response__files"><li v-for="(file, index) in line.files" :key="index"><a :href="entryFileUrl(formId, entry.id, line.id, index)" download>{{ file.name }}</a><span class="af-response__size">{{ formatSize(file.size) }}</span></li></ul><template v-else>{{ line.answered ? line.value : '—' }}</template></dd>
+					<dd :class="{ 'af-response__none': !line.answered }"><img v-if="line.image" :src="line.image" class="af-response__signature" :alt="t('webforms', 'Signature')"><ul v-else-if="line.files.length > 0" class="af-response__files"><li v-for="(file, index) in line.files" :key="index"><a :href="entryFileUrl(formId, entry.id, line.id, index)" download>{{ file.name }}</a><span class="af-response__size">{{ formatSize(file.size) }}</span></li></ul><template v-else>{{ line.answered ? line.value : '—' }}</template></dd>
 				</div>
 			</dl>
 
@@ -168,6 +168,16 @@ async function retry(delivery: Delivery): Promise<void> {
 </template>
 
 <style scoped>
+.af-response__signature {
+	display: block;
+	max-width: 300px;
+	width: 100%;
+	/* The ink is dark, so it sits on white in any theme. */
+	background: #fff;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-small, 4px);
+}
+
 .af-response {
 	border: 1px solid var(--color-border);
 	border-radius: var(--border-radius-large);

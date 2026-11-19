@@ -221,7 +221,7 @@ class DefinitionValidatorTest extends TestCase {
 
 	public function testUnknownFieldType(): void {
 		$codes = $this->codes(static function (array $d): array {
-			$d['fields']['f_url']['type'] = 'signature';
+			$d['fields']['f_url']['type'] = 'hologram';
 			return $d;
 		});
 		$this->assertContains('field_unknown_type', $codes);
@@ -602,6 +602,32 @@ class DefinitionValidatorTest extends TestCase {
 	}
 
 	public function testRatingScaleConsentAndDateTime(): void {
+		$cols = [['value' => 'good', 'label' => 'Good'], ['value' => 'bad', 'label' => 'Bad']];
+		$rows = [['value' => 'food', 'label' => 'Food']];
+		$this->assertSame([], $this->codesForField(['type' => 'matrix', 'questions' => $rows, 'options' => $cols, 'multiple' => true]));
+		$this->assertSame(['options_invalid'], $this->codesForField(['type' => 'matrix', 'options' => $cols]));
+		$this->assertSame(['options_invalid'], $this->codesForField(['type' => 'matrix', 'questions' => $rows]));
+		$this->assertSame(['field_flag_invalid'], $this->codesForField(['type' => 'matrix', 'questions' => $rows, 'options' => $cols, 'multiple' => 'yes']));
+		$this->assertSame([], $this->codesForField(['type' => 'signature']));
+		$this->assertSame(['field_default_invalid'], $this->codesForField(['type' => 'signature', 'defaultValue' => 'x']));
+		$this->assertSame([], $this->codesForField(['type' => 'slider']));
+		$this->assertSame([], $this->codesForField(['type' => 'slider', 'min' => 0, 'max' => 10, 'step' => 2, 'defaultValue' => 4]));
+		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'slider', 'min' => 5, 'max' => 5]));
+		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'slider', 'min' => 0, 'max' => 100000]));
+		$this->assertSame(['field_default_invalid'], $this->codesForField(['type' => 'slider', 'defaultValue' => 101]));
+		$this->assertSame([], $this->codesForField(['type' => 'color', 'defaultValue' => '#ff0000']));
+		$this->assertSame(['field_default_invalid'], $this->codesForField(['type' => 'color', 'defaultValue' => 'red']));
+		$this->assertSame([], $this->codesForField(['type' => 'daterange', 'min' => '2026-01-01', 'max' => '2026-12-31']));
+		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'daterange', 'min' => 'soon']));
+		$this->assertSame([], $this->codesForField(['type' => 'daterange', 'minDays' => 1, 'maxDays' => 14]));
+		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'daterange', 'minDays' => 5, 'maxDays' => 2]));
+		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'daterange', 'minDays' => -1]));
+		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'daterange', 'maxDays' => '7']));
+		$this->assertSame([], $this->codesForField(['type' => 'name', 'parts' => ['first', 'middle', 'last']]));
+		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'name', 'parts' => ['street']]));
+		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'name', 'parts' => []]));
+		$this->assertSame([], $this->codesForField(['type' => 'address', 'parts' => ['street', 'city']]));
+		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'address', 'parts' => ['first']]));
 		$this->assertSame([], $this->codesForField(['type' => 'rating']));
 		$this->assertSame([], $this->codesForField(['type' => 'rating', 'max' => 10, 'defaultValue' => 7]));
 		$this->assertSame(['field_limit_invalid'], $this->codesForField(['type' => 'rating', 'max' => 11]));

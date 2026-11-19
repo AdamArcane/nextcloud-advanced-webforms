@@ -83,6 +83,13 @@ appending and adding a column to an existing header were tried on the dev instan
 Lock keys for `ILockingProvider` must stay under 64 characters (hash them): the database provider
 cuts longer keys and then never releases them.
 
+Slider, colour, date range, name, address, matrix and signature (docs/SCHEMA.md section 4.10): seven input
+types. Composite answers (`name`, `address`, `matrix`, `daterange`) are objects, so rules only ask whether they
+were answered; a required one must be complete (`FieldValueValidator::isComplete`, error `incomplete`). The matrix
+rows are `questions` (`rows` is the textarea's line count). A signature is a validated PNG data address kept out
+of text (exports, search, saved progress). Unit and component tests pass; not yet tried in a real browser or on
+the dev instance (drawing with touch, the matrix on a phone, the responses view of a signature).
+
 Hidden fields, defaults and prefill (docs/SCHEMA.md section 4.7): a `hidden` field type, a default
 value control for every input field, and the link filling fields by field id unless `settings.prefill`
 is false. Prefill is read in the browser only (`src/prefill.ts`); the server validates submitted values

@@ -29,6 +29,8 @@ final class DefinitionValidator {
 	public const MAX_ACTIONS = 10;
 	public const MAX_ROWS = 100;
 	public const MAX_OPTIONS = 300;
+	public const MAX_MATRIX_ROWS = 20;
+	public const MAX_MATRIX_COLUMNS = 10;
 	/** Option values may be two characters, so country and state codes (`us`, `de`) work as they are. */
 	public const OPTION_VALUE_PATTERN = '/^[a-z][a-z0-9_]{1,31}$/D';
 	public const SPANS = [3, 4, 6, 8, 9, 12];
@@ -230,6 +232,10 @@ final class DefinitionValidator {
 			FieldType::RADIO => ['options', 'columns'],
 			FieldType::CHECKBOXES => ['options', 'minSelected', 'maxSelected', 'columns'],
 			FieldType::FILE => ['maxFiles', 'maxSizeMb', 'accept', 'audience', 'storage', 'folder'],
+			FieldType::SLIDER => ['min', 'max', 'step', 'prefix', 'suffix'],
+			FieldType::DATE_RANGE => ['min', 'max', 'minDays', 'maxDays'],
+			FieldType::NAME, FieldType::ADDRESS => ['parts'],
+			FieldType::MATRIX => ['questions', 'options', 'multiple'],
 			default => [],
 		};
 		$allowed = array_merge($allowed, $extra);
@@ -307,16 +313,59 @@ final class DefinitionValidator {
 		if ($type === FieldType::CHECKBOXES) {
 			$this->selectionLimits($field, $path);
 		}
+		if ($type === FieldType::SLIDER) {
+			$this->numberLimits($field, $path);
+			$this->optionalString($field, 'prefix', 16, 'field_limit_invalid', $path . '.');
+			$this->optionalString($field, 'suffix', 16, 'field_limit_invalid', $path . '.');
+			$limits = FieldValueValidator::sliderLimits($field);
+			if ($limits['max'] <= $limits['min'] || ($limits['max'] - $limits['min']) / $limits['step'] > 1000) {
+				$this->err('field_limit_invalid', $path . '.max');
+			}
+		}
+		if ($type === FieldType::DATE_RANGE) {
+			$this->dateTimeLimits($field, FieldType::DATE, $path);
+			foreach (['minDays', 'maxDays'] as $key) {
+				if (array_key_exists($key, $field) && (!is_int($field[$key]) || $field[$key] < 0 || $field[$key] > 3660)) {
+					$this->err('field_limit_invalid', $path . '.' . $key);
+				}
+			}
+			if (is_int($field['minDays'] ?? null) && is_int($field['maxDays'] ?? null) && $field['minDays'] > $field['maxDays']) {
+				$this->err('field_limit_invalid', $path . '.minDays');
+			}
+		}
+		if ($type === FieldType::NAME || $type === FieldType::ADDRESS) {
+			$known = $type === FieldType::NAME ? FieldValueValidator::NAME_PARTS : FieldValueValidator::ADDRESS_PARTS;
+			$parts = $field['parts'] ?? null;
+			if (array_key_exists('parts', $field) && (!is_array($parts) || !array_is_list($parts) || $parts === []
+				|| array_diff($parts, $known) !== [] || count($parts) !== count(array_unique($parts)))) {
+				$this->err('field_limit_invalid', $path . '.parts');
+			}
+		}
+		if ($type === FieldType::MATRIX) {
+			// The columns are `options`, checked above like any choice field's.
+			$this->options($field['questions'] ?? null, $path . '.questions');
+			if (is_array($field['questions'] ?? null) && count($field['questions']) > self::MAX_MATRIX_ROWS) {
+				$this->err('options_invalid', $path . '.questions');
+			}
+			if (is_array($field['options'] ?? null) && count($field['options']) > self::MAX_MATRIX_COLUMNS) {
+				$this->err('options_invalid', $path . '.options');
+			}
+			if (array_key_exists('multiple', $field) && !is_bool($field['multiple'])) {
+				$this->err('field_flag_invalid', $path . '.multiple');
+			}
+		}
 
-		if ($type === FieldType::FILE) {
-			$this->uploadSettings($field, $path);
+		if ($type === FieldType::FILE || $type === FieldType::SIGNATURE) {
+			if ($type === FieldType::FILE) {
+				$this->uploadSettings($field, $path);
+			}
 			if (array_key_exists('defaultValue', $field)) {
 				$this->err('field_default_invalid', $path . '.defaultValue');
 			}
 		}
 
 		// A default must be a value the field itself would accept.
-		if ($type !== FieldType::FILE && array_key_exists('defaultValue', $field) && $field['defaultValue'] !== null) {
+		if ($type !== FieldType::FILE && $type !== FieldType::SIGNATURE && array_key_exists('defaultValue', $field) && $field['defaultValue'] !== null) {
 			[, $error] = FieldValueValidator::clean($field, $field['defaultValue']);
 			if ($error !== null) {
 				$this->err('field_default_invalid', $path . '.defaultValue');

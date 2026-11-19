@@ -8,6 +8,7 @@
 
 import type { FormField } from './types.ts'
 
+import { hasParts } from './answers.ts'
 import { isInputType } from './rules/fieldTypes.ts'
 
 /** Unsent answers are forgotten after this long. */
@@ -32,12 +33,15 @@ export interface RestoredProgress {
 	dropped: boolean
 }
 
-/** Uploads are not kept, and a hidden field always comes from the address or its default. */
+/** Uploads and signatures are not kept (too large), and a hidden field always comes from the address or its default. */
 export function isKept(field: FormField | undefined): field is FormField {
-	return field !== undefined && isInputType(field.type) && field.type !== 'file' && field.type !== 'hidden'
+	return field !== undefined && isInputType(field.type) && field.type !== 'file' && field.type !== 'hidden' && field.type !== 'signature'
 }
 
 function isBlank(value: unknown): boolean {
+	if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+		return !hasParts(value)
+	}
 	return value === '' || value === false || value === null || value === undefined || (Array.isArray(value) && value.length === 0)
 }
 
@@ -61,6 +65,11 @@ function fitting(field: FormField, value: unknown): unknown {
 		case 'select':
 		case 'radio':
 			return typeof value === 'string' && (value === '' || (field.options ?? []).some((option) => option.value === value)) ? value : undefined
+		case 'matrix':
+		case 'daterange':
+		case 'name':
+		case 'address':
+			return typeof value === 'object' && value !== null && !Array.isArray(value) && JSON.stringify(value).length <= MAX_TEXT ? value : undefined
 		default:
 			return typeof value === 'string' && value.length <= MAX_TEXT ? value : undefined
 	}

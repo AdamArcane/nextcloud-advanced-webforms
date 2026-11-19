@@ -7,6 +7,7 @@
 import type { FormField } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
+import NcButton from '@nextcloud/vue/components/NcButton'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
@@ -92,6 +93,18 @@ function toggleOption(option: string, on: boolean): void {
 				:type="temporalInputType(type)"
 				:value="text"
 				@change="setText(($event.target as HTMLInputElement).value)">
+		</template>
+
+		<template v-else-if="type === 'color'">
+			<label class="af-default__caption" :for="inputId">{{ t('webforms', 'Default colour') }}</label>
+			<input :id="inputId"
+				class="af-default__native"
+				type="color"
+				:value="/^#[0-9a-f]{6}$/i.test(text) ? text : '#000000'"
+				@input="setText(($event.target as HTMLInputElement).value)">
+			<NcButton v-if="text !== ''" variant="tertiary" @click="emit('change', undefined)">
+				{{ t('webforms', 'No default') }}
+			</NcButton>
 		</template>
 
 		<NcTextArea v-else-if="type === 'textarea'"

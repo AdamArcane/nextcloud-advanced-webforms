@@ -44,6 +44,22 @@ export function messageFor(code: string): string {
 			return t('webforms', 'Select more options.')
 		case 'too_many':
 			return t('webforms', 'Select fewer options.')
+		case 'incomplete':
+			return t('webforms', 'Please fill in every part of this answer.')
+		case 'incomplete_range':
+			return t('webforms', 'Enter both the first and the last date.')
+		case 'range_reversed':
+			return t('webforms', 'The last date cannot be before the first date.')
+		case 'range_too_short':
+			return t('webforms', 'The last date is too soon after the first date.')
+		case 'range_too_long':
+			return t('webforms', 'The dates are too far apart.')
+		case 'invalid_color':
+			return t('webforms', 'Choose a valid colour.')
+		case 'invalid_signature':
+			return t('webforms', 'The signature could not be read. Please draw it again.')
+		case 'signature_too_large':
+			return t('webforms', 'The signature is too large. Please draw it again, smaller.')
 		case 'invalid_option':
 		case 'duplicate_option':
 			return t('webforms', 'Choose one of the available options.')
