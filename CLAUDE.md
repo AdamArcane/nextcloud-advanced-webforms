@@ -16,7 +16,7 @@ rules semantics, actions, versioning and the submit algorithm.
   The app ID can never change (it would become a different app).
 - License AGPL-3.0-or-later, copyright holder "ArcaneX". Every file needs an
   SPDX header (`reuse lint` must pass).
-- Nextcloud 35 only (min 35, max 35), PHP 8.3+, Vue 3 + @nextcloud/vue 9 + Vite.
+- Nextcloud 34 and 35 (min 34, max 35), PHP 8.3+, Vue 3 + @nextcloud/vue 9 + Vite.  34 was tried on a throwaway `nextcloud:34-apache` container (install, migrations, API, public and embedded form, builder); the dev instance is 35.
 - v1 scope: rules engine (show/hide/require, nested AND/OR), after-submit actions
   (email, webhook, message, redirect), 12-column grid layout. Any user can create
   forms. Public link only. No payments.

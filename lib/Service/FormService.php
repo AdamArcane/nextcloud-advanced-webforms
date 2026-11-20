@@ -1032,7 +1032,7 @@ class FormService {
 					$errors[] = ['code' => 'tables_column_missing', 'path' => $path . '.map.' . $columnId];
 					continue;
 				}
-				$sourceType = is_string($source) && in_array($source, TablesValue::META, true) ? $source : (string)($fields[$source]['type'] ?? '');
+				$sourceType = is_string($source) && in_array($source, TablesValue::META, true) ? $source : (is_array($fields[$source] ?? null) ? FieldType::valueType($fields[$source]) : '');
 				if (!TablesValue::compatible($sourceType, $column)) {
 					$errors[] = ['code' => 'tables_type_mismatch', 'path' => $path . '.map.' . $columnId];
 				}

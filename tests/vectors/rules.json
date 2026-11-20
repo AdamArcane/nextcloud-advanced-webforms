@@ -5472,6 +5472,158 @@
           ],
           "required": []
         }
+      },
+    {
+      "name": "yes or no question: false matches eq false",
+      "fields": {
+        "f_a": {
+          "type": "radio",
+          "boolean": true,
+          "label": "L",
+          "options": [
+            {
+              "value": "yes",
+              "label": "Yes"
+            },
+            {
+              "value": "no",
+              "label": "No"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": false
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": false
+      },
+      "expect": {
+        "visible": [
+          "f_a",
+          "f_b"
+        ],
+        "required": []
       }
+    },
+    {
+      "name": "yes or no question: true does not match eq false",
+      "fields": {
+        "f_a": {
+          "type": "radio",
+          "boolean": true,
+          "label": "L",
+          "options": [
+            {
+              "value": "yes",
+              "label": "Yes"
+            },
+            {
+              "value": "no",
+              "label": "No"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": false
+              }
+            ]
+          }
+        }
+      ],
+      "values": {
+        "f_a": true
+      },
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    },
+    {
+      "name": "yes or no question: unanswered does not match eq false",
+      "fields": {
+        "f_a": {
+          "type": "radio",
+          "boolean": true,
+          "label": "L",
+          "options": [
+            {
+              "value": "yes",
+              "label": "Yes"
+            },
+            {
+              "value": "no",
+              "label": "No"
+            }
+          ]
+        },
+        "f_b": {
+          "type": "text",
+          "label": "L"
+        }
+      },
+      "rules": [
+        {
+          "id": "r1",
+          "effect": "show",
+          "targets": [
+            "f_b"
+          ],
+          "when": {
+            "all": [
+              {
+                "field": "f_a",
+                "op": "eq",
+                "value": false
+              }
+            ]
+          }
+        }
+      ],
+      "values": {},
+      "expect": {
+        "visible": [
+          "f_a"
+        ],
+        "required": []
+      }
+    }
   ]
 }

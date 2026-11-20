@@ -80,6 +80,19 @@ export function partsOf(field: { type: string, parts?: unknown }): string[] {
 	return known.filter((part) => chosen.includes(part))
 }
 
+/** A single choice that is a yes or no question: it answers `true` or `false` (docs/SCHEMA.md 4.11). */
+export function isBooleanChoice(field: { type?: unknown, boolean?: unknown }): boolean {
+	return field.type === 'radio' && field.boolean === true
+}
+
+/** The type that decides how an answer is stored and compared: a yes or no question counts as a checkbox. */
+export function valueType(field: { type?: unknown, boolean?: unknown }): string {
+	if (isBooleanChoice(field)) {
+		return 'checkbox'
+	}
+	return typeof field.type === 'string' ? field.type : ''
+}
+
 /** Types whose answer is ticked or not. */
 export function isBooleanType(type: string): boolean {
 	return type === 'checkbox' || type === 'consent'

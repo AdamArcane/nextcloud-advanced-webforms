@@ -40,6 +40,8 @@ export type FormField = {
 	suffix?: string
 	/** Columns used to lay out radio buttons or checkboxes (1 to 4). */
 	columns?: number
+	/** A single choice that is a yes or no question: it answers true or false (docs/SCHEMA.md 4.11). */
+	boolean?: boolean
 	/** Line style of a divider. Default solid. */
 	style?: 'solid' | 'dashed' | 'dotted'
 	step?: number

@@ -33,6 +33,11 @@ describe('isUnanswered', () => {
 		expect(isUnanswered(fields.f_tags, [])).toBe(true)
 		expect(isUnanswered(fields.f_agree, false)).toBe(true)
 		expect(isUnanswered(fields.f_agree, true)).toBe(false)
+		// A yes or no question: "No" is an answer, nothing is not.
+		const yesNo = { type: 'radio', boolean: true, label: 'Ok?', options: [] } as FormField
+		expect(isUnanswered(yesNo, false)).toBe(false)
+		expect(isUnanswered(yesNo, true)).toBe(false)
+		expect(isUnanswered(yesNo, null)).toBe(true)
 	})
 })
 

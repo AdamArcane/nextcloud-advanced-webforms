@@ -309,7 +309,14 @@ function toggleOption(value: string, event: Event) {
 			</p>
 			<div class="af-options" :style="columnStyle">
 			<label v-for="option in field.options" :key="option.value" class="af-checkbox">
-				<input v-if="field.type === 'radio'"
+				<!-- A yes or no question answers true or false; the first option is yes, the second is no. -->
+				<input v-if="field.type === 'radio' && field.boolean === true"
+					type="radio"
+					:name="domId"
+					:value="option.value"
+					:checked="modelValue === (option.value === 'yes')"
+					@change="emit('update:modelValue', option.value === 'yes')">
+				<input v-else-if="field.type === 'radio'"
 					type="radio"
 					:name="domId"
 					:value="option.value"

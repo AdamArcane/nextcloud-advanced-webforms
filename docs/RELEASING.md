@@ -16,6 +16,26 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) for the branch workflow. Releases are 
    (`dev/deploy.sh <user>@<dev host>`) and click through the
    builder, a public form, and the responses view.
 
+## Database changes: one migration per release
+
+An update from the app store runs the app's migrations inside the page's own web request, and many servers
+end a request after about a minute (PHP-FPM `request_terminate_timeout`). If the migrations take longer, the
+update is cut off with the new files in place, the database not upgraded and the site stuck in maintenance
+mode. Release 0.4.2 hit this: five migrations took 2 min 18 s on a large instance, although each only adds
+a column or a table.
+
+The cost is mostly per migration, not per statement: Nextcloud reads the whole database schema before and
+after every migration that changes tables. So:
+
+- Put all the schema changes of one release in **one** migration file. If the release branch has gathered
+  several, merge them into one before tagging, while none of them has been released. Never edit or merge a
+  migration that was already released, because servers that ran it would not run the new file.
+- Guard every change (`hasTable`, `hasColumn`, `hasIndex`) so it is safe to run again.
+- Keep data work in `postSchemaChange` small. A loop over every response would add to the same web request.
+
+If a site is stuck in maintenance after an update, run `php occ upgrade` on the server as the site user. It
+finishes the upgrade and turns maintenance mode off. Then reload PHP-FPM (see below).
+
 ## Install a release on a server
 
 Pushing a tag that matches `<version>` in `appinfo/info.xml` builds the release:
@@ -108,7 +128,7 @@ For each release:
 
 ## Screenshot addresses
 
-The `<screenshot>` entries in `appinfo/info.xml` name the release tag (`.../v0.4.3/docs/screenshots/...`), not
+The `<screenshot>` entries in `appinfo/info.xml` name the release tag (`.../v0.5.0/docs/screenshots/...`), not
 `main`. The app store fetches each address once and keeps the result, even a failed fetch, so an address that
 was ever unreachable stays broken. Point them at the tag of the release being published, and the tag must
 exist before the upload.

@@ -71,6 +71,21 @@ function toggleOption(option: string, on: boolean): void {
 			</NcCheckboxRadioSwitch>
 		</template>
 
+		<template v-else-if="type === 'radio' && field.boolean === true">
+			<label class="af-default__caption" :for="inputId">{{ t('webforms', 'Default value') }}</label>
+			<select :id="inputId"
+				class="af-default__native"
+				:value="value === true ? 'yes' : value === false ? 'no' : ''"
+				@change="emit('change', ($event.target as HTMLSelectElement).value === '' ? undefined : ($event.target as HTMLSelectElement).value === 'yes')">
+				<option value="">
+					{{ t('webforms', 'None') }}
+				</option>
+				<option v-for="option in field.options ?? []" :key="option.value" :value="option.value">
+					{{ option.label }}
+				</option>
+			</select>
+		</template>
+
 		<template v-else-if="type === 'select' || type === 'radio'">
 			<label class="af-default__caption" :for="inputId">{{ t('webforms', 'Default value') }}</label>
 			<select :id="inputId"

@@ -113,6 +113,17 @@ final class FieldType {
 		return $type === self::NUMBER || $type === self::RATING || $type === self::SCALE || $type === self::SLIDER;
 	}
 
+	/**
+	 * The type that decides how a field's answer is stored and compared. A single choice marked
+	 * `boolean` answers `true` or `false` like a checkbox; every other field is its own type.
+	 *
+	 * @param array<string, mixed> $field
+	 */
+	public static function valueType(array $field): string {
+		$type = is_string($field['type'] ?? null) ? $field['type'] : '';
+		return ($type === self::RADIO && ($field['boolean'] ?? false) === true) ? self::CHECKBOX : $type;
+	}
+
 	/** Types whose answer is ticked or not. */
 	public static function isBoolean(string $type): bool {
 		return $type === self::CHECKBOX || $type === self::CONSENT;

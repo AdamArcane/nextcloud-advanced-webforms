@@ -9,7 +9,7 @@
 import type { FormField } from './types.ts'
 
 import { hasParts } from './answers.ts'
-import { isInputType } from './rules/fieldTypes.ts'
+import { isInputType, valueType } from './rules/fieldTypes.ts'
 
 /** Unsent answers are forgotten after this long. */
 export const PROGRESS_TTL_MS = 30 * 24 * 3600 * 1000
@@ -50,7 +50,7 @@ function isBlank(value: unknown): boolean {
  * it. Only the shape is checked: the server checks everything when the form is sent.
  */
 function fitting(field: FormField, value: unknown): unknown {
-	switch (field.type) {
+	switch (valueType(field)) {
 		case 'checkbox':
 		case 'consent':
 			return typeof value === 'boolean' ? value : undefined
