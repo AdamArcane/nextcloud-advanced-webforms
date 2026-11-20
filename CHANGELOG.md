@@ -5,6 +5,11 @@
 
 # Changelog
 
+## 0.4.3 - 2026-11-19
+
+- The app store screenshots are now linked by release tag instead of by the `main` branch, so the store
+  fetches them fresh and they do not change when `main` does. No change to the app.
+
 ## 0.4.2 - 2026-11-19
 
 - Responses: the **Answers** filter button is gone, and the summary has one **Hide summary** or **Show summary**
