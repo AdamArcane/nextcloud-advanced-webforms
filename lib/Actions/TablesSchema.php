@@ -33,7 +33,7 @@ final class TablesSchema {
 		$sources = [];
 		foreach ($fields as $field) {
 			$id = $field['id'] ?? null;
-			$type = $field['type'] ?? null;
+			$type = is_array($field) ? FieldType::valueType($field) : null;
 			if (!is_string($id) || !is_string($type) || !FieldType::isInput($type) || count($columns) >= self::MAX_COLUMNS - 1) {
 				continue;
 			}

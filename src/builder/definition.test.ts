@@ -42,6 +42,16 @@ function build(): { def: DraftDefinition, a: string, b: string, c: string } {
 	return { def: c.definition, a: a.fieldId, b: b.fieldId, c: c.fieldId }
 }
 
+describe('addField ids', () => {
+	it('names a new field after its type and numbers repeats', () => {
+		const def = emptyDefinition('T')
+		const a = addField(def, 'email', { kind: 'row', index: 0 })
+		const b = addField(a.definition, 'email', { kind: 'row', index: 1 })
+		const c = addField(b.definition, 'url', { kind: 'row', index: 2 }, ['f_url'])
+		expect([a.fieldId, b.fieldId, c.fieldId]).toEqual(['f_email', 'f_email_2', 'f_url_2'])
+	})
+})
+
 describe('addField', () => {
 	it('creates a valid id, cell and full-width row', () => {
 		const { definition, fieldId } = addField(emptyDefinition('T'), 'text', { kind: 'row', index: 0 })

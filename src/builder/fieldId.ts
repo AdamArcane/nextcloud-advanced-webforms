@@ -166,8 +166,8 @@ export function idFromLabel(label: string, unavailable: ReadonlySet<string>): st
 }
 
 /** Whether `id` is one the builder made itself (random, or made from `label`), as opposed to one the owner chose. */
-function isAutoId(id: string, label: string | undefined): boolean {
-	if (RANDOM_ID.test(id)) {
+function isAutoId(id: string, label: string | undefined, type: string): boolean {
+	if (RANDOM_ID.test(id) || id === 'f_' + type || new RegExp('^f_' + type + '_\\d+$').test(id)) {
 		return true
 	}
 	const slug = slugFromLabel(label ?? '')
@@ -192,7 +192,7 @@ export function followLabel(
 ): { definition: DraftDefinition, fieldId: string } {
 	const field = definition.fields[fieldId]
 	const unchanged = { definition, fieldId }
-	if (!field || frozen.has(fieldId) || !NAMED_TYPES.has(field.type) || !isAutoId(fieldId, previousLabel)) {
+	if (!field || frozen.has(fieldId) || !NAMED_TYPES.has(field.type) || !isAutoId(fieldId, previousLabel, field.type)) {
 		return unchanged
 	}
 	const unavailable = new Set<string>([...Object.keys(definition.fields), ...retired])

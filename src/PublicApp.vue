@@ -262,6 +262,16 @@ html.af-embed {
 	color-scheme: light !important;
 }
 
+/*
+ * Nextcloud sets overscroll-behavior: contain on the root and the body, so a wheel turn over the frame is
+ * kept inside it. When the frame is as tall as the form there is nothing to scroll in it, and the turn
+ * must reach the website around it.
+ */
+html.af-embed,
+html.af-embed body {
+	overscroll-behavior: auto !important;
+}
+
 html.af-embed,
 html.af-embed body,
 html.af-embed #content {

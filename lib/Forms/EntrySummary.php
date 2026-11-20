@@ -39,7 +39,7 @@ final class EntrySummary {
 
 		foreach ($order as $position => $id) {
 			$field = $fields[$id] ?? null;
-			$type = is_array($field) ? (string)($field['type'] ?? '') : '';
+			$type = is_array($field) ? FieldType::valueType($field) : '';
 			$kind = match ($type) {
 				FieldType::SELECT, FieldType::RADIO, FieldType::CHECKBOXES => 'choice',
 				FieldType::NUMBER, FieldType::RATING, FieldType::SCALE, FieldType::SLIDER => 'number',

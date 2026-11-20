@@ -217,7 +217,7 @@ moving a field in the layout never changes its identity.
 - Unique within a form and never positional. The builder generates one, and the
   owner may replace it with a meaningful name (for example `customer_email`),
   because the id is what a webhook receiver or an export sees.
-- While the builder made the id (the random one, or one made from the label), it
+- While the builder made the id (`f_<type>` such as `f_email`, numbered `f_email_2` when taken, or one made from the label), it
   follows the label as you type: `First Name` becomes `f_first_name`, with `_2`,
   `_3` added if taken. Accents are dropped and other characters become `_`. Once
   the owner sets an id by hand it never changes by itself. Only fields that
@@ -594,6 +594,26 @@ validated on the server like every type, and are checked again on publish.
 - **Summary** (17.2): a slider is summarised as a number.
 - **Not filled from the address or a default in the builder:** `name`, `address`, `matrix`,
   `daterange` and `signature` (a draft may still carry a `defaultValue` object that the field accepts).
+
+### 4.11 Yes or no answer on a single choice (DECISION)
+
+A `radio` field with `boolean: true` is a yes or no question. It looks and lays out like a single choice
+(`columns` still applies, the options are shown as radio buttons) but its answer is `true` or `false`, the
+same as a `checkbox`, so rules, exports, webhooks, the summary and a Tables check column all see a boolean.
+
+- **Options.** `options` must be exactly `yes` then `no`. Only their labels are the owner's to change ("Agree"
+  and "Disagree", say). The builder sets them when the switch is turned on.
+- **Server.** `FieldType::valueType($field)` gives `checkbox` for such a field and the field's own type for
+  every other, and every place that decides how an answer is stored or compared uses it. TypeScript has the
+  same `valueType` in `src/rules/fieldTypes.ts`. `tests/vectors/rules.json` covers it.
+- **Answer.** `true`, `false`, or none. The option text (`"yes"`) is `invalid_type`.
+- **Required.** Unlike a checkbox, a required yes or no question accepts `false`: it must be answered, and "No"
+  is an answer. A field left unanswered is empty (null), which is not `false`, so a rule `eq false` does not
+  match it.
+- **Default.** `defaultValue` is `true` or `false`, or absent for no default. It is checked like a checkbox's.
+- **Rules.** The operators are a checkbox's: `eq` and `neq` with `true` or `false`.
+- **Not an upgrade path.** Turning the switch off keeps the two options, and the stored answers of
+  published versions stay as they were: entries keep the version they were made under.
 
 ## 5. Layout: pages > rows > cells (DECISION)
 
@@ -1556,6 +1576,9 @@ leading `*.` for subdomains (`embed_origins_invalid` otherwise). An empty list a
   behind a frame whose colour scheme differs from the page around it. A website that declares a dark
   colour scheme therefore gets a white backdrop. The form's own design settings (card, accent colour,
   background colour) apply as usual.
+- **Scrolling.** Nextcloud sets `overscroll-behavior: contain` on the page, which would keep a wheel turn
+  inside the frame. The embedded page resets it to `auto`, so a frame that is as tall as its form (nothing
+  to scroll) passes the turn on to the website around it.
 - **Redirect.** A `redirect` action takes the whole page to the address, not only the frame. If the
   browser does not allow that, the frame itself goes there.
 - **Not done yet.** A server-wide switch for administrators to forbid embedding, and a form rendered

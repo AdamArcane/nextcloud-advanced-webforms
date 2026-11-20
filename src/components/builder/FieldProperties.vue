@@ -60,6 +60,26 @@ const type = computed(() => field.value?.type ?? '')
 const isDisplay = computed(() => ['heading', 'paragraph', 'divider', 'image'].includes(type.value))
 const hasPlaceholder = computed(() => ['text', 'textarea', 'email', 'url', 'number', 'phone', 'select'].includes(type.value))
 const hasOptions = computed(() => ['select', 'radio', 'checkboxes'].includes(type.value))
+/** A single choice that is a yes or no question: two fixed options, and the answer is true or false. */
+const isYesNo = computed(() => type.value === 'radio' && field.value?.boolean === true)
+
+function setYesNo(on: boolean): void {
+	if (!on) {
+		emit('update', { boolean: undefined, defaultValue: undefined })
+		return
+	}
+	emit('update', {
+		boolean: true,
+		options: [{ value: 'yes', label: t('webforms', 'Yes') }, { value: 'no', label: t('webforms', 'No') }],
+		defaultValue: undefined,
+	})
+}
+
+/** Rename the Yes (index 0) or No (index 1) answer. */
+function setYesNoLabel(index: 0 | 1, label: string | number): void {
+	const options = (field.value?.options ?? []).map((option, at) => (at === index ? { ...option, label: String(label) } : option))
+	emit('update', { options })
+}
 const isConsent = computed(() => type.value === 'consent')
 const consentText = computed(() => field.value?.text ?? '')
 const consentHelp = t('webforms', 'Shown beside the checkbox. Basic markdown works, so you can link to your terms: [terms](https://example.com/terms).')
@@ -370,7 +390,7 @@ const moves: { move: Move, label: string, icon: string }[] = [
 					:helper-text="consentHelp"
 					rows="3"
 					@update:model-value="(value: string) => emit('update', { text: value })" />
-				<DefaultValueEditor v-if="canPrefill" :field-id="fieldId" :field="field" @change="(value) => emit('update', { defaultValue: value })" />
+				<DefaultValueEditor v-if="canPrefill && !hasOptions" :field-id="fieldId" :field="field" @change="(value) => emit('update', { defaultValue: value })" />
 				<NcCheckboxRadioSwitch type="switch"
 					:model-value="field.required === true"
 					@update:model-value="(value: boolean) => emit('update', { required: value })">
@@ -583,9 +603,29 @@ const moves: { move: Move, label: string, icon: string }[] = [
 			<h3 class="af-props__heading">
 				{{ limitsHeading }}
 			</h3>
-			<OptionsEditor v-if="hasOptions"
+			<template v-if="type === 'radio'">
+				<NcCheckboxRadioSwitch type="switch"
+					:model-value="isYesNo"
+					@update:model-value="setYesNo">
+					{{ t('webforms', 'Yes or no answer') }}
+				</NcCheckboxRadioSwitch>
+				<p v-if="isYesNo" class="af-props__hint">
+					{{ t('webforms', 'The answer is true or false in responses, downloads and rules.') }}
+				</p>
+			</template>
+			<template v-if="isYesNo">
+				<NcTextField :model-value="field.options?.[0]?.label ?? ''"
+					:label="t('webforms', 'Label for yes')"
+					@update:model-value="(value: string | number) => setYesNoLabel(0, value)" />
+				<NcTextField :model-value="field.options?.[1]?.label ?? ''"
+					:label="t('webforms', 'Label for no')"
+					@update:model-value="(value: string | number) => setYesNoLabel(1, value)" />
+			</template>
+			<OptionsEditor v-else-if="hasOptions"
 				:options="field.options ?? []"
 				@update:options="(options) => emit('update', { options })" />
+			<!-- A choice field's default is picked from its list, so it sits right below it. -->
+			<DefaultValueEditor v-if="canPrefill && hasOptions" :field-id="fieldId" :field="field" @change="(value) => emit('update', { defaultValue: value })" />
 			<template v-if="type === 'matrix'">
 				<span class="af-props__caption">{{ t('webforms', 'Questions (the rows)') }}</span>
 				<OptionsEditor :options="field.questions ?? []"

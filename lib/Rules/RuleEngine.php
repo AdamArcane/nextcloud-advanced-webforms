@@ -50,7 +50,7 @@ final class RuleEngine {
 
 		foreach ($order as $id) {
 			$field = $fields[$id];
-			$type = is_array($field) && is_string($field['type'] ?? null) ? $field['type'] : '';
+			$type = is_array($field) ? FieldType::valueType($field) : '';
 			$show = $conditions[$id]['show'] ?? [];
 			$hide = $conditions[$id]['hide'] ?? [];
 			$require = $conditions[$id]['require'] ?? [];
@@ -90,7 +90,7 @@ final class RuleEngine {
 		/** @var array<string, string|float|bool|list<string>|null> $effective */
 		$effective = [];
 		foreach ($fields as $id => $field) {
-			$type = is_array($field) && is_string($field['type'] ?? null) ? $field['type'] : '';
+			$type = is_array($field) ? FieldType::valueType($field) : '';
 			if (FieldType::isInput($type)) {
 				$effective[(string)$id] = ValueNormalizer::normalize($type, $values[$id] ?? null);
 			}
@@ -150,7 +150,7 @@ final class RuleEngine {
 		if (!is_string($id) || !is_string($op) || !isset($fields[$id])) {
 			return false;
 		}
-		$type = is_string($fields[$id]['type'] ?? null) ? $fields[$id]['type'] : '';
+		$type = is_array($fields[$id] ?? null) ? FieldType::valueType($fields[$id]) : '';
 		if (!in_array($op, FieldType::operatorsFor($type), true)) {
 			return false;
 		}

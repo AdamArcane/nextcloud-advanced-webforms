@@ -10,7 +10,7 @@
 import type { DraftDefinition } from '../types.ts'
 
 import { t } from '@nextcloud/l10n'
-import { isBooleanType, isNumericType } from '../rules/fieldTypes.ts'
+import { isBooleanType, isNumericType, valueType } from '../rules/fieldTypes.ts'
 import { sourceFields } from './rules.ts'
 
 export interface TablesColumn {
@@ -87,7 +87,7 @@ export function metaLabel(source: string): string {
 /** The answers a column can take: the form's fields that fit, then the automatic values that fit. */
 export function sourcesForColumn(definition: DraftDefinition, column: TablesColumn): SourceOption[] {
 	const options: SourceOption[] = sourceFields(definition)
-		.filter(({ field }) => compatible(field.type, column.kind))
+		.filter(({ field }) => compatible(valueType(field), column.kind))
 		.map(({ id, field }) => ({ id, label: field.label || id, hint: field.type }))
 	for (const source of META_SOURCES) {
 		if (compatible(source, column.kind)) {

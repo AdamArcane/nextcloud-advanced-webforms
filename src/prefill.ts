@@ -6,7 +6,7 @@
 // Filling fields from the address the form was opened with (docs/SCHEMA.md section 4.7).
 
 import type { FormField } from './types.ts'
-import { steps } from './rules/fieldTypes.ts'
+import { steps, valueType } from './rules/fieldTypes.ts'
 
 /** Limits from lib/Forms/FieldValueValidator.php, so a prefilled value is one the server takes. */
 const MAX_TEXT = 2000
@@ -30,7 +30,7 @@ export function prefillValue(fieldId: string, field: FormField, params: URLSearc
 	}
 	const all = params.getAll(name)
 	const raw = (all[0] ?? '').trim()
-	switch (field.type) {
+	switch (valueType(field)) {
 		case 'text':
 		case 'hidden':
 			return text(field, raw, MAX_TEXT)
