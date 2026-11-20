@@ -2053,7 +2053,7 @@ is not a `GET`.
   least Reviewer. A form they cannot open is `404`, so a caller cannot tell it exists. Every call asks for
   the role through `FormService::get`, and `tests/Unit/Access/PermissionTableTest.php` lists each method.
 - **Server switch.** The administrator can turn the API off (`PolicySettings::apiEnabled`, Settings,
-  Administration, "Forms and responses"). It is on unless switched off. Off, every route answers `404`.
+  Administration, "Forms and responses", under "API"). It is on unless switched off. Off, every route answers `404`.
 - **Rate limit.** Each route allows 120 calls a minute per account.
 
 ### 23.1 Routes

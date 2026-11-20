@@ -14,7 +14,7 @@ The full specification is [SCHEMA.md section 23](SCHEMA.md); this page is the sh
    for example "n8n". Use the account that owns the form, or one a form is shared with (Reviewer or above).
    Revoke the app password there when the tool is no longer needed.
 2. Ask your administrator if the API answers `404`: they can switch it off under **Administration settings,
-   Forms and responses**.
+   Forms and responses, API**.
 
 ## Calling it
 

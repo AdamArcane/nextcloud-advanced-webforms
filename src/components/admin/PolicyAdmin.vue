@@ -259,12 +259,12 @@ async function save(confirmDelete = false): Promise<void> {
 
 			<!-- Read-only API -->
 			<section class="af-policy__block">
-				<h3>{{ t('webforms', 'Access for other software') }}</h3>
+				<h3>{{ t('webforms', 'API') }}</h3>
 				<NcCheckboxRadioSwitch v-model="api" type="switch" data-test="policy-api">
-					{{ t('webforms', 'Other software can read forms and responses with an app password') }}
+					{{ t('webforms', 'Allow read-only API access') }}
 				</NcCheckboxRadioSwitch>
 				<p class="af-policy__hint">
-					{{ t('webforms', 'Read only, and only what the account behind the app password may already see. Switched off, the interface answers as if it did not exist.') }}
+					{{ t('webforms', 'For tools like n8n, with an app password. Switched off, the API answers 404.') }}
 				</p>
 			</section>
 

@@ -89,10 +89,10 @@ describe('PolicyAdmin', () => {
 		expect(saves.at(-1)?.sharing).toBe(false)
 	})
 
-	it('saves the read-only API as off when switched off (docs/SCHEMA.md section 23)', async () => {
+	it('saves the API as off when switched off (docs/SCHEMA.md section 23)', async () => {
 		const wrapper = await mountIt()
-		expect(wrapper.text()).toContain('Access for other software')
-		const toggle = wrapper.findAll('input[type="checkbox"]').find((box) => box.element.closest('.checkbox-content, label, span')?.textContent?.includes('Other software can read'))!
+		expect(wrapper.text()).toContain('Allow read-only API access')
+		const toggle = wrapper.findAll('input[type="checkbox"]').find((box) => box.element.closest('.checkbox-content, label, span')?.textContent?.includes('Allow read-only API access'))!
 		expect((toggle.element as HTMLInputElement).checked).toBe(true)
 		await toggle.setValue(false)
 		await button(wrapper, 'Save').trigger('click')

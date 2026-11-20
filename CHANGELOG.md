@@ -11,7 +11,7 @@
   responses (with an `after` cursor to fetch only new ones), the summary and a CSV download. Signed in with an
   app password, and limited to what that account may already see. It never changes anything and never sends the
   owner's private notes, uploaded files or signatures. Administrators can switch it off under Administration
-  settings, Forms and responses. See `docs/API.md`.
+  settings, Forms and responses, under API. See `docs/API.md`.
 
 ## 0.5.0 - 2026-11-20
 
