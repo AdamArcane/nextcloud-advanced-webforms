@@ -106,6 +106,13 @@ For each release:
 
 3. On the app store, upload the release with that download URL and the signature.
 
+## Screenshot addresses
+
+The `<screenshot>` entries in `appinfo/info.xml` name the release tag (`.../v0.4.3/docs/screenshots/...`), not
+`main`. The app store fetches each address once and keeps the result, even a failed fetch, so an address that
+was ever unreachable stays broken. Point them at the tag of the release being published, and the tag must
+exist before the upload.
+
 ## Still to prepare
 
 - Screenshots for the app store listing (add `<screenshot>` entries to `appinfo/info.xml`
