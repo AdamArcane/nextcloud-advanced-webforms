@@ -11,7 +11,7 @@ msgstr ""
 msgid "(signature)"
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:184
+#: src/components/admin/PolicyAdmin.vue:187
 msgid "{count} existing responses are older than this and will be deleted."
 msgstr ""
 
@@ -103,7 +103,7 @@ msgstr ""
 msgid "A form can have up to {max} actions."
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:204
+#: src/components/admin/PolicyAdmin.vue:207
 msgid "A form that reaches this shows its closed message. Two people sending at the same moment can go one over."
 msgstr ""
 
@@ -395,11 +395,15 @@ msgstr ""
 msgid "Allow other websites to show this form in a frame"
 msgstr ""
 
+#: src/components/admin/PolicyAdmin.vue:264
+msgid "Allow read-only API access"
+msgstr ""
+
 #: src/components/builder/FieldProperties.vue:639
 msgid "Allow several answers in a row"
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:151
+#: src/components/admin/PolicyAdmin.vue:154
 msgid "Allowed actions"
 msgstr ""
 
@@ -492,6 +496,10 @@ msgstr ""
 
 #: src/components/builder/SharePanel.vue:248
 msgid "Anyone who opens the link or the custom address is asked for a password first. Enter a new one to change it. Everyone who already got in is asked again."
+msgstr ""
+
+#: src/components/admin/PolicyAdmin.vue:262
+msgid "API"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:581
@@ -627,7 +635,7 @@ msgid "Canadian provinces"
 msgstr ""
 
 #: src/App.vue:526
-#: src/components/admin/PolicyAdmin.vue:266
+#: src/components/admin/PolicyAdmin.vue:280
 #: src/components/admin/StatusAdmin.vue:234
 msgid "Cancel"
 msgstr ""
@@ -954,7 +962,7 @@ msgid "Could not load the responses."
 msgstr ""
 
 #: src/AdminApp.vue:70
-#: src/components/admin/PolicyAdmin.vue:145
+#: src/components/admin/PolicyAdmin.vue:148
 #: src/components/admin/StatusAdmin.vue:153
 msgid "Could not load the settings."
 msgstr ""
@@ -991,7 +999,7 @@ msgstr ""
 msgid "Could not save the setting."
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:133
+#: src/components/admin/PolicyAdmin.vue:136
 msgid "Could not save the settings."
 msgstr ""
 
@@ -1080,7 +1088,7 @@ msgstr ""
 msgid "Days of the week"
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:175
+#: src/components/admin/PolicyAdmin.vue:178
 msgid "Days to keep a response"
 msgstr ""
 
@@ -1139,7 +1147,7 @@ msgstr ""
 msgid "Delete response"
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:168
+#: src/components/admin/PolicyAdmin.vue:171
 msgid "Delete responses automatically after a number of days"
 msgstr ""
 
@@ -1157,7 +1165,7 @@ msgstr ""
 msgid "Delete status {n}"
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:263
+#: src/components/admin/PolicyAdmin.vue:277
 msgid "Delete them and save"
 msgstr ""
 
@@ -1448,7 +1456,7 @@ msgstr ""
 msgid "Enter a valid web address, such as https://example.com."
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:177
+#: src/components/admin/PolicyAdmin.vue:180
 msgid "Enter a whole number from 1 to 3650."
 msgstr ""
 
@@ -1472,7 +1480,7 @@ msgstr ""
 msgid "Every response that matches the filter is deleted, with its answers, uploaded files and the record of what was sent. This cannot be undone."
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:218
+#: src/components/admin/PolicyAdmin.vue:221
 msgid "Everyone"
 msgstr ""
 
@@ -1596,6 +1604,10 @@ msgstr ""
 msgid "for example: contact"
 msgstr ""
 
+#: src/components/admin/PolicyAdmin.vue:267
+msgid "For tools like n8n, with an app password. Switched off, the API answers 404."
+msgstr ""
+
 #: src/components/builder/FieldProperties.vue:111
 msgid "Form"
 msgstr ""
@@ -1651,11 +1663,11 @@ msgstr ""
 msgid "Forms"
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:142
+#: src/components/admin/PolicyAdmin.vue:145
 msgid "Forms and responses"
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:242
+#: src/components/admin/PolicyAdmin.vue:245
 msgid "Forms that already exist keep working and stay editable by their owners."
 msgstr ""
 
@@ -1669,7 +1681,7 @@ msgstr ""
 msgid "From"
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:211
+#: src/components/admin/PolicyAdmin.vue:214
 msgid "From 1 to {max}. Forms with more than this cannot be published."
 msgstr ""
 
@@ -1724,7 +1736,7 @@ msgstr ""
 msgid "Group"
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:230
+#: src/components/admin/PolicyAdmin.vue:233
 msgid "Groups"
 msgstr ""
 
@@ -1942,7 +1954,7 @@ msgstr ""
 msgid "Keep mine"
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:166
+#: src/components/admin/PolicyAdmin.vue:169
 msgid "Keep responses"
 msgstr ""
 
@@ -2080,7 +2092,7 @@ msgstr ""
 msgid "Letting anyone upload into your files works like a public upload link, so it is only allowed if you may share that folder by link."
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:196
+#: src/components/admin/PolicyAdmin.vue:199
 msgid "Limit the number of responses"
 msgstr ""
 
@@ -2088,7 +2100,7 @@ msgstr ""
 msgid "Limits"
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:194
+#: src/components/admin/PolicyAdmin.vue:197
 msgid "Limits per form"
 msgstr ""
 
@@ -2204,7 +2216,7 @@ msgstr ""
 msgid "Months"
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:209
+#: src/components/admin/PolicyAdmin.vue:212
 msgid "Most actions on a form"
 msgstr ""
 
@@ -2216,7 +2228,7 @@ msgstr ""
 msgid "Most files (1 to 10)"
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:202
+#: src/components/admin/PolicyAdmin.vue:205
 msgid "Most responses a form accepts"
 msgstr ""
 
@@ -2395,7 +2407,7 @@ msgstr ""
 msgid "No deliveries match this filter."
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:183
+#: src/components/admin/PolicyAdmin.vue:186
 msgid "No existing responses are older than this."
 msgstr ""
 
@@ -2555,7 +2567,7 @@ msgstr ""
 msgid "One of the files is no longer available. Remove it and add it again."
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:131
+#: src/components/admin/PolicyAdmin.vue:134
 msgid "One of the groups no longer exists. Remove it and try again."
 msgstr ""
 
@@ -2583,7 +2595,7 @@ msgstr ""
 msgid "Only logged-in users can respond"
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:221
+#: src/components/admin/PolicyAdmin.vue:224
 msgid "Only members of these groups, and administrators"
 msgstr ""
 
@@ -2704,7 +2716,7 @@ msgstr ""
 msgid "Owner"
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:250
+#: src/components/admin/PolicyAdmin.vue:253
 msgid "Owners can share forms with other accounts and groups"
 msgstr ""
 
@@ -2803,7 +2815,7 @@ msgstr ""
 msgid "Pick any number of options"
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:235
+#: src/components/admin/PolicyAdmin.vue:238
 msgid "Pick at least one group, or choose Everyone."
 msgstr ""
 
@@ -3083,11 +3095,11 @@ msgstr ""
 msgid "Responses appear here as soon as someone sends the form."
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:188
+#: src/components/admin/PolicyAdmin.vue:191
 msgid "Responses are kept until their owner deletes them."
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:179
+#: src/components/admin/PolicyAdmin.vue:182
 msgid "Responses older than this are deleted for good, with their uploaded files and delivery log. Copies already sent by email, webhook, to Tables or to a CSV file are not touched."
 msgstr ""
 
@@ -3159,7 +3171,7 @@ msgstr ""
 
 #: src/AdminApp.vue:121
 #: src/components/admin/MailAdmin.vue:127
-#: src/components/admin/PolicyAdmin.vue:272
+#: src/components/admin/PolicyAdmin.vue:286
 msgid "Save"
 msgstr ""
 
@@ -3192,7 +3204,7 @@ msgstr ""
 msgid "Saved in this browser at {time}. You can close this page and come back to it on this device."
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:259
+#: src/components/admin/PolicyAdmin.vue:273
 msgid "Saving will delete {count} existing responses older than {days} days, with their uploaded files. This cannot be undone."
 msgstr ""
 
@@ -3222,7 +3234,7 @@ msgstr ""
 msgid "Search field types"
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:231
+#: src/components/admin/PolicyAdmin.vue:234
 msgid "Search for a group"
 msgstr ""
 
@@ -3349,7 +3361,7 @@ msgstr ""
 msgid "Server sender address"
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:143
+#: src/components/admin/PolicyAdmin.vue:146
 msgid "Server-wide rules for every form. The defaults keep everything open and keep responses for ever."
 msgstr ""
 
@@ -3375,7 +3387,7 @@ msgid "Settings"
 msgstr ""
 
 #: src/AdminApp.vue:83
-#: src/components/admin/PolicyAdmin.vue:125
+#: src/components/admin/PolicyAdmin.vue:128
 msgid "Settings saved"
 msgstr ""
 
@@ -3407,7 +3419,7 @@ msgstr ""
 msgid "Sharing"
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:248
+#: src/components/admin/PolicyAdmin.vue:251
 msgid "Sharing of forms"
 msgstr ""
 
@@ -3715,7 +3727,7 @@ msgstr ""
 msgid "Switched off for this form under Settings, General."
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:253
+#: src/components/admin/PolicyAdmin.vue:256
 msgid "Switched off, nobody can be added to a form. Forms that are already shared keep working."
 msgstr ""
 
@@ -4065,7 +4077,7 @@ msgstr ""
 msgid "There are no statuses, so responses show none."
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:238
+#: src/components/admin/PolicyAdmin.vue:241
 msgid "These groups no longer exist: {names}"
 msgstr ""
 
@@ -4543,7 +4555,7 @@ msgstr ""
 msgid "Website"
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:153
+#: src/components/admin/PolicyAdmin.vue:156
 msgid "What forms may do after someone sends them. A switched-off type is hidden in the builder, refused when publishing, and stops running on forms that are already live."
 msgstr ""
 
@@ -4592,7 +4604,7 @@ msgstr ""
 msgid "Where replies go"
 msgstr ""
 
-#: src/components/admin/PolicyAdmin.vue:216
+#: src/components/admin/PolicyAdmin.vue:219
 msgid "Who can create forms"
 msgstr ""
 

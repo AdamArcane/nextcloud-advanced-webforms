@@ -5,13 +5,14 @@
 
 # Changelog
 
-## Unreleased
+## 0.6.0 - 2026-11-20
 
 - A **read-only API** for other software such as n8n: the forms you can open, their questions and versions,
   responses (with an `after` cursor to fetch only new ones), the summary and a CSV download. Signed in with an
   app password, and limited to what that account may already see. It never changes anything and never sends the
   owner's private notes, uploaded files or signatures. Administrators can switch it off under Administration
   settings, Forms and responses, under API. See `docs/API.md`.
+- The app store screenshots are retaken in the light theme.
 
 ## 0.5.0 - 2026-11-20
 
