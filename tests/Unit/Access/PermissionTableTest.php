@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace OCA\Webforms\Tests\Unit\Access;
 
 use OCA\Webforms\Service\ActionLogService;
+use OCA\Webforms\Service\ApiService;
 use OCA\Webforms\Service\EntryExportService;
 use OCA\Webforms\Service\FormService;
 use OCA\Webforms\Service\OwnershipService;
@@ -50,6 +51,20 @@ final class PermissionTableTest extends TestCase {
 	private const EXPORT = ['export' => 'REVIEWER'];
 	private const OWNERSHIP = ['transfer' => 'OWNER'];
 
+	/** The read-only API (section 23): everything it reads needs the Reviewer role, and nothing else. */
+	private const API = [
+		'form' => 'REVIEWER',
+		'versions' => 'REVIEWER',
+		'version' => 'REVIEWER',
+		'responses' => 'REVIEWER',
+		'response' => 'REVIEWER',
+		'summary' => 'REVIEWER',
+		'csv' => 'REVIEWER',
+	];
+
+	/** The API's one method that names no form: it lists the caller's own, as FormService::listForDisplay does. */
+	private const API_OPEN = ['forms'];
+
 	/** Methods that only hand over to one of the methods above, which asks for the role. */
 	private const DELEGATES = [EntryExportService::class . '::csv' => EntryExportService::class . '::export'];
 
@@ -65,6 +80,9 @@ final class PermissionTableTest extends TestCase {
 		}
 		foreach (self::OWNERSHIP as $method => $role) {
 			yield 'OwnershipService::' . $method => [OwnershipService::class, $method, $role];
+		}
+		foreach (self::API as $method => $role) {
+			yield 'ApiService::' . $method => [ApiService::class, $method, $role];
 		}
 		foreach (self::EXPORT as $method => $role) {
 			yield 'EntryExportService::' . $method => [EntryExportService::class, $method, $role];
@@ -89,6 +107,19 @@ final class PermissionTableTest extends TestCase {
 			}
 		}
 		self::assertSame([], $undecided, 'A new public FormService method must be given a role in section 22.1 and in this table.');
+	}
+
+	public function testNoPublicApiServiceMethodIsLeftOutOfTheTable(): void {
+		$undecided = [];
+		foreach ((new \ReflectionClass(ApiService::class))->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
+			if ($method->isConstructor() || $method->isStatic()) {
+				continue;
+			}
+			if (!isset(self::API[$method->getName()]) && !in_array($method->getName(), self::API_OPEN, true)) {
+				$undecided[] = $method->getName();
+			}
+		}
+		self::assertSame([], $undecided, 'A new public ApiService method must be given a role in section 23 and in this table.');
 	}
 
 	public function testAMethodThatOnlyDelegatesCallsOneThatAsksForTheRole(): void {
