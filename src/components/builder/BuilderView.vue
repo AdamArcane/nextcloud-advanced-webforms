@@ -368,7 +368,7 @@ function onAdd(type: string, rowIndex: number, pageIndex = 0): void {
 	if (!draft.value) {
 		return
 	}
-	const result = addField(draft.value, type, { kind: 'row', index: rowIndex, page: pageIndex })
+	const result = addField(draft.value, type, { kind: 'row', index: rowIndex, page: pageIndex }, form.value?.retiredIds ?? [])
 	edit(forRole(result.definition, result.fieldId))
 	select(result.fieldId)
 }
@@ -381,7 +381,7 @@ function onAddBeside(type: string): void {
 	if (!at) {
 		return
 	}
-	const result = addField(draft.value, type, { kind: 'join', rowId: at.row.id })
+	const result = addField(draft.value, type, { kind: 'join', rowId: at.row.id }, form.value?.retiredIds ?? [])
 	edit(forRole(result.definition, result.fieldId))
 	select(result.fieldId)
 }

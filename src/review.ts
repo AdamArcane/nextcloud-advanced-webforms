@@ -10,7 +10,7 @@ import type { FormField } from './types.ts'
 
 import { hasParts } from './answers.ts'
 import { displayAnswer } from './entries/format.ts'
-import { isBooleanType, isCompositeType, isInputType } from './rules/fieldTypes.ts'
+import { isBooleanChoice, isBooleanType, isCompositeType, isInputType } from './rules/fieldTypes.ts'
 
 export interface ReviewItem {
 	id: string
@@ -36,6 +36,10 @@ export interface Review {
 
 /** Whether a field has no answer yet, the way required fields are checked. */
 export function isUnanswered(field: FormField, value: unknown): boolean {
+	if (isBooleanChoice(field)) {
+		// Either answer counts: "No" is an answer.
+		return typeof value !== 'boolean'
+	}
 	if (isBooleanType(field.type)) {
 		return value !== true
 	}

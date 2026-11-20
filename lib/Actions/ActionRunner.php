@@ -204,7 +204,7 @@ final class ActionRunner {
 				}
 				$field = $isMeta ? [] : $context->fields[$source];
 				// The converter works from what kind of answer it is: the field's type, or the meta name.
-				$value = TablesValue::convert($isMeta ? $source : (string)($field['type'] ?? ''), $field, $context->data[$source] ?? null, $column, $meta);
+				$value = TablesValue::convert($isMeta ? $source : FieldType::valueType($field), $field, $context->data[$source] ?? null, $column, $meta);
 				if ($value !== null) {
 					$values[(int)$columnId] = $value;
 				}

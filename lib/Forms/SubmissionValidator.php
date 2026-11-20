@@ -50,7 +50,7 @@ final class SubmissionValidator {
 		$data = [];
 		foreach ($fields as $id => $field) {
 			$id = (string)$id;
-			$type = (string)($field['type'] ?? '');
+			$type = FieldType::valueType($field);
 			// Hidden fields and display fields never carry a value.
 			if (!isset($visible[$id]) || !isset(FieldType::OPERATORS[$type])) {
 				continue;
@@ -62,8 +62,9 @@ final class SubmissionValidator {
 				continue;
 			}
 
-			// A required checkbox or consent must be ticked; for other types, empty is missing.
-			$missing = $value === null || (FieldType::isBoolean($type) && $value === false);
+			// A required checkbox or consent must be ticked; a yes or no question only needs an answer.
+			// For other types, empty is missing.
+			$missing = $value === null || (FieldType::isBoolean($type) && $value === false && ($field['type'] ?? null) !== FieldType::RADIO);
 			if ($missing && isset($required[$id])) {
 				$errors[] = ['field' => $id, 'code' => 'required'];
 				continue;

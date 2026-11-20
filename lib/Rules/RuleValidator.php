@@ -251,6 +251,6 @@ final class RuleValidator {
 	 * @param array<string, mixed> $field
 	 */
 	private function typeOf(array $field): string {
-		return is_string($field['type'] ?? null) ? $field['type'] : '';
+		return FieldType::valueType($field);
 	}
 }

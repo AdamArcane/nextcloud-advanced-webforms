@@ -80,7 +80,7 @@ export function emptyDefinition(title: string): DraftDefinition {
 	}
 }
 
-/** Ids match `^[a-z][a-z0-9_]{2,31}$` and are never derived from labels (SCHEMA 4.1). */
+/** Random id for rows, cells, pages and options. Ids match `^[a-z][a-z0-9_]{2,31}$`. */
 export function randomId(prefix: string, taken: ReadonlySet<string> = new Set()): string {
 	for (;;) {
 		const id = prefix + '_' + Math.random().toString(36).slice(2, 8).padEnd(6, '0')
@@ -88,6 +88,19 @@ export function randomId(prefix: string, taken: ReadonlySet<string> = new Set())
 			return id
 		}
 	}
+}
+
+/** The default id for a new field: `f_email` for an email field, then `f_email_2`, `f_email_3`. */
+export function idFromType(type: string, taken: ReadonlySet<string>): string {
+	const base = ('f_' + type).slice(0, 32)
+	for (let n = 1; n < 1000; n++) {
+		const suffix = n === 1 ? '' : '_' + n
+		const id = base.slice(0, 32 - suffix.length) + suffix
+		if (!taken.has(id)) {
+			return id
+		}
+	}
+	return randomId('f', taken)
 }
 
 function allIds(definition: DraftDefinition): Set<string> {
@@ -216,10 +229,10 @@ export interface AddResult {
 	fieldId: string
 }
 
-export function addField(definition: DraftDefinition, type: string, placement: Placement): AddResult {
+export function addField(definition: DraftDefinition, type: string, placement: Placement, retired: readonly string[] = []): AddResult {
 	const next = clone(definition)
 	const taken = allIds(next)
-	const fieldId = randomId('f', taken)
+	const fieldId = idFromType(type, new Set([...taken, ...retired]))
 	taken.add(fieldId)
 	const cellId = randomId('c', taken)
 	taken.add(cellId)

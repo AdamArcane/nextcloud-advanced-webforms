@@ -241,6 +241,31 @@ describe('FormRenderer with a rating, a scale and a consent', () => {
 	})
 })
 
+describe('FormRenderer with a yes or no question', () => {
+	const asked: PublicForm = {
+		...form,
+		definition: {
+			...form.definition,
+			fields: {
+				f_ok: { type: 'radio', boolean: true, label: 'Ok?', required: true, options: [{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }] },
+			},
+			rules: [],
+			pages: [{ id: 'p_1', title: null, rows: [{ id: 'r_1', cells: [{ id: 'c_1', span: 12, field: 'f_ok' }] }] }],
+		},
+	}
+
+	it('needs an answer, and sends false for No', async () => {
+		submitMock.mockResolvedValue({ message: null, redirect: null })
+		const wrapper = mount(FormRenderer, { props: { form: asked }, attachTo: document.body })
+		await wrapper.find('form').trigger('submit')
+		expect(submitMock).not.toHaveBeenCalled()
+		await wrapper.findAll('[data-field=f_ok] input[type=radio]')[1].setValue(true)
+		await wrapper.find('form').trigger('submit')
+		await flushPromises()
+		expect(submitMock.mock.calls[0][1].values).toEqual({ f_ok: false })
+	})
+})
+
 describe('FormRenderer with image blocks', () => {
 	const pictured = (preview: boolean) => mount(FormRenderer, {
 		props: {

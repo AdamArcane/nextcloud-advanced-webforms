@@ -44,7 +44,7 @@ final class FieldValueValidator {
 	 *   [value to store, error code]. A null value with no error means "empty".
 	 */
 	public static function clean(array $field, mixed $raw): array {
-		$type = is_string($field['type'] ?? null) ? $field['type'] : '';
+		$type = FieldType::valueType($field);
 
 		return match ($type) {
 			FieldType::TEXT, FieldType::HIDDEN => self::text($field, $raw, self::MAX_TEXT),

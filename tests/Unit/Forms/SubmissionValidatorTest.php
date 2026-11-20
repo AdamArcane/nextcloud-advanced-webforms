@@ -230,4 +230,27 @@ class SubmissionValidatorTest extends TestCase {
 		$fields = ['f_sign' => ['type' => 'signature', 'label' => 'Sign', 'required' => true], 'f_col' => ['type' => 'color', 'label' => 'Colour', 'required' => true]];
 		$this->assertSame(['f_col:required', 'f_sign:required'], $this->partsErrors($fields, ['f_sign' => '', 'f_col' => '']));
 	}
+
+	private const YES_NO = ['f_ok' => ['type' => 'radio', 'boolean' => true, 'label' => 'OK', 'required' => true, 'options' => [['value' => 'yes', 'label' => 'Yes'], ['value' => 'no', 'label' => 'No']]]];
+
+	public function testYesNoQuestionStoresABoolean(): void {
+		$this->assertSame([], $this->partsErrors(self::YES_NO, ['f_ok' => true]));
+		$result = (new SubmissionValidator())->validate(['fields' => self::YES_NO, 'rules' => []], ['f_ok' => false]);
+		$this->assertSame([], $result['errors']);
+		$this->assertSame(['f_ok' => false], $result['data']);
+	}
+
+	public function testRequiredYesNoQuestionAcceptsNoButNeedsAnAnswer(): void {
+		$this->assertSame(['f_ok:required'], $this->partsErrors(self::YES_NO, []));
+		$this->assertSame(['f_ok:required'], $this->partsErrors(self::YES_NO, ['f_ok' => null]));
+	}
+
+	public function testYesNoQuestionRejectsTheOptionText(): void {
+		$this->assertSame(['f_ok:invalid_type'], $this->partsErrors(self::YES_NO, ['f_ok' => 'yes']));
+	}
+
+	public function testRequiredCheckboxStillMustBeTicked(): void {
+		$fields = ['f_ok' => ['type' => 'checkbox', 'label' => 'OK', 'required' => true]];
+		$this->assertSame(['f_ok:required'], $this->partsErrors($fields, ['f_ok' => false]));
+	}
 }

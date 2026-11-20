@@ -17,7 +17,7 @@ import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { computed } from 'vue'
 import { operatorLabel } from '../../builder/labels.ts'
 import { changeLeafField, changeLeafOp, valueKind } from '../../builder/rules.ts'
-import { isBooleanType, isNumericType, isTemporalType, operatorsFor, temporalInputType } from '../../rules/fieldTypes.ts'
+import { isBooleanType, isNumericType, isTemporalType, operatorsFor, temporalInputType, valueType } from '../../rules/fieldTypes.ts'
 import SegmentedControl from './SegmentedControl.vue'
 
 const props = defineProps<{
@@ -35,7 +35,7 @@ const emit = defineEmits<{
 }>()
 
 const field = computed(() => props.definition.fields[props.leaf.field])
-const type = computed(() => field.value?.type ?? '')
+const type = computed(() => (field.value ? valueType(field.value) : ''))
 const kind = computed(() => valueKind(props.leaf.op))
 const isChoice = computed(() => ['select', 'radio', 'checkboxes'].includes(type.value))
 

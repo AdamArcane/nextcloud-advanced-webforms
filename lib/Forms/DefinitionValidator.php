@@ -229,7 +229,7 @@ final class DefinitionValidator {
 			FieldType::SCALE => ['min', 'max', 'minLabel', 'maxLabel'],
 			FieldType::CONSENT => ['text'],
 			FieldType::SELECT => ['options'],
-			FieldType::RADIO => ['options', 'columns'],
+			FieldType::RADIO => ['options', 'columns', 'boolean'],
 			FieldType::CHECKBOXES => ['options', 'minSelected', 'maxSelected', 'columns'],
 			FieldType::FILE => ['maxFiles', 'maxSizeMb', 'accept', 'audience', 'storage', 'folder'],
 			FieldType::SLIDER => ['min', 'max', 'step', 'prefix', 'suffix'],
@@ -304,6 +304,15 @@ final class DefinitionValidator {
 		if (($type === FieldType::RADIO || $type === FieldType::CHECKBOXES)
 			&& array_key_exists('columns', $field) && (!is_int($field['columns']) || $field['columns'] < 1 || $field['columns'] > 4)) {
 			$this->err('field_limit_invalid', $path . '.columns');
+		}
+		if ($type === FieldType::RADIO && array_key_exists('boolean', $field)) {
+			// A yes or no question: it answers true or false, and its two options are fixed.
+			if (!is_bool($field['boolean'])) {
+				$this->err('field_flag_invalid', $path . '.boolean');
+			} elseif ($field['boolean'] === true
+				&& array_column(is_array($field['options'] ?? null) ? $field['options'] : [], 'value') !== ['yes', 'no']) {
+				$this->err('options_invalid', $path . '.options');
+			}
 		}
 		if ($type === FieldType::NUMBER) {
 			$this->numberLimits($field, $path);

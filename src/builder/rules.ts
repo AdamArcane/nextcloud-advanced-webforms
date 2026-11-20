@@ -10,7 +10,7 @@
 import type { DraftDefinition, FormField } from '../types.ts'
 import type { AllCondition, AnyCondition, Condition, LeafCondition, Rule, RuleEffect } from '../rules/types.ts'
 
-import { isInputType, operatorsFor } from '../rules/fieldTypes.ts'
+import { isInputType, operatorsFor, valueType } from '../rules/fieldTypes.ts'
 import { sourcesOf } from '../rules/graph.ts'
 import { fieldOrder, randomId } from './definition.ts'
 
@@ -80,7 +80,10 @@ export function defaultOp(type: string): string {
 }
 
 function defaultScalar(field: FormField | undefined): unknown {
-	switch (field?.type) {
+	if (!field) {
+		return ''
+	}
+	switch (valueType(field)) {
 		case 'select':
 		case 'radio':
 		case 'checkboxes':
@@ -121,7 +124,7 @@ function leafFor(field: FormField | undefined, fieldId: string, op: string, prev
 /** A fresh condition on a field. */
 export function defaultLeaf(definition: DraftDefinition, fieldId: string): LeafCondition {
 	const field = definition.fields[fieldId]
-	return leafFor(field, fieldId, defaultOp(field?.type ?? ''))
+	return leafFor(field, fieldId, defaultOp(field ? valueType(field) : ''))
 }
 
 /** Switch a condition to another field; the operator and value no longer apply, so they reset. */

@@ -6,7 +6,7 @@
 import type { Condition, EvaluationResult, FieldDefinition, NormalizedValue, RuleDefinition } from './types.ts'
 
 import { compare } from './compare.ts'
-import { isInputType, operatorsFor } from './fieldTypes.ts'
+import { isInputType, operatorsFor, valueType } from './fieldTypes.ts'
 import { evaluationOrder } from './graph.ts'
 import { normalize } from './normalize.ts'
 
@@ -53,7 +53,7 @@ export function evaluateRules(definition: RuleDefinition, values: Record<string,
 
 	for (const id of order) {
 		const field = fields.get(id) as FieldDefinition
-		const type = typeof field.type === 'string' ? field.type : ''
+		const type = valueType(field)
 		const byEffect = conditions.get(id)
 		const show = byEffect?.get('show') ?? []
 		const hide = byEffect?.get('hide') ?? []
@@ -111,7 +111,7 @@ function matches(node: unknown, fields: Map<string, FieldDefinition>, effective:
 	if (field === undefined) {
 		return false
 	}
-	const type = typeof field.type === 'string' ? field.type : ''
+	const type = valueType(field)
 	if (!operatorsFor(type).includes(leaf.op)) {
 		return false
 	}

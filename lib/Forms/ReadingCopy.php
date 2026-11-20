@@ -28,7 +28,7 @@ final class ReadingCopy {
 	public const KEPT_FIELD = [
 		'type', 'label', 'description', 'required', 'defaultValue', 'labelPosition', 'hideLabel', 'placeholder',
 		'minLength', 'maxLength', 'rows', 'min', 'max', 'step', 'prefix', 'suffix', 'minLabel', 'maxLabel',
-		'text', 'options', 'columns', 'minSelected', 'maxSelected', 'maxFiles', 'maxSizeMb', 'accept',
+		'text', 'options', 'columns', 'boolean', 'minSelected', 'maxSelected', 'maxFiles', 'maxSizeMb', 'accept',
 		'level', 'align', 'style', 'src', 'alt', 'width',
 	];
 

@@ -17,7 +17,7 @@ import { leaveTo } from '../../embedded.ts'
 import { ownerImageUrl, publicImageUrl } from '../../images.ts'
 import { visiblePages } from '../../layout/visibleLayout.ts'
 import { evaluateRules } from '../../rules/engine.ts'
-import { isInputType } from '../../rules/fieldTypes.ts'
+import { isBooleanChoice, isInputType, valueType } from '../../rules/fieldTypes.ts'
 import CaptchaField from './CaptchaField.vue'
 import FieldInput from './FieldInput.vue'
 import { prefillValue } from '../../prefill.ts'
@@ -53,10 +53,11 @@ function initialValue(id: string, field: FormField): unknown {
 		return Array.isArray(given) ? [...given] : given
 	}
 	const fallback = field.defaultValue
-	switch (field.type) {
+	switch (valueType(field)) {
 		case 'checkbox':
 		case 'consent':
-			return fallback === true
+			// A yes or no question starts unanswered unless it has a default.
+			return isBooleanChoice(field) ? (typeof fallback === 'boolean' ? fallback : null) : fallback === true
 		case 'checkboxes':
 			return Array.isArray(fallback) ? [...fallback] : []
 		case 'file':
