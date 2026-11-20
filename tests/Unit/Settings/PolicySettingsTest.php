@@ -38,6 +38,7 @@ final class PolicySettingsTest extends TestCase {
 		$this->assertSame(10, $policy->maxActionsPerForm());
 		$this->assertSame([], $policy->creatorGroups());
 		$this->assertTrue($policy->sharingEnabled());
+		$this->assertTrue($policy->apiEnabled());
 	}
 
 	public function testSaveAndReadBack(): void {
@@ -131,5 +132,16 @@ final class PolicySettingsTest extends TestCase {
 	public function testRetentionCutoff(): void {
 		$this->assertNull(PolicyCheck::retentionCutoff(1000000, 0));
 		$this->assertSame(1000000 - 30 * 86400, PolicyCheck::retentionCutoff(1000000, 30));
+	}
+
+	public function testTheApiIsOnUntilSwitchedOffAndStaysOffUntilSwitchedOn(): void {
+		$store = $this->store();
+		$policy = new PolicySettings($store);
+		$policy->save(['email'], 0, 0, 10, [], true, false);
+		$this->assertFalse($policy->apiEnabled());
+		$policy->save(['email'], 0, 0, 10, [], true, true);
+		$this->assertTrue($policy->apiEnabled());
+		$store->values['policy_api'] = 'garbage';
+		$this->assertTrue($policy->apiEnabled(), 'Only an explicit 0 switches it off.');
 	}
 }

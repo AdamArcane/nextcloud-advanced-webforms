@@ -2038,3 +2038,67 @@ check (phase 2) has not been tried there with two real accounts.
 
 A table test holds section 22.1 as data and checks every owner call against every role, so a new endpoint
 without a role fails it.
+
+## 23. Read-only API (DECISION)
+
+An API for other software to read forms and responses: n8n, scripts, and tools the owner does not control.
+It only reads. Nothing in it creates, changes or deletes anything, and a test fails if a route is added that
+is not a `GET`.
+
+- **Address and sign-in.** OCS routes under `/ocs/v2.php/apps/webforms/api/v1/`, with the header
+  `OCS-APIRequest: true`, and `format=json` or `Accept: application/json`. Sign in with a Nextcloud account
+  and an app password (HTTP basic authentication). The app's own `/apps/webforms/api/v1/` routes are the
+  builder's interface, not this one, and may change.
+- **Who sees what.** The caller's role on the form decides, the same as the app (section 22): they need at
+  least Reviewer. A form they cannot open is `404`, so a caller cannot tell it exists. Every call asks for
+  the role through `FormService::get`, and `tests/Unit/Access/PermissionTableTest.php` lists each method.
+- **Server switch.** The administrator can turn the API off (`PolicySettings::apiEnabled`, Settings,
+  Administration, "Forms and responses", under "API"). It is on unless switched off. Off, every route answers `404`.
+- **Rate limit.** Each route allows 120 calls a minute per account.
+
+### 23.1 Routes
+
+| Route | Returns |
+| --- | --- |
+| `GET /forms` | the forms the caller can open |
+| `GET /forms/{id}` | one form with its latest published questions |
+| `GET /forms/{id}/versions` | its published versions |
+| `GET /forms/{id}/versions/{versionId}` | one version's questions |
+| `GET /forms/{id}/responses` | responses, with filters and a cursor |
+| `GET /forms/{id}/responses/{responseId}` | one response |
+| `GET /forms/{id}/summary` | counts per choice, number ranges and responses per day (section 17.2) |
+| `GET /forms/{id}/responses/export` | a CSV file of the responses (section 9.1) |
+
+- **Questions** are the reading copy of a definition (`ReadingCopy`): fields, pages, rules, title and
+  description. Never the settings, actions, destinations or draft.
+- **Form** is `{id, title, description, status, role, ownerId, ownerName, latestVersionId, createdAt,
+  updatedAt, responses, availability}`. `status` is `draft`, `published` or `closed`. The link, address,
+  password and embedding settings are never included, whatever the role.
+- **Response** is `{id, versionId, submittedAt, respondent, status, answers}`. `submittedAt` is unix seconds
+  (UTC). `respondent` is the account id of a signed-in respondent, or null. `status` is the id of the
+  administrator's status, or null. `answers` is keyed by field id: the stored value, as section 4 gives it.
+  Two kinds of answer are reduced: an uploaded file is `{name, size, mime}` only, never where it is kept, and a
+  signature is `true` (the picture is not sent). A field the response's version did not have is absent.
+- **Not included.** The owner's private note on a response, and any download of an uploaded file.
+- **Reading answers.** Fetch the version a response names (`versionId`) to know what each field id meant when
+  it was answered. Versions never change (section 8).
+
+### 23.2 Filters and the cursor
+
+`GET /forms/{id}/responses` takes `limit` (1 to 200, default 50), `after`, `sort` (`newest` default, or
+`oldest`), `from` and `to` (dates, `YYYY-MM-DD`, UTC), `status` (comma separated ids, or `none`),
+`respondent` (`any`, `signed_in`, `anonymous`) and `q` (text search). It returns `{total, responses,
+nextAfter}`.
+
+- **Polling.** `after=<response id>` returns only responses with a larger id, oldest first, whatever `sort` says.
+  `nextAfter` is the id of the last response returned (or null when there is none), the value to send next
+  time. A tool keeps that one number between runs. Ids only grow, so nothing is missed or repeated.
+- `summary` and `export` take the same filters except `limit`, `after` and `sort`. `export` also takes
+  `format` (`csv`, the only one for now).
+- A bad filter is `422` with `{error: "filter_invalid", reason}`.
+
+### 23.3 Left for later
+
+Read-only keys limited to one form (so a tool does not hold an account-wide app password), file downloads,
+an OpenAPI file produced in CI, and a filter on answers (`where`).
+

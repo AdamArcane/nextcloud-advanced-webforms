@@ -102,6 +102,7 @@ class AdminController extends Controller {
 		array $creatorGroups = [],
 		bool $confirmDelete = false,
 		bool $sharing = true,
+		bool $api = true,
 	): JSONResponse {
 		foreach ($actionTypes as $type) {
 			if (!is_string($type) || !in_array($type, DefinitionValidator::ACTION_TYPES, true)) {
@@ -130,7 +131,7 @@ class AdminController extends Controller {
 			}
 		}
 
-		$this->policy->save(array_values($actionTypes), $retentionDays, $maxResponses, $maxActions, array_values($creatorGroups), $sharing);
+		$this->policy->save(array_values($actionTypes), $retentionDays, $maxResponses, $maxActions, array_values($creatorGroups), $sharing, $api);
 		return new JSONResponse($this->currentPolicy());
 	}
 
@@ -254,6 +255,7 @@ class AdminController extends Controller {
 			'maxActionsCeiling' => DefinitionValidator::MAX_ACTIONS,
 			'creatorGroups' => $groups,
 			'sharing' => $this->policy->sharingEnabled(),
+			'api' => $this->policy->apiEnabled(),
 		];
 	}
 

@@ -34,6 +34,7 @@ const maxActions = ref('10')
 const ceiling = ref(10)
 const everyone = ref(true)
 const sharing = ref(true)
+const api = ref(true)
 const groups = ref<PolicyGroup[]>([])
 const groupOptions = ref<PolicyGroup[]>([])
 const groupsLoading = ref(false)
@@ -64,6 +65,7 @@ function apply(policy: PolicyAdminSettings): void {
 	ceiling.value = policy.maxActionsCeiling
 	everyone.value = policy.creatorGroups.length === 0
 	sharing.value = policy.sharing !== false
+	api.value = policy.api !== false
 	groups.value = policy.creatorGroups
 	confirmDue.value = null
 }
@@ -120,6 +122,7 @@ async function save(confirmDelete = false): Promise<void> {
 			maxActions: Number.parseInt(maxActions.value, 10),
 			creatorGroups: everyone.value ? [] : groups.value.map((group) => group.id),
 			sharing: sharing.value,
+			api: api.value,
 			confirmDelete,
 		}))
 		showSuccess(t('webforms', 'Settings saved'))
@@ -251,6 +254,17 @@ async function save(confirmDelete = false): Promise<void> {
 				</NcCheckboxRadioSwitch>
 				<p class="af-policy__hint">
 					{{ t('webforms', 'Switched off, nobody can be added to a form. Forms that are already shared keep working.') }}
+				</p>
+			</section>
+
+			<!-- Read-only API -->
+			<section class="af-policy__block">
+				<h3>{{ t('webforms', 'API') }}</h3>
+				<NcCheckboxRadioSwitch v-model="api" type="switch" data-test="policy-api">
+					{{ t('webforms', 'Allow read-only API access') }}
+				</NcCheckboxRadioSwitch>
+				<p class="af-policy__hint">
+					{{ t('webforms', 'For tools like n8n, with an app password. Switched off, the API answers 404.') }}
 				</p>
 			</section>
 

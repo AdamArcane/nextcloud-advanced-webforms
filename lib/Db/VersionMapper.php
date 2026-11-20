@@ -60,6 +60,21 @@ class VersionMapper extends QBMapper {
 	}
 
 	/**
+	 * Every published version of a form, oldest first.
+	 *
+	 * @return list<Version>
+	 * @throws Exception
+	 */
+	public function findByForm(int $formId): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from($this->getTableName())
+			->where($qb->expr()->eq('form_id', $qb->createNamedParameter($formId, IQueryBuilder::PARAM_INT)))
+			->orderBy('version_number', 'ASC');
+		return array_values($this->findEntities($qb));
+	}
+
+	/**
 	 * @throws Exception
 	 */
 	public function findLatest(int $formId): ?Version {

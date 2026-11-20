@@ -103,6 +103,49 @@ responses exist in two places. Items 1 and 4 above exist to reduce that.
 copy for data minimisation. That would be an optional Tables-only mode, with the open questions in
 SCHEMA.md section 9 to answer first.
 
+## Read-only API (in progress)
+
+Specified in SCHEMA.md section 23. For tools such as n8n that poll for new responses. Reads only, by decision.
+
+- **Shape.** OCS routes under `/ocs/v2.php/apps/webforms/api/v1/`, signed in with a Nextcloud app password. A
+  caller sees what their role on a form allows, at Reviewer or above, the same as the app.
+- **Included.** The forms a person can open, a form's published questions, its versions, responses (with a
+  `after` cursor for polling), one response, the summary, and a CSV download.
+- **Left out on purpose.** The owner's private notes, file downloads (names and sizes only), signature pictures,
+  and everything that belongs to an editor: draft, destinations, link, password, retired ids.
+- **Admin switch.** A server policy setting turns the whole API off (it then answers `404`).
+- **Later.** Read-only keys limited to one form, so a tool does not need an account-wide app password; file
+  downloads; an OpenAPI file generated in CI.
+
+## Quizzes and scoring (planned, on hold)
+
+Planned 2026-11-20, not started. It would reverse the "calculations" non-goal in SCHEMA.md section 1, so the
+first step is a new SCHEMA.md section (24) with shared scoring fixtures that PHP and TypeScript both pass.
+
+- **Shape.** Quiz mode is a form setting (`settings.quiz`) plus per-question scoring, not a new field type.
+  Pages, rules, actions and the responses view are reused.
+- **Answer keys never reach the browser.** The public API sends the whole definition, so keys are stored in
+  the version but stripped from what respondents receive. Reviewers see them. This gets its own test.
+- **Scored on the server,** in the submit algorithm after validation (SCHEMA.md section 10, after step 6),
+  over visible fields only: a question hidden by a rule counts for neither the score nor the maximum.
+- **The key belongs to the version** (section 8). Editing a key later never rescores old responses.
+- **Marking.** Single choice and dropdown: one correct option. Multiple choice: all or nothing, with an optional
+  partial credit mode (never below zero). Short text: a list of accepted answers, trimmed and case
+  insensitive. Number: a value or a range. Every other type is unscored. Per question: `points` (default 1),
+  an optional `explanation`.
+- **Result.** A per-form `reveal`: `none`, `score` (default) or `answers` (right or wrong, the correct answer
+  and the explanation). Result bands (`from` percent, message) feed the thank-you message, and the message action
+  gains `{score}`, `{max}` and `{percent}`. Rules do not learn about scores in the first version: that would
+  need a second TypeScript mirror and new shared vectors.
+- **Owner side.** A Quiz switch in settings, a Scoring group in the field panel, a score column and filter,
+  a "how many got this right" summary card, the score in the CSV, webhooks and emails.
+- **Storage.** Nullable `score` and `max_score` columns on the entries table, in the release's single
+  migration (RELEASING.md, one migration per release).
+- **Honest limits.** An anonymous quiz cannot stop answers being shared, same as duplicate control today.
+  Timers and shuffled question order are left out of the first version.
+- **Open decisions.** Default `reveal`; whether a quiz defaults to login plus one attempt; whether short text
+  is in the first version (leaning yes).
+
 ## Release and publishing
 
 - App store registration, signing, screenshots and real translations (see RELEASING.md).
