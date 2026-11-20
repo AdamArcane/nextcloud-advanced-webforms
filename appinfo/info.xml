@@ -18,7 +18,7 @@
 - **Sharing:** public link, custom address, QR code and embedding in a frame, with spam protection that keeps your visitors' data on your server.
 - **Flow integration** and server-wide administration settings.
 
-Forms and responses stay on your server. Requires Nextcloud 35.
+Forms and responses stay on your server. Requires Nextcloud 34 or 35.
 	]]></description>
 
 	<version>0.4.4</version>
@@ -51,7 +51,7 @@ Forms and responses stay on your server. Requires Nextcloud 35.
 
 	<dependencies>
 		<php min-version="8.3" />
-		<nextcloud min-version="35" max-version="35" />
+		<nextcloud min-version="34" max-version="35" />
 	</dependencies>
 
 	<background-jobs>

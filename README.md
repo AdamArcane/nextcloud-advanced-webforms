@@ -9,7 +9,7 @@ A form builder for Nextcloud with the features larger form tools have: condition
 grid layouts, multi-page forms, file uploads and after-submit actions. Forms and responses stay
 on your own server.
 
-It supports **Nextcloud 35 only**. Install it from the Nextcloud app store, or from a GitHub
+It supports **Nextcloud 34 and 35**. Install it from the Nextcloud app store, or from a GitHub
 release (see [Install](#install)). Please back up before you update.
 
 ## Features
@@ -53,7 +53,7 @@ Nextcloud Tables is an after-submit action, not a storage backend (see the roadm
 
 ## Requirements
 
-- Nextcloud 35
+- Nextcloud 34 or 35
 - PHP 8.3 or newer
 - Shell access to the server, to run `occ`
 
@@ -118,7 +118,7 @@ Nextcloud database, and uploaded files in the form owner's Files or in the app's
 
 ## Development
 
-You need Nextcloud 35, PHP 8.3 or newer and Node 24 or newer.
+You need Nextcloud 34 or 35, PHP 8.3 or newer and Node 24 or newer.
 
 ```bash
 git clone https://github.com/AdamArcane/nextcloud-advanced-webforms webforms

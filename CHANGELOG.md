@@ -7,6 +7,8 @@
 
 ## 0.4.4 - 2026-11-20
 
+- Works on **Nextcloud 34** as well as 35. Tried on a clean Nextcloud 34.0.6: install and migrations, the API, the public and
+  embedded form, submissions and the builder.
 - A **Single choice** can now be a **Yes or no answer**. Turn the switch on in the field panel: the two answers
   can be renamed, and the answer is a true or false value in responses, downloads, webhooks, Tables and rules
   (like a checkbox), but "No" counts as an answer for a required question. See `docs/SCHEMA.md` section 4.11.
