@@ -5,6 +5,18 @@
 
 # Changelog
 
+## 0.5.0 - 2026-11-20
+
+- Works on **Nextcloud 34** as well as 35. Tried on a clean Nextcloud 34.0.6: install and migrations, the API, the public and
+  embedded form, submissions and the builder.
+- A **Single choice** can now be a **Yes or no answer**. Turn the switch on in the field panel: the two answers
+  can be renamed, and the answer is a true or false value in responses, downloads, webhooks, Tables and rules
+  (like a checkbox), but "No" counts as an answer for a required question. See `docs/SCHEMA.md` section 4.11.
+- New fields get an ID from their type (`f_email`, `f_url`, then `f_email_2` and so on) instead of a random one.
+  It still follows the label until you set the ID yourself.
+- The default value of a Dropdown, Single choice or Multiple choice sits below its list of options.
+- Embedded forms: the mouse wheel over a frame that is as tall as its form now scrolls the website around it.
+
 ## 0.4.3 - 2026-11-19
 
 - The app store screenshots are now linked by release tag instead of by the `main` branch, so the store
