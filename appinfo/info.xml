@@ -21,7 +21,7 @@
 Forms and responses stay on your server. Requires Nextcloud 34 or 35.
 	]]></description>
 
-	<version>0.4.4</version>
+	<version>0.5.0</version>
 	<licence>AGPL-3.0-or-later</licence>
 
 	<author>Adam Arcane</author>
