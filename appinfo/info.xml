@@ -42,12 +42,12 @@ Forms and responses stay on your server. Requires Nextcloud 34 or 35.
 	<bugs>https://github.com/AdamArcane/nextcloud-advanced-webforms/issues</bugs>
 	<repository type="git">https://github.com/AdamArcane/nextcloud-advanced-webforms</repository>
 
-	<screenshot>https://raw.githubusercontent.com/AdamArcane/nextcloud-advanced-webforms/v0.4.3/docs/screenshots/01-builder.jpg</screenshot>
-	<screenshot>https://raw.githubusercontent.com/AdamArcane/nextcloud-advanced-webforms/v0.4.3/docs/screenshots/02-logic.jpg</screenshot>
-	<screenshot>https://raw.githubusercontent.com/AdamArcane/nextcloud-advanced-webforms/v0.4.3/docs/screenshots/03-form.jpg</screenshot>
-	<screenshot>https://raw.githubusercontent.com/AdamArcane/nextcloud-advanced-webforms/v0.4.3/docs/screenshots/04-form-page-two.jpg</screenshot>
-	<screenshot>https://raw.githubusercontent.com/AdamArcane/nextcloud-advanced-webforms/v0.4.3/docs/screenshots/05-review.jpg</screenshot>
-	<screenshot>https://raw.githubusercontent.com/AdamArcane/nextcloud-advanced-webforms/v0.4.3/docs/screenshots/06-responses.jpg</screenshot>
+	<screenshot>https://raw.githubusercontent.com/AdamArcane/nextcloud-advanced-webforms/v0.5.0/docs/screenshots/01-builder.jpg</screenshot>
+	<screenshot>https://raw.githubusercontent.com/AdamArcane/nextcloud-advanced-webforms/v0.5.0/docs/screenshots/02-logic.jpg</screenshot>
+	<screenshot>https://raw.githubusercontent.com/AdamArcane/nextcloud-advanced-webforms/v0.5.0/docs/screenshots/03-form.jpg</screenshot>
+	<screenshot>https://raw.githubusercontent.com/AdamArcane/nextcloud-advanced-webforms/v0.5.0/docs/screenshots/04-form-page-two.jpg</screenshot>
+	<screenshot>https://raw.githubusercontent.com/AdamArcane/nextcloud-advanced-webforms/v0.5.0/docs/screenshots/05-review.jpg</screenshot>
+	<screenshot>https://raw.githubusercontent.com/AdamArcane/nextcloud-advanced-webforms/v0.5.0/docs/screenshots/06-responses.jpg</screenshot>
 
 	<dependencies>
 		<php min-version="8.3" />

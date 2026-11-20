@@ -5,7 +5,7 @@
 
 # Changelog
 
-## 0.4.4 - 2026-11-20
+## 0.5.0 - 2026-11-20
 
 - Works on **Nextcloud 34** as well as 35. Tried on a clean Nextcloud 34.0.6: install and migrations, the API, the public and
   embedded form, submissions and the builder.
