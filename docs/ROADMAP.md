@@ -103,10 +103,24 @@ responses exist in two places. Items 1 and 4 above exist to reduce that.
 copy for data minimisation. That would be an optional Tables-only mode, with the open questions in
 SCHEMA.md section 9 to answer first.
 
+## Read-only API (in progress)
+
+Specified in SCHEMA.md section 23. For tools such as n8n that poll for new responses. Reads only, by decision.
+
+- **Shape.** OCS routes under `/ocs/v2.php/apps/webforms/api/v1/`, signed in with a Nextcloud app password. A
+  caller sees what their role on a form allows, at Reviewer or above, the same as the app.
+- **Included.** The forms a person can open, a form's published questions, its versions, responses (with a
+  `after` cursor for polling), one response, the summary, and a CSV download.
+- **Left out on purpose.** The owner's private notes, file downloads (names and sizes only), signature pictures,
+  and everything that belongs to an editor: draft, destinations, link, password, retired ids.
+- **Admin switch.** A server policy setting turns the whole API off (it then answers `404`).
+- **Later.** Read-only keys limited to one form, so a tool does not need an account-wide app password; file
+  downloads; an OpenAPI file generated in CI.
+
 ## Quizzes and scoring (planned, on hold)
 
 Planned 2026-11-20, not started. It would reverse the "calculations" non-goal in SCHEMA.md section 1, so the
-first step is a new SCHEMA.md section (23) with shared scoring fixtures that PHP and TypeScript both pass.
+first step is a new SCHEMA.md section (24) with shared scoring fixtures that PHP and TypeScript both pass.
 
 - **Shape.** Quiz mode is a form setting (`settings.quiz`) plus per-question scoring, not a new field type.
   Pages, rules, actions and the responses view are reused.

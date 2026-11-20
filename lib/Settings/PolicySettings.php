@@ -29,6 +29,7 @@ class PolicySettings {
 	private const MAX_ACTIONS = 'policy_max_actions';
 	private const CREATOR_GROUPS = 'policy_creator_groups';
 	private const SHARING = 'policy_sharing';
+	private const API = 'policy_api';
 
 	public function __construct(
 		private readonly ConfigStore $config,
@@ -81,11 +82,20 @@ class PolicySettings {
 	}
 
 	/**
+	 * Whether other software may read forms and responses through the read-only API (docs/SCHEMA.md
+	 * section 23). On unless switched off. Off, every route of it answers 404.
+	 */
+	public function apiEnabled(): bool {
+		return $this->config->get(self::API) !== '0';
+	}
+
+	/**
 	 * @param list<string> $actionTypes
 	 * @param list<string> $creatorGroups
 	 */
-	public function save(array $actionTypes, int $retentionDays, int $maxResponses, int $maxActions, array $creatorGroups, bool $sharing = true): void {
+	public function save(array $actionTypes, int $retentionDays, int $maxResponses, int $maxActions, array $creatorGroups, bool $sharing = true, bool $api = true): void {
 		$this->config->set(self::SHARING, $sharing ? '1' : '0');
+		$this->config->set(self::API, $api ? '1' : '0');
 		$types = array_values(array_intersect(DefinitionValidator::ACTION_TYPES, $actionTypes));
 		// "All" is stored as nothing, so a type added in a later version is allowed unless switched off.
 		$this->config->set(self::ACTION_TYPES, count($types) === count(DefinitionValidator::ACTION_TYPES) ? '' : json_encode($types, JSON_THROW_ON_ERROR));

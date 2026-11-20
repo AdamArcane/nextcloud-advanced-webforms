@@ -125,6 +125,9 @@ class EntryMapper extends QBMapper {
 		if ($filter->to !== null) {
 			$qb->andWhere($qb->expr()->lte('submitted_at', $qb->createNamedParameter($filter->to, IQueryBuilder::PARAM_INT)));
 		}
+		if ($filter->afterId !== null) {
+			$qb->andWhere($qb->expr()->gt('id', $qb->createNamedParameter($filter->afterId, IQueryBuilder::PARAM_INT)));
+		}
 		if ($filter->respondent === EntryFilter::RESPONDENT_SIGNED_IN) {
 			$qb->andWhere($qb->expr()->isNotNull('user_id'));
 		} elseif ($filter->respondent === EntryFilter::RESPONDENT_ANONYMOUS) {

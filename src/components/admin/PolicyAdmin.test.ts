@@ -28,13 +28,13 @@ vi.mock('../../api/admin.ts', () => ({
 		if (confirmNeeded !== null && !input.confirmDelete) {
 			return new Promise((_resolve, reject) => setTimeout(() => reject(new ApiError(409, 'confirmation_required', [], null, { due: confirmNeeded })), 0))
 		}
-		current = { ...current, actionTypes: input.actionTypes, retentionDays: input.retentionDays, maxResponses: input.maxResponses, maxActions: input.maxActions, creatorGroups: input.creatorGroups.map((id) => ({ id, displayName: id })), sharing: input.sharing }
+		current = { ...current, actionTypes: input.actionTypes, retentionDays: input.retentionDays, maxResponses: input.maxResponses, maxActions: input.maxActions, creatorGroups: input.creatorGroups.map((id) => ({ id, displayName: id })), sharing: input.sharing, api: input.api }
 		return Promise.resolve(current)
 	},
 }))
 
 function policy(extra: Partial<PolicyAdminSettings> = {}): PolicyAdminSettings {
-	return { actionTypes: ALL, allActionTypes: ALL, retentionDays: 0, maxResponses: 0, maxActions: 10, maxActionsCeiling: 10, creatorGroups: [], sharing: true, ...extra }
+	return { actionTypes: ALL, allActionTypes: ALL, retentionDays: 0, maxResponses: 0, maxActions: 10, maxActionsCeiling: 10, creatorGroups: [], sharing: true, api: true, ...extra }
 }
 
 async function mountIt() {
@@ -75,7 +75,7 @@ describe('PolicyAdmin', () => {
 		const wrapper = await mountIt()
 		await button(wrapper, 'Save').trigger('click')
 		await flushPromises()
-		expect(saves).toEqual([{ actionTypes: ALL, retentionDays: 0, maxResponses: 0, maxActions: 10, creatorGroups: [], sharing: true, confirmDelete: false }])
+		expect(saves).toEqual([{ actionTypes: ALL, retentionDays: 0, maxResponses: 0, maxActions: 10, creatorGroups: [], sharing: true, api: true, confirmDelete: false }])
 	})
 
 	it('shows sharing as on and saves it as off when switched off (docs/SCHEMA.md section 22.8)', async () => {
@@ -87,6 +87,17 @@ describe('PolicyAdmin', () => {
 		await button(wrapper, 'Save').trigger('click')
 		await flushPromises()
 		expect(saves.at(-1)?.sharing).toBe(false)
+	})
+
+	it('saves the read-only API as off when switched off (docs/SCHEMA.md section 23)', async () => {
+		const wrapper = await mountIt()
+		expect(wrapper.text()).toContain('Access for other software')
+		const toggle = wrapper.findAll('input[type="checkbox"]').find((box) => box.element.closest('.checkbox-content, label, span')?.textContent?.includes('Other software can read'))!
+		expect((toggle.element as HTMLInputElement).checked).toBe(true)
+		await toggle.setValue(false)
+		await button(wrapper, 'Save').trigger('click')
+		await flushPromises()
+		expect(saves.at(-1)?.api).toBe(false)
 	})
 
 	it('shows the retention warning and how many responses would go', async () => {

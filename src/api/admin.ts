@@ -54,6 +54,8 @@ export interface PolicyAdminSettings {
 	creatorGroups: PolicyGroup[]
 	/** Forms may be shared with accounts and groups (docs/SCHEMA.md section 22.8). */
 	sharing: boolean
+	/** Other software may read forms and responses (docs/SCHEMA.md section 23). */
+	api: boolean
 }
 
 export interface PolicyInput {
@@ -63,6 +65,7 @@ export interface PolicyInput {
 	maxActions: number
 	creatorGroups: string[]
 	sharing: boolean
+	api: boolean
 	/** Agree to delete the responses that retention would remove right now. */
 	confirmDelete?: boolean
 }
