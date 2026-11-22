@@ -692,7 +692,7 @@ msgstr ""
 msgid "Billing"
 msgstr ""
 
-#: src/components/TemplateDialog.vue:139
+#: src/components/TemplateDialog.vue:60
 msgid "Blank form"
 msgstr ""
 
@@ -1047,7 +1047,7 @@ msgstr ""
 msgid "Could not delete the responses."
 msgstr ""
 
-#: src/components/TemplateDialog.vue:117
+#: src/components/TemplateDialog.vue:148
 msgid "Could not delete the template."
 msgstr ""
 
@@ -1122,7 +1122,7 @@ msgstr ""
 msgid "Could not look for your forms. Close this and try again."
 msgstr ""
 
-#: src/components/TemplateDialog.vue:105
+#: src/components/TemplateDialog.vue:131
 msgid "Could not make a form from this template."
 msgstr ""
 
@@ -1181,6 +1181,10 @@ msgstr ""
 
 #: src/AdminApp.vue:109
 msgid "Create a site in the provider's dashboard to get the keys:"
+msgstr ""
+
+#: src/components/TemplateDialog.vue:199
+msgid "Create form"
 msgstr ""
 
 #: src/components/builder/TablesActionBody.vue:191
@@ -1266,9 +1270,9 @@ msgstr ""
 msgid "Defaults for the emails that forms send. They apply at once, also to forms that are already live."
 msgstr ""
 
-#: src/components/TemplateDialog.vue:184
 #: src/components/admin/TemplateAdmin.vue:152
 #: src/components/builder/BuilderView.vue:717
+#: src/components/entries/EntriesView.vue:737
 msgid "Delete"
 msgstr ""
 
@@ -1321,7 +1325,10 @@ msgstr ""
 msgid "Delete status {n}"
 msgstr ""
 
-#: src/components/TemplateDialog.vue:182
+#: src/components/TemplateDialog.vue:196
+msgid "Delete template"
+msgstr ""
+
 #: src/components/admin/TemplateAdmin.vue:149
 msgid "Delete the template {name}"
 msgstr ""
@@ -2335,7 +2342,7 @@ msgstr ""
 msgid "Leave empty to use the name of the form."
 msgstr ""
 
-#: src/components/TemplateDialog.vue:133
+#: src/components/TemplateDialog.vue:189
 msgid "Leave empty to use the name of the template."
 msgstr ""
 
@@ -2619,10 +2626,6 @@ msgstr ""
 
 #: src/App.vue:78
 msgid "My forms"
-msgstr ""
-
-#: src/components/TemplateDialog.vue:169
-msgid "My templates"
 msgstr ""
 
 #: src/builder/fieldTypeNames.ts:32
@@ -3857,7 +3860,6 @@ msgstr ""
 msgid "Shared by {owner}, you can read responses"
 msgstr ""
 
-#: src/components/TemplateDialog.vue:153
 #: src/components/admin/TemplateAdmin.vue:131
 msgid "Shared templates"
 msgstr ""
@@ -4073,11 +4075,15 @@ msgstr ""
 msgid "Stars, from 1 to 5 or more"
 msgstr ""
 
+#: src/components/TemplateDialog.vue:167
+msgid "Start from"
+msgstr ""
+
 #: src/components/render/FormRenderer.vue:463
 msgid "Start over"
 msgstr ""
 
-#: src/components/TemplateDialog.vue:140
+#: src/components/TemplateDialog.vue:60
 msgid "Start with nothing and add your own fields."
 msgstr ""
 
@@ -4573,7 +4579,7 @@ msgstr ""
 msgid "The Tables app is not installed or not enabled on this server, so this action cannot run. Ask an administrator to enable it."
 msgstr ""
 
-#: src/components/TemplateDialog.vue:148
+#: src/components/TemplateDialog.vue:163
 msgid "The templates could not be loaded. You can still start with a blank form."
 msgstr ""
 
@@ -4879,7 +4885,7 @@ msgstr ""
 msgid "Title"
 msgstr ""
 
-#: src/components/TemplateDialog.vue:132
+#: src/components/TemplateDialog.vue:188
 msgid "Title (optional)"
 msgstr ""
 

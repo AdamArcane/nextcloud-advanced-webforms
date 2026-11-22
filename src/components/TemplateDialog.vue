@@ -4,14 +4,14 @@
 -->
 
 <script setup lang="ts">
-import type { BundledTemplate, OwnTemplate, SharedTemplate } from '../api/forms.ts'
+import type { OwnTemplate } from '../api/forms.ts'
 import type { OwnerForm } from '../types.ts'
 
 import { n, t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
-import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { computed, ref, watch } from 'vue'
 import { createFromTemplate, deleteTemplate, fetchTemplates } from '../api/forms.ts'
@@ -33,32 +33,45 @@ const emit = defineEmits<{
 	created: [form: OwnerForm]
 }>()
 
+/** One line to choose from: the name, and a second line that says what it is. */
+interface Choice {
+	/** `blank`, or the id of a template: `b:` a starter, `s:` made for everyone, `u:` the person's own. */
+	id: string
+	label: string
+	hint: string
+}
+
+const BLANK_ID = 'blank'
+
 const loading = ref(false)
 const loadFailed = ref(false)
-const bundled = ref<BundledTemplate[]>([])
-const own = ref<OwnTemplate[]>([])
-const shared = ref<SharedTemplate[]>([])
-const working = ref<string | null>(null)
+const choices = ref<Choice[]>([])
+const selected = ref<Choice | null>(null)
+const working = ref(false)
 const error = ref<string | null>(null)
 const title = ref('')
 
 const CATEGORY_ORDER = ['general', 'events', 'feedback', 'support']
 
-/** Starter templates under their category, in a fixed order, with the words in the person's language. */
-const groups = computed(() => {
-	const known = new Set(CATEGORY_ORDER)
-	const keys = [...CATEGORY_ORDER, ...new Set(bundled.value.map((item) => item.category).filter((key) => !known.has(key)))]
-	return keys
-		.map((key) => ({
-			key,
-			caption: categoryName(key),
-			items: bundled.value.filter((item) => item.category === key),
-		}))
-		.filter((group) => group.items.length > 0)
-})
+const isOwn = computed(() => selected.value?.id.startsWith('u:') === true)
+const canUse = computed(() => props.canCreate && !working.value && selected.value !== null)
 
-function categoryName(key: string): string {
-	return translateTemplateText(key.charAt(0).toUpperCase() + key.slice(1))
+function blankChoice(): Choice {
+	return { id: BLANK_ID, label: t('webforms', 'Blank form'), hint: t('webforms', 'Start with nothing and add your own fields.') }
+}
+
+function byCategory(a: { category: string }, b: { category: string }): number {
+	const rank = (category: string): number => {
+		const index = CATEGORY_ORDER.indexOf(category)
+		return index === -1 ? CATEGORY_ORDER.length : index
+	}
+	return rank(a.category) - rank(b.category)
+}
+
+function ownLine(item: OwnTemplate, mine: boolean): string {
+	return mine
+		? n('webforms', 'My template, %n field', 'My template, %n fields', item.fieldCount)
+		: n('webforms', 'Shared template, %n field', 'Shared template, %n fields', item.fieldCount)
 }
 
 // Looked up each time the dialog opens, so a template saved a minute ago is there.
@@ -70,11 +83,21 @@ watch(() => props.open, async (open) => {
 	title.value = ''
 	loadFailed.value = false
 	loading.value = true
+	choices.value = [blankChoice()]
+	selected.value = choices.value[0]!
 	try {
 		const list = await fetchTemplates()
-		bundled.value = list.bundled
-		own.value = list.own
-		shared.value = list.shared ?? []
+		choices.value = [
+			blankChoice(),
+			...(list.shared ?? []).map((item): Choice => ({ id: item.id, label: item.name, hint: ownLine(item, false) })),
+			...list.own.map((item): Choice => ({ id: item.id, label: item.name, hint: ownLine(item, true) })),
+			...[...list.bundled].sort(byCategory).map((item): Choice => ({
+				id: item.id,
+				label: translateTemplateText(item.name),
+				hint: translateTemplateText(item.description),
+			})),
+		]
+		selected.value = choices.value[0]!
 	} catch {
 		loadFailed.value = true
 	} finally {
@@ -86,33 +109,41 @@ function close(): void {
 	emit('update:open', false)
 }
 
-function blank(): void {
-	close()
-	emit('blank')
-}
-
-async function use(id: string, isBundled: boolean): Promise<void> {
-	if (working.value !== null) {
+async function create(): Promise<void> {
+	const choice = selected.value
+	if (choice === null || working.value) {
 		return
 	}
-	working.value = id
+	if (choice.id === BLANK_ID) {
+		close()
+		emit('blank')
+		return
+	}
+	working.value = true
 	error.value = null
 	try {
-		const { form } = await createFromTemplate(id, title.value.trim(), isBundled ? templateStrings() : undefined)
+		// Only a starter template has its words translated; the others are used as they were saved.
+		const strings = choice.id.startsWith('b:') ? templateStrings() : undefined
+		const { form } = await createFromTemplate(choice.id, title.value.trim(), strings)
 		close()
 		emit('created', form)
 	} catch (caught) {
 		error.value = caught instanceof ApiError ? describeError(caught.errors[0]?.code ?? caught.code) : t('webforms', 'Could not make a form from this template.')
 	} finally {
-		working.value = null
+		working.value = false
 	}
 }
 
-async function remove(item: OwnTemplate): Promise<void> {
+async function remove(): Promise<void> {
+	const choice = selected.value
+	if (choice === null || !choice.id.startsWith('u:')) {
+		return
+	}
 	error.value = null
 	try {
-		await deleteTemplate(item.id)
-		own.value = own.value.filter((other) => other.id !== item.id)
+		await deleteTemplate(choice.id)
+		choices.value = choices.value.filter((other) => other.id !== choice.id)
+		selected.value = choices.value[0] ?? null
 	} catch {
 		error.value = t('webforms', 'Could not delete the template.')
 	}
@@ -128,82 +159,46 @@ async function remove(item: OwnTemplate): Promise<void> {
 			<NcNoteCard v-if="error" type="error">
 				{{ error }}
 			</NcNoteCard>
+			<NcNoteCard v-if="loadFailed" type="warning">
+				{{ t('webforms', 'The templates could not be loaded. You can still start with a blank form.') }}
+			</NcNoteCard>
+			<NcSelect v-model="selected"
+				class="af-tpl__select"
+				:input-label="t('webforms', 'Start from')"
+				:options="choices"
+				:loading="loading"
+				:clearable="false"
+				:searchable="false"
+				:disabled="!canCreate"
+				label="label">
+				<template #option="option">
+					<span class="af-tpl__option">
+						<span class="af-tpl__name">{{ option.label }}</span>
+						<span class="af-tpl__hint">{{ option.hint }}</span>
+					</span>
+				</template>
+				<template #selected-option="option">
+					<span class="af-tpl__option">
+						<span class="af-tpl__name">{{ option.label }}</span>
+						<span class="af-tpl__hint">{{ option.hint }}</span>
+					</span>
+				</template>
+			</NcSelect>
 			<NcTextField v-model="title"
 				:label="t('webforms', 'Title (optional)')"
 				:helper-text="t('webforms', 'Leave empty to use the name of the template.')" />
-
-			<section class="af-tpl__section">
-				<ul class="af-tpl__grid">
-					<li>
-						<button type="button" class="af-tpl__tile" :disabled="!canCreate" @click="blank">
-							<span class="af-tpl__name">{{ t('webforms', 'Blank form') }}</span>
-							<span class="af-tpl__hint">{{ t('webforms', 'Start with nothing and add your own fields.') }}</span>
-						</button>
-					</li>
-				</ul>
-			</section>
-
-			<NcLoadingIcon v-if="loading" :size="32" />
-			<NcNoteCard v-else-if="loadFailed" type="warning">
-				{{ t('webforms', 'The templates could not be loaded. You can still start with a blank form.') }}
-			</NcNoteCard>
-			<template v-else>
-				<section v-if="shared.length > 0" class="af-tpl__section">
-					<h3 class="af-tpl__heading">
-						{{ t('webforms', 'Shared templates') }}
-					</h3>
-					<ul class="af-tpl__grid">
-						<li v-for="item in shared" :key="item.id">
-							<button type="button"
-								class="af-tpl__tile"
-								:disabled="!canCreate || working !== null"
-								@click="use(item.id, false)">
-								<span class="af-tpl__name">{{ item.name }}</span>
-								<span class="af-tpl__hint">{{ n('webforms', '%n field', '%n fields', item.fieldCount) }}</span>
-							</button>
-						</li>
-					</ul>
-				</section>
-				<section v-if="own.length > 0" class="af-tpl__section">
-					<h3 class="af-tpl__heading">
-						{{ t('webforms', 'My templates') }}
-					</h3>
-					<ul class="af-tpl__grid">
-						<li v-for="item in own" :key="item.id" class="af-tpl__own">
-							<button type="button"
-								class="af-tpl__tile"
-								:disabled="!canCreate || working !== null"
-								@click="use(item.id, false)">
-								<span class="af-tpl__name">{{ item.name }}</span>
-								<span class="af-tpl__hint">{{ n('webforms', '%n field', '%n fields', item.fieldCount) }}</span>
-							</button>
-							<NcButton variant="tertiary"
-								class="af-tpl__delete"
-								:aria-label="t('webforms', 'Delete the template {name}', { name: item.name })"
-								@click="remove(item)">
-								{{ t('webforms', 'Delete') }}
-							</NcButton>
-						</li>
-					</ul>
-				</section>
-				<section v-for="group in groups" :key="group.key" class="af-tpl__section">
-					<h3 class="af-tpl__heading">
-						{{ group.caption }}
-					</h3>
-					<ul class="af-tpl__grid">
-						<li v-for="item in group.items" :key="item.id">
-							<button type="button"
-								class="af-tpl__tile"
-								:disabled="!canCreate || working !== null"
-								@click="use(item.id, true)">
-								<span class="af-tpl__name">{{ translateTemplateText(item.name) }}</span>
-								<span class="af-tpl__hint">{{ translateTemplateText(item.description) }}</span>
-							</button>
-						</li>
-					</ul>
-				</section>
-			</template>
 		</div>
+		<template #actions>
+			<NcButton v-if="isOwn"
+				variant="tertiary"
+				:disabled="working"
+				@click="remove">
+				{{ t('webforms', 'Delete template') }}
+			</NcButton>
+			<NcButton variant="primary" :disabled="!canUse" @click="create">
+				{{ t('webforms', 'Create form') }}
+			</NcButton>
+		</template>
 	</NcDialog>
 </template>
 
@@ -215,60 +210,30 @@ async function remove(item: OwnTemplate): Promise<void> {
 	padding-bottom: 12px;
 }
 
-.af-tpl__heading {
-	margin: 8px 0 4px;
-	font-size: 15px;
-	font-weight: bold;
+.af-tpl__select {
+	width: 100%;
 }
 
-.af-tpl__grid {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-	gap: 8px;
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
-
-.af-tpl__tile {
+/* The same two lines in the list and in the box: the name, and under it what it is. */
+.af-tpl__option {
 	display: flex;
 	flex-direction: column;
-	align-items: flex-start;
-	gap: 2px;
-	width: 100%;
-	height: 100%;
-	padding: 10px 12px;
-	border: 1px solid var(--color-border-maxcontrast);
-	border-radius: var(--border-radius-large);
-	background: var(--color-main-background);
-	color: var(--color-main-text);
-	text-align: start;
-	cursor: pointer;
-}
-
-.af-tpl__tile:hover:not(:disabled),
-.af-tpl__tile:focus-visible {
-	border-color: var(--color-primary-element);
-	background: var(--color-background-hover);
-}
-
-.af-tpl__tile:disabled {
-	opacity: 0.6;
-	cursor: default;
+	min-width: 0;
+	line-height: 1.3;
 }
 
 .af-tpl__name {
+	overflow: hidden;
 	font-weight: bold;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .af-tpl__hint {
+	overflow: hidden;
 	color: var(--color-text-maxcontrast);
 	font-size: 13px;
-}
-
-.af-tpl__own {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 </style>
