@@ -72,7 +72,7 @@ const isOwn = computed(() => selected.value?.id.startsWith('u:') === true)
 const canUse = computed(() => props.canCreate && !working.value && selected.value !== null)
 
 function blankChoice(): Choice {
-	return { id: BLANK_ID, label: t('webforms', 'Blank form'), hint: t('webforms', 'Start with nothing and add your own fields.') }
+	return { id: BLANK_ID, label: t('webforms', 'Blank form'), hint: t('webforms', 'Add your own fields from scratch.') }
 }
 
 function byCategory(a: { category: string }, b: { category: string }): number {
@@ -229,15 +229,30 @@ async function remove(): Promise<void> {
 	width: 100%;
 }
 
-/* Room for two lines in the box, so the second line is not cut by the border. */
+/*
+ * Room for two lines in the box. The outline is drawn by the search input, which NcSelect lays over the chosen
+ * item at one row high, so it has to grow with the box or the second line spills out of it.
+ */
 .af-tpl__select :deep(.vs__dropdown-toggle) {
-	min-height: 64px;
-	padding: 6px 4px;
+	min-height: 68px;
 }
 
 .af-tpl__select :deep(.vs__selected-options) {
-	align-items: center;
+	align-items: stretch;
+	min-height: 68px;
 	padding: 0;
+}
+
+.af-tpl__select :deep(.vs__search),
+.af-tpl__select :deep(.vs__search .input-field),
+.af-tpl__select :deep(.vs__search .input-field__main-wrapper),
+.af-tpl__select :deep(.vs__search .input-field__input) {
+	height: 100% !important;
+	min-height: 100% !important;
+}
+
+.af-tpl__select :deep(.vs__search) {
+	inset-block: 0;
 }
 
 .af-tpl__select :deep(.vs__selected) {
@@ -245,7 +260,9 @@ async function remove(): Promise<void> {
 	height: auto;
 	min-height: 0;
 	margin: 0;
-	padding: 0 8px;
+	padding: 8px 14px;
+	border-radius: 0 !important;
+	background: transparent !important;
 }
 
 /* The same two lines in the list and in the box: the name, and under it what it is. */

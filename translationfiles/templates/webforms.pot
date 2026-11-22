@@ -393,6 +393,10 @@ msgstr ""
 msgid "Add your first field. You can put several fields side by side later."
 msgstr ""
 
+#: src/components/TemplateDialog.vue:75
+msgid "Add your own fields from scratch."
+msgstr ""
+
 #: src/builder/fieldTypeNames.ts:33
 #: src/components/builder/ActionCard.vue:329
 msgid "Address"
@@ -692,7 +696,7 @@ msgstr ""
 msgid "Billing"
 msgstr ""
 
-#: src/components/TemplateDialog.vue:60
+#: src/components/TemplateDialog.vue:75
 msgid "Blank form"
 msgstr ""
 
@@ -1047,7 +1051,7 @@ msgstr ""
 msgid "Could not delete the responses."
 msgstr ""
 
-#: src/components/TemplateDialog.vue:148
+#: src/components/TemplateDialog.vue:163
 msgid "Could not delete the template."
 msgstr ""
 
@@ -1122,7 +1126,7 @@ msgstr ""
 msgid "Could not look for your forms. Close this and try again."
 msgstr ""
 
-#: src/components/TemplateDialog.vue:131
+#: src/components/TemplateDialog.vue:146
 msgid "Could not make a form from this template."
 msgstr ""
 
@@ -1183,7 +1187,7 @@ msgstr ""
 msgid "Create a site in the provider's dashboard to get the keys:"
 msgstr ""
 
-#: src/components/TemplateDialog.vue:199
+#: src/components/TemplateDialog.vue:214
 msgid "Create form"
 msgstr ""
 
@@ -1325,7 +1329,7 @@ msgstr ""
 msgid "Delete status {n}"
 msgstr ""
 
-#: src/components/TemplateDialog.vue:196
+#: src/components/TemplateDialog.vue:211
 msgid "Delete template"
 msgstr ""
 
@@ -2342,7 +2346,7 @@ msgstr ""
 msgid "Leave empty to use the name of the form."
 msgstr ""
 
-#: src/components/TemplateDialog.vue:189
+#: src/components/TemplateDialog.vue:204
 msgid "Leave empty to use the name of the template."
 msgstr ""
 
@@ -4075,16 +4079,12 @@ msgstr ""
 msgid "Stars, from 1 to 5 or more"
 msgstr ""
 
-#: src/components/TemplateDialog.vue:167
+#: src/components/TemplateDialog.vue:182
 msgid "Start from"
 msgstr ""
 
 #: src/components/render/FormRenderer.vue:463
 msgid "Start over"
-msgstr ""
-
-#: src/components/TemplateDialog.vue:60
-msgid "Start with nothing and add your own fields."
 msgstr ""
 
 #: src/components/builder/BuilderCanvas.vue:381
@@ -4579,7 +4579,7 @@ msgstr ""
 msgid "The Tables app is not installed or not enabled on this server, so this action cannot run. Ask an administrator to enable it."
 msgstr ""
 
-#: src/components/TemplateDialog.vue:163
+#: src/components/TemplateDialog.vue:178
 msgid "The templates could not be loaded. You can still start with a blank form."
 msgstr ""
 
@@ -4885,7 +4885,7 @@ msgstr ""
 msgid "Title"
 msgstr ""
 
-#: src/components/TemplateDialog.vue:188
+#: src/components/TemplateDialog.vue:203
 msgid "Title (optional)"
 msgstr ""
 
