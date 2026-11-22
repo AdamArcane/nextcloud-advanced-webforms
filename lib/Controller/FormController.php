@@ -24,6 +24,7 @@ use OCA\Webforms\Service\FormService;
 use OCA\Webforms\Service\WaitlistService;
 use OCA\Webforms\Forms\ImageSource;
 use OCA\Webforms\Forms\JsonShape;
+use OCA\Webforms\Import\CoreForms\CoreFormsImporter;
 use OCA\Webforms\Uploads\Ports\OwnerImagePort;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -51,6 +52,7 @@ class FormController extends Controller {
 		private readonly EntryExportService $export,
 		private readonly OwnerImagePort $images,
 		private readonly WaitlistService $waitlist,
+		private readonly CoreFormsImporter $coreImporter,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 	}
@@ -175,6 +177,33 @@ class FormController extends Controller {
 				// Not blocking for a draft, but publishing will refuse these.
 				'errors' => $imported['errors'],
 			], Http::STATUS_CREATED);
+		});
+	}
+
+	/**
+	 * The forms the caller owns in the core Forms app, for the import menu (docs/SCHEMA.md section 13.3).
+	 * `available` is false when core Forms was never installed here.
+	 */
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/import/core-forms')]
+	public function coreForms(): JSONResponse {
+		return new JSONResponse($this->coreImporter->listFor($this->userId()));
+	}
+
+	/**
+	 * Import one of the caller's core Forms forms as a new draft, or with `dryRun` only report what would
+	 * be left out. One form per request, so a form with many responses cannot hold up the others.
+	 */
+	#[NoAdminRequired]
+	#[UserRateLimit(limit: 60, period: 300)]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/import/core-forms')]
+	public function importCoreForm(int $formId = 0, bool $withResponses = false, bool $dryRun = false): JSONResponse {
+		return $this->guard(function () use ($formId, $withResponses, $dryRun): JSONResponse {
+			$outcome = $this->coreImporter->importOwned($this->userId(), $formId, $withResponses, $dryRun);
+			if ($outcome === null) {
+				throw new NotFoundException();
+			}
+			return new JSONResponse($outcome, $dryRun ? Http::STATUS_OK : Http::STATUS_CREATED);
 		});
 	}
 

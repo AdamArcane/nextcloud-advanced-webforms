@@ -12,6 +12,12 @@
   can filter the waiting list and promote a response by hand. Actions can be set to run when a response is
   confirmed, joins the waiting list or is promoted, and there is a new Flow event, "Response promoted from the waiting
   list". The waiting list is not a status.
+- **Import from the core Forms app.** **Import form** is now a list of where a form can come from: a file, or your
+  forms in the Nextcloud Forms app. Pick forms, choose whether to bring their responses (the form is then
+  published once and closed), preview what would be left out, and import. Administrators can do the same for
+  everyone's forms with `occ webforms:import-core-forms`. Questions with no equivalent (ranking, number
+  grids, time ranges), uploaded files, sharing settings and the confirmation email are not carried, and the
+  command lists each one. See `docs/SCHEMA.md` section 13.3.
 
 ## 0.6.0 - 2026-11-20
 

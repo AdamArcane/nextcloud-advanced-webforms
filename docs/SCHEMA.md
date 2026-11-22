@@ -1288,6 +1288,85 @@ chosen, named "Copy of <title>", and opens it so it can be renamed.
   warnings, which block publishing and not saving. It goes through the same creation and draft save as an
   import, so a refused definition leaves no half-made form behind.
 
+### 13.3 Importing from core Forms (DECISION)
+
+People moving from the core Nextcloud Forms app can bring their forms, and optionally their responses, across
+from the app or with an administrator command. Both read core Forms' tables on the same server and only ever
+select, so core Forms is left as it was.
+
+**In the app.** **Import form** in the sidebar opens a list of where a form can come from: **From a file** (section
+13) and **From Nextcloud Forms**. The second is offered when the person owns forms in core Forms, and otherwise
+shown off with the reason. It lists those forms with their response counts, takes a switch for the responses, and
+has **Preview** (the report below, nothing created) and **Import**. Forms go one per request, so one with many
+responses cannot hold up or time out the rest, and a form that fails does not stop the others. The same list
+is where later sources (another form builder) would be added.
+
+- `GET /api/v1/import/core-forms` answers `{available, forms: [{id, title, responses}]}`: only forms the caller
+  owns in core Forms.
+- `POST /api/v1/import/core-forms` with `{formId, withResponses, dryRun}` answers `201` (or `200` for a preview)
+  with the outcome, limited to 60 a 5 minutes. A core form that is someone else's, or does not exist, is
+  `404`, so the route cannot be used to find out about other people's forms. Creating needs the same permission
+  as any new form (`create_not_allowed`, section 16).
+
+**With the command.** For an administrator, who may import anyone's forms:
+
+```
+occ webforms:import-core-forms [--form=ID ...] [--user=ACCOUNT] [--with-responses] [--dry-run]
+```
+
+- **Which forms.** Every core form, or the ones named with `--form` (repeat it). `--user` names the account that
+  will own the imported forms; without it each form goes to its owner in core Forms, who must exist here. The
+  app's menu never does this: a person only ever imports forms they own in core Forms, as themselves.
+- **Always a new draft,** owned by that account, through the same draft save as a file import (section 13). It
+  never overwrites anything. Problems the draft has are printed and block publishing, not the import.
+- **`--dry-run`** converts and prints the report and creates nothing. Run it first.
+- **Responses** are imported only with `--with-responses`. A response must belong to a version, so the form is
+  published once and then closed: it takes no new responses until the owner reopens it. A draft that cannot be
+  published keeps its form and loses its responses, and the report says why. Imported responses keep their time
+  and their account, are not counted as new, and carry no status or note. A respondent that core Forms hid
+  (`anon-user-...`) has no account here.
+- **Source.** The tables `forms_v2_forms`, `_questions`, `_options`, `_submissions` and `_answers`. Core Forms does
+  not promise this layout to other apps, so a column that is missing reads as "not set" and what was not read is
+  reported, never an error halfway through.
+
+| Core Forms | Here | Notes |
+| --- | --- | --- |
+| `short` | `text`, or `email`, `phone`, `number` by its validation | a regex validation has no equivalent: plain `text` |
+| `long` | `textarea` | |
+| `multiple` | `checkboxes` | `optionsLimitMin` and `optionsLimitMax` become `minSelected` and `maxSelected` |
+| `multiple_unique` | `radio` | |
+| `dropdown` | `select` | |
+| `date` | `date`, or `daterange` for a date range | `dateMin` and `dateMax` become `min` and `max` |
+| `time` | `time` | a time range has no equivalent |
+| `datetime` | `datetime` | |
+| `linearscale` | `scale`, or `rating` for the rating sub type | `max` is kept between 3 and 10 for a rating |
+| `color` | `color` | |
+| `file` | `file` | the question is kept, the uploaded files are not copied |
+| `grid` of radio or checkbox | `matrix` | at most 20 rows and 10 columns |
+| `grid` of numbers, `ranking`, any other type | nothing | the question and its answers are left out |
+
+- **Ids.** Field ids are made from the question text (`f_` and up to 29 characters, numbered when taken) and option
+  values from the option text, as the builder does (sections 4.1 and 4.3). The layout is one page with one field per
+  row, in core Forms' order.
+- **Answers.** Core Forms stores a choice as the option's text, so an answer is matched to an option by its text
+  (case ignored). One that matches no option (the "other" answer, or an option renamed since) is not imported.
+  Dates, times, scales, colours and grids are checked as they are read; one that is not valid is not imported.
+- **Form settings.** Title, description, the submission message (as a `message` action), whether more than one
+  response is allowed, and the opening and closing times (`opensAt`, `closesAt`).
+- **Not carried, and said so.** Who may open the form and how it is shared, the confirmation email, the option to
+  shuffle options, the "other" answer, a question that was only shown after another answer (it is kept, always
+  shown and not required), and uploaded files.
+- **The report.** Everything above that applies to a form is returned as items with a `scope` (`form`, `question`
+  or `answer`), the question's `ref` and `label`, a `code`, an English `detail` and a `count`. The screen words them
+  in the person's language from the code, and the command prints the `detail`. Answer lines are counted per
+  question, not listed one by one, and never repeat what a respondent wrote.
+- **Left out on purpose:** importing into an existing form, keeping core Forms' ids or share links, and a
+  background job for very large forms (the screen imports one form per request instead).
+
+The conversion itself (`CoreFormsConverter`) does not touch the database. It takes the form, questions and
+submissions as plain arrays and is covered by `tests/Unit/Import/CoreFormsConverterTest.php`; the reader and the
+command are the thin parts around it.
+
 ## 14. Nextcloud events (DECISION)
 
 Besides the per-form webhook action (section 7), the app dispatches Nextcloud events, so an

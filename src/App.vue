@@ -33,6 +33,7 @@ import { icons } from './icons.ts'
 import { loadNavOpen, saveNavOpen } from './navState.ts'
 import BuilderView from './components/builder/BuilderView.vue'
 import EntriesView from './components/entries/EntriesView.vue'
+import ImportDialog from './components/ImportDialog.vue'
 import OverviewView from './components/OverviewView.vue'
 import SettingsDialog from './components/SettingsDialog.vue'
 import { statusText } from './availability.ts'
@@ -48,6 +49,9 @@ const preferences = ref<UserPreferences>({ ...DEFAULT_PREFERENCES })
 const preferencesLoaded = ref(false)
 const settingsOpen = ref(false)
 const importing = ref(false)
+const importOpen = ref(false)
+// Drafts the import dialog made, so closing it can open the one new form.
+const importedIds = ref<number[]>([])
 const importError = ref<string | null>(null)
 const importInput = ref<HTMLInputElement | null>(null)
 const route = ref(readHash())
@@ -193,6 +197,21 @@ async function create(): Promise<void> {
 
 // A form file is a few hundred KB at most (the server caps a definition at 512 KB), so anything bigger is not one.
 const MAX_IMPORT_BYTES = 1024 * 1024
+
+async function onCoreImported(ids: number[]): Promise<void> {
+	importedIds.value = ids
+	await load()
+}
+
+function onImportOpen(value: boolean): void {
+	importOpen.value = value
+	if (!value && importedIds.value.length === 1) {
+		open(importedIds.value[0]!)
+	}
+	if (!value) {
+		importedIds.value = []
+	}
+}
 
 function pickImportFile(): void {
 	importError.value = null
@@ -451,7 +470,7 @@ function hasNewerDraft(form: OwnerForm): boolean {
 				<ul class="app-navigation-entry__settings">
 					<NcAppNavigationItem :name="t('webforms', 'Import form')"
 						:disabled="importing || !policy.canCreate"
-						@click="pickImportFile">
+						@click="importOpen = true">
 						<template #icon>
 							<NcLoadingIcon v-if="importing" :size="20" />
 							<Icon v-else :path="icons.import" />
@@ -465,6 +484,11 @@ function hasNewerDraft(form: OwnerForm): boolean {
 				</ul>
 			</template>
 		</NcAppNavigation>
+
+		<ImportDialog :open="importOpen"
+			@update:open="onImportOpen"
+			@pick-file="pickImportFile"
+			@imported="onCoreImported" />
 
 		<SettingsDialog v-model:open="settingsOpen"
 			:preferences="preferences"

@@ -258,3 +258,45 @@ export function duplicateForm(id: number, title: string): Promise<SaveResult> {
 export function importForm(pkg: unknown): Promise<SaveResult> {
 	return call(axios.post<SaveResult>(url('/forms/import'), { package: pkg }))
 }
+
+/** A form in the core Forms app that the person owns there. */
+export interface CoreFormSummary {
+	id: number
+	title: string
+	responses: number
+}
+
+/** One thing that did not come across from core Forms (docs/SCHEMA.md section 13.3). */
+export interface CoreImportSkipped {
+	scope: 'form' | 'question' | 'answer'
+	ref: string
+	/** The question's text, for a question or answer line. */
+	label: string
+	code: string
+	/** An English sentence, only for a code the screen has no text for. */
+	detail: string
+	/** For an answer line, how many answers it stands for. */
+	count: number
+}
+
+export interface CoreImportOutcome {
+	coreId: number
+	title: string
+	/** The new draft, or null for a preview. */
+	formId: number | null
+	fields: number
+	responsesFound: number
+	responsesImported: number
+	errors: DefinitionError[]
+	skipped: CoreImportSkipped[]
+}
+
+/** The forms the person owns in the core Forms app, or `available: false` when it was never installed. */
+export function fetchCoreForms(): Promise<{ available: boolean, forms: CoreFormSummary[] }> {
+	return call(axios.get<{ available: boolean, forms: CoreFormSummary[] }>(url('/import/core-forms')))
+}
+
+/** Import one core Forms form as a new draft, or with `dryRun` only report what would be left out. Rejects with an ApiError. */
+export function importCoreForm(formId: number, withResponses: boolean, dryRun: boolean): Promise<CoreImportOutcome> {
+	return call(axios.post<CoreImportOutcome>(url('/import/core-forms'), { formId, withResponses, dryRun }))
+}
