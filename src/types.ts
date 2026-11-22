@@ -147,6 +147,10 @@ export interface FormSettings {
 	notOpenMessage?: string
 	/** Shown when the form has `maxResponses` responses. */
 	fullMessage?: string
+	/** `waitlist` keeps taking responses once the limit is reached, on a waiting list. Default `close`. Needs `maxResponses`. */
+	whenFull?: 'close' | 'waitlist'
+	/** Shown to a respondent who joins the waiting list. */
+	waitlistMessage?: string
 }
 
 /** The public view of a definition: `actions` is never sent to respondents. */
@@ -173,6 +177,8 @@ export interface PublicForm {
 	captcha?: CaptchaConfig | null
 	/** How many more responses the form takes, when it is set to show that. */
 	remaining?: number | null
+	/** A notice for a form that is full and keeps a waiting list: a response sent now joins it. Null otherwise. */
+	waitlisting?: string | null
 }
 
 export interface CaptchaConfig {
@@ -184,6 +190,8 @@ export interface CaptchaConfig {
 export interface SubmitResult {
 	message: string | null
 	redirect: string | null
+	/** The response joined the waiting list. */
+	waitlisted?: boolean
 }
 
 export interface FieldError {
@@ -275,7 +283,12 @@ export interface FormAvailability {
 	closesAt: number | null
 	/** The lower of the form's and the server's limit, 0 for none. */
 	cap: number
+	/** Responses that count against the limit: those not on the waiting list. */
 	responses: number
+	/** Responses on the waiting list. */
+	waitlisted?: number
+	/** The form keeps a waiting list once it is full. */
+	waitsWhenFull?: boolean
 }
 
 /** What a person may do with a form (docs/SCHEMA.md section 22.1). */
@@ -341,6 +354,8 @@ export interface EntryRecord {
 	submittedAt: number
 	/** The id of one of the administrator's statuses, or null for none (docs/SCHEMA.md section 20.2). */
 	status?: string | null
+	/** On the waiting list: it does not count against the limit until it is promoted (docs/SCHEMA.md section 3.2). */
+	waitlisted?: boolean
 	/** The owner's private note, or null. */
 	note?: string | null
 	data: Record<string, unknown>

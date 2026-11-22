@@ -170,7 +170,9 @@ extend a deadline or raise the limit on a live form, change it and publish again
 | `opensAt` | unix seconds | the form takes responses from this moment |
 | `closesAt` | unix seconds, later than `opensAt` (`window_invalid`) | the form takes responses until this moment |
 | `notOpenMessage` | string, up to 500 | shown before `opensAt`. Default "This form is not open yet." |
-| `fullMessage` | string, up to 500 | shown at the limit. Default "This form has received the maximum number of responses." |
+| `fullMessage` | string, up to 500 | shown at the limit. Default "This form has received the maximum number of responses." With `whenFull` set to `waitlist`, shown above the form instead, and the default is "This form is full. You can join the waiting list." |
+| `whenFull` | `close` or `waitlist`, default `close` | what happens at the limit. `close` refuses new responses. `waitlist` keeps taking them and puts them on the waiting list (section 3.2). Only with `maxResponses` |
+| `waitlistMessage` | string, up to 500 | shown to a respondent who joined the waiting list. Default "You are on the waiting list." Only with `whenFull` set to `waitlist` |
 
 Times are unix seconds, so they mean the same moment everywhere. The builder shows and takes them in
 the owner's own time zone. A time in the past is allowed: a `closesAt` that has passed simply
@@ -181,12 +183,18 @@ that applies wins:
 
 1. `ended`: `closesAt` has come. Answered like a closed form, with `closedMessage`.
 2. `scheduled`: `opensAt` has not come yet. Answered with `notOpenMessage`.
-3. `full`: the form has as many responses as its limit. Answered with `fullMessage`.
+3. `full`: the form has as many responses as its limit. With `whenFull` set to `close`, answered with
+   `fullMessage`. With `whenFull` set to `waitlist` the state is still `full`, so the owner sees it, but
+   the public routes keep taking responses (section 3.2).
 4. `open`.
 
 The limit that counts is the lower of `maxResponses` and the server's cap (section 16). Every response
-the form has counts, whichever version it was sent to, and deleting a response frees a place. As with
-the server's cap, responses sent at the same instant can pass the limit by one.
+the form has counts, whichever version it was sent to, and deleting a response frees a place. Responses
+on the waiting list (section 3.2) do not count against the form's own `maxResponses`, but they do count
+against the server's cap, because they take space like any other response, and the server's cap always
+refuses. The form's own limit is checked again after the response is stored (section 3.2), so
+responses sent at the same instant cannot pass it, apart from the one case described there. The
+server's cap is still best effort and can be passed by one.
 
 The public page, the submit and the upload routes all answer `410` with
 `{"error": "closed", "reason": ..., "message": ...}` when the form does not take responses. `reason` is
@@ -201,10 +209,61 @@ With `showRemaining` and `maxResponses`, the public form carries `remaining` (ho
 it takes, by the limit that counts) and the page shows it under the description. Otherwise `remaining`
 is null.
 
-The owner API adds `availability` to every form: `{state, opensAt, closesAt, cap, responses}` for the
-published version, or null before the first publish. `cap` is the limit that counts, 0 for none. The
-forms list shows Scheduled, Ended or Full in place of Published, and the settings show the state with
-the responses counted against the limit.
+The owner API adds `availability` to every form: `{state, opensAt, closesAt, cap, responses, waitlisted, waitsWhenFull}`
+for the published version, or null before the first publish. `cap` is the limit that counts, 0 for none.
+`responses` is the number counted against the limit and `waitlisted` is the number on the waiting list
+(0 without one); `waitsWhenFull` says the form keeps a waiting list. The forms list shows Scheduled, Ended or Full in place of Published, and the settings
+show the state with the responses counted against the limit.
+
+### 3.2 Waiting list (DECISION)
+
+With `whenFull` set to `waitlist`, a form that has reached `maxResponses` keeps taking responses and puts
+them on a waiting list. The owner moves people off it by hand, one at a time. Nothing is promoted
+automatically, and a respondent cannot cancel or promote themselves (both are left out on purpose, see
+the end of this section).
+
+**Storage.** `advforms_entries` gets `waitlisted` (smallint, not null, default 0) with an index on
+`form_id, waitlisted`. It is not a response status (section 20.2): a status is a label from the
+administrator's list that changes nothing else, a response has only one, and the administrator can
+rename or delete it. The waiting list changes what counts against the limit, so it has a column of its
+own, and a waitlisted response can still carry any status.
+
+**Submit.** The form's own limit is decided in the submit algorithm (section 10, step 9):
+
+1. The response is stored with `waitlisted` 0.
+2. It is counted: how many responses of the form with `waitlisted` 0 have an `id` up to and including
+   its own. If that number is at most `maxResponses`, the response stays as it is.
+3. If it is over the limit, then with `whenFull` set to `waitlist` the response is flagged
+   `waitlisted` 1. With `close` it is deleted again and the submit answers `410 full` as it always has.
+
+Ids only grow, so almost every interleaving of requests gives the same answer, with no lock and the same
+behaviour on every database. One case remains: if the later id
+becomes visible and is counted before the earlier id has finished storing, both can stay and the form
+passes its limit by one. The window runs from an id being handed out to its row being stored, a single
+insert, so it takes two responses at the same instant. The owner sees it in the count (51 / 50) and can
+delete one response. The count is always made from the stored rows, so nothing can drift.
+
+The submit answer for a waitlisted response is a normal success with `waitlisted: true` added and
+`message` set to `waitlistMessage` (section 7.2 says which actions run).
+
+**Public form.** With `whenFull` set to `waitlist`, the public form carries `waitlisting`: the text
+to show above the form when it is at its limit (`fullMessage`, else "This form is full. You can join the
+waiting list."), and null otherwise. `remaining` is 0 then.
+
+**Promoting.** `POST /api/v1/forms/{id}/entries/{entryId}/promote` clears `waitlisted`. A response that
+is not on the waiting list is `422` with the error code `not_waitlisted`. The owner can promote past the limit, because
+it is the owner's own decision. The Responses view has a Promote button on a waitlisted response, and
+the waiting list is read oldest first (lowest `id`).
+
+**Showing it.** The Responses view shows a "Waiting list" label in the status column and offers it in the
+filter. `GET /api/v1/forms/{id}/entries` takes `waitlisted` (`true` or `false`) and gives each response
+`waitlisted`. The form's responses count is shown as `42 / 50, 6 on the waiting list`. Downloads are
+unchanged.
+
+**Deleting.** Deleting a response that counts frees a place and nobody moves up. The owner promotes.
+
+**Left out on purpose.** Promoting automatically, a respondent cancelling or leaving the list, a position
+in the line shown to the respondent, and a limit per option or per quantity.
 
 ## 4. Fields
 
@@ -852,6 +911,22 @@ condition group (same format as rules) evaluated against the submitted
 }}
 ```
 
+An action may also carry `on`, which says for which kind of response it runs. It only means something on
+a form with a waiting list (section 3.2), and `when` is checked in addition to it.
+
+| `on` | the action runs |
+| --- | --- |
+| omitted | when a response is submitted, whether it is confirmed or waitlisted. This is how actions have always worked |
+| `confirmed` | when a response is submitted and is not on the waiting list |
+| `waitlisted` | when a response is submitted and goes on the waiting list |
+| `promoted` | when the owner promotes a response off the waiting list |
+
+`on` is one of those four values, otherwise the publish gate refuses it as `action_on_invalid`.
+`promoted` runs with the answers the response was stored with, once, and an action never runs twice for the
+same response, so a promoted response gets the `promoted` actions and the ones it already got. For a
+waitlisted response the respondent sees `waitlistMessage` and no `message` or `redirect` action runs,
+unless it has `on` set to `waitlisted`.
+
 ### 7.2 Types
 
 - `email`:
@@ -1006,6 +1081,7 @@ Initial proposal, one row per entry:
 | `user_id` | nullable, set only for logged-in respondents |
 | `data` | JSON text, keyed by field ID, only visible fields |
 | `status`, `note` | nullable, the owner's status and private note (section 20) |
+| `waitlisted` | 0 or 1, default 0. 1 means the response is on the form's waiting list (section 3.2) |
 
 Entry access goes through one class (`EntryMapper`) so the storage can be
 swapped. Tables is not a storage backend: it is an after-submit action (section 15), and the built-in
@@ -1064,7 +1140,9 @@ The server never trusts the client's idea of visibility.
 7. Compute `required` (including `require` rules) and reject missing values.
 8. If the form disallows multiple submissions, enforce that for logged-in users.
    (Anonymous duplicate control is not reliable and is not promised.)
-9. In one transaction: insert the entry.
+9. Insert the entry. With a form limit (section 3.1), count it as in section 3.2: a response over
+   `maxResponses` is flagged `waitlisted` when `whenFull` is `waitlist`, and deleted again with
+   `410 full` when it is `close`.
 10. After commit: evaluate action conditions, enqueue jobs, resolve the
     `message` or `redirect` result, return it.
 
@@ -1226,6 +1304,7 @@ name is what an administrator registers. They live in `OCA\Webforms\Event\`.
 | `EntryCreatedEvent` | `entry.created` | a response is stored |
 | `EntryDeletedEvent` | `entry.deleted` | the owner deletes a response |
 | `EntryStatusChangedEvent` | `entry.status_changed` | the owner gives a response another status (section 20.2) |
+| `EntryPromotedEvent` | `entry.promoted` | the owner promotes a response off the waiting list (section 3.2) |
 | `FormPublishedEvent` | `form.published` | a form is published, including a republish with no changes |
 | `FormStatusChangedEvent` | `form.status_changed` | a form is unpublished, reopened or closed |
 
@@ -1234,7 +1313,10 @@ Every payload has `event`, `formId`, `formTitle` and `ownerId`. The rest:
 - `entry.created`: the webhook body of section 7.3 (`versionId`, `entryId`, `submittedAt`, `userId`,
   `data` with label and value for each visible answered field). Uploaded files are described by
   name, size and type, never by where they are stored.
+- `entry.created` and the webhook body also carry `waitlisted` (true when the response went on the
+  waiting list).
 - `entry.deleted`: `versionId`, `entryId`, `deletedBy`. No answers.
+- `entry.promoted`: `versionId`, `entryId`, `promotedBy`. No answers.
 - `form.published`: `versionId`, `versionNumber`, `newVersion` (false when the draft matched the
   latest version, so no version was added) and `publicToken`.
 - `form.status_changed`: `status` and `previousStatus`, each `unpublished`, `published` or `closed`.
@@ -1255,7 +1337,7 @@ Rules:
 
 `OCA\Webforms\WorkflowEngine\FormsEntity` registers the events with the Nextcloud workflow engine
 (Flow) as an entity called "Webforms", so "Response submitted", "Response deleted", "Response status
-changed", "Form published"
+changed", "Response promoted from the waiting list", "Form published"
 and "Form status changed" can be chosen as the "When" of a flow. The event name the engine listens
 for is the event class name. An administrator's flow sees every form. A user's own flow only runs for
 forms that user owns. Webforms offers triggers only. The actions (what a flow does) come from other
@@ -1723,6 +1805,8 @@ section 17. A response arrives with none.
   row, and ticked rows can be given a status together.
 - A status changes nothing else. A response marked "Spam" is still in the list, the summary and the
   count for the response limit, and what its actions already did stays done. Filter it out to hide it.
+- The waiting list (section 3.2) is not a status. It is stored and filtered on its own, and only shown
+  beside the status.
 
 **In a download.** The CSV and Excel files get a fourth fixed column, `Status`, after `Respondent`,
 holding the label. The Files action (section 19) and the Tables action (section 15) do not: they run

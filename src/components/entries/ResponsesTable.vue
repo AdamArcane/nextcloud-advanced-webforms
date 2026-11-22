@@ -9,6 +9,7 @@ import type { EntrySort } from '../../entries/filter.ts'
 import type { EntryRecord, ResponseStatus, VersionDefinition } from '../../types.ts'
 
 import { t } from '@nextcloud/l10n'
+import NcButton from '@nextcloud/vue/components/NcButton'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { cellText } from '../../entries/columns.ts'
 import { formatTime } from '../../entries/format.ts'
@@ -17,6 +18,8 @@ import Icon from '../common/Icon.vue'
 import { isNewResponse } from '../../entries/statuses.ts'
 import ResponseCard from './ResponseCard.vue'
 import StatusSelect from './StatusSelect.vue'
+import { useCanManageResponses } from './permissions.ts'
+import WaitlistTag from './WaitlistTag.vue'
 
 const props = defineProps<{
 	formId: number
@@ -47,7 +50,11 @@ const emit = defineEmits<{
 	status: [id: number, status: string | null]
 	/** A response changed on the server (its note). */
 	updated: [entry: EntryRecord]
+	/** The owner took a response off the waiting list. The parent saves it. */
+	promote: [id: number]
 }>()
+
+const canManage = useCanManageResponses()
 
 const hasStatuses = computed(() => (props.statuses?.length ?? 0) > 0)
 
@@ -135,6 +142,16 @@ onBeforeUnmount(() => observer?.disconnect())
 						<td class="af-table__when">
 							<span v-if="isNewResponse(entry, seenAt)" class="af-table__new">{{ t('webforms', 'New') }}</span>
 							{{ formatTime(entry.submittedAt) }}
+							<span v-if="entry.waitlisted" class="af-table__waitlist" @click.stop>
+								<WaitlistTag />
+								<NcButton v-if="canManage"
+									variant="tertiary"
+									:disabled="busyId === entry.id"
+									:aria-label="t('webforms', 'Promote response {id} off the waiting list', { id: entry.id })"
+									@click="emit('promote', entry.id)">
+									{{ t('webforms', 'Promote') }}
+								</NcButton>
+							</span>
 							<span v-if="entry.note" class="af-table__noted" :title="t('webforms', 'Has a note')">
 								<Icon :path="icons.note" :size="16" />
 							</span>
@@ -162,6 +179,7 @@ onBeforeUnmount(() => observer?.disconnect())
 									:is-new="isNewResponse(entry, seenAt)"
 									:busy="busyId === entry.id"
 									@status="(value) => emit('status', entry.id, value)"
+									@promote="emit('promote', entry.id)"
 									@updated="(saved) => emit('updated', saved)"
 									@toggle="emit('toggle', entry.id)"
 									@delete="emit('delete', entry.id)"
@@ -256,6 +274,13 @@ onBeforeUnmount(() => observer?.disconnect())
 	margin-inline-start: 4px;
 	color: var(--color-text-maxcontrast);
 	vertical-align: middle;
+}
+
+.af-table__waitlist {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	margin-inline-start: 6px;
 }
 
 .af-table .af-table__status {

@@ -50,6 +50,32 @@ describe('response limit in the form settings', () => {
 	})
 })
 
+describe('waiting list in the form settings', () => {
+	const label = 'Keep a waiting list when the form is full'
+	const find = (wrapper: ReturnType<typeof mountProps>) => wrapper.findAll('input[type="checkbox"]')
+		.find((node) => node.element.closest('.checkbox-radio-switch')?.textContent?.includes(label))!
+
+	it('is only offered with a limit', () => {
+		expect((find(mountProps()).element as HTMLInputElement).disabled).toBe(true)
+		expect((find(mountProps({ maxResponses: 5 })).element as HTMLInputElement).disabled).toBe(false)
+	})
+
+	it('turns on and off, taking its message with it', async () => {
+		const wrapper = mountProps({ maxResponses: 5 })
+		await find(wrapper).setValue(true)
+		expect(patches(wrapper).at(-1)).toEqual({ whenFull: 'waitlist' })
+		const on = mountProps({ maxResponses: 5, whenFull: 'waitlist', waitlistMessage: 'Soon.' })
+		await find(on).setValue(false)
+		expect(patches(on).at(-1)).toEqual({ whenFull: undefined, waitlistMessage: undefined })
+	})
+
+	it('drops the waiting list with the limit', async () => {
+		const wrapper = mountProps({ maxResponses: 5, whenFull: 'waitlist' })
+		await wrapper.find('input[type="number"]').setValue('')
+		expect(patches(wrapper).at(-1)).toEqual({ maxResponses: undefined, showRemaining: undefined, whenFull: undefined, waitlistMessage: undefined })
+	})
+})
+
 describe('opening and closing times in the form settings', () => {
 	it('stores the times as unix seconds', async () => {
 		const wrapper = mountProps()

@@ -5,6 +5,14 @@
 
 # Changelog
 
+## Unreleased
+
+- A form can keep a **waiting list**. Set a response limit, then choose to keep a waiting list when the form is full:
+  further responses are still taken, marked as waiting, and do not count against the limit. In the Responses view you
+  can filter the waiting list and promote a response by hand. Actions can be set to run when a response is
+  confirmed, joins the waiting list or is promoted, and there is a new Flow event, "Response promoted from the waiting
+  list". The waiting list is not a status.
+
 ## 0.6.0 - 2026-11-20
 
 - A **read-only API** for other software such as n8n: the forms you can open, their questions and versions,

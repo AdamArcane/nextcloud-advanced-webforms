@@ -20,6 +20,8 @@ const props = defineProps<{
 	modelValue: EntryFilterState
 	/** The statuses a response can be given. None hides the status filter. */
 	statuses?: readonly ResponseStatus[]
+	/** The form keeps a waiting list, so the filter for it is offered. */
+	waitlist?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -118,6 +120,18 @@ function clear(): void {
 					</option>
 					<option v-for="status in statuses" :key="status.id" :value="status.id">
 						{{ statusLabel(status) }}
+					</option>
+				</select>
+			</label>
+
+			<label v-if="waitlist || modelValue.waitlisted" class="af-filters__field">
+				<span>{{ t('webforms', 'Waiting list') }}</span>
+				<select :value="modelValue.waitlisted === true ? 'only' : ''" @change="update({ waitlisted: ($event.target as HTMLSelectElement).value === 'only' ? true : undefined })">
+					<option value="">
+						{{ t('webforms', 'All responses') }}
+					</option>
+					<option value="only">
+						{{ t('webforms', 'Only the waiting list') }}
 					</option>
 				</select>
 			</label>

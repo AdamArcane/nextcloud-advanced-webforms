@@ -60,6 +60,21 @@ class ActionPlannerTest extends TestCase {
 		$this->assertSame(['act_mail', 'act_hook'], $plan['queue']);
 	}
 
+	public function testActionsAreChosenByWhenTheyRun(): void {
+		$actions = [
+			['id' => 'act_any', 'type' => 'email'],
+			['id' => 'act_confirmed', 'type' => 'email', 'on' => 'confirmed'],
+			['id' => 'act_waiting', 'type' => 'email', 'on' => 'waitlisted'],
+			['id' => 'act_promoted', 'type' => 'email', 'on' => 'promoted'],
+		];
+		$planner = new ActionPlanner(new RuleEngine());
+		$definition = $this->definition($actions);
+		$this->assertSame(['act_any', 'act_confirmed'], $planner->plan($definition, [])['queue']);
+		$this->assertSame(['act_any', 'act_waiting'], $planner->plan($definition, [], ActionPlanner::ON_WAITLISTED)['queue']);
+		// What is left out of `on` never runs on promotion.
+		$this->assertSame(['act_promoted'], $planner->plan($definition, [], ActionPlanner::ON_PROMOTED)['queue']);
+	}
+
 	public function testFirstMatchingMessageOrRedirectWins(): void {
 		$plan = $this->plan([
 			['id' => 'act_one', 'type' => 'redirect', 'url' => 'https://example.com/a'],

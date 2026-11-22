@@ -20,6 +20,7 @@ final class EventPayload {
 	public const ENTRY_CREATED = 'entry.created';
 	public const ENTRY_DELETED = 'entry.deleted';
 	public const ENTRY_STATUS_CHANGED = 'entry.status_changed';
+	public const ENTRY_PROMOTED = 'entry.promoted';
 	public const FORM_PUBLISHED = 'form.published';
 	public const FORM_STATUS_CHANGED = 'form.status_changed';
 
@@ -44,6 +45,7 @@ final class EventPayload {
 		int $submittedAt,
 		array $fields,
 		array $data,
+		bool $waitlisted = false,
 	): array {
 		$body = ActionRunner::payload(new ActionContext(
 			formId: $formId,
@@ -56,6 +58,7 @@ final class EventPayload {
 			data: $data,
 			now: $submittedAt,
 			ownerId: $ownerId,
+			waitlisted: $waitlisted,
 		));
 		return self::withForm($body, $formTitle, $ownerId);
 	}
@@ -90,6 +93,21 @@ final class EventPayload {
 			'status' => $status,
 			'previousStatus' => $previousStatus,
 			'changedBy' => $changedBy,
+		], $formTitle, $ownerId);
+	}
+
+	/**
+	 * Carries no answers (docs/SCHEMA.md section 3.2).
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function entryPromoted(int $formId, string $formTitle, string $ownerId, int $versionId, int $entryId, string $promotedBy): array {
+		return self::withForm([
+			'event' => self::ENTRY_PROMOTED,
+			'formId' => $formId,
+			'versionId' => $versionId,
+			'entryId' => $entryId,
+			'promotedBy' => $promotedBy,
 		], $formTitle, $ownerId);
 	}
 

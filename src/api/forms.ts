@@ -168,6 +168,11 @@ export async function markEntriesSeen(id: number): Promise<number | null> {
 	return (await call(axios.post<{ previousSeenAt: number | null }>(url('/forms/' + id + '/entries/seen')))).previousSeenAt
 }
 
+/** Take a response off the waiting list so it counts as a response. Rejects with status 422 `not_waitlisted` when it is not on it. */
+export async function promoteEntry(id: number, entryId: number): Promise<void> {
+	await call(axios.post(url('/forms/' + id + '/entries/' + entryId + '/promote')))
+}
+
 /** Give a response a status, or null for none. Resolves to the response. */
 export function setEntryStatus(id: number, entryId: number, status: string | null): Promise<EntryRecord> {
 	return call(axios.put<EntryRecord>(url('/forms/' + id + '/entries/' + entryId + '/status'), { status }))

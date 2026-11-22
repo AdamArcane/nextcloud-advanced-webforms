@@ -67,7 +67,7 @@ function limit(value: string | number): number | undefined {
 function setLimit(value: string | number): void {
 	const maxResponses = limit(value)
 	// Without a limit there is nothing left to count down.
-	emit('settings', maxResponses === undefined ? { maxResponses, showRemaining: undefined } : { maxResponses })
+	emit('settings', maxResponses === undefined ? { maxResponses, showRemaining: undefined, whenFull: undefined, waitlistMessage: undefined } : { maxResponses })
 }
 
 /** Change one design option; `undefined` puts it back to the default, and an empty design is dropped. */
@@ -390,6 +390,20 @@ function str(value: string | number): string | undefined {
 					</NcCheckboxRadioSwitch>
 				</SettingsRow>
 				<SettingsRow>
+					<NcCheckboxRadioSwitch type="switch"
+						:model-value="definition.settings.whenFull === 'waitlist'"
+						:disabled="definition.settings.maxResponses === undefined"
+						@update:model-value="(value: boolean) => emit('settings', value ? { whenFull: 'waitlist' } : { whenFull: undefined, waitlistMessage: undefined })">
+						{{ t('webforms', 'Keep a waiting list when the form is full') }}
+					</NcCheckboxRadioSwitch>
+				</SettingsRow>
+				<SettingsRow v-if="definition.settings.whenFull === 'waitlist'">
+					<NcTextField :model-value="definition.settings.waitlistMessage ?? ''"
+						:label="t('webforms', 'Message after joining the waiting list')"
+						:placeholder="t('webforms', 'You are on the waiting list.')"
+						@update:model-value="(value: string | number) => emit('settings', { waitlistMessage: str(value) })" />
+				</SettingsRow>
+				<SettingsRow v-else>
 					<NcTextField :model-value="definition.settings.fullMessage ?? ''"
 						:label="t('webforms', 'Message when full')"
 						:placeholder="t('webforms', 'This form has received the maximum number of responses.')"

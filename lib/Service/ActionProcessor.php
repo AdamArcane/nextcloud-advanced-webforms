@@ -92,6 +92,7 @@ class ActionProcessor {
 				ownerId: $this->forms->find($row->getFormId())->getOwnerId(),
 				pages: is_array($definition['pages'] ?? null) ? $definition['pages'] : [],
 				mail: $this->policy->mail(),
+				waitlisted: $entry->isWaitlisted(),
 			);
 			$this->runner->run($action, $context);
 

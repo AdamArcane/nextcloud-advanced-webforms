@@ -40,6 +40,9 @@ const style = computed(() => ({
 			<p v-if="form.definition.description" class="af-page__intro">
 				{{ form.definition.description }}
 			</p>
+			<p v-if="form.waitlisting" class="af-page__remaining" role="status">
+				{{ form.waitlisting }}
+			</p>
 			<p v-if="typeof form.remaining === 'number' && form.remaining > 0" class="af-page__remaining">
 				{{ n('webforms', '{count} place left', '{count} places left', form.remaining, { count: form.remaining }) }}
 			</p>

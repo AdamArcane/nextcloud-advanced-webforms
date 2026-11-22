@@ -21,6 +21,8 @@ export interface EntryFilterState {
 	where: AllCondition | AnyCondition | null
 	/** Only responses with one of these statuses, where `none` means without one. Empty means any. */
 	statuses: string[]
+	/** Only responses on the waiting list (docs/SCHEMA.md section 3.2). */
+	waitlisted?: boolean
 	sort: EntrySort
 }
 
@@ -39,7 +41,7 @@ export const EMPTY_FILTER: EntryFilterState = {
 
 /** Whether anything narrows the list. The order alone does not. */
 export function isFilterActive(filter: EntryFilterState): boolean {
-	return filter.text.trim() !== '' || filter.from !== '' || filter.to !== '' || filter.respondent !== 'any' || filter.where !== null || filter.statuses.length > 0
+	return filter.text.trim() !== '' || filter.from !== '' || filter.to !== '' || filter.respondent !== 'any' || filter.where !== null || filter.statuses.length > 0 || filter.waitlisted === true
 }
 
 /** The query parameters for the server, leaving out whatever is at its default. */
@@ -62,6 +64,9 @@ export function filterParams(filter: EntryFilterState): Record<string, string> {
 	}
 	if (filter.statuses.length > 0) {
 		params.status = filter.statuses.join(',')
+	}
+	if (filter.waitlisted === true) {
+		params.waitlisted = 'true'
 	}
 	if (filter.sort !== 'newest') {
 		params.sort = filter.sort

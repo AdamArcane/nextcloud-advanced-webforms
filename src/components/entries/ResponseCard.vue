@@ -21,6 +21,7 @@ import { useCanManageResponses } from './permissions.ts'
 import NoteEditor from './NoteEditor.vue'
 import StatusSelect from './StatusSelect.vue'
 import StatusTag from './StatusTag.vue'
+import WaitlistTag from './WaitlistTag.vue'
 
 const props = defineProps<{
 	formId: number
@@ -44,6 +45,8 @@ const emit = defineEmits<{
 	status: [status: string | null]
 	/** The response changed on the server (its note), and this is how it reads now. */
 	updated: [entry: EntryRecord]
+	/** The owner took the response off the waiting list. The parent saves it. */
+	promote: []
 }>()
 
 const status = computed(() => findStatus(props.statuses ?? [], props.entry.status))
@@ -98,6 +101,7 @@ async function retry(delivery: Delivery): Promise<void> {
 			<span v-if="isNew" class="af-response__new">{{ t('webforms', 'New') }}</span>
 			<span class="af-response__when">{{ formatTime(entry.submittedAt) }}</span>
 			<span v-if="entry.userId" class="af-response__who">{{ entry.userId }}</span>
+			<WaitlistTag v-if="entry.waitlisted" />
 			<StatusTag v-if="status" :status="status" />
 			<span v-if="entry.note" class="af-response__noted" :title="t('webforms', 'Has a note')">
 				<Icon :path="icons.note" :size="16" />
@@ -127,6 +131,12 @@ async function retry(delivery: Delivery): Promise<void> {
 					:label="t('webforms', 'Status of response {id}', { id: entry.id })"
 					:disabled="busy"
 					@update:model-value="(value) => emit('status', value)" />
+				<NcButton v-if="entry.waitlisted && canManage"
+					variant="secondary"
+					:disabled="busy"
+					@click="emit('promote')">
+					{{ t('webforms', 'Promote from the waiting list') }}
+				</NcButton>
 				<a class="af-response__open" :href="'#/f/' + formId + '/responses/' + entry.id">
 					{{ t('webforms', 'Open on its own page') }}
 				</a>

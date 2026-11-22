@@ -129,6 +129,7 @@ class FormService {
 		}
 		$versions = $this->versions->findByIds($versionIds);
 		$counts = $this->entries->countByForms($ids);
+		$waiting = $ids === [] ? [] : $this->entries->countWaitlistedByForms($ids);
 		$new = $ids === [] ? [] : $this->entries->countNewForUser($userId, $ids);
 		$seen = $this->seen->forForms($userId, $ids);
 		$names = [];
@@ -136,7 +137,7 @@ class FormService {
 		foreach ($access as ['form' => $form, 'role' => $role, 'direct' => $direct]) {
 			$latest = $versions[$form->getLatestVersionId() ?? 0] ?? null;
 			$names[$form->getOwnerId()] ??= $this->access->displayName($form->getOwnerId());
-			$data = $this->describe($form, $latest, $counts[$form->getId()] ?? 0, $new[$form->getId()] ?? 0, $role, $direct, $seen[$form->getId()] ?? null, $names[$form->getOwnerId()]);
+			$data = $this->describe($form, $latest, $counts[$form->getId()] ?? 0, $waiting[$form->getId()] ?? 0, $new[$form->getId()] ?? 0, $role, $direct, $seen[$form->getId()] ?? null, $names[$form->getOwnerId()]);
 			if ($role->atLeast(Role::EDITOR)) {
 				$data['hasUnpublishedChanges'] = $latest === null ? true : $this->differs($form, $latest);
 			}
@@ -684,6 +685,7 @@ class FormService {
 			'submittedAt' => $entry->getSubmittedAt(),
 			'status' => $entry->getStatus(),
 			'note' => $entry->getNote(),
+			'waitlisted' => $entry->isWaitlisted(),
 			'data' => JsonShape::map($entry->getDataArray()),
 		];
 	}
@@ -1081,6 +1083,7 @@ class FormService {
 			$form,
 			$latest,
 			$this->entries->countByForm($form->getId()),
+			$this->entries->countWaitlisted($form->getId()),
 			$this->entries->countNew($form->getId(), $seenAt),
 			$role,
 			$role !== Role::OWNER && $this->shares->findOne($form->getId(), FormShare::TYPE_USER, $userId) !== null,
@@ -1099,21 +1102,25 @@ class FormService {
 	/**
 	 * A form as the person sees it. `availability` says whether the published form takes responses by
 	 * its own limit and dates and the server's cap (docs/SCHEMA.md section 3.1); it is null until the
-	 * form has been published. A closed or archived form takes none whatever it says.
+	 * form has been published. A closed or archived form takes none whatever it says. `responses` is
+	 * all the form has, and `$waitlisted` of them are on its waiting list (section 3.2).
 	 *
 	 * @param bool $direct a share was made with their own account, so they may leave the form
 	 * @return array<string, mixed>
 	 */
-	private function describe(Form $form, ?Version $latest, int $responses, int $newResponses, Role $role, bool $direct, ?int $seenAt, string $ownerName): array {
+	private function describe(Form $form, ?Version $latest, int $responses, int $waitlisted, int $newResponses, Role $role, bool $direct, ?int $seenAt, string $ownerName): array {
 		$availability = null;
 		if ($latest !== null) {
 			$settings = $latest->getDefinitionArray()['settings'] ?? [];
 			$availability = Availability::of(
 				is_array($settings) ? $settings : [],
 				$this->time->getTime(),
-				$responses,
+				$responses - $waitlisted,
 				$this->policy->settings()->maxResponsesPerForm(),
+				$responses,
 			);
+			$availability['waitlisted'] = $waitlisted;
+			$availability['waitsWhenFull'] = Availability::waitsWhenFull(is_array($settings) ? $settings : []);
 		}
 		$data = [
 			'id' => $form->getId(),
