@@ -5,7 +5,7 @@
 
 # Changelog
 
-## Unreleased
+## 0.7.0 - 2026-11-22
 
 - **Templates.** **New form** now opens a chooser: a blank form, one of the starter templates (contact form,
   event RSVP, feedback survey, event registration, quick poll, support request), or one of your own. Choose
