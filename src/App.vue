@@ -512,6 +512,7 @@ function hasNewerDraft(form: OwnerForm): boolean {
 				:responses-view="preferences.responsesView"
 				:responses-summary="preferences.responsesSummary"
 				:role="selectedForm?.role ?? 'owner'"
+				:waitlist="{ enabled: selectedForm?.availability?.waitsWhenFull === true, count: selectedForm?.availability?.waitlisted ?? 0 }"
 				@preference="savePreference"
 				@seen="onResponsesSeen(selectedId)" />
 		</template>

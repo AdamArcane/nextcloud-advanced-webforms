@@ -327,6 +327,7 @@ final class ActionRunner {
 			'entryId' => $context->entryId,
 			'submittedAt' => gmdate('Y-m-d\TH:i:s\Z', $context->submittedAt),
 			'userId' => $context->userId,
+			'waitlisted' => $context->waitlisted,
 			// An empty map must stay an object, not become [].
 			'data' => $data === [] ? new \stdClass() : $data,
 		];

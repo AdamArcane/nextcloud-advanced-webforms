@@ -51,6 +51,8 @@ class SubmissionService {
 	public const DEFAULT_CLOSED_MESSAGE = 'This form is no longer accepting responses.';
 	public const FULL_MESSAGE = 'This form has received the maximum number of responses.';
 	public const NOT_OPEN_MESSAGE = 'This form is not open yet.';
+	public const WAITLIST_FULL_MESSAGE = 'This form is full. You can join the waiting list.';
+	public const WAITLIST_MESSAGE = 'You are on the waiting list.';
 
 	private readonly FillTimeToken $tokens;
 	private readonly AccessToken $access;
@@ -91,7 +93,8 @@ class SubmissionService {
 		$form = $this->findForm($token, $embedded);
 		$userId = $embedded ? null : $userId;
 		$remaining = null;
-		$version = $this->openVersion($form, $userId, $access, $remaining);
+		$waitlisting = false;
+		$version = $this->openVersion($form, $userId, $access, $remaining, $waitlisting);
 		$definition = $version->getDefinitionArray();
 		unset($definition['actions']);
 		$captcha = $this->captcha->publicConfig($definition, $userId);
@@ -118,13 +121,16 @@ class SubmissionService {
 			'fillToken' => $this->tokens->issue($form->getId(), $version->getId(), $this->time->getTime()),
 			'captcha' => $captcha,
 			'remaining' => $remaining,
+			// The notice to show when the form is at its limit and keeps taking responses onto a waiting list
+			// (docs/SCHEMA.md section 3.2), otherwise null.
+			'waitlisting' => $waitlisting ? self::message(is_array($definition['settings'] ?? null) ? $definition['settings'] : [], 'fullMessage', self::WAITLIST_FULL_MESSAGE) : null,
 			'definition' => JsonShape::definition($definition),
 		];
 	}
 
 	/**
 	 * @param array<string, mixed> $values
-	 * @return array{message: string|null, redirect: string|null}
+	 * @return array{message: string|null, redirect: string|null, waitlisted: bool}
 	 * @throws NotFoundException
 	 * @throws FormClosedException
 	 * @throws LoginRequiredException
@@ -145,7 +151,9 @@ class SubmissionService {
 	): array {
 		$form = $this->findForm($token, $embedded);
 		$userId = $embedded ? null : $userId;
-		$latest = $this->openVersion($form, $userId, $access);
+		$unused = null;
+		$waitlisting = false;
+		$latest = $this->openVersion($form, $userId, $access, $unused, $waitlisting);
 
 		$version = $versionId === $latest->getId() ? $latest : $this->versions->find($versionId);
 		if ($version->getFormId() !== $form->getId()) {
@@ -154,7 +162,7 @@ class SubmissionService {
 
 		// A filled honeypot is a bot. Pretend it worked so it learns nothing.
 		if ($honeypot !== '') {
-			return ['message' => null, 'redirect' => null];
+			return ['message' => null, 'redirect' => null, 'waitlisted' => false];
 		}
 
 		$tokenState = $this->tokens->check($fillToken, $form->getId(), $version->getId(), $this->time->getTime());
@@ -184,6 +192,9 @@ class SubmissionService {
 			throw new ValidationException([$e->fieldId === null ? ['code' => $e->reason] : ['field' => $e->fieldId, 'code' => $e->reason]]);
 		}
 
+		$limitSettings = $latest->getDefinitionArray()['settings'] ?? [];
+		$limitSettings = is_array($limitSettings) ? $limitSettings : [];
+		$ownCap = Availability::ownCap($limitSettings);
 		try {
 			$entry = new Entry();
 			$entry->setFormId($form->getId());
@@ -191,7 +202,21 @@ class SubmissionService {
 			$entry->setUserId($userId);
 			$entry->setData(json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 			$entry->setSubmittedAt($this->time->getTime());
+			$entry->setWaitlisted($waitlisting ? 1 : 0);
 			$entry = $this->entries->insert($entry);
+
+			// The form's own limit is checked again from the stored rows, so responses sent at the same
+			// instant cannot both take the last place (docs/SCHEMA.md section 3.2).
+			if (!$waitlisting && $ownCap > 0 && $this->entries->countConfirmedUpTo($form->getId(), $entry->getId()) > $ownCap) {
+				if (Availability::waitsWhenFull($limitSettings)) {
+					$this->entries->setWaitlisted($form->getId(), $entry->getId(), true);
+					$entry->setWaitlisted(1);
+					$waitlisting = true;
+				} else {
+					$this->entries->delete($entry);
+					throw new FormClosedException(self::message($limitSettings, 'fullMessage', self::FULL_MESSAGE), FormClosedException::FULL);
+				}
+			}
 		} catch (\Throwable $e) {
 			// The answers were not saved, so the files must not stay behind.
 			$this->uploads->deleteFilesOf($form->getOwnerId(), $fields, $data);
@@ -209,9 +234,14 @@ class SubmissionService {
 			$entry->getSubmittedAt(),
 			$fields,
 			$data,
+			$waitlisting,
 		)));
 
-		return $this->afterSubmit($form, $definition, $entry, self::forConditions($fields, $data));
+		$result = $this->afterSubmit($form, $definition, $entry, self::forConditions($fields, $data), $waitlisting ? ActionPlanner::ON_WAITLISTED : ActionPlanner::ON_CONFIRMED);
+		if ($waitlisting && $result['message'] === null && $result['redirect'] === null) {
+			$result['message'] = self::message($limitSettings, 'waitlistMessage', self::WAITLIST_MESSAGE);
+		}
+		return $result + ['waitlisted' => $waitlisting];
 	}
 
 	/**
@@ -222,7 +252,7 @@ class SubmissionService {
 	 * @param array<string, mixed> $data
 	 * @return array<string, mixed>
 	 */
-	private static function forConditions(array $fields, array $data): array {
+	public static function forConditions(array $fields, array $data): array {
 		foreach ($data as $fieldId => $value) {
 			if (is_array($fields[$fieldId] ?? null) && ($fields[$fieldId]['type'] ?? null) === FieldType::FILE && is_array($value)) {
 				$data[$fieldId] = array_values(array_map(static fn (mixed $file): string => is_array($file) && is_string($file['name'] ?? null) ? $file['name'] : '', $value));
@@ -282,13 +312,14 @@ class SubmissionService {
 	 *
 	 * @param array<string, mixed> $definition
 	 * @param array<string, mixed> $data
+	 * @param string $on which kind of response this is, one of the `ActionPlanner::ON_*` values
 	 * @return array{message: string|null, redirect: string|null}
 	 */
-	private function afterSubmit(Form $form, array $definition, Entry $entry, array $data): array {
+	private function afterSubmit(Form $form, array $definition, Entry $entry, array $data, string $on = ActionPlanner::ON_CONFIRMED): array {
 		try {
 			// Actions of a type the server no longer allows do not run, even on a form that is already live.
 			$definition = $this->policy->withoutDisabledActions($definition);
-			$plan = $this->planner->plan($definition, $data);
+			$plan = $this->planner->plan($definition, $data, $on);
 
 			$types = [];
 			foreach (is_array($definition['actions'] ?? null) ? $definition['actions'] : [] as $action) {
@@ -393,12 +424,13 @@ class SubmissionService {
 	 * dates, or full (docs/SCHEMA.md sections 3.1 and 16).
 	 *
 	 * @param int|null $remaining set to how many more responses the form takes, when it is set to show that
+	 * @param bool $waitlisting set to true when the form is at its limit and puts new responses on a waiting list
 	 * @throws NotFoundException
 	 * @throws FormClosedException
 	 * @throws LoginRequiredException
 	 * @throws PasswordRequiredException
 	 */
-	private function openVersion(Form $form, ?string $userId, string $access, ?int &$remaining = null): \OCA\Webforms\Db\Version {
+	private function openVersion(Form $form, ?string $userId, string $access, ?int &$remaining = null, bool &$waitlisting = false): \OCA\Webforms\Db\Version {
 		if ($form->getStatus() === Form::STATUS_UNPUBLISHED || $form->getLatestVersionId() === null) {
 			throw new NotFoundException();
 		}
@@ -413,23 +445,32 @@ class SubmissionService {
 		}
 
 		$policyCap = $this->policy->settings()->maxResponsesPerForm();
-		// Counting is only needed when something limits the number.
-		$limited = $policyCap > 0 || Availability::ownCap($settings) > 0;
-		$availability = Availability::of($settings, $this->time->getTime(), $limited ? $this->entries->countByForm($form->getId()) : 0, $policyCap);
+		$ownCap = Availability::ownCap($settings);
+		// Counting is only needed when something limits the number. The form's own limit does not count
+		// the responses on its waiting list, the server's cap counts every response (docs/SCHEMA.md section 3.2).
+		$total = $policyCap > 0 ? $this->entries->countByForm($form->getId()) : 0;
+		$responses = $ownCap > 0 ? $this->entries->countConfirmed($form->getId()) : $total;
+		$availability = Availability::of($settings, $this->time->getTime(), $responses, $policyCap, $total);
 		switch ($availability['state']) {
 			case Availability::ENDED:
 				throw new FormClosedException(self::message($settings, 'closedMessage', self::DEFAULT_CLOSED_MESSAGE));
 			case Availability::SCHEDULED:
 				throw new FormClosedException(self::message($settings, 'notOpenMessage', self::NOT_OPEN_MESSAGE), FormClosedException::NOT_OPEN);
 			case Availability::FULL:
+				// A form that waits at its limit goes on taking responses, unless the server's cap is the
+				// reason it is full: that one always refuses.
+				if (Availability::waitsWhenFull($settings) && !($policyCap > 0 && $total >= $policyCap)) {
+					$waitlisting = true;
+					break;
+				}
 				throw new FormClosedException(self::message($settings, 'fullMessage', self::FULL_MESSAGE), FormClosedException::FULL);
 		}
 
 		if (($settings['requireLogin'] ?? false) === true && $userId === null) {
 			throw new LoginRequiredException();
 		}
-		if (($settings['showRemaining'] ?? false) === true && Availability::ownCap($settings) > 0) {
-			$remaining = $availability['cap'] - $availability['responses'];
+		if (($settings['showRemaining'] ?? false) === true && $ownCap > 0) {
+			$remaining = max(0, min($ownCap - $responses, $policyCap > 0 ? $policyCap - $total : PHP_INT_MAX));
 		}
 		return $version;
 	}

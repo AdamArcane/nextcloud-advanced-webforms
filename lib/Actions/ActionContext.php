@@ -39,6 +39,8 @@ final class ActionContext {
 		public readonly array $pages = [],
 		/** The administrator's settings for mail (docs/SCHEMA.md section 16.2). */
 		public readonly MailPolicy $mail = new MailPolicy(),
+		/** The response is on the form's waiting list (docs/SCHEMA.md section 3.2). */
+		public readonly bool $waitlisted = false,
 	) {
 	}
 }

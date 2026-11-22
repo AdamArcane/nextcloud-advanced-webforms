@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace OCA\Webforms\Forms;
 
+use OCA\Webforms\Actions\ActionPlanner;
 use OCA\Webforms\Actions\CsvFile;
 use OCA\Webforms\Actions\MailPolicy;
 use OCA\Webforms\Actions\Template;
@@ -38,7 +39,7 @@ final class DefinitionValidator {
 	public const MAX_TABLES_COLUMNS = 100;
 	public const ACTION_TYPES = ['email', 'webhook', 'message', 'redirect', 'tables', 'files'];
 
-	private const SETTINGS_KEYS = ['submitLabel', 'labelPosition', 'requireLogin', 'allowMultipleSubmissions', 'hideRequiredIndicator', 'hideTitle', 'captcha', 'closedMessage', 'maxResponses', 'showRemaining', 'opensAt', 'closesAt', 'notOpenMessage', 'fullMessage', 'prefill', 'saveProgress', 'reviewStep', 'reviewTitle', 'design'];
+	private const SETTINGS_KEYS = ['submitLabel', 'labelPosition', 'requireLogin', 'allowMultipleSubmissions', 'hideRequiredIndicator', 'hideTitle', 'captcha', 'closedMessage', 'maxResponses', 'showRemaining', 'opensAt', 'closesAt', 'notOpenMessage', 'fullMessage', 'whenFull', 'waitlistMessage', 'prefill', 'saveProgress', 'reviewStep', 'reviewTitle', 'design'];
 	private const MAX_PAGES = 20;
 	private const TOP_KEYS = ['schemaVersion', 'title', 'description', 'settings', 'fields', 'pages', 'rules', 'actions'];
 	private const COMMON_INPUT_KEYS = ['type', 'label', 'description', 'required', 'defaultValue', 'labelPosition', 'hideLabel'];
@@ -128,6 +129,11 @@ final class DefinitionValidator {
 				}
 			} elseif (in_array($key, ['requireLogin', 'allowMultipleSubmissions', 'hideRequiredIndicator', 'hideTitle', 'captcha', 'showRemaining', 'prefill', 'saveProgress', 'reviewStep'], true)) {
 				if (!is_bool($value)) {
+					$this->err('settings_invalid', $path);
+				}
+			} elseif ($key === 'whenFull') {
+				// Waiting is only meaningful at a limit of the form's own (docs/SCHEMA.md section 3.2).
+				if (!in_array($value, ['close', 'waitlist'], true) || ($value === 'waitlist' && !array_key_exists('maxResponses', $settings))) {
 					$this->err('settings_invalid', $path);
 				}
 			} elseif ($key === 'maxResponses') {
@@ -675,7 +681,13 @@ final class DefinitionValidator {
 				}
 			}
 
-			$allowed = ['id', 'type', 'when'];
+			$allowed = ['id', 'type', 'when', 'on'];
+			if (array_key_exists('on', $action)
+				&& (!in_array($action['on'], ActionPlanner::ON_VALUES, true)
+					// A promotion has no respondent to answer (docs/SCHEMA.md section 7.1).
+					|| ($action['on'] === ActionPlanner::ON_PROMOTED && in_array($action['type'], ['message', 'redirect'], true)))) {
+				$this->err('action_on_invalid', $path . '.on');
+			}
 			switch ($action['type']) {
 				case 'email':
 					$allowed = array_merge($allowed, ['to', 'replyTo', 'fromName', 'subject', 'body']);

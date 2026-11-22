@@ -26,6 +26,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setStatus(?string $status)
  * @method string|null getNote()
  * @method void setNote(?string $note)
+ * @method int getWaitlisted()
+ * @method void setWaitlisted(int $waitlisted)
  */
 class Entry extends Entity {
 	protected $formId;
@@ -37,6 +39,8 @@ class Entry extends Entity {
 	protected $status;
 	/** The owner's private note, or null. */
 	protected $note;
+	/** 1 when the response is on the form's waiting list (docs/SCHEMA.md section 3.2), otherwise 0. */
+	protected $waitlisted = 0;
 
 	public function __construct() {
 		$this->addType('formId', 'integer');
@@ -46,6 +50,11 @@ class Entry extends Entity {
 		$this->addType('submittedAt', 'integer');
 		$this->addType('status', 'string');
 		$this->addType('note', 'string');
+		$this->addType('waitlisted', 'integer');
+	}
+
+	public function isWaitlisted(): bool {
+		return $this->getWaitlisted() === 1;
 	}
 
 	/**

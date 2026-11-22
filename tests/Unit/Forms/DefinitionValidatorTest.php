@@ -33,6 +33,26 @@ class DefinitionValidatorTest extends TestCase {
 		return $codes;
 	}
 
+	public function testWaitingListSettings(): void {
+		$this->assertSame([], $this->codes(static function (array $d): array {
+			$d['settings']['maxResponses'] = 5;
+			$d['settings']['whenFull'] = 'waitlist';
+			$d['settings']['waitlistMessage'] = 'We will write to you.';
+			return $d;
+		}));
+		// A waiting list needs a limit to wait for.
+		$this->assertSame(['settings_invalid'], $this->codes(static function (array $d): array {
+			unset($d['settings']['maxResponses']);
+			$d['settings']['whenFull'] = 'waitlist';
+			return $d;
+		}));
+		$this->assertSame(['settings_invalid'], $this->codes(static function (array $d): array {
+			$d['settings']['maxResponses'] = 5;
+			$d['settings']['whenFull'] = 'queue';
+			return $d;
+		}));
+	}
+
 	public function testSpecExampleIsValid(): void {
 		$this->assertSame([], (new DefinitionValidator())->validate(self::specExample()));
 	}

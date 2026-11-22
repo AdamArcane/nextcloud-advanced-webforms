@@ -8,6 +8,15 @@ import type { AllCondition } from '../rules/types.ts'
 import { describe, expect, it } from 'vitest'
 import { EMPTY_FILTER, filterParams, isFilterActive, rangeInvalid } from './filter.ts'
 
+describe('waiting list filter', () => {
+	it('is sent only when it is on, and counts as a filter', () => {
+		expect(filterParams({ ...EMPTY_FILTER, waitlisted: true })).toEqual({ waitlisted: 'true' })
+		expect(filterParams({ ...EMPTY_FILTER, waitlisted: undefined })).toEqual({})
+		expect(isFilterActive({ ...EMPTY_FILTER, waitlisted: true })).toBe(true)
+		expect(isFilterActive(EMPTY_FILTER)).toBe(false)
+	})
+})
+
 describe('filterParams', () => {
 	it('sends nothing for an empty filter', () => {
 		expect(filterParams(EMPTY_FILTER)).toEqual({})

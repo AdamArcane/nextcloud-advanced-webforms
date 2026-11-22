@@ -21,6 +21,7 @@ use OCA\Webforms\Forms\EntryFilter;
 use OCA\Webforms\Service\EntryExportService;
 use OCA\Webforms\Access\Role;
 use OCA\Webforms\Service\FormService;
+use OCA\Webforms\Service\WaitlistService;
 use OCA\Webforms\Forms\ImageSource;
 use OCA\Webforms\Forms\JsonShape;
 use OCA\Webforms\Import\CoreForms\CoreFormsImporter;
@@ -50,6 +51,7 @@ class FormController extends Controller {
 		private readonly ActionLogService $actionLog,
 		private readonly EntryExportService $export,
 		private readonly OwnerImagePort $images,
+		private readonly WaitlistService $waitlist,
 		private readonly CoreFormsImporter $coreImporter,
 	) {
 		parent::__construct(Application::APP_ID, $request);
@@ -284,9 +286,10 @@ class FormController extends Controller {
 		string $where = '',
 		string $sort = '',
 		string $status = '',
+		string $waitlisted = '',
 	): JSONResponse {
 		try {
-			$filter = EntryFilter::fromInput($q, $from, $to, $respondent, $where, $sort, $status);
+			$filter = EntryFilter::fromInput($q, $from, $to, $respondent, $where, $sort, $status, null, $waitlisted);
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => 'filter_invalid', 'reason' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
@@ -301,9 +304,9 @@ class FormController extends Controller {
 	 */
 	#[NoAdminRequired]
 	#[FrontpageRoute(verb: 'GET', url: '/api/v1/forms/{id}/entries/summary')]
-	public function entriesSummary(int $id, string $q = '', string $from = '', string $to = '', string $respondent = '', string $where = '', string $status = ''): JSONResponse {
+	public function entriesSummary(int $id, string $q = '', string $from = '', string $to = '', string $respondent = '', string $where = '', string $status = '', string $waitlisted = ''): JSONResponse {
 		try {
-			$filter = EntryFilter::fromInput($q, $from, $to, $respondent, $where, 'oldest', $status);
+			$filter = EntryFilter::fromInput($q, $from, $to, $respondent, $where, 'oldest', $status, null, $waitlisted);
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => 'filter_invalid', 'reason' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
@@ -342,12 +345,13 @@ class FormController extends Controller {
 		string $ids = '',
 		string $columns = '',
 		string $status = '',
+		string $waitlisted = '',
 	): DataDownloadResponse|JSONResponse {
 		if (!in_array($format, [EntryExportService::CSV, EntryExportService::XLSX], true)) {
 			return new JSONResponse(['error' => 'format_invalid'], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 		try {
-			$filter = EntryFilter::fromInput($q, $from, $to, $respondent, $where, $sort, $status);
+			$filter = EntryFilter::fromInput($q, $from, $to, $respondent, $where, $sort, $status, null, $waitlisted);
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => 'filter_invalid', 'reason' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
@@ -409,7 +413,7 @@ class FormController extends Controller {
 	 */
 	private static function bodyFilter(array $filter): EntryFilter {
 		$text = static fn (string $key): string => is_scalar($filter[$key] ?? null) ? (string)$filter[$key] : '';
-		return EntryFilter::fromInput($text('q'), $text('from'), $text('to'), $text('respondent'), $text('where'), '', $text('status'));
+		return EntryFilter::fromInput($text('q'), $text('from'), $text('to'), $text('respondent'), $text('where'), '', $text('status'), null, $text('waitlisted'));
 	}
 
 	/**
@@ -442,6 +446,17 @@ class FormController extends Controller {
 	public function setEntryStatus(int $id, int $entryId, ?string $status = null): JSONResponse {
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
 			$this->service->setEntryStatus($this->userId(), $id, $entryId, $status === '' ? null : $status),
+		));
+	}
+
+	/**
+	 * Move a response off the form's waiting list (docs/SCHEMA.md section 3.2).
+	 */
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/forms/{id}/entries/{entryId}/promote', requirements: ['entryId' => '\d+'])]
+	public function promoteEntry(int $id, int $entryId): JSONResponse {
+		return $this->guard(fn (): JSONResponse => new JSONResponse(
+			$this->waitlist->promote($this->userId(), $id, $entryId),
 		));
 	}
 
