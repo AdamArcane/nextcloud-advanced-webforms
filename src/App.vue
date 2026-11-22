@@ -6,7 +6,7 @@
 <script setup lang="ts">
 import type { OwnerForm } from './types.ts'
 
-import { showError } from '@nextcloud/dialogs'
+import { showError, showSuccess } from '@nextcloud/dialogs'
 import { n, t } from '@nextcloud/l10n'
 import NcAppContent from '@nextcloud/vue/components/NcAppContent'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
@@ -23,7 +23,7 @@ import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { createForm, duplicateForm, formExportUrl, importForm, leaveForm, listForms, setFormArchived } from './api/forms.ts'
+import { createForm, duplicateForm, saveAsTemplate, formExportUrl, importForm, leaveForm, listForms, setFormArchived } from './api/forms.ts'
 import { ApiError } from './api/http.ts'
 import { DEFAULT_PREFERENCES, fetchUserPolicy, fetchUserPreferences, OPEN_POLICY, saveUserPreferences } from './api/settings.ts'
 import type { UserPolicy, UserPreferences } from './api/settings.ts'
@@ -34,6 +34,7 @@ import { loadNavOpen, saveNavOpen } from './navState.ts'
 import BuilderView from './components/builder/BuilderView.vue'
 import EntriesView from './components/entries/EntriesView.vue'
 import ImportDialog from './components/ImportDialog.vue'
+import TemplateDialog from './components/TemplateDialog.vue'
 import OverviewView from './components/OverviewView.vue'
 import SettingsDialog from './components/SettingsDialog.vue'
 import { statusText } from './availability.ts'
@@ -50,6 +51,7 @@ const preferencesLoaded = ref(false)
 const settingsOpen = ref(false)
 const importing = ref(false)
 const importOpen = ref(false)
+const templatesOpen = ref(false)
 // Drafts the import dialog made, so closing it can open the one new form.
 const importedIds = ref<number[]>([])
 const importError = ref<string | null>(null)
@@ -195,6 +197,12 @@ async function create(): Promise<void> {
 	}
 }
 
+/** A form made from a template, opened at once so it can be renamed. */
+function onCreatedFromTemplate(form: OwnerForm): void {
+	forms.value = [form, ...forms.value]
+	open(form.id)
+}
+
 // A form file is a few hundred KB at most (the server caps a definition at 512 KB), so anything bigger is not one.
 const MAX_IMPORT_BYTES = 1024 * 1024
 
@@ -301,6 +309,23 @@ async function duplicate(form: OwnerForm): Promise<void> {
 	}
 }
 
+const templateFailed = ref(false)
+
+/** Keeps the draft as one of the person's own templates; it then shows under "My templates" in New form. */
+async function saveTemplate(form: OwnerForm): Promise<void> {
+	templateFailed.value = false
+	try {
+		await saveAsTemplate(form.id, form.title)
+		showSuccess(t('webforms', 'Saved as a template.'))
+	} catch (caught) {
+		if (caught instanceof ApiError && caught.errors[0]?.code === 'template_limit') {
+			showError(describeError('template_limit'))
+		} else {
+			templateFailed.value = true
+		}
+	}
+}
+
 async function toggleArchived(form: OwnerForm): Promise<void> {
 	archiveError.value = false
 	try {
@@ -324,7 +349,7 @@ function hasNewerDraft(form: OwnerForm): boolean {
 			<template #list>
 				<NcAppNavigationNew :text="t('webforms', 'New form')"
 					:disabled="creating || !policy.canCreate"
-					@click="create">
+					@click="templatesOpen = true">
 					<template #icon>
 						<NcLoadingIcon v-if="creating" :size="20" />
 						<span v-else aria-hidden="true" class="af-new-plus">+</span>
@@ -382,6 +407,9 @@ function hasNewerDraft(form: OwnerForm): boolean {
 									<Icon :path="icons.copy" :inline="false" />
 								</template>
 								{{ t('webforms', 'Duplicate') }}
+							</NcActionButton>
+							<NcActionButton v-if="canEdit(form)" :disabled="!policy.canCreate" close-after-click @click="saveTemplate(form)">
+								{{ t('webforms', 'Save as template') }}
 							</NcActionButton>
 							<NcActionButton v-if="canEdit(form)" close-after-click @click="toggleArchived(form)">
 								<template #icon>
@@ -453,6 +481,9 @@ function hasNewerDraft(form: OwnerForm): boolean {
 				<NcNoteCard v-if="leaveFailed" type="error">
 					{{ t('webforms', 'Could not leave the form.') }}
 				</NcNoteCard>
+				<NcNoteCard v-if="templateFailed" type="error">
+					{{ t('webforms', 'Could not save the template.') }}
+				</NcNoteCard>
 				<NcNoteCard v-if="duplicateFailed" type="error">
 					{{ t('webforms', 'Could not duplicate the form.') }}
 				</NcNoteCard>
@@ -485,6 +516,10 @@ function hasNewerDraft(form: OwnerForm): boolean {
 			</template>
 		</NcAppNavigation>
 
+		<TemplateDialog v-model:open="templatesOpen"
+			:can-create="policy.canCreate"
+			@blank="create"
+			@created="onCreatedFromTemplate" />
 		<ImportDialog :open="importOpen"
 			@update:open="onImportOpen"
 			@pick-file="pickImportFile"
@@ -531,7 +566,7 @@ function hasNewerDraft(form: OwnerForm): boolean {
 					:name="t('webforms', 'Create your first form')"
 					:description="t('webforms', 'Build forms with conditional fields and flexible layouts. Responses stay on your server.')">
 					<template #action>
-						<NcButton variant="primary" :disabled="creating" @click="create">
+						<NcButton variant="primary" :disabled="creating" @click="templatesOpen = true">
 							{{ t('webforms', 'New form') }}
 						</NcButton>
 					</template>
@@ -540,7 +575,7 @@ function hasNewerDraft(form: OwnerForm): boolean {
 					:forms="forms"
 					:can-create="policy.canCreate"
 					:creating="creating"
-					@create="create" />
+					@create="templatesOpen = true" />
 			</div>
 		</NcAppContent>
 

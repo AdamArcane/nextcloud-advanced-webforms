@@ -371,7 +371,7 @@ describe('the menu of a form shared with the person', () => {
 		const reviewer = rows.find((row) => row.text().startsWith('Shared 3'))!
 		expect(labels(reviewer)).toEqual(['Leave this form'])
 		const editor = rows.find((row) => row.text().startsWith('Shared 2'))!
-		expect(labels(editor)).toEqual(['Export draft', 'Export published version', 'Duplicate', 'Archive', 'Leave this form'])
+		expect(labels(editor)).toEqual(['Export draft', 'Export published version', 'Duplicate', 'Save as template', 'Archive', 'Leave this form'])
 	})
 
 	it('does not offer to leave a form that comes through a group', async () => {

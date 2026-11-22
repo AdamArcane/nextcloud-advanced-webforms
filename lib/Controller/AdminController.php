@@ -11,6 +11,10 @@ namespace OCA\Webforms\Controller;
 
 use OCA\Webforms\AppInfo\Application;
 use OCA\Webforms\Db\EntryMapper;
+use OCA\Webforms\Exception\ForbiddenException;
+use OCA\Webforms\Exception\NotFoundException;
+use OCA\Webforms\Exception\ValidationException;
+use OCA\Webforms\Service\FormService;
 use OCA\Webforms\Forms\DefinitionValidator;
 use OCA\Webforms\Forms\ResponseStatuses;
 use OCA\Webforms\Security\Captcha\CaptchaProvider;
@@ -27,6 +31,7 @@ use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IGroupManager;
 use OCP\IRequest;
+use OCP\IUserSession;
 
 /**
  * Server-wide settings. Without `#[NoAdminRequired]` Nextcloud only lets administrators in.
@@ -44,6 +49,8 @@ class AdminController extends Controller {
 		private readonly ITimeFactory $time,
 		private readonly StatusSettings $statuses,
 		private readonly EntryMapper $entries,
+		private readonly FormService $forms,
+		private readonly IUserSession $session,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 	}
@@ -224,6 +231,72 @@ class AdminController extends Controller {
 		$this->statuses->save($list);
 		$this->entries->clearStatuses($removed);
 		return new JSONResponse($this->currentStatuses());
+	}
+
+	/**
+	 * Starter templates (with whether each is hidden) and the templates made for everyone (docs/SCHEMA.md
+	 * section 13.4).
+	 */
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/admin/templates')]
+	public function getTemplates(): JSONResponse {
+		return new JSONResponse($this->forms->listServerTemplates());
+	}
+
+	/**
+	 * Hide starter templates from everyone. `hidden` lists the ids to hide; the rest are shown.
+	 *
+	 * @param list<string> $hidden
+	 */
+	#[FrontpageRoute(verb: 'PUT', url: '/api/v1/admin/templates/hidden')]
+	public function setHiddenTemplates(array $hidden = []): JSONResponse {
+		$this->forms->setHiddenTemplates($hidden);
+		return new JSONResponse($this->forms->listServerTemplates());
+	}
+
+	/**
+	 * Make a template for everyone from the draft of one of the administrator's own forms.
+	 */
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/admin/templates')]
+	public function addTemplate(int $formId = 0, string $title = ''): JSONResponse {
+		return $this->templateCall(function () use ($formId, $title): JSONResponse {
+			$userId = $this->session->getUser()?->getUID();
+			if ($userId === null) {
+				throw new ForbiddenException();
+			}
+			$this->forms->saveServerTemplate($userId, $formId, $title);
+			return new JSONResponse($this->forms->listServerTemplates(), Http::STATUS_CREATED);
+		});
+	}
+
+	#[FrontpageRoute(verb: 'PUT', url: '/api/v1/admin/templates/{templateId}')]
+	public function renameTemplate(string $templateId, string $title = ''): JSONResponse {
+		return $this->templateCall(function () use ($templateId, $title): JSONResponse {
+			$this->forms->renameServerTemplate($templateId, $title);
+			return new JSONResponse($this->forms->listServerTemplates());
+		});
+	}
+
+	#[FrontpageRoute(verb: 'DELETE', url: '/api/v1/admin/templates/{templateId}')]
+	public function deleteTemplate(string $templateId): JSONResponse {
+		return $this->templateCall(function () use ($templateId): JSONResponse {
+			$this->forms->deleteServerTemplate($templateId);
+			return new JSONResponse($this->forms->listServerTemplates());
+		});
+	}
+
+	/**
+	 * @param callable(): JSONResponse $action
+	 */
+	private function templateCall(callable $action): JSONResponse {
+		try {
+			return $action();
+		} catch (NotFoundException) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		} catch (ForbiddenException) {
+			return new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		} catch (ValidationException $e) {
+			return new JSONResponse(['error' => 'validation', 'errors' => $e->getErrors()], Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
 	}
 
 	/**

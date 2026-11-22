@@ -12,6 +12,7 @@ namespace OCA\Webforms\Listener;
 use OCA\Webforms\Db\EntryMapper;
 use OCA\Webforms\Db\FormMapper;
 use OCA\Webforms\Db\FormSeenMapper;
+use OCA\Webforms\Db\FormTemplateMapper;
 use OCA\Webforms\Db\FormShare;
 use OCA\Webforms\Db\FormShareMapper;
 use OCA\Webforms\Service\FormService;
@@ -36,6 +37,7 @@ class UserDeletedListener implements IEventListener {
 		private readonly EntryMapper $entries,
 		private readonly FormShareMapper $shares,
 		private readonly FormSeenMapper $seen,
+		private readonly FormTemplateMapper $templates,
 		private readonly LoggerInterface $logger,
 	) {
 	}
@@ -55,6 +57,8 @@ class UserDeletedListener implements IEventListener {
 			// What was shared with them, and what they had seen, goes with the account (docs/SCHEMA.md section 22.7).
 			$this->shares->deleteByTarget(FormShare::TYPE_USER, $userId);
 			$this->seen->deleteByUser($userId);
+			// Their saved templates are theirs alone, so they go with them.
+			$this->templates->deleteByOwner($userId);
 			$this->entries->anonymizeUser($userId);
 		} catch (\Throwable $e) {
 			// Deleting an account must not fail because of this app.

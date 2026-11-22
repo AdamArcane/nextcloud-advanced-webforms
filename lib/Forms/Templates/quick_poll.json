@@ -1,0 +1,71 @@
+{
+  "id": "quick_poll",
+  "category": "general",
+  "name": "Quick poll",
+  "description": "One question, a few choices.",
+  "definition": {
+    "schemaVersion": 1,
+    "title": "Quick poll",
+    "description": "Pick one answer.",
+    "settings": {
+      "submitLabel": "Vote",
+      "allowMultipleSubmissions": false
+    },
+    "fields": {
+      "f_choice": {
+        "type": "radio",
+        "label": "Which option do you prefer?",
+        "required": true,
+        "options": [
+          {
+            "value": "option_a",
+            "label": "Option A"
+          },
+          {
+            "value": "option_b",
+            "label": "Option B"
+          },
+          {
+            "value": "option_c",
+            "label": "Option C"
+          }
+        ]
+      },
+      "f_comment": {
+        "type": "text",
+        "label": "Comment (optional)",
+        "required": false
+      }
+    },
+    "pages": [
+      {
+        "id": "p_1",
+        "title": null,
+        "rows": [
+          {
+            "id": "r_1",
+            "cells": [
+              {
+                "id": "c_1",
+                "span": 12,
+                "field": "f_choice"
+              }
+            ]
+          },
+          {
+            "id": "r_2",
+            "cells": [
+              {
+                "id": "c_2",
+                "span": 12,
+                "field": "f_comment"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "rules": [],
+    "actions": []
+  }
+}

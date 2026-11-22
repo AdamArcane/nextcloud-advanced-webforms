@@ -123,6 +123,17 @@ confirmed, waitlisted and promoted, and there is a Flow event for a promotion. T
 `Version001100Date20261122120000` ran on the dev instance. Not yet tried by hand: joining the list, promoting,
 and the actions on each event.
 
+Templates (docs/SCHEMA.md section 13.4): New form opens `TemplateDialog.vue` (blank, own, starter). Starter
+templates are JSON in `lib/Forms/Templates/` read by `TemplateCatalog`; own templates are rows in
+`advforms_templates` (`FormTemplate`, `FormTemplateMapper`, added to the unreleased migration `Version001100`).
+`FormService::createFromTemplate` goes through `createFromDefinition`, like import and duplicate. Starter text is
+English on the server and translated by the browser: every word must be listed in `src/templates/catalog.ts`
+(a test checks it), and `TemplateText` swaps only respondent-facing properties. The migration had already run on
+the dev instance, so its new table is not there until that migration's row is removed from the migrations table.
+Administrators can hide starters (`TemplateSettings`, app config `templates_hidden`) and keep templates for everyone
+(`advforms_templates` rows with empty `owner_id`, ids `s:<n>`; `TemplateAdmin.vue`, `/api/v1/admin/templates`).
+Not yet tried by hand on the dev instance.
+
 Sharing (docs/SCHEMA.md section 18): custom address, QR code, and embedding in a frame through the
 `embed` routes, which skip the request token and are always anonymous. Loading and submitting were
 tried in a real frame on another site; uploads and the redirect action in a frame were not.

@@ -1367,6 +1367,54 @@ The conversion itself (`CoreFormsConverter`) does not touch the database. It tak
 submissions as plain arrays and is covered by `tests/Unit/Import/CoreFormsConverterTest.php`; the reader and the
 command are the thin parts around it.
 
+### 13.4 Templates (DECISION)
+
+**New form** opens a chooser: a blank form, the templates the administrator made for everyone, the person's
+own templates, and starter templates that ship with the app. A template is only a definition (section 3), so making a form from one is the same step as making a
+copy (section 13.2).
+
+- **Starter templates.** JSON files in `lib/Forms/Templates/`, each with an `id`, a `category`, a `name`, a
+  `description` and a `definition`. They are read from disk and need no table. Each one must pass the
+  validator as it is, so it can be published without changes, and none carries an action with a secret
+  (a test checks both). Their ids are `b:<name>` in the API. The files themselves are not editable in the app,
+  but the administrator can hide any of them (see Server templates below).
+- **Own templates.** "Save as template" in a form's menu keeps its draft in `advforms_templates` (owner, title,
+  definition, times), private to that person: they are not shared, and an account's templates are deleted
+  with the account. Their ids are `u:<number>` in the API. A person keeps at most 50 (`template_limit`), and
+  the 512 KB limit on a definition applies. Saving needs the Editor role on the form (section 22.1).
+- **What a template brings.** Fields, layout, pages, rules, actions and settings. Webhook secrets are left
+  out, as in an export (section 13). Nothing of a form's responses, versions or link exists in a template.
+- **Making a form.** The title is the one the person typed, or else the template's own. The person's defaults
+  for new forms (section 16.1) lay over the template's settings, so a person who set an accent colour gets it
+  on every form, and one who set nothing gets the template as it is. The form is a draft: it is saved like an
+  import, so problems come back as warnings and publishing stays the gate.
+- **Language.** The starter templates are kept in English. The browser sends `strings`, a map from each English
+  text to its translation, and the server replaces only the properties a respondent reads (`title`,
+  `description`, `label`, `text`, `placeholder`, `submitLabel`, `closedMessage`, `minLabel`, `maxLabel`,
+  `reviewTitle`). It never changes an id, a value, a type or a rule, and it ignores entries over 300 or
+  longer than 1000 characters. A person's own template is used as saved, in whatever language it was written.
+- **Endpoints.** `GET /api/v1/templates` answers `{ bundled, own }`. `POST /api/v1/forms/from-template` with
+  `templateId`, an optional `title` and `strings` answers `201` with `{ form, errors }`, and is rate limited
+  like the core Forms import. `POST /api/v1/forms/{id}/save-as-template` with an optional `title` answers
+  `201`. `DELETE /api/v1/templates/{templateId}` removes one of the person's own. Another person's template
+  answers `404`.
+- **Server templates.** The administrator has a Templates section in the server settings with two parts.
+  Which starter templates are shown: the ids of the hidden ones are kept in app config (`templates_hidden`),
+  nothing hidden is the default, and a damaged value hides nothing. A hidden starter is not listed and
+  cannot be used (`404`), and forms already made from it are untouched. And shared templates: rows of
+  `advforms_templates` with an empty `owner_id`, which no account has. The administrator makes one from the
+  draft of one of their own forms (Editor role needed, as for any template), and can rename and delete it.
+  It is a copy as of that moment: changing the form later does not change the template. At most 100.
+  Everyone who may create forms sees them under "Shared templates"; ids are `s:<number>`, and they are used
+  like any other template. Only the administrator can add, rename or delete them (the admin endpoints below).
+- **Admin endpoints** (administrators only): `GET /api/v1/admin/templates` answers the starter templates, each
+  with `hidden`, and the shared ones. `PUT /api/v1/admin/templates/hidden` with `hidden`, a list of starter ids,
+  replaces the hidden set (ids that are not starter templates are ignored). `POST /api/v1/admin/templates`
+  with `formId` and an optional `title`, `PUT /api/v1/admin/templates/{templateId}` with `title`, and
+  `DELETE /api/v1/admin/templates/{templateId}`. Each answers the same list as the `GET`.
+- **Left out on purpose.** Templates shared with only some groups, and changing the fields of a starter
+  template in the app. A shared template made from a copy of a starter covers the second.
+
 ## 14. Nextcloud events (DECISION)
 
 Besides the per-form webhook action (section 7), the app dispatches Nextcloud events, so an
