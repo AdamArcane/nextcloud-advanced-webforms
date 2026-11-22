@@ -100,7 +100,7 @@ class ImportCoreForms extends Command {
 				$output->writeln('  <comment>Draft problem (blocks publishing): ' . ($error['code'] ?? '?') . ' at ' . ($error['path'] ?? '?') . '</comment>');
 			}
 			foreach ($outcome['skipped'] as $item) {
-				$output->writeln(sprintf('  <comment>Left out [%s %s] %s:</comment> %s', $item['scope'], $item['ref'], $item['code'], $item['detail']));
+				$output->writeln(sprintf('  <comment>Left out [%s %s%s] %s:</comment> %s', $item['scope'], $item['ref'], $item['label'] === '' ? '' : ' "' . $item['label'] . '"', $item['code'], $item['detail']));
 			}
 		}
 		return $failed === 0 ? self::SUCCESS : self::FAILURE;

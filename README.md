@@ -44,8 +44,8 @@ release (see [Install](#install)). Please back up before you update.
 - **Versioning.** Published versions are immutable, and each response records the version it was
   submitted against. Drafts autosave.
 - **Import and export** a whole form as a file (definition only: no responses or secrets), and
-  **archive** forms you no longer use. Forms from the core Forms app can be brought across with
-  `occ webforms:import-core-forms`.
+  **archive** forms you no longer use. **Import form** also brings across your forms from the core Forms app, with or
+  without their responses.
 - **Sharing.** Public forms by link (`/apps/webforms/f/<token>`), with an optional custom address, a QR
   code, and code to embed the form in another website. Any user can create forms.
 

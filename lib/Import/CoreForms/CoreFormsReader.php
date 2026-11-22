@@ -51,11 +51,14 @@ class CoreFormsReader {
 	/**
 	 * @return list<array{id: int, title: string, ownerId: string}>
 	 */
-	public function listForms(?int $onlyId = null): array {
+	public function listForms(?int $onlyId = null, ?string $ownerId = null): array {
 		$qb = $this->db->getQueryBuilder();
 		$qb->select('*')->from(self::FORMS);
 		if ($onlyId !== null) {
-			$qb->where($qb->expr()->eq('id', $qb->createNamedParameter($onlyId, IQueryBuilder::PARAM_INT)));
+			$qb->andWhere($qb->expr()->eq('id', $qb->createNamedParameter($onlyId, IQueryBuilder::PARAM_INT)));
+		}
+		if ($ownerId !== null) {
+			$qb->andWhere($qb->expr()->eq('owner_id', $qb->createNamedParameter($ownerId)));
 		}
 		$forms = [];
 		foreach ($this->rows($qb) as $row) {
@@ -67,6 +70,27 @@ class CoreFormsReader {
 		}
 		usort($forms, static fn (array $a, array $b): int => $a['id'] <=> $b['id']);
 		return $forms;
+	}
+
+	/**
+	 * How many responses each of the forms has.
+	 *
+	 * @param list<int> $formIds
+	 * @return array<int, int>
+	 */
+	public function countResponses(array $formIds): array {
+		$counts = array_fill_keys($formIds, 0);
+		foreach (array_chunk($formIds, self::CHUNK) as $chunk) {
+			$qb = $this->db->getQueryBuilder();
+			$qb->select('form_id')->selectAlias($qb->func()->count('id'), 'total')
+				->from(self::SUBMISSIONS)
+				->where($qb->expr()->in('form_id', $qb->createNamedParameter($chunk, IQueryBuilder::PARAM_INT_ARRAY)))
+				->groupBy('form_id');
+			foreach ($this->rows($qb) as $row) {
+				$counts[(int)$row['form_id']] = (int)$row['total'];
+			}
+		}
+		return $counts;
 	}
 
 	/**

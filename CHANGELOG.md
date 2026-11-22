@@ -7,9 +7,10 @@
 
 ## Unreleased
 
-- **Import from the core Forms app.** `occ webforms:import-core-forms` brings your forms from the Nextcloud Forms
-  app across as new draft forms, and with `--with-responses` their responses too (the form is then published once
-  and closed). Use `--dry-run` first to see what would be left out. Questions with no equivalent (ranking, number
+- **Import from the core Forms app.** **Import form** is now a list of where a form can come from: a file, or your
+  forms in the Nextcloud Forms app. Pick forms, choose whether to bring their responses (the form is then
+  published once and closed), preview what would be left out, and import. Administrators can do the same for
+  everyone's forms with `occ webforms:import-core-forms`. Questions with no equivalent (ranking, number
   grids, time ranges), uploaded files, sharing settings and the confirmation email are not carried, and the
   command lists each one. See `docs/SCHEMA.md` section 13.3.
 

@@ -1212,16 +1212,33 @@ chosen, named "Copy of <title>", and opens it so it can be renamed.
 
 ### 13.3 Importing from core Forms (DECISION)
 
-People moving from the core Nextcloud Forms app can bring their forms, and optionally their responses, with
-an administrator command. It reads core Forms' tables on the same server and only ever selects, so core Forms
-is left as it was.
+People moving from the core Nextcloud Forms app can bring their forms, and optionally their responses, across
+from the app or with an administrator command. Both read core Forms' tables on the same server and only ever
+select, so core Forms is left as it was.
+
+**In the app.** **Import form** in the sidebar opens a list of where a form can come from: **From a file** (section
+13) and **From Nextcloud Forms**. The second is offered when the person owns forms in core Forms, and otherwise
+shown off with the reason. It lists those forms with their response counts, takes a switch for the responses, and
+has **Preview** (the report below, nothing created) and **Import**. Forms go one per request, so one with many
+responses cannot hold up or time out the rest, and a form that fails does not stop the others. The same list
+is where later sources (another form builder) would be added.
+
+- `GET /api/v1/import/core-forms` answers `{available, forms: [{id, title, responses}]}`: only forms the caller
+  owns in core Forms.
+- `POST /api/v1/import/core-forms` with `{formId, withResponses, dryRun}` answers `201` (or `200` for a preview)
+  with the outcome, limited to 60 a 5 minutes. A core form that is someone else's, or does not exist, is
+  `404`, so the route cannot be used to find out about other people's forms. Creating needs the same permission
+  as any new form (`create_not_allowed`, section 16).
+
+**With the command.** For an administrator, who may import anyone's forms:
 
 ```
 occ webforms:import-core-forms [--form=ID ...] [--user=ACCOUNT] [--with-responses] [--dry-run]
 ```
 
 - **Which forms.** Every core form, or the ones named with `--form` (repeat it). `--user` names the account that
-  will own the imported forms; without it each form goes to its owner in core Forms, who must exist here.
+  will own the imported forms; without it each form goes to its owner in core Forms, who must exist here. The
+  app's menu never does this: a person only ever imports forms they own in core Forms, as themselves.
 - **Always a new draft,** owned by that account, through the same draft save as a file import (section 13). It
   never overwrites anything. Problems the draft has are printed and block publishing, not the import.
 - **`--dry-run`** converts and prints the report and creates nothing. Run it first.
@@ -1261,11 +1278,12 @@ occ webforms:import-core-forms [--form=ID ...] [--user=ACCOUNT] [--with-response
 - **Not carried, and said so.** Who may open the form and how it is shared, the confirmation email, the option to
   shuffle options, the "other" answer, a question that was only shown after another answer (it is kept, always
   shown and not required), and uploaded files.
-- **The report.** Everything above that applies to a form is printed after it as `Left out [scope ref] code`, with
-  `scope` `form`, `question` or `answer`. Answer lines are counted per question, not listed one by one, and never
-  repeat what a respondent wrote.
-- **Left out on purpose:** an import button in the app (the command is the entry point, and the same converter can
-  sit behind a button later), importing into an existing form, and keeping core Forms' ids or share links.
+- **The report.** Everything above that applies to a form is returned as items with a `scope` (`form`, `question`
+  or `answer`), the question's `ref` and `label`, a `code`, an English `detail` and a `count`. The screen words them
+  in the person's language from the code, and the command prints the `detail`. Answer lines are counted per
+  question, not listed one by one, and never repeat what a respondent wrote.
+- **Left out on purpose:** importing into an existing form, keeping core Forms' ids or share links, and a
+  background job for very large forms (the screen imports one form per request instead).
 
 The conversion itself (`CoreFormsConverter`) does not touch the database. It takes the form, questions and
 submissions as plain arrays and is covered by `tests/Unit/Import/CoreFormsConverterTest.php`; the reader and the

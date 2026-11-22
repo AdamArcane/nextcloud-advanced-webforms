@@ -40,6 +40,40 @@ class CoreFormsImporter {
 	}
 
 	/**
+	 * What a person may import from core Forms: only the forms they own there (the app's screen uses this).
+	 *
+	 * @return array{available: bool, forms: list<array{id: int, title: string, responses: int}>}
+	 */
+	public function listFor(string $userId): array {
+		if (!$this->reader->isAvailable()) {
+			return ['available' => false, 'forms' => []];
+		}
+		$forms = $this->reader->listForms(null, $userId);
+		$counts = $this->reader->countResponses(array_map(static fn (array $form): int => $form['id'], $forms));
+		return [
+			'available' => true,
+			'forms' => array_map(static fn (array $form): array => [
+				'id' => $form['id'],
+				'title' => $form['title'],
+				'responses' => $counts[$form['id']] ?? 0,
+			], $forms),
+		];
+	}
+
+	/**
+	 * Import one core Forms form for the person who owns it there. A form that is someone else's, or that
+	 * does not exist, answers the same way, so this cannot be used to find out about other people's forms.
+	 *
+	 * @return array<string, mixed>|null the outcome of {@see import()}, or null when the person owns no such form
+	 */
+	public function importOwned(string $userId, int $coreFormId, bool $withResponses, bool $dryRun): ?array {
+		if (!$this->reader->isAvailable() || $this->reader->listForms($coreFormId, $userId) === []) {
+			return null;
+		}
+		return $this->import($coreFormId, $userId, $withResponses, $dryRun);
+	}
+
+	/**
 	 * @param bool $dryRun convert and report only, create nothing
 	 * @return array{
 	 *     coreId: int,
@@ -49,7 +83,7 @@ class CoreFormsImporter {
 	 *     responsesFound: int,
 	 *     responsesImported: int,
 	 *     errors: list<array<string, mixed>>,
-	 *     skipped: list<array{scope: string, ref: string, code: string, detail: string}>
+	 *     skipped: list<array{scope: string, ref: string, label: string, code: string, detail: string, count: int}>
 	 * }
 	 */
 	public function import(int $coreFormId, string $ownerId, bool $withResponses, bool $dryRun): array {
@@ -100,6 +134,8 @@ class CoreFormsImporter {
 			$outcome['skipped'][] = [
 				'scope' => 'form',
 				'ref' => 'responses',
+				'label' => '',
+				'count' => 1,
 				'code' => 'responses_not_imported',
 				'detail' => 'The responses were not imported because the form could not be published: '
 					. implode(', ', array_map(static fn (array $error): string => (string)($error['code'] ?? '?'), $e->getErrors()))

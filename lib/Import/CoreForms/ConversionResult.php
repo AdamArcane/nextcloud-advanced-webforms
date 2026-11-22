@@ -19,7 +19,7 @@ final class ConversionResult {
 	/**
 	 * @param array<string, mixed> $definition a draft definition (docs/SCHEMA.md section 3)
 	 * @param list<array{submittedAt: int, userId: ?string, data: array<string, mixed>}> $entries
-	 * @param list<array{scope: string, ref: string, code: string, detail: string}> $skipped
+	 * @param list<array{scope: string, ref: string, label: string, code: string, detail: string, count: int}> $skipped
 	 * @param array<int, string> $fieldIds core question id => field id in the definition
 	 */
 	public function __construct(

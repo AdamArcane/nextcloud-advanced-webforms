@@ -29,11 +29,14 @@ use OCA\Webforms\Forms\DefinitionValidator;
 final class CoreFormsConverter {
 	private const ANONYMOUS_PREFIX = 'anon-user-';
 
-	/** @var list<array{scope: string, ref: string, code: string, detail: string}> */
+	/** @var list<array{scope: string, ref: string, label: string, code: string, detail: string, count: int}> */
 	private array $skipped = [];
 
 	/** @var array<string, int> how many answers each `answer` report line stands for */
 	private array $answerCounts = [];
+
+	/** @var array<string, string> question id => its text, so the report can name the question */
+	private array $labels = [];
 
 	/**
 	 * @param array<string, mixed> $form
@@ -43,6 +46,10 @@ final class CoreFormsConverter {
 	public function convert(array $form, array $questions, array $submissions): ConversionResult {
 		$this->skipped = [];
 		$this->answerCounts = [];
+		$this->labels = [];
+		foreach ($questions as $question) {
+			$this->labels[(string)($question['id'] ?? '')] = mb_substr(trim((string)($question['text'] ?? '')), 0, 80);
+		}
 
 		usort($questions, static fn (array $a, array $b): int => ((int)($a['order'] ?? 0)) <=> ((int)($b['order'] ?? 0)));
 
@@ -694,7 +701,14 @@ final class CoreFormsConverter {
 	}
 
 	private function skip(string $scope, string $ref, string $code, string $detail): void {
-		$this->skipped[] = ['scope' => $scope, 'ref' => $ref, 'code' => $code, 'detail' => $detail];
+		$this->skipped[] = [
+			'scope' => $scope,
+			'ref' => $ref,
+			'label' => $scope === 'question' ? ($this->labels[$ref] ?? '') : '',
+			'code' => $code,
+			'detail' => $detail,
+			'count' => 1,
+		];
 	}
 
 	private function countAnswers(string $qid, string $code, int $count): void {
@@ -703,7 +717,7 @@ final class CoreFormsConverter {
 	}
 
 	/**
-	 * @return list<array{scope: string, ref: string, code: string, detail: string}>
+	 * @return list<array{scope: string, ref: string, label: string, code: string, detail: string, count: int}>
 	 */
 	private function report(): array {
 		$report = $this->skipped;
@@ -712,8 +726,10 @@ final class CoreFormsConverter {
 			$report[] = [
 				'scope' => 'answer',
 				'ref' => $qid,
+				'label' => $this->labels[$qid] ?? '',
 				'code' => $code,
 				'detail' => $count . ($count === 1 ? ' answer was' : ' answers were') . ' not imported.',
+				'count' => $count,
 			];
 		}
 		return $report;
