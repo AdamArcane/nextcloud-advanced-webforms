@@ -142,4 +142,19 @@ describe('template dialog', () => {
 		expect(select(wrapper).props('disabled')).toBe(true)
 		expect(button(wrapper, 'Create form').attributes('disabled')).toBeDefined()
 	})
+
+	it('is a normal dialog on a wide screen and a small, content-height one on a phone', async () => {
+		const wrapper = await mountDialog()
+		expect(wrapper.findComponent({ name: 'NcDialog' }).props('size')).toBe('normal')
+		wrapper.unmount()
+
+		const original = window.matchMedia
+		window.matchMedia = ((query: string) => ({ matches: true, media: query, addEventListener: vi.fn(), removeEventListener: vi.fn() })) as unknown as typeof window.matchMedia
+		try {
+			const phone = await mountDialog()
+			expect(phone.findComponent({ name: 'NcDialog' }).props('size')).toBe('small')
+		} finally {
+			window.matchMedia = original
+		}
+	})
 })

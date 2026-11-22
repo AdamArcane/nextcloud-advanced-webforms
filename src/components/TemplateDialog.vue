@@ -13,7 +13,7 @@ import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { createFromTemplate, deleteTemplate, fetchTemplates } from '../api/forms.ts'
 import { ApiError } from '../api/http.ts'
 import { describeError } from '../builder/errors.ts'
@@ -51,13 +51,28 @@ const working = ref(false)
 const error = ref<string | null>(null)
 const title = ref('')
 
+// On a phone the dialog is only as tall as what is in it and sits in the middle of the screen. NcDialog does that
+// for its small size (up to 512 px wide), and a normal one would fill the whole screen with empty space.
+const NARROW = '(max-width: 512px)'
+const narrow = ref(false)
+let query: MediaQueryList | null = null
+function onQueryChange(event: MediaQueryListEvent): void {
+	narrow.value = event.matches
+}
+onMounted(() => {
+	query = typeof window.matchMedia === 'function' ? window.matchMedia(NARROW) : null
+	narrow.value = query?.matches ?? false
+	query?.addEventListener('change', onQueryChange)
+})
+onBeforeUnmount(() => query?.removeEventListener('change', onQueryChange))
+
 const CATEGORY_ORDER = ['general', 'events', 'feedback', 'support']
 
 const isOwn = computed(() => selected.value?.id.startsWith('u:') === true)
 const canUse = computed(() => props.canCreate && !working.value && selected.value !== null)
 
 function blankChoice(): Choice {
-	return { id: BLANK_ID, label: t('webforms', 'Blank form'), hint: t('webforms', 'Start with nothing and add your own fields.') }
+	return { id: BLANK_ID, label: t('webforms', 'Blank form'), hint: t('webforms', 'Add your own fields from scratch.') }
 }
 
 function byCategory(a: { category: string }, b: { category: string }): number {
@@ -153,7 +168,7 @@ async function remove(): Promise<void> {
 <template>
 	<NcDialog :open="open"
 		:name="t('webforms', 'New form')"
-		size="normal"
+		:size="narrow ? 'small' : 'normal'"
 		@update:open="(value: boolean) => emit('update:open', value)">
 		<div class="af-tpl">
 			<NcNoteCard v-if="error" type="error">
@@ -206,7 +221,7 @@ async function remove(): Promise<void> {
 .af-tpl {
 	display: flex;
 	flex-direction: column;
-	gap: 12px;
+	gap: 16px;
 	padding-bottom: 12px;
 }
 
@@ -214,12 +229,50 @@ async function remove(): Promise<void> {
 	width: 100%;
 }
 
+/*
+ * Room for two lines in the box. The outline is drawn by the search input, which NcSelect lays over the chosen
+ * item at one row high, so it has to grow with the box or the second line spills out of it.
+ */
+.af-tpl__select :deep(.vs__dropdown-toggle) {
+	min-height: 68px;
+}
+
+.af-tpl__select :deep(.vs__selected-options) {
+	align-items: stretch;
+	min-height: 68px;
+	padding: 0;
+}
+
+.af-tpl__select :deep(.vs__search),
+.af-tpl__select :deep(.vs__search .input-field),
+.af-tpl__select :deep(.vs__search .input-field__main-wrapper),
+.af-tpl__select :deep(.vs__search .input-field__input) {
+	height: 100% !important;
+	min-height: 100% !important;
+}
+
+.af-tpl__select :deep(.vs__search) {
+	inset-block: 0;
+}
+
+.af-tpl__select :deep(.vs__selected) {
+	width: 100%;
+	height: auto;
+	min-height: 0;
+	margin: 0;
+	padding: 8px 14px;
+	border-radius: 0 !important;
+	background: transparent !important;
+}
+
 /* The same two lines in the list and in the box: the name, and under it what it is. */
 .af-tpl__option {
 	display: flex;
 	flex-direction: column;
+	gap: 2px;
 	min-width: 0;
-	line-height: 1.3;
+	padding: 6px 0;
+	line-height: 1.35;
 }
 
 .af-tpl__name {
