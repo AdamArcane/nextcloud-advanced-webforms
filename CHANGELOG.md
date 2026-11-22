@@ -5,6 +5,14 @@
 
 # Changelog
 
+## Unreleased
+
+- **Import from the core Forms app.** `occ webforms:import-core-forms` brings your forms from the Nextcloud Forms
+  app across as new draft forms, and with `--with-responses` their responses too (the form is then published once
+  and closed). Use `--dry-run` first to see what would be left out. Questions with no equivalent (ranking, number
+  grids, time ranges), uploaded files, sharing settings and the confirmation email are not carried, and the
+  command lists each one. See `docs/SCHEMA.md` section 13.3.
+
 ## 0.6.0 - 2026-11-20
 
 - A **read-only API** for other software such as n8n: the forms you can open, their questions and versions,
