@@ -37,4 +37,23 @@ final class NewFormDefaults {
 		}
 		return $settings;
 	}
+
+	/**
+	 * A template's definition with the person's own defaults laid over its settings (docs/SCHEMA.md section
+	 * 13.4). A default is only there when it differs from the built-in behaviour, so a person who set nothing
+	 * gets the template as it is, and one who chose an accent colour gets their colour.
+	 *
+	 * @param array<string, mixed> $definition
+	 * @param array<string, mixed> $preferences as returned by `UserPreferences::forUser()`
+	 * @return array<string, mixed>
+	 */
+	public static function applyTo(array $definition, array $preferences): array {
+		$defaults = self::settings($preferences);
+		if ($defaults === []) {
+			return $definition;
+		}
+		$own = $definition['settings'] ?? [];
+		$definition['settings'] = array_replace_recursive(is_array($own) ? $own : [], $defaults);
+		return $definition;
+	}
 }

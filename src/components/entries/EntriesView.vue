@@ -21,7 +21,7 @@ import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, nextTick, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import { icons } from '../../icons.ts'
 import Icon from '../common/Icon.vue'
-import { bulkDeleteEntries, bulkSetEntryStatus, deleteEntry, exportUrl, fetchEntrySummary, listDeliveries, listEntries, markEntriesSeen, retryDelivery, setEntryStatus } from '../../api/forms.ts'
+import { bulkDeleteEntries, bulkSetEntryStatus, deleteEntry, exportUrl, fetchEntrySummary, listDeliveries, listEntries, markEntriesSeen, promoteEntry, retryDelivery, setEntryStatus } from '../../api/forms.ts'
 import { ApiError } from '../../api/http.ts'
 import { defaultColumnIds, loadColumnChoice, responseColumns, saveColumnChoice, visibleColumns } from '../../entries/columns.ts'
 import { exportScope, MAX_SELECTED } from '../../entries/exporting.ts'
@@ -51,12 +51,15 @@ const props = withDefaults(defineProps<{
 	responsesSummary?: boolean
 	/** The person's role on the form. A Reviewer cannot delete responses or see the delivery log. */
 	role?: 'owner' | 'editor' | 'reviewer'
+	/** The form keeps a waiting list, and how many responses are on it now. */
+	waitlist?: { enabled: boolean, count: number }
 }>(), {
 	entryId: null,
 	statuses: () => [],
 	responsesView: 'table',
 	responsesSummary: true,
 	role: 'owner',
+	waitlist: () => ({ enabled: false, count: 0 }),
 })
 
 const canManage = props.role !== 'reviewer'
@@ -122,6 +125,28 @@ async function changeStatus(id: number, status: string | null): Promise<void> {
 		replaceEntry(await setEntryStatus(props.formId, id, status))
 	} catch {
 		statusError.value = true
+	} finally {
+		statusBusyId.value = null
+	}
+}
+
+const waitlistCount = ref(props.waitlist.count)
+watch(() => props.waitlist.count, (value) => {
+	waitlistCount.value = value
+})
+const promoteError = ref(false)
+
+/** Take a response off the waiting list, then show the list as the server has it (a waiting-list filter drops it). */
+async function promote(id: number): Promise<void> {
+	statusBusyId.value = id
+	promoteError.value = false
+	try {
+		await promoteEntry(props.formId, id)
+		waitlistCount.value = Math.max(0, waitlistCount.value - 1)
+		await loadEntries(false)
+		void loadSummary()
+	} catch {
+		promoteError.value = true
 	} finally {
 		statusBusyId.value = null
 	}
@@ -560,6 +585,9 @@ onMounted(() => {
 			<template #meta>
 				<span class="af-entries__count">
 					{{ filtered ? t('webforms', '{n} of {all} responses', { n: total, all: grandTotal }) : t('webforms', '{n} responses', { n: total }) }}
+					<template v-if="waitlistCount > 0">
+						{{ t('webforms', '({n} on the waiting list)', { n: waitlistCount }) }}
+					</template>
 				</span>
 			</template>
 			<template #end>
@@ -594,6 +622,7 @@ onMounted(() => {
 				:title="title"
 				:statuses="statuses"
 				@updated="replaceEntry"
+				@promoted="waitlistCount = Math.max(0, waitlistCount - 1)"
 				@changed="refreshFailedCount" />
 		</div>
 
@@ -620,7 +649,11 @@ onMounted(() => {
 				<ResponseFilters v-if="grandTotal > 0 || filtered"
 					:model-value="entryFilter"
 					:statuses="statuses"
+					:waitlist="waitlist.enabled || waitlistCount > 0"
 					@update:model-value="applyFilter" />
+				<NcNoteCard v-if="promoteError" type="error">
+					{{ t('webforms', 'Could not promote the response.') }}
+				</NcNoteCard>
 
 				<div v-if="loading" class="af-entries__center">
 					<NcLoadingIcon :size="44" />
@@ -746,6 +779,7 @@ onMounted(() => {
 						:seen-at="seenAt"
 						:busy-id="statusBusyId"
 						@status="changeStatus"
+						@promote="promote"
 						@updated="replaceEntry"
 						@select="selectOne"
 						@select-page="selectPage"
@@ -763,6 +797,7 @@ onMounted(() => {
 								:is-new="isNewResponse(entry, seenAt)"
 								:busy="statusBusyId === entry.id"
 								@status="(value) => changeStatus(entry.id, value)"
+								@promote="promote(entry.id)"
 								@updated="replaceEntry"
 								@toggle="expandedId = expandedId === entry.id ? null : entry.id"
 								@delete="confirmDeleteId = entry.id"

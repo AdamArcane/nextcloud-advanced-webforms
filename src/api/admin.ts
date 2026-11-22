@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+import type { BundledTemplate, SharedTemplate } from './forms.ts'
 import type { ResponseStatus } from '../types.ts'
 
 import axios from '@nextcloud/axios'
@@ -155,6 +156,54 @@ export async function fetchStatuses(): Promise<StatusAdminSettings> {
 export async function saveStatuses(statuses: ResponseStatus[], confirmDelete = false): Promise<StatusAdminSettings> {
 	try {
 		return (await axios.put<StatusAdminSettings>(url('/admin/statuses'), { statuses, confirmDelete })).data
+	} catch (error) {
+		throw toApiError(error)
+	}
+}
+
+/** The starter templates, each with whether it is hidden, and the templates made for everyone (docs/SCHEMA.md section 13.4). */
+export interface TemplateAdminSettings {
+	bundled: (BundledTemplate & { hidden: boolean })[]
+	shared: SharedTemplate[]
+}
+
+export async function fetchAdminTemplates(): Promise<TemplateAdminSettings> {
+	try {
+		return (await axios.get<TemplateAdminSettings>(url('/admin/templates'))).data
+	} catch (error) {
+		throw toApiError(error)
+	}
+}
+
+/** `hidden` lists the starter templates to hide from everyone; the rest are shown. */
+export async function saveHiddenTemplates(hidden: string[]): Promise<TemplateAdminSettings> {
+	try {
+		return (await axios.put<TemplateAdminSettings>(url('/admin/templates/hidden'), { hidden })).data
+	} catch (error) {
+		throw toApiError(error)
+	}
+}
+
+/** Make a template for everyone from the draft of one of the administrator's own forms. */
+export async function addSharedTemplate(formId: number, title: string): Promise<TemplateAdminSettings> {
+	try {
+		return (await axios.post<TemplateAdminSettings>(url('/admin/templates'), { formId, title })).data
+	} catch (error) {
+		throw toApiError(error)
+	}
+}
+
+export async function renameSharedTemplate(templateId: string, title: string): Promise<TemplateAdminSettings> {
+	try {
+		return (await axios.put<TemplateAdminSettings>(url('/admin/templates/' + encodeURIComponent(templateId)), { title })).data
+	} catch (error) {
+		throw toApiError(error)
+	}
+}
+
+export async function deleteSharedTemplate(templateId: string): Promise<TemplateAdminSettings> {
+	try {
+		return (await axios.delete<TemplateAdminSettings>(url('/admin/templates/' + encodeURIComponent(templateId)))).data
 	} catch (error) {
 		throw toApiError(error)
 	}

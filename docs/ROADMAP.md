@@ -185,6 +185,9 @@ Gap review written against 0.3.x (2026-11-15), from README.md, docs/SCHEMA.md an
 - **Respondent experience.** Done: a progress indicator on forms with several pages (SCHEMA.md section 5.1). Also done: a review step that lists the answers before sending (SCHEMA.md section 5.2). Still open: per-form language, and a picture inside a question (image blocks, SCHEMA.md section 4.9, are done).
 - **Sharing.** Public link, custom address, QR code and embedding (see Sharing above). Sharing a form with other accounts and groups is designed (see Collaboration above); it is not built yet.
 - **Question types.** Done: rating, scale, consent and date and time (SCHEMA.md section 4.8). Also done: slider, colour, date range, name, address, matrix and signature (SCHEMA.md section 4.10). Image blocks are done (SCHEMA.md section 4.9).
+- **Templates.** Done: a chooser behind New form with starter templates and the person's own saved templates
+  (SCHEMA.md section 13.4). Also done: the administrator can hide starters and make templates for everyone.
+  Still open: templates shared with only some groups.
 - **Builder.** Touch dragging is not supported.
 - **Rules.** Show, hide and require only. No conditional values or calculated fields.
 - **Actions.** Submit message and redirect are resolved synchronously, so they cannot depend on a background action.

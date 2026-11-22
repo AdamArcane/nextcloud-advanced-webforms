@@ -170,7 +170,9 @@ extend a deadline or raise the limit on a live form, change it and publish again
 | `opensAt` | unix seconds | the form takes responses from this moment |
 | `closesAt` | unix seconds, later than `opensAt` (`window_invalid`) | the form takes responses until this moment |
 | `notOpenMessage` | string, up to 500 | shown before `opensAt`. Default "This form is not open yet." |
-| `fullMessage` | string, up to 500 | shown at the limit. Default "This form has received the maximum number of responses." |
+| `fullMessage` | string, up to 500 | shown at the limit. Default "This form has received the maximum number of responses." With `whenFull` set to `waitlist`, shown above the form instead, and the default is "This form is full. You can join the waiting list." |
+| `whenFull` | `close` or `waitlist`, default `close` | what happens at the limit. `close` refuses new responses. `waitlist` keeps taking them and puts them on the waiting list (section 3.2). Only with `maxResponses` |
+| `waitlistMessage` | string, up to 500 | shown to a respondent who joined the waiting list. Default "You are on the waiting list." Only with `whenFull` set to `waitlist` |
 
 Times are unix seconds, so they mean the same moment everywhere. The builder shows and takes them in
 the owner's own time zone. A time in the past is allowed: a `closesAt` that has passed simply
@@ -181,12 +183,18 @@ that applies wins:
 
 1. `ended`: `closesAt` has come. Answered like a closed form, with `closedMessage`.
 2. `scheduled`: `opensAt` has not come yet. Answered with `notOpenMessage`.
-3. `full`: the form has as many responses as its limit. Answered with `fullMessage`.
+3. `full`: the form has as many responses as its limit. With `whenFull` set to `close`, answered with
+   `fullMessage`. With `whenFull` set to `waitlist` the state is still `full`, so the owner sees it, but
+   the public routes keep taking responses (section 3.2).
 4. `open`.
 
 The limit that counts is the lower of `maxResponses` and the server's cap (section 16). Every response
-the form has counts, whichever version it was sent to, and deleting a response frees a place. As with
-the server's cap, responses sent at the same instant can pass the limit by one.
+the form has counts, whichever version it was sent to, and deleting a response frees a place. Responses
+on the waiting list (section 3.2) do not count against the form's own `maxResponses`, but they do count
+against the server's cap, because they take space like any other response, and the server's cap always
+refuses. The form's own limit is checked again after the response is stored (section 3.2), so
+responses sent at the same instant cannot pass it, apart from the one case described there. The
+server's cap is still best effort and can be passed by one.
 
 The public page, the submit and the upload routes all answer `410` with
 `{"error": "closed", "reason": ..., "message": ...}` when the form does not take responses. `reason` is
@@ -201,10 +209,61 @@ With `showRemaining` and `maxResponses`, the public form carries `remaining` (ho
 it takes, by the limit that counts) and the page shows it under the description. Otherwise `remaining`
 is null.
 
-The owner API adds `availability` to every form: `{state, opensAt, closesAt, cap, responses}` for the
-published version, or null before the first publish. `cap` is the limit that counts, 0 for none. The
-forms list shows Scheduled, Ended or Full in place of Published, and the settings show the state with
-the responses counted against the limit.
+The owner API adds `availability` to every form: `{state, opensAt, closesAt, cap, responses, waitlisted, waitsWhenFull}`
+for the published version, or null before the first publish. `cap` is the limit that counts, 0 for none.
+`responses` is the number counted against the limit and `waitlisted` is the number on the waiting list
+(0 without one); `waitsWhenFull` says the form keeps a waiting list. The forms list shows Scheduled, Ended or Full in place of Published, and the settings
+show the state with the responses counted against the limit.
+
+### 3.2 Waiting list (DECISION)
+
+With `whenFull` set to `waitlist`, a form that has reached `maxResponses` keeps taking responses and puts
+them on a waiting list. The owner moves people off it by hand, one at a time. Nothing is promoted
+automatically, and a respondent cannot cancel or promote themselves (both are left out on purpose, see
+the end of this section).
+
+**Storage.** `advforms_entries` gets `waitlisted` (smallint, not null, default 0) with an index on
+`form_id, waitlisted`. It is not a response status (section 20.2): a status is a label from the
+administrator's list that changes nothing else, a response has only one, and the administrator can
+rename or delete it. The waiting list changes what counts against the limit, so it has a column of its
+own, and a waitlisted response can still carry any status.
+
+**Submit.** The form's own limit is decided in the submit algorithm (section 10, step 9):
+
+1. The response is stored with `waitlisted` 0.
+2. It is counted: how many responses of the form with `waitlisted` 0 have an `id` up to and including
+   its own. If that number is at most `maxResponses`, the response stays as it is.
+3. If it is over the limit, then with `whenFull` set to `waitlist` the response is flagged
+   `waitlisted` 1. With `close` it is deleted again and the submit answers `410 full` as it always has.
+
+Ids only grow, so almost every interleaving of requests gives the same answer, with no lock and the same
+behaviour on every database. One case remains: if the later id
+becomes visible and is counted before the earlier id has finished storing, both can stay and the form
+passes its limit by one. The window runs from an id being handed out to its row being stored, a single
+insert, so it takes two responses at the same instant. The owner sees it in the count (51 / 50) and can
+delete one response. The count is always made from the stored rows, so nothing can drift.
+
+The submit answer for a waitlisted response is a normal success with `waitlisted: true` added and
+`message` set to `waitlistMessage` (section 7.2 says which actions run).
+
+**Public form.** With `whenFull` set to `waitlist`, the public form carries `waitlisting`: the text
+to show above the form when it is at its limit (`fullMessage`, else "This form is full. You can join the
+waiting list."), and null otherwise. `remaining` is 0 then.
+
+**Promoting.** `POST /api/v1/forms/{id}/entries/{entryId}/promote` clears `waitlisted`. A response that
+is not on the waiting list is `422` with the error code `not_waitlisted`. The owner can promote past the limit, because
+it is the owner's own decision. The Responses view has a Promote button on a waitlisted response, and
+the waiting list is read oldest first (lowest `id`).
+
+**Showing it.** The Responses view shows a "Waiting list" label in the status column and offers it in the
+filter. `GET /api/v1/forms/{id}/entries` takes `waitlisted` (`true` or `false`) and gives each response
+`waitlisted`. The form's responses count is shown as `42 / 50, 6 on the waiting list`. Downloads are
+unchanged.
+
+**Deleting.** Deleting a response that counts frees a place and nobody moves up. The owner promotes.
+
+**Left out on purpose.** Promoting automatically, a respondent cancelling or leaving the list, a position
+in the line shown to the respondent, and a limit per option or per quantity.
 
 ## 4. Fields
 
@@ -852,6 +911,22 @@ condition group (same format as rules) evaluated against the submitted
 }}
 ```
 
+An action may also carry `on`, which says for which kind of response it runs. It only means something on
+a form with a waiting list (section 3.2), and `when` is checked in addition to it.
+
+| `on` | the action runs |
+| --- | --- |
+| omitted | when a response is submitted, whether it is confirmed or waitlisted. This is how actions have always worked |
+| `confirmed` | when a response is submitted and is not on the waiting list |
+| `waitlisted` | when a response is submitted and goes on the waiting list |
+| `promoted` | when the owner promotes a response off the waiting list |
+
+`on` is one of those four values, otherwise the publish gate refuses it as `action_on_invalid`.
+`promoted` runs with the answers the response was stored with, once, and an action never runs twice for the
+same response, so a promoted response gets the `promoted` actions and the ones it already got. For a
+waitlisted response the respondent sees `waitlistMessage` and no `message` or `redirect` action runs,
+unless it has `on` set to `waitlisted`.
+
 ### 7.2 Types
 
 - `email`:
@@ -1006,6 +1081,7 @@ Initial proposal, one row per entry:
 | `user_id` | nullable, set only for logged-in respondents |
 | `data` | JSON text, keyed by field ID, only visible fields |
 | `status`, `note` | nullable, the owner's status and private note (section 20) |
+| `waitlisted` | 0 or 1, default 0. 1 means the response is on the form's waiting list (section 3.2) |
 
 Entry access goes through one class (`EntryMapper`) so the storage can be
 swapped. Tables is not a storage backend: it is an after-submit action (section 15), and the built-in
@@ -1064,7 +1140,9 @@ The server never trusts the client's idea of visibility.
 7. Compute `required` (including `require` rules) and reject missing values.
 8. If the form disallows multiple submissions, enforce that for logged-in users.
    (Anonymous duplicate control is not reliable and is not promised.)
-9. In one transaction: insert the entry.
+9. Insert the entry. With a form limit (section 3.1), count it as in section 3.2: a response over
+   `maxResponses` is flagged `waitlisted` when `whenFull` is `waitlist`, and deleted again with
+   `410 full` when it is `close`.
 10. After commit: evaluate action conditions, enqueue jobs, resolve the
     `message` or `redirect` result, return it.
 
@@ -1210,6 +1288,133 @@ chosen, named "Copy of <title>", and opens it so it can be renamed.
   warnings, which block publishing and not saving. It goes through the same creation and draft save as an
   import, so a refused definition leaves no half-made form behind.
 
+### 13.3 Importing from core Forms (DECISION)
+
+People moving from the core Nextcloud Forms app can bring their forms, and optionally their responses, across
+from the app or with an administrator command. Both read core Forms' tables on the same server and only ever
+select, so core Forms is left as it was.
+
+**In the app.** **Import form** in the sidebar opens a list of where a form can come from: **From a file** (section
+13) and **From Nextcloud Forms**. The second is offered when the person owns forms in core Forms, and otherwise
+shown off with the reason. It lists those forms with their response counts, takes a switch for the responses, and
+has **Preview** (the report below, nothing created) and **Import**. Forms go one per request, so one with many
+responses cannot hold up or time out the rest, and a form that fails does not stop the others. The same list
+is where later sources (another form builder) would be added.
+
+- `GET /api/v1/import/core-forms` answers `{available, forms: [{id, title, responses}]}`: only forms the caller
+  owns in core Forms.
+- `POST /api/v1/import/core-forms` with `{formId, withResponses, dryRun}` answers `201` (or `200` for a preview)
+  with the outcome, limited to 60 a 5 minutes. A core form that is someone else's, or does not exist, is
+  `404`, so the route cannot be used to find out about other people's forms. Creating needs the same permission
+  as any new form (`create_not_allowed`, section 16).
+
+**With the command.** For an administrator, who may import anyone's forms:
+
+```
+occ webforms:import-core-forms [--form=ID ...] [--user=ACCOUNT] [--with-responses] [--dry-run]
+```
+
+- **Which forms.** Every core form, or the ones named with `--form` (repeat it). `--user` names the account that
+  will own the imported forms; without it each form goes to its owner in core Forms, who must exist here. The
+  app's menu never does this: a person only ever imports forms they own in core Forms, as themselves.
+- **Always a new draft,** owned by that account, through the same draft save as a file import (section 13). It
+  never overwrites anything. Problems the draft has are printed and block publishing, not the import.
+- **`--dry-run`** converts and prints the report and creates nothing. Run it first.
+- **Responses** are imported only with `--with-responses`. A response must belong to a version, so the form is
+  published once and then closed: it takes no new responses until the owner reopens it. A draft that cannot be
+  published keeps its form and loses its responses, and the report says why. Imported responses keep their time
+  and their account, are not counted as new, and carry no status or note. A respondent that core Forms hid
+  (`anon-user-...`) has no account here.
+- **Source.** The tables `forms_v2_forms`, `_questions`, `_options`, `_submissions` and `_answers`. Core Forms does
+  not promise this layout to other apps, so a column that is missing reads as "not set" and what was not read is
+  reported, never an error halfway through.
+
+| Core Forms | Here | Notes |
+| --- | --- | --- |
+| `short` | `text`, or `email`, `phone`, `number` by its validation | a regex validation has no equivalent: plain `text` |
+| `long` | `textarea` | |
+| `multiple` | `checkboxes` | `optionsLimitMin` and `optionsLimitMax` become `minSelected` and `maxSelected` |
+| `multiple_unique` | `radio` | |
+| `dropdown` | `select` | |
+| `date` | `date`, or `daterange` for a date range | `dateMin` and `dateMax` become `min` and `max` |
+| `time` | `time` | a time range has no equivalent |
+| `datetime` | `datetime` | |
+| `linearscale` | `scale`, or `rating` for the rating sub type | `max` is kept between 3 and 10 for a rating |
+| `color` | `color` | |
+| `file` | `file` | the question is kept, the uploaded files are not copied |
+| `grid` of radio or checkbox | `matrix` | at most 20 rows and 10 columns |
+| `grid` of numbers, `ranking`, any other type | nothing | the question and its answers are left out |
+
+- **Ids.** Field ids are made from the question text (`f_` and up to 29 characters, numbered when taken) and option
+  values from the option text, as the builder does (sections 4.1 and 4.3). The layout is one page with one field per
+  row, in core Forms' order.
+- **Answers.** Core Forms stores a choice as the option's text, so an answer is matched to an option by its text
+  (case ignored). One that matches no option (the "other" answer, or an option renamed since) is not imported.
+  Dates, times, scales, colours and grids are checked as they are read; one that is not valid is not imported.
+- **Form settings.** Title, description, the submission message (as a `message` action), whether more than one
+  response is allowed, and the opening and closing times (`opensAt`, `closesAt`).
+- **Not carried, and said so.** Who may open the form and how it is shared, the confirmation email, the option to
+  shuffle options, the "other" answer, a question that was only shown after another answer (it is kept, always
+  shown and not required), and uploaded files.
+- **The report.** Everything above that applies to a form is returned as items with a `scope` (`form`, `question`
+  or `answer`), the question's `ref` and `label`, a `code`, an English `detail` and a `count`. The screen words them
+  in the person's language from the code, and the command prints the `detail`. Answer lines are counted per
+  question, not listed one by one, and never repeat what a respondent wrote.
+- **Left out on purpose:** importing into an existing form, keeping core Forms' ids or share links, and a
+  background job for very large forms (the screen imports one form per request instead).
+
+The conversion itself (`CoreFormsConverter`) does not touch the database. It takes the form, questions and
+submissions as plain arrays and is covered by `tests/Unit/Import/CoreFormsConverterTest.php`; the reader and the
+command are the thin parts around it.
+
+### 13.4 Templates (DECISION)
+
+**New form** opens a chooser: a blank form, the templates the administrator made for everyone, the person's
+own templates, and starter templates that ship with the app. A template is only a definition (section 3), so making a form from one is the same step as making a
+copy (section 13.2).
+
+- **Starter templates.** JSON files in `lib/Forms/Templates/`, each with an `id`, a `category`, a `name`, a
+  `description` and a `definition`. They are read from disk and need no table. Each one must pass the
+  validator as it is, so it can be published without changes, and none carries an action with a secret
+  (a test checks both). Their ids are `b:<name>` in the API. The files themselves are not editable in the app,
+  but the administrator can hide any of them (see Server templates below).
+- **Own templates.** "Save as template" in a form's menu keeps its draft in `advforms_templates` (owner, title,
+  definition, times), private to that person: they are not shared, and an account's templates are deleted
+  with the account. Their ids are `u:<number>` in the API. A person keeps at most 50 (`template_limit`), and
+  the 512 KB limit on a definition applies. Saving needs the Editor role on the form (section 22.1).
+- **What a template brings.** Fields, layout, pages, rules, actions and settings. Webhook secrets are left
+  out, as in an export (section 13). Nothing of a form's responses, versions or link exists in a template.
+- **Making a form.** The title is the one the person typed, or else the template's own. The person's defaults
+  for new forms (section 16.1) lay over the template's settings, so a person who set an accent colour gets it
+  on every form, and one who set nothing gets the template as it is. The form is a draft: it is saved like an
+  import, so problems come back as warnings and publishing stays the gate.
+- **Language.** The starter templates are kept in English. The browser sends `strings`, a map from each English
+  text to its translation, and the server replaces only the properties a respondent reads (`title`,
+  `description`, `label`, `text`, `placeholder`, `submitLabel`, `closedMessage`, `minLabel`, `maxLabel`,
+  `reviewTitle`). It never changes an id, a value, a type or a rule, and it ignores entries over 300 or
+  longer than 1000 characters. A person's own template is used as saved, in whatever language it was written.
+- **Endpoints.** `GET /api/v1/templates` answers `{ bundled, own }`. `POST /api/v1/forms/from-template` with
+  `templateId`, an optional `title` and `strings` answers `201` with `{ form, errors }`, and is rate limited
+  like the core Forms import. `POST /api/v1/forms/{id}/save-as-template` with an optional `title` answers
+  `201`. `DELETE /api/v1/templates/{templateId}` removes one of the person's own. Another person's template
+  answers `404`.
+- **Server templates.** The administrator has a Templates section in the server settings with two parts.
+  Which starter templates are shown: the ids of the hidden ones are kept in app config (`templates_hidden`),
+  nothing hidden is the default, and a damaged value hides nothing. A hidden starter is not listed and
+  cannot be used (`404`), and forms already made from it are untouched. And shared templates: rows of
+  `advforms_templates` with an empty `owner_id`, which no account has. The administrator makes one from the
+  draft of one of their own forms (Editor role needed, as for any template), and can rename and delete it.
+  It is a copy as of that moment: changing the form later does not change the template. At most 100.
+  Everyone who may create forms sees them under "Shared templates"; ids are `s:<number>`, and they are used
+  like any other template. Only the administrator can add, rename or delete them (the admin endpoints below).
+- **Admin endpoints** (administrators only): `GET /api/v1/admin/templates` answers the starter templates, each
+  with `hidden`, and the shared ones. `PUT /api/v1/admin/templates/hidden` with `hidden`, a list of starter ids,
+  replaces the hidden set (ids that are not starter templates are ignored). `POST /api/v1/admin/templates`
+  with `formId` and an optional `title`, `PUT /api/v1/admin/templates/{templateId}` with `title`, and
+  `DELETE /api/v1/admin/templates/{templateId}`. Each answers the same list as the `GET`.
+- **Left out on purpose.** Templates shared with only some groups, and changing the fields of a starter
+  template in the app. A shared template made from a copy of a starter covers the second.
+
 ## 14. Nextcloud events (DECISION)
 
 Besides the per-form webhook action (section 7), the app dispatches Nextcloud events, so an
@@ -1226,6 +1431,7 @@ name is what an administrator registers. They live in `OCA\Webforms\Event\`.
 | `EntryCreatedEvent` | `entry.created` | a response is stored |
 | `EntryDeletedEvent` | `entry.deleted` | the owner deletes a response |
 | `EntryStatusChangedEvent` | `entry.status_changed` | the owner gives a response another status (section 20.2) |
+| `EntryPromotedEvent` | `entry.promoted` | the owner promotes a response off the waiting list (section 3.2) |
 | `FormPublishedEvent` | `form.published` | a form is published, including a republish with no changes |
 | `FormStatusChangedEvent` | `form.status_changed` | a form is unpublished, reopened or closed |
 
@@ -1234,7 +1440,10 @@ Every payload has `event`, `formId`, `formTitle` and `ownerId`. The rest:
 - `entry.created`: the webhook body of section 7.3 (`versionId`, `entryId`, `submittedAt`, `userId`,
   `data` with label and value for each visible answered field). Uploaded files are described by
   name, size and type, never by where they are stored.
+- `entry.created` and the webhook body also carry `waitlisted` (true when the response went on the
+  waiting list).
 - `entry.deleted`: `versionId`, `entryId`, `deletedBy`. No answers.
+- `entry.promoted`: `versionId`, `entryId`, `promotedBy`. No answers.
 - `form.published`: `versionId`, `versionNumber`, `newVersion` (false when the draft matched the
   latest version, so no version was added) and `publicToken`.
 - `form.status_changed`: `status` and `previousStatus`, each `unpublished`, `published` or `closed`.
@@ -1255,7 +1464,7 @@ Rules:
 
 `OCA\Webforms\WorkflowEngine\FormsEntity` registers the events with the Nextcloud workflow engine
 (Flow) as an entity called "Webforms", so "Response submitted", "Response deleted", "Response status
-changed", "Form published"
+changed", "Response promoted from the waiting list", "Form published"
 and "Form status changed" can be chosen as the "When" of a flow. The event name the engine listens
 for is the event class name. An administrator's flow sees every form. A user's own flow only runs for
 forms that user owns. Webforms offers triggers only. The actions (what a flow does) come from other
@@ -1723,6 +1932,8 @@ section 17. A response arrives with none.
   row, and ticked rows can be given a status together.
 - A status changes nothing else. A response marked "Spam" is still in the list, the summary and the
   count for the response limit, and what its actions already did stays done. Filter it out to hide it.
+- The waiting list (section 3.2) is not a status. It is stored and filtered on its own, and only shown
+  beside the status.
 
 **In a download.** The CSV and Excel files get a fourth fixed column, `Status`, after `Respondent`,
 holding the label. The Files action (section 19) and the Tables action (section 15) do not: they run

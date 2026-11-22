@@ -133,6 +133,9 @@ class EntryMapper extends QBMapper {
 		} elseif ($filter->respondent === EntryFilter::RESPONDENT_ANONYMOUS) {
 			$qb->andWhere($qb->expr()->isNull('user_id'));
 		}
+		if ($filter->waitlisted !== null) {
+			$qb->andWhere($qb->expr()->eq('waitlisted', $qb->createNamedParameter($filter->waitlisted ? 1 : 0, IQueryBuilder::PARAM_INT)));
+		}
 		if ($filter->statuses !== null) {
 			$ids = array_values(array_filter($filter->statuses, static fn (string $id): bool => $id !== ResponseStatuses::NONE));
 			$any = [];
@@ -160,6 +163,68 @@ class EntryMapper extends QBMapper {
 	}
 
 	/**
+	 * How many responses count against the form's own limit: all but the ones on the waiting list
+	 * (docs/SCHEMA.md section 3.2).
+	 *
+	 * @throws Exception
+	 */
+	public function countConfirmed(int $formId): int {
+		return $this->countWhere($formId, 0, null);
+	}
+
+	/**
+	 * How many responses are on the form's waiting list.
+	 *
+	 * @throws Exception
+	 */
+	public function countWaitlisted(int $formId): int {
+		return $this->countWhere($formId, 1, null);
+	}
+
+	/**
+	 * How many responses that count against the limit have an id up to and including this one: where the
+	 * response stands in the line. Ids only grow, so this is the same answer however requests interleave.
+	 *
+	 * @throws Exception
+	 */
+	public function countConfirmedUpTo(int $formId, int $entryId): int {
+		return $this->countWhere($formId, 0, $entryId);
+	}
+
+	/**
+	 * @throws Exception
+	 */
+	private function countWhere(int $formId, int $waitlisted, ?int $upToId): int {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select($qb->func()->count('*', 'total'))->from($this->getTableName())
+			->where($qb->expr()->eq('form_id', $qb->createNamedParameter($formId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->eq('waitlisted', $qb->createNamedParameter($waitlisted, IQueryBuilder::PARAM_INT)));
+		if ($upToId !== null) {
+			$qb->andWhere($qb->expr()->lte('id', $qb->createNamedParameter($upToId, IQueryBuilder::PARAM_INT)));
+		}
+		$result = $qb->executeQuery();
+		$total = (int)$result->fetchOne();
+		$result->closeCursor();
+		return $total;
+	}
+
+	/**
+	 * Put a response on the waiting list, or take it off. Answers whether a row changed, so promoting a
+	 * response that is not on the list is told apart from promoting one that is.
+	 *
+	 * @throws Exception
+	 */
+	public function setWaitlisted(int $formId, int $entryId, bool $waitlisted): bool {
+		$qb = $this->db->getQueryBuilder();
+		$qb->update($this->getTableName())
+			->set('waitlisted', $qb->createNamedParameter($waitlisted ? 1 : 0, IQueryBuilder::PARAM_INT))
+			->where($qb->expr()->eq('id', $qb->createNamedParameter($entryId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->eq('form_id', $qb->createNamedParameter($formId, IQueryBuilder::PARAM_INT)))
+			->andWhere($qb->expr()->eq('waitlisted', $qb->createNamedParameter($waitlisted ? 0 : 1, IQueryBuilder::PARAM_INT)));
+		return $qb->executeStatement() === 1;
+	}
+
+	/**
 	 * How many responses each of these forms has. A form without responses is left out.
 	 *
 	 * @param list<int> $formIds
@@ -167,6 +232,26 @@ class EntryMapper extends QBMapper {
 	 * @throws Exception
 	 */
 	public function countByForms(array $formIds): array {
+		return $this->countGrouped($formIds, null);
+	}
+
+	/**
+	 * How many responses of each of these forms are on the waiting list. A form with none is left out.
+	 *
+	 * @param list<int> $formIds
+	 * @return array<int, int> form id to count
+	 * @throws Exception
+	 */
+	public function countWaitlistedByForms(array $formIds): array {
+		return $this->countGrouped($formIds, 1);
+	}
+
+	/**
+	 * @param list<int> $formIds
+	 * @return array<int, int>
+	 * @throws Exception
+	 */
+	private function countGrouped(array $formIds, ?int $waitlisted): array {
 		$counts = [];
 		foreach (array_chunk(array_values(array_unique($formIds)), 500) as $chunk) {
 			$qb = $this->db->getQueryBuilder();
@@ -175,6 +260,9 @@ class EntryMapper extends QBMapper {
 				->from($this->getTableName())
 				->where($qb->expr()->in('form_id', $qb->createNamedParameter($chunk, IQueryBuilder::PARAM_INT_ARRAY)))
 				->groupBy('form_id');
+			if ($waitlisted !== null) {
+				$qb->andWhere($qb->expr()->eq('waitlisted', $qb->createNamedParameter($waitlisted, IQueryBuilder::PARAM_INT)));
+			}
 			$result = $qb->executeQuery();
 			while (($row = $result->fetch()) !== false) {
 				$counts[(int)$row['form_id']] = (int)$row['total'];

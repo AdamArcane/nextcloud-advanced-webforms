@@ -26,6 +26,18 @@ function form(status: number, availability: Partial<FormAvailability> | null, ar
 	}
 }
 
+describe('waiting list wording', () => {
+	it('says a full form takes new responses on a waiting list, and how many wait', () => {
+		const note = availabilityNote(form(FORM_STATUS_PUBLISHED, { state: 'full', cap: 5, responses: 5, waitlisted: 2, waitsWhenFull: true }))
+		expect(note).toBe('Full: new responses join the waiting list. 5 of 5 responses. 2 responses on the waiting list.')
+	})
+
+	it('keeps the old wording for a form that closes when full', () => {
+		expect(availabilityNote(form(FORM_STATUS_PUBLISHED, { state: 'full', cap: 5, responses: 5 })))
+			.toBe('Full: it takes no more responses. 5 of 5 responses.')
+	})
+})
+
 describe('statusText', () => {
 	it('words the state of a published form', () => {
 		expect(statusText(form(FORM_STATUS_PUBLISHED, {}))).toBe('Published')

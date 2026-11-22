@@ -168,6 +168,11 @@ export async function markEntriesSeen(id: number): Promise<number | null> {
 	return (await call(axios.post<{ previousSeenAt: number | null }>(url('/forms/' + id + '/entries/seen')))).previousSeenAt
 }
 
+/** Take a response off the waiting list so it counts as a response. Rejects with status 422 `not_waitlisted` when it is not on it. */
+export async function promoteEntry(id: number, entryId: number): Promise<void> {
+	await call(axios.post(url('/forms/' + id + '/entries/' + entryId + '/promote')))
+}
+
 /** Give a response a status, or null for none. Resolves to the response. */
 export function setEntryStatus(id: number, entryId: number, status: string | null): Promise<EntryRecord> {
 	return call(axios.put<EntryRecord>(url('/forms/' + id + '/entries/' + entryId + '/status'), { status }))
@@ -252,4 +257,92 @@ export function duplicateForm(id: number, title: string): Promise<SaveResult> {
 /** Create a new draft form from the parsed contents of an export file. Rejects with an ApiError. */
 export function importForm(pkg: unknown): Promise<SaveResult> {
 	return call(axios.post<SaveResult>(url('/forms/import'), { package: pkg }))
+}
+
+/** A starter template that ships with the app (docs/SCHEMA.md section 13.4). Its text is English. */
+export interface BundledTemplate {
+	id: string
+	category: string
+	name: string
+	description: string
+	fieldCount: number
+}
+
+/** A template the person saved from one of their own forms. */
+export interface OwnTemplate {
+	id: string
+	name: string
+	fieldCount: number
+	updatedAt: number
+}
+
+/** A template the administrator made for everyone. */
+export type SharedTemplate = OwnTemplate
+
+export interface TemplateList {
+	bundled: BundledTemplate[]
+	shared: SharedTemplate[]
+	own: OwnTemplate[]
+}
+
+export function fetchTemplates(): Promise<TemplateList> {
+	return call(axios.get<TemplateList>(url('/templates')))
+}
+
+/**
+ * A new draft form from a template. `strings` maps the English text of a starter template to its translation
+ * and is left out for one of the person's own templates.
+ */
+export function createFromTemplate(templateId: string, title: string, strings?: Record<string, string>): Promise<SaveResult> {
+	return call(axios.post<SaveResult>(url('/forms/from-template'), { templateId, title, strings: strings ?? {} }))
+}
+
+export function saveAsTemplate(formId: number, title: string): Promise<OwnTemplate> {
+	return call(axios.post<OwnTemplate>(url('/forms/' + formId + '/save-as-template'), { title }))
+}
+
+export async function deleteTemplate(templateId: string): Promise<void> {
+	await call(axios.delete(url('/templates/' + encodeURIComponent(templateId))))
+}
+
+/** A form in the core Forms app that the person owns there. */
+export interface CoreFormSummary {
+	id: number
+	title: string
+	responses: number
+}
+
+/** One thing that did not come across from core Forms (docs/SCHEMA.md section 13.3). */
+export interface CoreImportSkipped {
+	scope: 'form' | 'question' | 'answer'
+	ref: string
+	/** The question's text, for a question or answer line. */
+	label: string
+	code: string
+	/** An English sentence, only for a code the screen has no text for. */
+	detail: string
+	/** For an answer line, how many answers it stands for. */
+	count: number
+}
+
+export interface CoreImportOutcome {
+	coreId: number
+	title: string
+	/** The new draft, or null for a preview. */
+	formId: number | null
+	fields: number
+	responsesFound: number
+	responsesImported: number
+	errors: DefinitionError[]
+	skipped: CoreImportSkipped[]
+}
+
+/** The forms the person owns in the core Forms app, or `available: false` when it was never installed. */
+export function fetchCoreForms(): Promise<{ available: boolean, forms: CoreFormSummary[] }> {
+	return call(axios.get<{ available: boolean, forms: CoreFormSummary[] }>(url('/import/core-forms')))
+}
+
+/** Import one core Forms form as a new draft, or with `dryRun` only report what would be left out. Rejects with an ApiError. */
+export function importCoreForm(formId: number, withResponses: boolean, dryRun: boolean): Promise<CoreImportOutcome> {
+	return call(axios.post<CoreImportOutcome>(url('/import/core-forms'), { formId, withResponses, dryRun }))
 }

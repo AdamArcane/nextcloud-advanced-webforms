@@ -75,4 +75,19 @@ class AvailabilityTest extends TestCase {
 		$this->assertSame(0, Availability::ownCap(['maxResponses' => Availability::MAX_RESPONSES + 1]));
 		$this->assertSame(7, Availability::ownCap(['maxResponses' => 7]));
 	}
+
+	public function testWaitingListNeedsALimit(): void {
+		$this->assertTrue(Availability::waitsWhenFull(['maxResponses' => 5, 'whenFull' => 'waitlist']));
+		$this->assertFalse(Availability::waitsWhenFull(['whenFull' => 'waitlist']));
+		$this->assertFalse(Availability::waitsWhenFull(['maxResponses' => 5]));
+		$this->assertFalse(Availability::waitsWhenFull(['maxResponses' => 5, 'whenFull' => 'close']));
+	}
+
+	public function testOwnLimitCountsOnlyConfirmedResponsesButTheServerLimitCountsAll(): void {
+		// 5 confirmed and 3 waiting: the form's own limit of 5 is reached, the server's limit of 10 is not.
+		$this->assertSame('full', Availability::of(['maxResponses' => 5], self::NOW, 5, 10, 8)['state']);
+		// 2 confirmed and 8 waiting: the form is not full, but the server's limit of 10 is.
+		$this->assertSame('full', Availability::of(['maxResponses' => 5], self::NOW, 2, 10, 10)['state']);
+		$this->assertSame('open', Availability::of(['maxResponses' => 5], self::NOW, 2, 10, 9)['state']);
+	}
 }

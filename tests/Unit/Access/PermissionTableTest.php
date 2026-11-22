@@ -26,6 +26,8 @@ final class PermissionTableTest extends TestCase {
 	private const FORM_SERVICE = [
 		'exportForm' => 'EDITOR',
 		'duplicateForm' => 'EDITOR',
+		'saveAsTemplate' => 'EDITOR',
+		'saveServerTemplate' => 'EDITOR',
 		'saveDraft' => 'EDITOR',
 		'publish' => 'EDITOR',
 		'setShare' => 'EDITOR',
@@ -45,7 +47,7 @@ final class PermissionTableTest extends TestCase {
 	];
 
 	/** Public methods that do not name a form to act on (they list, create or build from the caller's own data). */
-	private const FORM_SERVICE_OPEN = ['list', 'listForDisplay', 'create', 'importForm', 'backup', 'get', 'toArray', 'destinationErrorsFor', 'holdsFilesInFiles'];
+	private const FORM_SERVICE_OPEN = ['list', 'listForDisplay', 'create', 'importForm', 'listTemplates', 'createFromTemplate', 'deleteTemplate', 'listServerTemplates', 'setHiddenTemplates', 'renameServerTemplate', 'deleteServerTemplate', 'backup', 'get', 'toArray', 'destinationErrorsFor', 'holdsFilesInFiles'];
 
 	private const ACTION_LOG = ['list' => 'EDITOR', 'retry' => 'EDITOR'];
 	private const EXPORT = ['export' => 'REVIEWER'];

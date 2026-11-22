@@ -21,8 +21,10 @@ use OCA\Webforms\Forms\EntryFilter;
 use OCA\Webforms\Service\EntryExportService;
 use OCA\Webforms\Access\Role;
 use OCA\Webforms\Service\FormService;
+use OCA\Webforms\Service\WaitlistService;
 use OCA\Webforms\Forms\ImageSource;
 use OCA\Webforms\Forms\JsonShape;
+use OCA\Webforms\Import\CoreForms\CoreFormsImporter;
 use OCA\Webforms\Uploads\Ports\OwnerImagePort;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -49,6 +51,8 @@ class FormController extends Controller {
 		private readonly ActionLogService $actionLog,
 		private readonly EntryExportService $export,
 		private readonly OwnerImagePort $images,
+		private readonly WaitlistService $waitlist,
+		private readonly CoreFormsImporter $coreImporter,
 	) {
 		parent::__construct(Application::APP_ID, $request);
 	}
@@ -177,6 +181,83 @@ class FormController extends Controller {
 	}
 
 	/**
+	 * The templates the caller can start from: the starter ones that ship with the app, and their own
+	 * (docs/SCHEMA.md section 13.4).
+	 */
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/templates')]
+	public function templates(): JSONResponse {
+		return $this->guard(fn (): JSONResponse => new JSONResponse($this->service->listTemplates($this->userId())));
+	}
+
+	/**
+	 * A new draft form from a template. `strings` maps the English text of a starter template to its
+	 * translation; it is ignored for the caller's own templates.
+	 *
+	 * @param array<mixed> $strings
+	 */
+	#[NoAdminRequired]
+	#[UserRateLimit(limit: 60, period: 300)]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/forms/from-template')]
+	public function createFromTemplate(string $templateId = '', string $title = '', array $strings = []): JSONResponse {
+		return $this->guard(function () use ($templateId, $title, $strings): JSONResponse {
+			$created = $this->service->createFromTemplate($this->userId(), $templateId, $title, $strings);
+			return new JSONResponse([
+				'form' => $this->service->toArray($created['form'], $this->userId(), true),
+				'errors' => $created['errors'],
+			], Http::STATUS_CREATED);
+		});
+	}
+
+	/**
+	 * Keep this form's draft as one of the caller's own templates.
+	 */
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/forms/{id}/save-as-template')]
+	public function saveAsTemplate(int $id, string $title = ''): JSONResponse {
+		return $this->guard(function () use ($id, $title): JSONResponse {
+			$template = $this->service->saveAsTemplate($this->userId(), $id, $title);
+			return new JSONResponse(['id' => 'u:' . $template->getId(), 'name' => $template->getTitle()], Http::STATUS_CREATED);
+		});
+	}
+
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'DELETE', url: '/api/v1/templates/{templateId}')]
+	public function deleteTemplate(string $templateId): JSONResponse {
+		return $this->guard(function () use ($templateId): JSONResponse {
+			$this->service->deleteTemplate($this->userId(), $templateId);
+			return new JSONResponse(['ok' => true]);
+		});
+	}
+
+	/**
+	 * The forms the caller owns in the core Forms app, for the import menu (docs/SCHEMA.md section 13.3).
+	 * `available` is false when core Forms was never installed here.
+	 */
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/import/core-forms')]
+	public function coreForms(): JSONResponse {
+		return new JSONResponse($this->coreImporter->listFor($this->userId()));
+	}
+
+	/**
+	 * Import one of the caller's core Forms forms as a new draft, or with `dryRun` only report what would
+	 * be left out. One form per request, so a form with many responses cannot hold up the others.
+	 */
+	#[NoAdminRequired]
+	#[UserRateLimit(limit: 60, period: 300)]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/import/core-forms')]
+	public function importCoreForm(int $formId = 0, bool $withResponses = false, bool $dryRun = false): JSONResponse {
+		return $this->guard(function () use ($formId, $withResponses, $dryRun): JSONResponse {
+			$outcome = $this->coreImporter->importOwned($this->userId(), $formId, $withResponses, $dryRun);
+			if ($outcome === null) {
+				throw new NotFoundException();
+			}
+			return new JSONResponse($outcome, $dryRun ? Http::STATUS_OK : Http::STATUS_CREATED);
+		});
+	}
+
+	/**
 	 * @param array<string, mixed> $definition
 	 */
 	#[NoAdminRequired]
@@ -255,9 +336,10 @@ class FormController extends Controller {
 		string $where = '',
 		string $sort = '',
 		string $status = '',
+		string $waitlisted = '',
 	): JSONResponse {
 		try {
-			$filter = EntryFilter::fromInput($q, $from, $to, $respondent, $where, $sort, $status);
+			$filter = EntryFilter::fromInput($q, $from, $to, $respondent, $where, $sort, $status, null, $waitlisted);
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => 'filter_invalid', 'reason' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
@@ -272,9 +354,9 @@ class FormController extends Controller {
 	 */
 	#[NoAdminRequired]
 	#[FrontpageRoute(verb: 'GET', url: '/api/v1/forms/{id}/entries/summary')]
-	public function entriesSummary(int $id, string $q = '', string $from = '', string $to = '', string $respondent = '', string $where = '', string $status = ''): JSONResponse {
+	public function entriesSummary(int $id, string $q = '', string $from = '', string $to = '', string $respondent = '', string $where = '', string $status = '', string $waitlisted = ''): JSONResponse {
 		try {
-			$filter = EntryFilter::fromInput($q, $from, $to, $respondent, $where, 'oldest', $status);
+			$filter = EntryFilter::fromInput($q, $from, $to, $respondent, $where, 'oldest', $status, null, $waitlisted);
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => 'filter_invalid', 'reason' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
@@ -313,12 +395,13 @@ class FormController extends Controller {
 		string $ids = '',
 		string $columns = '',
 		string $status = '',
+		string $waitlisted = '',
 	): DataDownloadResponse|JSONResponse {
 		if (!in_array($format, [EntryExportService::CSV, EntryExportService::XLSX], true)) {
 			return new JSONResponse(['error' => 'format_invalid'], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 		try {
-			$filter = EntryFilter::fromInput($q, $from, $to, $respondent, $where, $sort, $status);
+			$filter = EntryFilter::fromInput($q, $from, $to, $respondent, $where, $sort, $status, null, $waitlisted);
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => 'filter_invalid', 'reason' => $e->getMessage()], Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
@@ -380,7 +463,7 @@ class FormController extends Controller {
 	 */
 	private static function bodyFilter(array $filter): EntryFilter {
 		$text = static fn (string $key): string => is_scalar($filter[$key] ?? null) ? (string)$filter[$key] : '';
-		return EntryFilter::fromInput($text('q'), $text('from'), $text('to'), $text('respondent'), $text('where'), '', $text('status'));
+		return EntryFilter::fromInput($text('q'), $text('from'), $text('to'), $text('respondent'), $text('where'), '', $text('status'), null, $text('waitlisted'));
 	}
 
 	/**
@@ -413,6 +496,17 @@ class FormController extends Controller {
 	public function setEntryStatus(int $id, int $entryId, ?string $status = null): JSONResponse {
 		return $this->guard(fn (): JSONResponse => new JSONResponse(
 			$this->service->setEntryStatus($this->userId(), $id, $entryId, $status === '' ? null : $status),
+		));
+	}
+
+	/**
+	 * Move a response off the form's waiting list (docs/SCHEMA.md section 3.2).
+	 */
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/forms/{id}/entries/{entryId}/promote', requirements: ['entryId' => '\d+'])]
+	public function promoteEntry(int $id, int $entryId): JSONResponse {
+		return $this->guard(fn (): JSONResponse => new JSONResponse(
+			$this->waitlist->promote($this->userId(), $id, $entryId),
 		));
 	}
 

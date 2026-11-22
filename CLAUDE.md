@@ -109,6 +109,31 @@ config, `StatusSettings`) and `note`, and `#/f/<id>/responses/<entryId>` is a pa
 shown inside `EntriesView` so the list keeps its state. No assignment, by decision. Not yet tried on
 the dev instance: the migration, the routes and the print view.
 
+Import from core Forms (docs/SCHEMA.md section 13.3): `lib/Import/CoreForms/` (reader, converter, importer),
+`occ webforms:import-core-forms`, and an Import form dialog (`src/components/ImportDialog.vue`) that lists the
+owner's core forms, previews what would be left out and can bring responses (the form is then published once
+and closed). Ranking, number grids, time ranges, uploaded files, sharing settings and the confirmation email
+are not carried. Tried on the dev instance: the dialog import works. The `occ` command and bringing
+responses were not checked by hand.
+
+Waiting list (docs/SCHEMA.md sections 3.2 and 4): `settings.whenFull` set to `waitlist` keeps taking responses
+past `maxResponses` and marks them waiting (not a status; `WaitlistService`, `lib/Forms/Availability.php`,
+`src/availability.ts`). Owners can filter the waiting list and promote a response by hand; actions can run on
+confirmed, waitlisted and promoted, and there is a Flow event for a promotion. The migration
+`Version001100Date20261122120000` ran on the dev instance. Not yet tried by hand: joining the list, promoting,
+and the actions on each event.
+
+Templates (docs/SCHEMA.md section 13.4): New form opens `TemplateDialog.vue` (blank, own, starter). Starter
+templates are JSON in `lib/Forms/Templates/` read by `TemplateCatalog`; own templates are rows in
+`advforms_templates` (`FormTemplate`, `FormTemplateMapper`, added to the unreleased migration `Version001100`).
+`FormService::createFromTemplate` goes through `createFromDefinition`, like import and duplicate. Starter text is
+English on the server and translated by the browser: every word must be listed in `src/templates/catalog.ts`
+(a test checks it), and `TemplateText` swaps only respondent-facing properties. The migration had already run on
+the dev instance, so its new table is not there until that migration's row is removed from the migrations table.
+Administrators can hide starters (`TemplateSettings`, app config `templates_hidden`) and keep templates for everyone
+(`advforms_templates` rows with empty `owner_id`, ids `s:<n>`; `TemplateAdmin.vue`, `/api/v1/admin/templates`).
+Not yet tried by hand on the dev instance.
+
 Sharing (docs/SCHEMA.md section 18): custom address, QR code, and embedding in a frame through the
 `embed` routes, which skip the request token and are always anonymous. Loading and submitting were
 tried in a real frame on another site; uploads and the redirect action in a frame were not.

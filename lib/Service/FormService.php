@@ -34,6 +34,10 @@ use OCA\Webforms\Db\FormMapper;
 use OCA\Webforms\Db\FormSeenMapper;
 use OCA\Webforms\Db\FormShare;
 use OCA\Webforms\Db\FormShareMapper;
+use OCA\Webforms\Db\FormTemplate;
+use OCA\Webforms\Db\FormTemplateMapper;
+use OCA\Webforms\Forms\TemplateCatalog;
+use OCA\Webforms\Forms\TemplateText;
 use OCA\Webforms\Db\Version;
 use OCA\Webforms\Db\VersionMapper;
 use OCA\Webforms\Exception\DraftConflictException;
@@ -58,6 +62,7 @@ use OCA\Webforms\Forms\RetiredIds;
 use OCA\Webforms\Forms\Availability;
 use OCA\Webforms\Forms\ShareSettings;
 use OCA\Webforms\Settings\StatusSettings;
+use OCA\Webforms\Settings\TemplateSettings;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\Security\IHasher;
 use OCP\Security\ISecureRandom;
@@ -69,6 +74,10 @@ use OCP\Security\ISecureRandom;
  */
 class FormService {
 	public const MAX_DEFINITION_BYTES = 512 * 1024;
+	/** Templates one person may keep. */
+	public const MAX_TEMPLATES = 50;
+	/** Templates the administrator may keep for everyone. */
+	public const MAX_SERVER_TEMPLATES = 100;
 	public const MAX_PAGE_SIZE = 100;
 	/** Selected responses in one bulk delete (they travel in the request). */
 	public const MAX_BULK_IDS = 500;
@@ -101,6 +110,9 @@ class FormService {
 		private readonly FormAccess $access,
 		private readonly FormShareMapper $shares,
 		private readonly FormSeenMapper $seen,
+		private readonly FormTemplateMapper $templates,
+		private readonly TemplateCatalog $catalog,
+		private readonly TemplateSettings $templateSettings,
 	) {
 	}
 
@@ -129,6 +141,7 @@ class FormService {
 		}
 		$versions = $this->versions->findByIds($versionIds);
 		$counts = $this->entries->countByForms($ids);
+		$waiting = $ids === [] ? [] : $this->entries->countWaitlistedByForms($ids);
 		$new = $ids === [] ? [] : $this->entries->countNewForUser($userId, $ids);
 		$seen = $this->seen->forForms($userId, $ids);
 		$names = [];
@@ -136,7 +149,7 @@ class FormService {
 		foreach ($access as ['form' => $form, 'role' => $role, 'direct' => $direct]) {
 			$latest = $versions[$form->getLatestVersionId() ?? 0] ?? null;
 			$names[$form->getOwnerId()] ??= $this->access->displayName($form->getOwnerId());
-			$data = $this->describe($form, $latest, $counts[$form->getId()] ?? 0, $new[$form->getId()] ?? 0, $role, $direct, $seen[$form->getId()] ?? null, $names[$form->getOwnerId()]);
+			$data = $this->describe($form, $latest, $counts[$form->getId()] ?? 0, $waiting[$form->getId()] ?? 0, $new[$form->getId()] ?? 0, $role, $direct, $seen[$form->getId()] ?? null, $names[$form->getOwnerId()]);
 			if ($role->atLeast(Role::EDITOR)) {
 				$data['hasUnpublishedChanges'] = $latest === null ? true : $this->differs($form, $latest);
 			}
@@ -283,6 +296,219 @@ class FormService {
 		$definition = FormPackage::withoutSecrets($source->getDraftDefinition());
 		$definition['title'] = $title;
 		return $this->createFromDefinition($userId, $title, $definition);
+	}
+
+	/**
+	 * The templates the person can start from: the starter ones that ship with the app (except the ones the
+	 * administrator hid), the ones the administrator made for everyone, and their own (docs/SCHEMA.md section
+	 * 13.4).
+	 *
+	 * @return array{bundled: list<array<string, mixed>>, shared: list<array<string, mixed>>, own: list<array<string, mixed>>}
+	 */
+	public function listTemplates(string $userId): array {
+		$bundled = TemplateCatalog::withoutHidden($this->catalog->all(), $this->templateSettings->hidden());
+		return [
+			'bundled' => $bundled,
+			'shared' => $this->describeTemplates($this->templates->findServerWide(), 's:'),
+			'own' => $this->describeTemplates($this->templates->findByOwner($userId), 'u:'),
+		];
+	}
+
+	/**
+	 * What the administrator manages: every starter template with whether it is hidden, and the shared ones.
+	 *
+	 * @return array{bundled: list<array<string, mixed>>, shared: list<array<string, mixed>>}
+	 */
+	public function listServerTemplates(): array {
+		$hidden = $this->templateSettings->hidden();
+		$bundled = array_map(
+			static fn (array $item): array => $item + ['hidden' => in_array($item['id'], $hidden, true)],
+			$this->catalog->all(),
+		);
+		return ['bundled' => $bundled, 'shared' => $this->describeTemplates($this->templates->findServerWide(), 's:')];
+	}
+
+	/**
+	 * @param list<FormTemplate> $templates
+	 * @return list<array<string, mixed>>
+	 */
+	private function describeTemplates(array $templates, string $prefix): array {
+		$items = [];
+		foreach ($templates as $template) {
+			$fields = $template->getDefinitionArray()['fields'] ?? [];
+			$items[] = [
+				'id' => $prefix . $template->getId(),
+				'name' => $template->getTitle(),
+				'fieldCount' => is_array($fields) ? count($fields) : 0,
+				'updatedAt' => $template->getUpdatedAt(),
+			];
+		}
+		return $items;
+	}
+
+	/**
+	 * Hide starter templates from everyone, or show them again. Ids that are not starter templates are ignored.
+	 *
+	 * @param array<mixed> $ids
+	 */
+	public function setHiddenTemplates(array $ids): void {
+		$known = array_column($this->catalog->all(), 'id');
+		$this->templateSettings->saveHidden(TemplateSettings::clean($ids, $known));
+	}
+
+	/**
+	 * A new draft form from a template. Like a copy it brings fields, layout, rules and actions and nothing
+	 * else, and the person's own defaults for new forms lay over its settings.
+	 *
+	 * @param string $templateId `b:<name>` for one that ships with the app, `u:<number>` for the person's own
+	 * @param string $title empty keeps the template's own title
+	 * @param array<mixed> $strings for a bundled template, English text to its translation (see TemplateText)
+	 * @return array{form: Form, errors: list<array{code: string, path: string}>}
+	 * @throws NotFoundException
+	 * @throws ValidationException
+	 */
+	public function createFromTemplate(string $userId, string $templateId, string $title = '', array $strings = []): array {
+		$number = self::templateNumber($templateId);
+		if ($number !== null && str_starts_with($templateId, 'u:')) {
+			$definition = $this->templates->findOwned($userId, $number)->getDefinitionArray();
+		} elseif ($number !== null && str_starts_with($templateId, 's:')) {
+			$definition = $this->templates->findOwned(FormTemplate::SERVER, $number)->getDefinitionArray();
+		} else {
+			if (in_array($templateId, $this->templateSettings->hidden(), true)) {
+				throw new NotFoundException();
+			}
+			$definition = TemplateText::translate($this->catalog->definition($templateId), $strings);
+		}
+		$definition = NewFormDefaults::applyTo(FormPackage::withoutSecrets($definition), $this->preferences->forUser($userId));
+		$title = trim($title);
+		if ($title === '') {
+			$own = $definition['title'] ?? null;
+			$title = is_string($own) ? trim($own) : '';
+		}
+		$title = mb_substr($title, 0, 255);
+		if ($title === '') {
+			throw new ValidationException([['code' => 'title_invalid', 'path' => 'title']]);
+		}
+		$definition['title'] = $title;
+		return $this->createFromDefinition($userId, $title, $definition);
+	}
+
+	/**
+	 * Keep the draft of a form as a template for the person's own later use. Nothing but the definition is
+	 * kept, and webhook secrets are left out.
+	 *
+	 * @throws NotFoundException
+	 * @throws ValidationException
+	 */
+	public function saveAsTemplate(string $userId, int $formId, string $title = ''): FormTemplate {
+		$source = $this->get($userId, $formId, Role::EDITOR);
+		$title = trim($title);
+		if ($title === '') {
+			$title = $source->getTitle();
+		}
+		if ($title === '' || mb_strlen($title) > 255) {
+			throw new ValidationException([['code' => 'title_invalid', 'path' => 'title']]);
+		}
+		if ($this->templates->countByOwner($userId) >= self::MAX_TEMPLATES) {
+			throw new ValidationException([['code' => 'template_limit', 'path' => '']]);
+		}
+		$definition = FormPackage::withoutSecrets($source->getDraftDefinition());
+		$definition['title'] = $title;
+		$encoded = $this->encode($definition);
+		if (strlen($encoded) > self::MAX_DEFINITION_BYTES) {
+			throw new ValidationException([['code' => 'definition_too_large', 'path' => '']]);
+		}
+		$now = $this->time->getTime();
+		$template = new FormTemplate();
+		$template->setOwnerId($userId);
+		$template->setTitle($title);
+		$template->setDefinition($encoded);
+		$template->setCreatedAt($now);
+		$template->setUpdatedAt($now);
+		return $this->templates->insert($template);
+	}
+
+	/**
+	 * @throws NotFoundException not the person's template, or not there
+	 */
+	public function deleteTemplate(string $userId, string $templateId): void {
+		$number = self::templateNumber($templateId);
+		if ($number === null || !str_starts_with($templateId, 'u:')) {
+			throw new NotFoundException();
+		}
+		$this->templates->delete($this->templates->findOwned($userId, $number));
+	}
+
+	/**
+	 * Keep the draft of one of the administrator's own forms as a template for everyone.
+	 *
+	 * @throws NotFoundException
+	 * @throws ValidationException
+	 */
+	public function saveServerTemplate(string $adminId, int $formId, string $title = ''): FormTemplate {
+		$source = $this->get($adminId, $formId, Role::EDITOR);
+		$title = trim($title) === '' ? $source->getTitle() : trim($title);
+		if ($title === '' || mb_strlen($title) > 255) {
+			throw new ValidationException([['code' => 'title_invalid', 'path' => 'title']]);
+		}
+		if ($this->templates->countServerWide() >= self::MAX_SERVER_TEMPLATES) {
+			throw new ValidationException([['code' => 'template_limit', 'path' => '']]);
+		}
+		$definition = FormPackage::withoutSecrets($source->getDraftDefinition());
+		$definition['title'] = $title;
+		$encoded = $this->encode($definition);
+		if (strlen($encoded) > self::MAX_DEFINITION_BYTES) {
+			throw new ValidationException([['code' => 'definition_too_large', 'path' => '']]);
+		}
+		$now = $this->time->getTime();
+		$template = new FormTemplate();
+		$template->setOwnerId(FormTemplate::SERVER);
+		$template->setTitle($title);
+		$template->setDefinition($encoded);
+		$template->setCreatedAt($now);
+		$template->setUpdatedAt($now);
+		return $this->templates->insert($template);
+	}
+
+	/**
+	 * @throws NotFoundException
+	 * @throws ValidationException
+	 */
+	public function renameServerTemplate(string $templateId, string $title): FormTemplate {
+		$number = self::templateNumber($templateId);
+		if ($number === null || !str_starts_with($templateId, 's:')) {
+			throw new NotFoundException();
+		}
+		$title = trim($title);
+		if ($title === '' || mb_strlen($title) > 255) {
+			throw new ValidationException([['code' => 'title_invalid', 'path' => 'title']]);
+		}
+		$template = $this->templates->findOwned(FormTemplate::SERVER, $number);
+		$definition = $template->getDefinitionArray();
+		$definition['title'] = $title;
+		$template->setTitle($title);
+		$template->setDefinition($this->encode($definition));
+		$template->setUpdatedAt($this->time->getTime());
+		return $this->templates->update($template);
+	}
+
+	/**
+	 * @throws NotFoundException
+	 */
+	public function deleteServerTemplate(string $templateId): void {
+		$number = self::templateNumber($templateId);
+		if ($number === null || !str_starts_with($templateId, 's:')) {
+			throw new NotFoundException();
+		}
+		$this->templates->delete($this->templates->findOwned(FormTemplate::SERVER, $number));
+	}
+
+	/** The number in `u:7` or `s:7`, or null for anything else. */
+	private static function templateNumber(string $templateId): ?int {
+		if (preg_match('/^[us]:([1-9][0-9]{0,17})$/D', $templateId, $m) !== 1) {
+			return null;
+		}
+		return (int)$m[1];
 	}
 
 	/**
@@ -684,6 +910,7 @@ class FormService {
 			'submittedAt' => $entry->getSubmittedAt(),
 			'status' => $entry->getStatus(),
 			'note' => $entry->getNote(),
+			'waitlisted' => $entry->isWaitlisted(),
 			'data' => JsonShape::map($entry->getDataArray()),
 		];
 	}
@@ -1081,6 +1308,7 @@ class FormService {
 			$form,
 			$latest,
 			$this->entries->countByForm($form->getId()),
+			$this->entries->countWaitlisted($form->getId()),
 			$this->entries->countNew($form->getId(), $seenAt),
 			$role,
 			$role !== Role::OWNER && $this->shares->findOne($form->getId(), FormShare::TYPE_USER, $userId) !== null,
@@ -1099,21 +1327,25 @@ class FormService {
 	/**
 	 * A form as the person sees it. `availability` says whether the published form takes responses by
 	 * its own limit and dates and the server's cap (docs/SCHEMA.md section 3.1); it is null until the
-	 * form has been published. A closed or archived form takes none whatever it says.
+	 * form has been published. A closed or archived form takes none whatever it says. `responses` is
+	 * all the form has, and `$waitlisted` of them are on its waiting list (section 3.2).
 	 *
 	 * @param bool $direct a share was made with their own account, so they may leave the form
 	 * @return array<string, mixed>
 	 */
-	private function describe(Form $form, ?Version $latest, int $responses, int $newResponses, Role $role, bool $direct, ?int $seenAt, string $ownerName): array {
+	private function describe(Form $form, ?Version $latest, int $responses, int $waitlisted, int $newResponses, Role $role, bool $direct, ?int $seenAt, string $ownerName): array {
 		$availability = null;
 		if ($latest !== null) {
 			$settings = $latest->getDefinitionArray()['settings'] ?? [];
 			$availability = Availability::of(
 				is_array($settings) ? $settings : [],
 				$this->time->getTime(),
-				$responses,
+				$responses - $waitlisted,
 				$this->policy->settings()->maxResponsesPerForm(),
+				$responses,
 			);
+			$availability['waitlisted'] = $waitlisted;
+			$availability['waitsWhenFull'] = Availability::waitsWhenFull(is_array($settings) ? $settings : []);
 		}
 		$data = [
 			'id' => $form->getId(),

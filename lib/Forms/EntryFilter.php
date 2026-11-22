@@ -45,6 +45,8 @@ final class EntryFilter {
 		public readonly ?array $statuses = null,
 		/** Only responses with a larger id: the read-only API's cursor (docs/SCHEMA.md section 23.2). */
 		public readonly ?int $afterId = null,
+		/** Only responses on the waiting list (true) or off it (false), docs/SCHEMA.md section 3.2. Null means any. */
+		public readonly ?bool $waitlisted = null,
 	) {
 	}
 
@@ -56,7 +58,7 @@ final class EntryFilter {
 	 * @param string $status comma separated status ids, `none` for responses without one, or empty for any
 	 * @throws \InvalidArgumentException
 	 */
-	public static function fromInput(string $text, string $from, string $to, string $respondent, string $where, string $sort, string $status = '', ?int $afterId = null): self {
+	public static function fromInput(string $text, string $from, string $to, string $respondent, string $where, string $sort, string $status = '', ?int $afterId = null, string $waitlisted = ''): self {
 		$text = trim($text);
 		if (mb_strlen($text) > self::MAX_TEXT) {
 			throw new \InvalidArgumentException('text_too_long');
@@ -98,7 +100,11 @@ final class EntryFilter {
 			}
 		}
 
-		return new self($text, $fromTime, $toTime, $respondent === '' ? self::RESPONDENT_ANY : $respondent, $condition, $sort !== 'oldest', $statuses, $afterId !== null && $afterId > 0 ? $afterId : null);
+		if (!in_array($waitlisted, ['', 'true', 'false'], true)) {
+			throw new \InvalidArgumentException('waitlisted_invalid');
+		}
+
+		return new self($text, $fromTime, $toTime, $respondent === '' ? self::RESPONDENT_ANY : $respondent, $condition, $sort !== 'oldest', $statuses, $afterId !== null && $afterId > 0 ? $afterId : null, $waitlisted === '' ? null : $waitlisted === 'true');
 	}
 
 	/**
@@ -109,7 +115,7 @@ final class EntryFilter {
 	}
 
 	public function isActive(): bool {
-		return $this->needsScan() || $this->from !== null || $this->to !== null || $this->respondent !== self::RESPONDENT_ANY || $this->statuses !== null || $this->afterId !== null;
+		return $this->needsScan() || $this->from !== null || $this->to !== null || $this->respondent !== self::RESPONDENT_ANY || $this->statuses !== null || $this->afterId !== null || $this->waitlisted !== null;
 	}
 
 	/**

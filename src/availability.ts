@@ -63,6 +63,7 @@ export function availabilityNote(form: OwnerForm): string | null {
 		return null
 	}
 	const { state, opensAt, closesAt, cap, responses } = availability
+	const waitlisted = availability.waitlisted ?? 0
 	if (state === 'open' && closesAt === null && cap === 0) {
 		return null
 	}
@@ -72,7 +73,9 @@ export function availabilityNote(form: OwnerForm): string | null {
 	} else if (state === 'ended' && closesAt !== null) {
 		parts.push(t('webforms', 'Ended: closed {time}.', { time: formatTime(closesAt) }))
 	} else if (state === 'full') {
-		parts.push(t('webforms', 'Full: it takes no more responses.'))
+		parts.push(availability.waitsWhenFull === true
+			? t('webforms', 'Full: new responses join the waiting list.')
+			: t('webforms', 'Full: it takes no more responses.'))
 	} else if (closesAt !== null) {
 		parts.push(t('webforms', 'Open until {time}.', { time: formatTime(closesAt) }))
 	} else {
@@ -80,6 +83,9 @@ export function availabilityNote(form: OwnerForm): string | null {
 	}
 	if (cap > 0) {
 		parts.push(n('webforms', '{responses} of {count} response.', '{responses} of {count} responses.', cap, { responses, count: cap }))
+	}
+	if (waitlisted > 0) {
+		parts.push(n('webforms', '{count} response on the waiting list.', '{count} responses on the waiting list.', waitlisted, { count: waitlisted }))
 	}
 	return parts.join(' ')
 }

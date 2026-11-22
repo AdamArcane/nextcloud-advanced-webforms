@@ -1,0 +1,123 @@
+{
+  "id": "support_request",
+  "category": "support",
+  "name": "Support request",
+  "description": "Topic, urgency and details.",
+  "definition": {
+    "schemaVersion": 1,
+    "title": "Support request",
+    "description": "Describe the problem and we will look into it.",
+    "settings": {
+      "submitLabel": "Submit request"
+    },
+    "fields": {
+      "f_name": {
+        "type": "text",
+        "label": "Name",
+        "required": true
+      },
+      "f_email": {
+        "type": "email",
+        "label": "Email",
+        "required": true
+      },
+      "f_topic": {
+        "type": "select",
+        "label": "Topic",
+        "required": true,
+        "options": [
+          {
+            "value": "account",
+            "label": "Account"
+          },
+          {
+            "value": "billing",
+            "label": "Billing"
+          },
+          {
+            "value": "bug",
+            "label": "Something is broken"
+          },
+          {
+            "value": "other",
+            "label": "Other"
+          }
+        ]
+      },
+      "f_urgency": {
+        "type": "radio",
+        "label": "How urgent is it?",
+        "required": true,
+        "options": [
+          {
+            "value": "low",
+            "label": "Low"
+          },
+          {
+            "value": "normal",
+            "label": "Normal"
+          },
+          {
+            "value": "high",
+            "label": "High"
+          }
+        ]
+      },
+      "f_details": {
+        "type": "textarea",
+        "label": "Details",
+        "required": true
+      }
+    },
+    "pages": [
+      {
+        "id": "p_1",
+        "title": null,
+        "rows": [
+          {
+            "id": "r_1",
+            "cells": [
+              {
+                "id": "c_1",
+                "span": 6,
+                "field": "f_name"
+              },
+              {
+                "id": "c_2",
+                "span": 6,
+                "field": "f_email"
+              }
+            ]
+          },
+          {
+            "id": "r_2",
+            "cells": [
+              {
+                "id": "c_3",
+                "span": 6,
+                "field": "f_topic"
+              },
+              {
+                "id": "c_4",
+                "span": 6,
+                "field": "f_urgency"
+              }
+            ]
+          },
+          {
+            "id": "r_3",
+            "cells": [
+              {
+                "id": "c_5",
+                "span": 12,
+                "field": "f_details"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "rules": [],
+    "actions": []
+  }
+}

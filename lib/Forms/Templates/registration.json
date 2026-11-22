@@ -1,0 +1,121 @@
+{
+  "id": "registration",
+  "category": "events",
+  "name": "Event registration",
+  "description": "Collect attendee details and consent.",
+  "definition": {
+    "schemaVersion": 1,
+    "title": "Registration",
+    "description": "Register your place.",
+    "settings": {
+      "submitLabel": "Register"
+    },
+    "fields": {
+      "f_name": {
+        "type": "name",
+        "label": "Full name",
+        "required": true
+      },
+      "f_email": {
+        "type": "email",
+        "label": "Email",
+        "required": true
+      },
+      "f_phone": {
+        "type": "phone",
+        "label": "Phone",
+        "required": false
+      },
+      "f_org": {
+        "type": "text",
+        "label": "Organization",
+        "required": false
+      },
+      "f_session": {
+        "type": "select",
+        "label": "Session",
+        "required": true,
+        "options": [
+          {
+            "value": "morning",
+            "label": "Morning"
+          },
+          {
+            "value": "afternoon",
+            "label": "Afternoon"
+          },
+          {
+            "value": "full_day",
+            "label": "Full day"
+          }
+        ]
+      },
+      "f_consent": {
+        "type": "consent",
+        "label": "Consent",
+        "text": "I agree that my details may be used to organize this event.",
+        "required": true
+      }
+    },
+    "pages": [
+      {
+        "id": "p_1",
+        "title": null,
+        "rows": [
+          {
+            "id": "r_1",
+            "cells": [
+              {
+                "id": "c_1",
+                "span": 12,
+                "field": "f_name"
+              }
+            ]
+          },
+          {
+            "id": "r_2",
+            "cells": [
+              {
+                "id": "c_2",
+                "span": 6,
+                "field": "f_email"
+              },
+              {
+                "id": "c_3",
+                "span": 6,
+                "field": "f_phone"
+              }
+            ]
+          },
+          {
+            "id": "r_3",
+            "cells": [
+              {
+                "id": "c_4",
+                "span": 6,
+                "field": "f_org"
+              },
+              {
+                "id": "c_5",
+                "span": 6,
+                "field": "f_session"
+              }
+            ]
+          },
+          {
+            "id": "r_4",
+            "cells": [
+              {
+                "id": "c_6",
+                "span": 12,
+                "field": "f_consent"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "rules": [],
+    "actions": []
+  }
+}

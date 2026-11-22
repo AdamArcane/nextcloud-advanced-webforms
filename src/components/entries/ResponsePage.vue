@@ -12,7 +12,7 @@ import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, ref, watch } from 'vue'
-import { getEntry, listDeliveries, retryDelivery, setEntryStatus } from '../../api/forms.ts'
+import { getEntry, listDeliveries, promoteEntry, retryDelivery, setEntryStatus } from '../../api/forms.ts'
 import { ApiError } from '../../api/http.ts'
 import { answerLines, entryFileUrl, formatTime } from '../../entries/format.ts'
 import { icons } from '../../icons.ts'
@@ -22,6 +22,7 @@ import DeliveryRow from './DeliveryRow.vue'
 import { useCanManageResponses } from './permissions.ts'
 import NoteEditor from './NoteEditor.vue'
 import StatusSelect from './StatusSelect.vue'
+import WaitlistTag from './WaitlistTag.vue'
 
 // One response on a page of its own (docs/SCHEMA.md section 20.4): every question of its version with
 // its answer, the status, the note and what was sent. Printing shows the answers only.
@@ -37,6 +38,8 @@ const emit = defineEmits<{
 	updated: [entry: EntryRecord]
 	/** A delivery was retried. */
 	changed: []
+	/** The response left the waiting list. */
+	promoted: []
 }>()
 
 const detail = ref<EntryDetail | null>(null)
@@ -45,6 +48,8 @@ const missing = ref(false)
 const failed = ref(false)
 const statusBusy = ref(false)
 const statusFailed = ref(false)
+const promoteBusy = ref(false)
+const promoteFailed = ref(false)
 const canManage = useCanManageResponses()
 const deliveries = ref<Delivery[] | null>(null)
 const deliveriesFailed = ref(false)
@@ -102,6 +107,22 @@ async function load(): Promise<void> {
 }
 
 watch(() => [props.formId, props.entryId], () => void load(), { immediate: true })
+
+async function promote(): Promise<void> {
+	promoteBusy.value = true
+	promoteFailed.value = false
+	try {
+		await promoteEntry(props.formId, props.entryId)
+		const loaded = await getEntry(props.formId, props.entryId)
+		detail.value = loaded
+		emit('updated', loaded.entry)
+		emit('promoted')
+	} catch {
+		promoteFailed.value = true
+	} finally {
+		promoteBusy.value = false
+	}
+}
 
 function apply(entry: EntryRecord): void {
 	if (detail.value && detail.value.entry.id === entry.id) {
@@ -218,6 +239,19 @@ function print(): void {
 			</article>
 
 			<aside class="af-page__side af-noprint">
+				<section v-if="detail.entry.waitlisted" class="af-page__block">
+					<h4 class="af-page__heading">
+						{{ t('webforms', 'Waiting list') }}
+					</h4>
+					<WaitlistTag />
+					<NcButton v-if="canManage" variant="secondary" :disabled="promoteBusy" @click="promote">
+						{{ t('webforms', 'Promote from the waiting list') }}
+					</NcButton>
+					<p v-if="promoteFailed" class="af-page__error" role="alert">
+						{{ t('webforms', 'Could not promote the response.') }}
+					</p>
+				</section>
+
 				<section v-if="statuses.length > 0" class="af-page__block">
 					<h4 class="af-page__heading">
 						{{ t('webforms', 'Status') }}
