@@ -26,6 +26,8 @@ vi.mock('./api/forms.ts', () => ({
 	duplicateForm: vi.fn(),
 	leaveForm: vi.fn(),
 	importForm: vi.fn(),
+	fetchCoreForms: vi.fn(() => Promise.resolve({ available: false, forms: [] })),
+	importCoreForm: vi.fn(),
 	setFormArchived: vi.fn(),
 	formExportUrl: () => '#',
 	formsBackupUrl: () => '/apps/webforms/api/v1/backup',

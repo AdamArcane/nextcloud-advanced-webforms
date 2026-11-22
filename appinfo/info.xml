@@ -60,6 +60,10 @@ Forms and responses stay on your server. Requires Nextcloud 34 or 35.
 		<job>OCA\Webforms\BackgroundJob\RetentionJob</job>
 	</background-jobs>
 
+	<commands>
+		<command>OCA\Webforms\Command\ImportCoreForms</command>
+	</commands>
+
 	<settings>
 		<admin>OCA\Webforms\Settings\AdminSettings</admin>
 		<admin-section>OCA\Webforms\Settings\AdminSection</admin-section>
