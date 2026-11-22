@@ -7,6 +7,14 @@
 
 ## Unreleased
 
+- **Templates.** **New form** now opens a chooser: a blank form, one of the starter templates (contact form,
+  event RSVP, feedback survey, event registration, quick poll, support request), or one of your own. Choose
+  **Save as template** in a form's menu to keep it for later; your own templates are private and are listed
+  under **My templates**, where you can delete them. A new form from a template is a draft, brings fields,
+  layout, rules and actions but no webhook secrets, and takes your defaults for new forms. The starter
+  templates are shown in your language. Administrators get a **Templates** section in the server settings:
+  hide starter templates nobody should use, and add templates for everyone from one of your own forms, which
+  appear under **Shared templates**. See `docs/SCHEMA.md` section 13.4.
 - A form can keep a **waiting list**. Set a response limit, then choose to keep a waiting list when the form is full:
   further responses are still taken, marked as waiting, and do not count against the limit. In the Responses view you
   can filter the waiting list and promote a response by hand. Actions can be set to run when a response is

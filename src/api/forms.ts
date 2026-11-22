@@ -259,6 +259,52 @@ export function importForm(pkg: unknown): Promise<SaveResult> {
 	return call(axios.post<SaveResult>(url('/forms/import'), { package: pkg }))
 }
 
+/** A starter template that ships with the app (docs/SCHEMA.md section 13.4). Its text is English. */
+export interface BundledTemplate {
+	id: string
+	category: string
+	name: string
+	description: string
+	fieldCount: number
+}
+
+/** A template the person saved from one of their own forms. */
+export interface OwnTemplate {
+	id: string
+	name: string
+	fieldCount: number
+	updatedAt: number
+}
+
+/** A template the administrator made for everyone. */
+export type SharedTemplate = OwnTemplate
+
+export interface TemplateList {
+	bundled: BundledTemplate[]
+	shared: SharedTemplate[]
+	own: OwnTemplate[]
+}
+
+export function fetchTemplates(): Promise<TemplateList> {
+	return call(axios.get<TemplateList>(url('/templates')))
+}
+
+/**
+ * A new draft form from a template. `strings` maps the English text of a starter template to its translation
+ * and is left out for one of the person's own templates.
+ */
+export function createFromTemplate(templateId: string, title: string, strings?: Record<string, string>): Promise<SaveResult> {
+	return call(axios.post<SaveResult>(url('/forms/from-template'), { templateId, title, strings: strings ?? {} }))
+}
+
+export function saveAsTemplate(formId: number, title: string): Promise<OwnTemplate> {
+	return call(axios.post<OwnTemplate>(url('/forms/' + formId + '/save-as-template'), { title }))
+}
+
+export async function deleteTemplate(templateId: string): Promise<void> {
+	await call(axios.delete(url('/templates/' + encodeURIComponent(templateId))))
+}
+
 /** A form in the core Forms app that the person owns there. */
 export interface CoreFormSummary {
 	id: number

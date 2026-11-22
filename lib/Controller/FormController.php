@@ -181,6 +181,56 @@ class FormController extends Controller {
 	}
 
 	/**
+	 * The templates the caller can start from: the starter ones that ship with the app, and their own
+	 * (docs/SCHEMA.md section 13.4).
+	 */
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'GET', url: '/api/v1/templates')]
+	public function templates(): JSONResponse {
+		return $this->guard(fn (): JSONResponse => new JSONResponse($this->service->listTemplates($this->userId())));
+	}
+
+	/**
+	 * A new draft form from a template. `strings` maps the English text of a starter template to its
+	 * translation; it is ignored for the caller's own templates.
+	 *
+	 * @param array<mixed> $strings
+	 */
+	#[NoAdminRequired]
+	#[UserRateLimit(limit: 60, period: 300)]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/forms/from-template')]
+	public function createFromTemplate(string $templateId = '', string $title = '', array $strings = []): JSONResponse {
+		return $this->guard(function () use ($templateId, $title, $strings): JSONResponse {
+			$created = $this->service->createFromTemplate($this->userId(), $templateId, $title, $strings);
+			return new JSONResponse([
+				'form' => $this->service->toArray($created['form'], $this->userId(), true),
+				'errors' => $created['errors'],
+			], Http::STATUS_CREATED);
+		});
+	}
+
+	/**
+	 * Keep this form's draft as one of the caller's own templates.
+	 */
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'POST', url: '/api/v1/forms/{id}/save-as-template')]
+	public function saveAsTemplate(int $id, string $title = ''): JSONResponse {
+		return $this->guard(function () use ($id, $title): JSONResponse {
+			$template = $this->service->saveAsTemplate($this->userId(), $id, $title);
+			return new JSONResponse(['id' => 'u:' . $template->getId(), 'name' => $template->getTitle()], Http::STATUS_CREATED);
+		});
+	}
+
+	#[NoAdminRequired]
+	#[FrontpageRoute(verb: 'DELETE', url: '/api/v1/templates/{templateId}')]
+	public function deleteTemplate(string $templateId): JSONResponse {
+		return $this->guard(function () use ($templateId): JSONResponse {
+			$this->service->deleteTemplate($this->userId(), $templateId);
+			return new JSONResponse(['ok' => true]);
+		});
+	}
+
+	/**
 	 * The forms the caller owns in the core Forms app, for the import menu (docs/SCHEMA.md section 13.3).
 	 * `available` is false when core Forms was never installed here.
 	 */

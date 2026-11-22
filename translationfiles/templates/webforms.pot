@@ -7,12 +7,20 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+#: src/components/entries/EntriesView.vue:589
+msgid "({n} on the waiting list)"
+msgstr ""
+
 #: src/entries/format.ts:32
 msgid "(signature)"
 msgstr ""
 
 #: src/components/admin/PolicyAdmin.vue:187
 msgid "{count} existing responses are older than this and will be deleted."
+msgstr ""
+
+#: src/components/ImportDialog.vue:130
+msgid "{done} of {all} responses"
 msgstr ""
 
 #: src/components/builder/BuilderView.vue:393
@@ -23,27 +31,27 @@ msgstr ""
 msgid "{n} columns"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:612
+#: src/components/entries/EntriesView.vue:641
 msgid "{n} emails or webhooks could not be sent."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:308
+#: src/components/entries/EntriesView.vue:333
 msgid "{n} matching responses"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:562
+#: src/components/entries/EntriesView.vue:587
 msgid "{n} of {all} responses"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:562
+#: src/components/entries/EntriesView.vue:587
 msgid "{n} responses"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:676
+#: src/components/entries/EntriesView.vue:709
 msgid "{n} selected"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:307
+#: src/components/entries/EntriesView.vue:332
 msgid "{n} selected responses"
 msgstr ""
 
@@ -61,6 +69,38 @@ msgstr ""
 
 #: src/components/render/FormRenderer.vue:173
 msgid "{percent}%"
+msgstr ""
+
+#: src/importReport.ts:47
+msgid "{question} allowed an \"other\" answer. That has no equivalent, so those answers are not imported."
+msgstr ""
+
+#: src/importReport.ts:51
+msgid "{question} checked the answer against a pattern. That has no equivalent, so it is a plain text field."
+msgstr ""
+
+#: src/importReport.ts:45
+msgid "{question} has no options and was left out."
+msgstr ""
+
+#: src/importReport.ts:33
+msgid "{question} has too many options and was left out."
+msgstr ""
+
+#: src/importReport.ts:43
+msgid "{question} is of a type that has no equivalent and was left out."
+msgstr ""
+
+#: src/importReport.ts:49
+msgid "{question} shuffled its options. That has no equivalent."
+msgstr ""
+
+#: src/importReport.ts:57
+msgid "{question} was kept, but its uploaded files stay in the Forms app and are not copied."
+msgstr ""
+
+#: src/importReport.ts:53
+msgid "{question} was only shown after a certain answer. It is now always shown and not required."
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:751
@@ -105,6 +145,14 @@ msgstr ""
 
 #: src/components/admin/PolicyAdmin.vue:207
 msgid "A form that reaches this shows its closed message. Two people sending at the same moment can go one over."
+msgstr ""
+
+#: src/components/ImportDialog.vue:146
+msgid "A form you exported from Advanced Webforms, or one from a backup."
+msgstr ""
+
+#: src/importReport.ts:39
+msgid "A grid of numbers has no equivalent, so {question} was left out."
 msgstr ""
 
 #: src/builder/fieldTypeNames.ts:65
@@ -167,6 +215,10 @@ msgstr ""
 msgid "A published field used this ID before it was deleted, so it cannot be used again."
 msgstr ""
 
+#: src/templates/catalog.ts:43
+msgid "A rating, what worked and what did not."
+msgstr ""
+
 #: src/components/builder/FieldProperties.vue:425
 msgid "A respondent can see and change this value in the link or the page. Do not use it for anything that must not be faked."
 msgstr ""
@@ -187,8 +239,12 @@ msgstr ""
 msgid "A single yes or no"
 msgstr ""
 
-#: src/AdminApp.vue:40
+#: src/AdminApp.vue:41
 msgid "A small calculation the browser does in the background. Nothing is shown, no account is needed, and no data leaves your server."
+msgstr ""
+
+#: src/importReport.ts:37
+msgid "A time range has no equivalent, so {question} was left out."
 msgstr ""
 
 #: src/builder/fieldTypeNames.ts:74
@@ -220,6 +276,10 @@ msgstr ""
 
 #: src/components/builder/FieldProperties.vue:534
 msgid "Accepted types"
+msgstr ""
+
+#: src/templates/catalog.ts:82
+msgid "Account"
 msgstr ""
 
 #: src/components/builder/CollaboratorsPanel.vue:278
@@ -288,6 +348,10 @@ msgstr ""
 msgid "Add field"
 msgstr ""
 
+#: src/components/admin/TemplateAdmin.vue:157
+msgid "Add from one of your forms"
+msgstr ""
+
 #: src/components/builder/ConditionGroup.vue:143
 msgid "Add group"
 msgstr ""
@@ -315,6 +379,10 @@ msgstr ""
 
 #: src/builder/errors.ts:20
 msgid "Add some text."
+msgstr ""
+
+#: src/components/admin/TemplateAdmin.vue:170
+msgid "Add template"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:854
@@ -355,8 +423,12 @@ msgstr ""
 msgid "After someone sends the form"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:410
+#: src/components/builder/FormProperties.vue:424
 msgid "After the closing time the form shows the message when closed."
+msgstr ""
+
+#: src/templates/catalog.ts:73
+msgid "Afternoon"
 msgstr ""
 
 #: src/builder/fieldTypeNames.ts:71
@@ -370,21 +442,30 @@ msgid "Alignment"
 msgstr ""
 
 #: src/components/builder/ConditionGroup.vue:88
-#: src/components/entries/EntriesView.vue:790
+#: src/components/entries/EntriesView.vue:825
 msgid "All"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:676
+#: src/components/entries/EntriesView.vue:709
 msgid "All {n} matching responses are selected"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:309
+#: src/components/entries/EntriesView.vue:334
 msgid "All {n} responses"
 msgstr ""
 
-#: src/components/entries/ResponsePage.vue:151
-#: src/components/entries/ResponsePage.vue:182
+#: src/components/ImportDialog.vue:180
+msgid "All forms"
+msgstr ""
+
+#: src/components/entries/ResponseFilters.vue:131
+#: src/components/entries/ResponsePage.vue:172
+#: src/components/entries/ResponsePage.vue:203
 msgid "All responses"
+msgstr ""
+
+#: src/templates/catalog.ts:40
+msgid "Allergies"
 msgstr ""
 
 #: src/components/builder/FormProperties.vue:353
@@ -419,6 +500,10 @@ msgstr ""
 msgid "Also applies to: {fields}"
 msgstr ""
 
+#: src/components/ImportDialog.vue:196
+msgid "Also import the responses"
+msgstr ""
+
 #: src/components/builder/FieldProperties.vue:146
 msgid "Always above the field."
 msgstr ""
@@ -447,8 +532,8 @@ msgstr ""
 msgid "and"
 msgstr ""
 
-#: src/components/entries/ResponseFilters.vue:58
-#: src/components/entries/ResponsesTable.vue:142
+#: src/components/entries/ResponseFilters.vue:60
+#: src/components/entries/ResponsesTable.vue:159
 msgid "Anonymous"
 msgstr ""
 
@@ -473,7 +558,7 @@ msgid "Answers are kept in the browser as they are typed, for up to 30 days, and
 msgstr ""
 
 #: src/components/builder/ConditionGroup.vue:89
-#: src/components/entries/ResponseFilters.vue:114
+#: src/components/entries/ResponseFilters.vue:116
 msgid "Any"
 msgstr ""
 
@@ -482,7 +567,7 @@ msgid "any moment now"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:560
-#: src/components/entries/ResponseFilters.vue:56
+#: src/components/entries/ResponseFilters.vue:58
 msgid "Anyone"
 msgstr ""
 
@@ -498,6 +583,10 @@ msgstr ""
 msgid "Anyone who opens the link or the custom address is asked for a password first. Enter a new one to change it. Everyone who already got in is asked again."
 msgstr ""
 
+#: src/templates/catalog.ts:41
+msgid "Anything else we should know?"
+msgstr ""
+
 #: src/components/admin/PolicyAdmin.vue:262
 msgid "API"
 msgstr ""
@@ -510,11 +599,11 @@ msgstr ""
 msgid "Applies to forms you create from now on."
 msgstr ""
 
-#: src/AdminApp.vue:94
+#: src/AdminApp.vue:95
 msgid "Applies to people who are not logged in. Form owners can turn the check off for a single form. Every form also has a hidden trap field, a minimum fill time and a rate limit."
 msgstr ""
 
-#: src/App.vue:371
+#: src/App.vue:418
 #: src/components/builder/FormProperties.vue:171
 msgid "Archive"
 msgstr ""
@@ -523,7 +612,7 @@ msgstr ""
 msgid "Archive form"
 msgstr ""
 
-#: src/App.vue:385
+#: src/App.vue:432
 #: src/components/builder/BuilderView.vue:559
 msgid "Archived"
 msgstr ""
@@ -564,6 +653,7 @@ msgstr ""
 msgid "Average"
 msgstr ""
 
+#: src/components/ImportDialog.vue:227
 #: src/components/render/FormRenderer.vue:577
 msgid "Back"
 msgstr ""
@@ -598,6 +688,14 @@ msgstr ""
 msgid "beside the field"
 msgstr ""
 
+#: src/templates/catalog.ts:83
+msgid "Billing"
+msgstr ""
+
+#: src/components/TemplateDialog.vue:60
+msgid "Blank form"
+msgstr ""
+
 #: src/components/admin/StatusAdmin.vue:52
 msgid "Blue"
 msgstr ""
@@ -606,11 +704,11 @@ msgstr ""
 msgid "Body"
 msgstr ""
 
-#: src/App.vue:507
+#: src/App.vue:567
 msgid "Build forms with conditional fields and flexible layouts. Responses stay on your server."
 msgstr ""
 
-#: src/AdminApp.vue:39
+#: src/AdminApp.vue:40
 msgid "Built-in (recommended)"
 msgstr ""
 
@@ -634,9 +732,9 @@ msgstr ""
 msgid "Canadian provinces"
 msgstr ""
 
-#: src/App.vue:526
+#: src/App.vue:586
+#: src/components/ImportDialog.vue:246
 #: src/components/admin/PolicyAdmin.vue:280
-#: src/components/admin/StatusAdmin.vue:234
 msgid "Cancel"
 msgstr ""
 
@@ -649,7 +747,7 @@ msgid "Canvas width"
 msgstr ""
 
 #: src/components/SettingsDialog.vue:119
-#: src/components/entries/EntriesView.vue:717
+#: src/components/entries/EntriesView.vue:750
 msgid "Cards"
 msgstr ""
 
@@ -717,6 +815,10 @@ msgstr ""
 msgid "Choose a folder for the uploaded files"
 msgstr ""
 
+#: src/components/admin/TemplateAdmin.vue:160
+msgid "Choose a form"
+msgstr ""
+
 #: src/components/builder/FieldCard.vue:112
 #: src/components/builder/FieldProperties.vue:306
 msgid "Choose a picture"
@@ -742,7 +844,7 @@ msgstr ""
 msgid "Choose at most"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:724
+#: src/components/entries/EntriesView.vue:757
 msgid "Choose columns"
 msgstr ""
 
@@ -800,12 +902,12 @@ msgstr ""
 msgid "Clear"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:639
-#: src/components/entries/ResponseFilters.vue:126
+#: src/components/entries/EntriesView.vue:672
+#: src/components/entries/ResponseFilters.vue:140
 msgid "Clear filters"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:707
+#: src/components/entries/EntriesView.vue:740
 msgid "Clear selection"
 msgstr ""
 
@@ -814,17 +916,21 @@ msgstr ""
 msgid "Closed"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:409
-#: src/components/builder/FormProperties.vue:413
+#: src/components/builder/FormProperties.vue:423
+#: src/components/builder/FormProperties.vue:427
 msgid "Closes"
 msgstr ""
 
-#: src/AdminApp.vue:44
+#: src/AdminApp.vue:45
 msgid "Cloudflare Turnstile"
 msgstr ""
 
 #: src/components/builder/CollaboratorsPanel.vue:199
 msgid "Collaborators"
+msgstr ""
+
+#: src/templates/catalog.ts:64
+msgid "Collect attendee details and consent."
 msgstr ""
 
 #: src/builder/fieldTypeNames.ts:30
@@ -843,8 +949,12 @@ msgstr ""
 
 #: src/components/builder/FieldProperties.vue:741
 #: src/components/builder/FieldProperties.vue:743
-#: src/components/entries/EntriesView.vue:724
+#: src/components/entries/EntriesView.vue:757
 msgid "Columns"
+msgstr ""
+
+#: src/templates/catalog.ts:62
+msgid "Comment (optional)"
 msgstr ""
 
 #: src/components/builder/ConditionRow.vue:86
@@ -857,7 +967,16 @@ msgid "Conditional"
 msgstr ""
 
 #: src/builder/fieldTypeNames.ts:35
+#: src/templates/catalog.ts:75
 msgid "Consent"
+msgstr ""
+
+#: src/templates/catalog.ts:18
+msgid "Contact form"
+msgstr ""
+
+#: src/templates/catalog.ts:20
+msgid "Contact us"
 msgstr ""
 
 #: src/builder/fieldTypeNames.ts:88
@@ -882,7 +1001,7 @@ msgstr ""
 msgid "Copy link"
 msgstr ""
 
-#: src/App.vue:277
+#: src/App.vue:304
 msgid "Copy of {title}"
 msgstr ""
 
@@ -890,17 +1009,17 @@ msgstr ""
 msgid "Copy this secret now. It will not be shown again."
 msgstr ""
 
-#: src/App.vue:441
+#: src/App.vue:491
 #: src/components/builder/BuilderView.vue:640
 msgid "Could not change the archive state. Try again."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:287
+#: src/components/entries/EntriesView.vue:312
 msgid "Could not change the status of the responses."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:669
-#: src/components/entries/ResponsePage.vue:231
+#: src/components/entries/EntriesView.vue:702
+#: src/components/entries/ResponsePage.vue:265
 msgid "Could not change the status."
 msgstr ""
 
@@ -912,7 +1031,7 @@ msgstr ""
 msgid "Could not create a secret. Try again."
 msgstr ""
 
-#: src/App.vue:447
+#: src/App.vue:497
 msgid "Could not create the form."
 msgstr ""
 
@@ -920,48 +1039,56 @@ msgstr ""
 msgid "Could not create the table. Try again."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:649
+#: src/components/entries/EntriesView.vue:682
 msgid "Could not delete the response."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:257
+#: src/components/entries/EntriesView.vue:282
 msgid "Could not delete the responses."
 msgstr ""
 
-#: src/App.vue:438
+#: src/components/TemplateDialog.vue:148
+msgid "Could not delete the template."
+msgstr ""
+
+#: src/App.vue:488
 msgid "Could not duplicate the form."
 msgstr ""
 
-#: src/App.vue:228
+#: src/App.vue:255
 msgid "Could not import the form."
 msgstr ""
 
-#: src/App.vue:435
+#: src/components/ImportDialog.vue:111
+msgid "Could not import this form."
+msgstr ""
+
+#: src/App.vue:482
 msgid "Could not leave the form."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:779
+#: src/components/entries/EntriesView.vue:814
 msgid "Could not load more responses."
 msgstr ""
 
-#: src/components/entries/ResponseCard.vue:143
-#: src/components/entries/ResponsePage.vue:242
+#: src/components/entries/ResponseCard.vue:153
+#: src/components/entries/ResponsePage.vue:276
 msgid "Could not load or update the deliveries."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:819
+#: src/components/entries/EntriesView.vue:854
 msgid "Could not load the deliveries."
 msgstr ""
 
-#: src/components/entries/ResponsePage.vue:187
+#: src/components/entries/ResponsePage.vue:208
 msgid "Could not load the response."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:629
+#: src/components/entries/EntriesView.vue:662
 msgid "Could not load the responses."
 msgstr ""
 
-#: src/AdminApp.vue:70
+#: src/AdminApp.vue:71
 #: src/components/admin/PolicyAdmin.vue:148
 #: src/components/admin/StatusAdmin.vue:153
 msgid "Could not load the settings."
@@ -975,16 +1102,33 @@ msgstr ""
 msgid "Could not load the table columns."
 msgstr ""
 
+#: src/components/admin/TemplateAdmin.vue:110
+msgid "Could not load the templates."
+msgstr ""
+
 #: src/components/builder/CollaboratorsPanel.vue:205
 msgid "Could not load who the form is shared with."
 msgstr ""
 
-#: src/App.vue:429
+#: src/App.vue:476
 msgid "Could not load your forms."
 msgstr ""
 
 #: src/components/builder/TablesActionBody.vue:156
 msgid "Could not load your Tables. Try again later."
+msgstr ""
+
+#: src/components/ImportDialog.vue:162
+msgid "Could not look for your forms. Close this and try again."
+msgstr ""
+
+#: src/components/TemplateDialog.vue:131
+msgid "Could not make a form from this template."
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:655
+#: src/components/entries/ResponsePage.vue:251
+msgid "Could not promote the response."
 msgstr ""
 
 #: src/components/builder/BuilderView.vue:235
@@ -995,7 +1139,7 @@ msgstr ""
 msgid "Could not save the note."
 msgstr ""
 
-#: src/App.vue:176
+#: src/App.vue:182
 msgid "Could not save the setting."
 msgstr ""
 
@@ -1003,7 +1147,7 @@ msgstr ""
 msgid "Could not save the settings."
 msgstr ""
 
-#: src/AdminApp.vue:85
+#: src/AdminApp.vue:86
 msgid "Could not save the settings. Check the keys and try again."
 msgstr ""
 
@@ -1011,8 +1155,20 @@ msgstr ""
 msgid "Could not save the statuses."
 msgstr ""
 
+#: src/App.vue:485
+msgid "Could not save the template."
+msgstr ""
+
+#: src/components/admin/TemplateAdmin.vue:64
+msgid "Could not save the templates."
+msgstr ""
+
 #: src/components/builder/CollaboratorsPanel.vue:168
 msgid "Could not transfer the form. Please try again."
+msgstr ""
+
+#: src/templates/catalog.ts:28
+msgid "Count guests and note dietary needs."
 msgstr ""
 
 #: src/components/builder/OptionsEditor.vue:40
@@ -1023,15 +1179,19 @@ msgstr ""
 msgid "Country"
 msgstr ""
 
-#: src/AdminApp.vue:108
+#: src/AdminApp.vue:109
 msgid "Create a site in the provider's dashboard to get the keys:"
+msgstr ""
+
+#: src/components/TemplateDialog.vue:199
+msgid "Create form"
 msgstr ""
 
 #: src/components/builder/TablesActionBody.vue:191
 msgid "Create table"
 msgstr ""
 
-#: src/App.vue:506
+#: src/App.vue:566
 msgid "Create your first form"
 msgstr ""
 
@@ -1043,7 +1203,7 @@ msgstr ""
 msgid "Creating…"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:579
+#: src/components/entries/EntriesView.vue:607
 msgid "CSV (.csv)"
 msgstr ""
 
@@ -1110,17 +1270,17 @@ msgstr ""
 msgid "Defaults for the emails that forms send. They apply at once, also to forms that are already live."
 msgstr ""
 
+#: src/components/admin/TemplateAdmin.vue:152
 #: src/components/builder/BuilderView.vue:717
-#: src/components/entries/EntriesView.vue:704
-#: src/components/entries/EntriesView.vue:859
+#: src/components/entries/EntriesView.vue:737
 msgid "Delete"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:870
+#: src/components/entries/EntriesView.vue:905
 msgid "Delete {n}"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:864
+#: src/components/entries/EntriesView.vue:899
 msgid "Delete {n} responses?"
 msgstr ""
 
@@ -1143,7 +1303,7 @@ msgstr ""
 msgid "Delete page"
 msgstr ""
 
-#: src/components/entries/ResponseCard.vue:163
+#: src/components/entries/ResponseCard.vue:173
 msgid "Delete response"
 msgstr ""
 
@@ -1165,6 +1325,14 @@ msgstr ""
 msgid "Delete status {n}"
 msgstr ""
 
+#: src/components/TemplateDialog.vue:196
+msgid "Delete template"
+msgstr ""
+
+#: src/components/admin/TemplateAdmin.vue:149
+msgid "Delete the template {name}"
+msgstr ""
+
 #: src/components/admin/PolicyAdmin.vue:277
 msgid "Delete them and save"
 msgstr ""
@@ -1177,20 +1345,24 @@ msgstr ""
 msgid "Delete this form?"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:855
+#: src/components/entries/EntriesView.vue:890
 msgid "Delete this response?"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:663
+#: src/components/entries/EntriesView.vue:696
 msgid "Deleted {n} responses."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:607
+#: src/components/entries/EntriesView.vue:636
 msgid "Deliveries"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:607
+#: src/components/entries/EntriesView.vue:636
 msgid "Deliveries ({n} failed)"
+msgstr ""
+
+#: src/templates/catalog.ts:79
+msgid "Describe the problem and we will look into it."
 msgstr ""
 
 #: src/components/builder/FormProperties.vue:101
@@ -1210,6 +1382,14 @@ msgstr ""
 msgid "Desktop"
 msgstr ""
 
+#: src/templates/catalog.ts:90
+msgid "Details"
+msgstr ""
+
+#: src/templates/catalog.ts:36
+msgid "Dietary needs"
+msgstr ""
+
 #: src/builder/fieldTypeNames.ts:40
 msgid "Divider"
 msgstr ""
@@ -1222,6 +1402,7 @@ msgstr ""
 msgid "does not include"
 msgstr ""
 
+#: src/components/ImportDialog.vue:242
 #: src/entries/statuses.ts:15
 msgid "Done"
 msgstr ""
@@ -1234,7 +1415,7 @@ msgstr ""
 msgid "Double-click to rename"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:566
+#: src/components/entries/EntriesView.vue:594
 msgid "Download"
 msgstr ""
 
@@ -1254,7 +1435,7 @@ msgstr ""
 msgid "Download PNG"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:567
+#: src/components/entries/EntriesView.vue:595
 msgid "Download responses"
 msgstr ""
 
@@ -1300,7 +1481,7 @@ msgstr ""
 msgid "Dropdown"
 msgstr ""
 
-#: src/App.vue:365
+#: src/App.vue:409
 msgid "Duplicate"
 msgstr ""
 
@@ -1318,6 +1499,10 @@ msgstr ""
 msgid "Each field can override this. Beside labels stay above long text and choice fields."
 msgstr ""
 
+#: src/components/ImportDialog.vue:173
+msgid "Each form becomes a new draft. Nothing in the Forms app is changed, and nothing here is overwritten."
+msgstr ""
+
 #: src/components/builder/ActionCard.vue:452
 msgid "Each request is signed so the receiver can check it came from this form. The signature is in the X-Webforms-Signature header."
 msgstr ""
@@ -1330,7 +1515,7 @@ msgstr ""
 msgid "Each response is added as a line, with the same columns as the CSV download. The file is created when the first response arrives. If it already exists, its own header row is kept: answers go under the matching heading, and new questions are added as columns at the end."
 msgstr ""
 
-#: src/components/entries/ResponsePage.vue:158
+#: src/components/entries/ResponsePage.vue:179
 msgid "Earlier"
 msgstr ""
 
@@ -1362,7 +1547,12 @@ msgstr ""
 
 #: src/builder/fieldTypeNames.ts:15
 #: src/entries/deliveryText.ts:21
+#: src/templates/catalog.ts:24
 msgid "Email"
+msgstr ""
+
+#: src/templates/catalog.ts:53
+msgid "Email (optional, if you want a reply)"
 msgstr ""
 
 #: src/components/admin/MailAdmin.vue:62
@@ -1373,12 +1563,12 @@ msgstr ""
 msgid "Email you, or the respondent, a copy of the answers."
 msgstr ""
 
-#: src/components/entries/ResponseCard.vue:139
-#: src/components/entries/ResponsePage.vue:239
+#: src/components/entries/ResponseCard.vue:149
+#: src/components/entries/ResponsePage.vue:273
 msgid "Emails and webhooks"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:826
+#: src/components/entries/EntriesView.vue:861
 msgid "Emails and webhooks from your form's actions are listed here, with what happened to each."
 msgstr ""
 
@@ -1410,7 +1600,7 @@ msgstr ""
 msgid "Ended"
 msgstr ""
 
-#: src/availability.ts:73
+#: src/availability.ts:74
 msgid "Ended: closed {time}."
 msgstr ""
 
@@ -1472,11 +1662,23 @@ msgstr ""
 msgid "Enter the password you were given to open it."
 msgstr ""
 
+#: src/templates/catalog.ts:63
+msgid "Event registration"
+msgstr ""
+
+#: src/templates/catalog.ts:27
+msgid "Event RSVP"
+msgstr ""
+
+#: src/templates/catalog.ts:92
+msgid "Events"
+msgstr ""
+
 #: src/builder/errors.ts:24
 msgid "Every option needs a label."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:866
+#: src/components/entries/EntriesView.vue:901
 msgid "Every response that matches the filter is deleted, with its answers, uploaded files and the record of what was sent. This cannot be undone."
 msgstr ""
 
@@ -1488,26 +1690,34 @@ msgstr ""
 msgid "Everything is hidden. Use the menu above to show something."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:585
+#: src/components/entries/EntriesView.vue:613
 msgid "Excel (.xlsx)"
 msgstr ""
 
-#: src/App.vue:350
-#: src/App.vue:412
+#: src/App.vue:394
+#: src/App.vue:459
 msgid "Export draft"
 msgstr ""
 
-#: src/App.vue:359
+#: src/App.vue:403
 msgid "Export published version"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:791
+#: src/components/entries/EntriesView.vue:826
 #: src/entries/deliveryText.ts:13
 msgid "Failed"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:833
+#: src/components/entries/EntriesView.vue:868
 msgid "Failed deliveries are tried again automatically, up to five times. Trying again by hand starts over and is sent within a minute."
+msgstr ""
+
+#: src/templates/catalog.ts:93
+msgid "Feedback"
+msgstr ""
+
+#: src/templates/catalog.ts:42
+msgid "Feedback survey"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:730
@@ -1564,7 +1774,7 @@ msgstr ""
 msgid "Filled from the link, or give it a default."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:788
+#: src/components/entries/EntriesView.vue:823
 msgid "Filter deliveries"
 msgstr ""
 
@@ -1658,7 +1868,7 @@ msgstr ""
 msgid "Form width"
 msgstr ""
 
-#: src/App.vue:304
+#: src/App.vue:348
 #: src/components/OverviewView.vue:30
 msgid "Forms"
 msgstr ""
@@ -1671,12 +1881,12 @@ msgstr ""
 msgid "Forms that already exist keep working and stay editable by their owners."
 msgstr ""
 
-#: src/AdminApp.vue:45
+#: src/AdminApp.vue:46
 msgid "Free and mostly invisible. Respondents' browsers contact Cloudflare. Needs a site key and a secret key."
 msgstr ""
 
 #: src/components/builder/FieldCard.vue:148
-#: src/components/entries/ResponseFilters.vue:87
+#: src/components/entries/ResponseFilters.vue:89
 #: src/components/render/FieldInput.vue:279
 msgid "From"
 msgstr ""
@@ -1685,9 +1895,25 @@ msgstr ""
 msgid "From 1 to {max}. Forms with more than this cannot be published."
 msgstr ""
 
+#: src/components/ImportDialog.vue:145
+msgid "From a file"
+msgstr ""
+
+#: src/components/ImportDialog.vue:154
+msgid "From Nextcloud Forms"
+msgstr ""
+
 #: src/availability.ts:51
 #: src/components/builder/FieldProperties.vue:200
 msgid "Full"
+msgstr ""
+
+#: src/templates/catalog.ts:74
+msgid "Full day"
+msgstr ""
+
+#: src/templates/catalog.ts:68
+msgid "Full name"
 msgstr ""
 
 #: src/components/builder/FormProperties.vue:272
@@ -1698,12 +1924,17 @@ msgstr ""
 msgid "Full: it takes no more responses"
 msgstr ""
 
-#: src/availability.ts:75
+#: src/availability.ts:78
 msgid "Full: it takes no more responses."
+msgstr ""
+
+#: src/availability.ts:77
+msgid "Full: new responses join the waiting list."
 msgstr ""
 
 #: src/components/SettingsDialog.vue:41
 #: src/components/builder/BuilderView.vue:660
+#: src/templates/catalog.ts:91
 msgid "General"
 msgstr ""
 
@@ -1721,6 +1952,10 @@ msgstr ""
 
 #: src/builder/errors.ts:14
 msgid "Give this field a label."
+msgstr ""
+
+#: src/templates/catalog.ts:39
+msgid "Gluten free"
 msgstr ""
 
 #: src/components/admin/StatusAdmin.vue:46
@@ -1744,9 +1979,9 @@ msgstr ""
 msgid "H1 is the largest and H6 the smallest. Keep headings in order for screen readers. The form title is already a level 1 heading, so H2 is usually the right start."
 msgstr ""
 
-#: src/components/entries/ResponseCard.vue:102
-#: src/components/entries/ResponseCard.vue:104
-#: src/components/entries/ResponsesTable.vue:138
+#: src/components/entries/ResponseCard.vue:106
+#: src/components/entries/ResponseCard.vue:108
+#: src/components/entries/ResponsesTable.vue:155
 msgid "Has a note"
 msgstr ""
 
@@ -1754,7 +1989,7 @@ msgstr ""
 msgid "Has unpublished changes"
 msgstr ""
 
-#: src/AdminApp.vue:49
+#: src/AdminApp.vue:50
 msgid "hCaptcha"
 msgstr ""
 
@@ -1805,6 +2040,10 @@ msgstr ""
 msgid "Hide the required indicator (*)"
 msgstr ""
 
+#: src/templates/catalog.ts:89
+msgid "High"
+msgstr ""
+
 #: src/components/entries/ResponseSummary.vue:212
 msgid "Highest"
 msgstr ""
@@ -1813,13 +2052,29 @@ msgstr ""
 msgid "How field labels look across the whole form."
 msgstr ""
 
+#: src/templates/catalog.ts:50
+msgid "How likely are you to recommend us?"
+msgstr ""
+
 #: src/components/SettingsDialog.vue:110
 msgid "How responses open, on every device you use."
 msgstr ""
 
 #: src/components/SettingsDialog.vue:116
-#: src/components/entries/EntriesView.vue:713
+#: src/components/entries/EntriesView.vue:746
 msgid "How to show responses"
+msgstr ""
+
+#: src/templates/catalog.ts:86
+msgid "How urgent is it?"
+msgstr ""
+
+#: src/templates/catalog.ts:47
+msgid "How would you rate your experience?"
+msgstr ""
+
+#: src/templates/catalog.ts:76
+msgid "I agree that my details may be used to organize this event."
 msgstr ""
 
 #: src/components/builder/ActionCard.vue:458
@@ -1838,8 +2093,28 @@ msgstr ""
 msgid "Images"
 msgstr ""
 
-#: src/App.vue:452
+#: src/components/ImportDialog.vue:239
+msgid "Import"
+msgstr ""
+
+#: src/components/ImportDialog.vue:139
+msgid "Import a form"
+msgstr ""
+
+#: src/App.vue:502
 msgid "Import form"
+msgstr ""
+
+#: src/components/ImportDialog.vue:139
+msgid "Import from Nextcloud Forms"
+msgstr ""
+
+#: src/components/ImportDialog.vue:133
+msgid "Imported as a closed form with {fields} and {responses}."
+msgstr ""
+
+#: src/components/ImportDialog.vue:126
+msgid "Imported as a draft with {fields}."
 msgstr ""
 
 #: src/entries/format.ts:144
@@ -1942,12 +2217,16 @@ msgstr ""
 msgid "It may have been deleted, or you may not have access to it."
 msgstr ""
 
-#: src/components/entries/ResponsePage.vue:179
+#: src/components/entries/ResponsePage.vue:200
 msgid "It may have been deleted."
 msgstr ""
 
 #: src/builder/labels.ts:60
 msgid "Keep a spreadsheet of every response in your Files."
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:397
+msgid "Keep a waiting list when the form is full"
 msgstr ""
 
 #: src/components/builder/BuilderView.vue:625
@@ -2034,7 +2313,7 @@ msgstr ""
 msgid "Last name"
 msgstr ""
 
-#: src/components/entries/ResponsePage.vue:164
+#: src/components/entries/ResponsePage.vue:185
 msgid "Later"
 msgstr ""
 
@@ -2051,7 +2330,7 @@ msgstr ""
 msgid "Layout"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:401
+#: src/components/builder/FormProperties.vue:415
 msgid "Leave a time empty to have no opening or no closing time. Times are in your own time zone. Like the other settings here, the limit and the times apply once the form is published."
 msgstr ""
 
@@ -2059,7 +2338,15 @@ msgstr ""
 msgid "Leave empty"
 msgstr ""
 
-#: src/App.vue:527
+#: src/components/admin/TemplateAdmin.vue:168
+msgid "Leave empty to use the name of the form."
+msgstr ""
+
+#: src/components/TemplateDialog.vue:189
+msgid "Leave empty to use the name of the template."
+msgstr ""
+
+#: src/App.vue:587
 msgid "Leave form"
 msgstr ""
 
@@ -2067,11 +2354,11 @@ msgstr ""
 msgid "Leave the title off the form page"
 msgstr ""
 
-#: src/App.vue:377
+#: src/App.vue:424
 msgid "Leave this form"
 msgstr ""
 
-#: src/App.vue:523
+#: src/App.vue:583
 msgid "Leave this form?"
 msgstr ""
 
@@ -2080,12 +2367,20 @@ msgstr ""
 msgid "Left"
 msgstr ""
 
+#: src/importReport.ts:31
+msgid "Left out because a form holds at most 100 fields: {question}."
+msgstr ""
+
 #: src/components/builder/FormProperties.vue:153
 msgid "Let people continue later"
 msgstr ""
 
 #: src/components/builder/FormProperties.vue:146
 msgid "Let the link fill in fields"
+msgstr ""
+
+#: src/templates/catalog.ts:30
+msgid "Let us know if you can make it."
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:566
@@ -2118,7 +2413,7 @@ msgid "Loading columns…"
 msgstr ""
 
 #: src/components/builder/TablesActionBody.vue:165
-#: src/components/entries/EntriesView.vue:774
+#: src/components/entries/EntriesView.vue:809
 msgid "Loading…"
 msgstr ""
 
@@ -2137,6 +2432,14 @@ msgstr ""
 
 #: src/builder/fieldTypeNames.ts:14
 msgid "Long text"
+msgstr ""
+
+#: src/components/ImportDialog.vue:156
+msgid "Looking for your forms…"
+msgstr ""
+
+#: src/templates/catalog.ts:87
+msgid "Low"
 msgstr ""
 
 #: src/components/entries/ResponseSummary.vue:208
@@ -2180,10 +2483,15 @@ msgid "Me (the form owner)"
 msgstr ""
 
 #: src/components/builder/ActionCard.vue:320
+#: src/templates/catalog.ts:26
 msgid "Message"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:423
+#: src/components/builder/FormProperties.vue:402
+msgid "Message after joining the waiting list"
+msgstr ""
+
+#: src/components/builder/FormProperties.vue:437
 msgid "Message before opening"
 msgstr ""
 
@@ -2191,7 +2499,7 @@ msgstr ""
 msgid "Message when closed"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:394
+#: src/components/builder/FormProperties.vue:408
 msgid "Message when full"
 msgstr ""
 
@@ -2214,6 +2522,10 @@ msgstr ""
 
 #: src/components/builder/OptionsEditor.vue:46
 msgid "Months"
+msgstr ""
+
+#: src/templates/catalog.ts:72
+msgid "Morning"
 msgstr ""
 
 #: src/components/admin/PolicyAdmin.vue:212
@@ -2312,13 +2624,18 @@ msgstr ""
 msgid "Must start with https://. Nextcloud blocks addresses on private networks unless an administrator allows them."
 msgstr ""
 
-#: src/App.vue:72
+#: src/App.vue:78
 msgid "My forms"
 msgstr ""
 
 #: src/builder/fieldTypeNames.ts:32
 #: src/components/admin/StatusAdmin.vue:169
+#: src/components/admin/TemplateAdmin.vue:141
 msgid "Name"
+msgstr ""
+
+#: src/components/admin/TemplateAdmin.vue:167
+msgid "Name (optional)"
 msgstr ""
 
 #: src/components/admin/MailAdmin.vue:107
@@ -2327,6 +2644,10 @@ msgstr ""
 
 #: src/components/admin/StatusAdmin.vue:167
 msgid "Name of status {n}"
+msgstr ""
+
+#: src/templates/catalog.ts:19
+msgid "Name, email and a message."
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:414
@@ -2345,13 +2666,13 @@ msgstr ""
 msgid "Never used"
 msgstr ""
 
-#: src/components/entries/ResponseCard.vue:98
-#: src/components/entries/ResponsesTable.vue:136
+#: src/components/entries/ResponseCard.vue:101
+#: src/components/entries/ResponsesTable.vue:143
 msgid "New"
 msgstr ""
 
-#: src/App.vue:306
-#: src/App.vue:510
+#: src/App.vue:350
+#: src/App.vue:570
 #: src/components/OverviewView.vue:124
 msgid "New form"
 msgstr ""
@@ -2394,8 +2715,8 @@ msgstr ""
 msgid "No actions yet. Respondents will see a default thank-you."
 msgstr ""
 
-#: src/components/entries/ResponseCard.vue:110
-#: src/components/entries/ResponsePage.vue:216
+#: src/components/entries/ResponseCard.vue:114
+#: src/components/entries/ResponsePage.vue:237
 msgid "No answers"
 msgstr ""
 
@@ -2403,7 +2724,7 @@ msgstr ""
 msgid "No default"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:826
+#: src/components/entries/EntriesView.vue:861
 msgid "No deliveries match this filter."
 msgstr ""
 
@@ -2428,11 +2749,11 @@ msgstr ""
 msgid "No matching option in Tables for: {names}. A response that picks one of these leaves this column empty. Add the option in Tables, or give it the same name."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:635
+#: src/components/entries/EntriesView.vue:668
 msgid "No responses match"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:644
+#: src/components/entries/EntriesView.vue:677
 msgid "No responses yet"
 msgstr ""
 
@@ -2440,18 +2761,22 @@ msgstr ""
 msgid "No rules yet. This field is always shown."
 msgstr ""
 
-#: src/AdminApp.vue:54
+#: src/AdminApp.vue:55
 msgid "No spam check"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:276
-#: src/components/entries/EntriesView.vue:693
-#: src/components/entries/ResponseFilters.vue:117
+#: src/components/entries/EntriesView.vue:301
+#: src/components/entries/EntriesView.vue:726
+#: src/components/entries/ResponseFilters.vue:119
 msgid "No status"
 msgstr ""
 
 #: src/components/builder/SharePanel.vue:310
 msgid "No websites listed: any website may embed this form."
+msgstr ""
+
+#: src/templates/catalog.ts:34
+msgid "No, I cannot make it"
 msgstr ""
 
 #: src/components/builder/CollaboratorsPanel.vue:271
@@ -2464,7 +2789,11 @@ msgstr ""
 msgid "None"
 msgstr ""
 
-#: src/components/entries/ResponsePage.vue:212
+#: src/templates/catalog.ts:88
+msgid "Normal"
+msgstr ""
+
+#: src/components/entries/ResponsePage.vue:233
 msgid "Not answered"
 msgstr ""
 
@@ -2485,6 +2814,7 @@ msgid "Not enough room in this row"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:701
+#: src/templates/catalog.ts:51
 msgid "Not likely"
 msgstr ""
 
@@ -2525,7 +2855,7 @@ msgstr ""
 msgid "Nothing has been filled in yet."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:825
+#: src/components/entries/EntriesView.vue:860
 msgid "Nothing here"
 msgstr ""
 
@@ -2533,18 +2863,22 @@ msgstr ""
 msgid "Nothing needs you right now."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:825
+#: src/components/entries/EntriesView.vue:860
 msgid "Nothing sent yet"
 msgstr ""
 
-#: src/components/entries/ResponseCard.vue:146
-#: src/components/entries/ResponsePage.vue:246
+#: src/components/entries/ResponseCard.vue:156
+#: src/components/entries/ResponsePage.vue:280
 msgid "Nothing was sent for this response."
 msgstr ""
 
 #: src/builder/fieldTypeNames.ts:18
 #: src/components/builder/TablesActionBody.vue:139
 msgid "Number"
+msgstr ""
+
+#: src/templates/catalog.ts:35
+msgid "Number of guests"
 msgstr ""
 
 #: src/components/builder/FormProperties.vue:265
@@ -2579,6 +2913,10 @@ msgstr ""
 msgid "One of the upload settings is not valid."
 msgstr ""
 
+#: src/templates/catalog.ts:55
+msgid "One question, a few choices."
+msgstr ""
+
 #: src/components/SettingsDialog.vue:43
 msgid "Only changes how the app works for you."
 msgstr ""
@@ -2599,7 +2937,7 @@ msgstr ""
 msgid "Only members of these groups, and administrators"
 msgstr ""
 
-#: src/AdminApp.vue:55
+#: src/AdminApp.vue:56
 msgid "Only the hidden trap field, the minimum fill time and the rate limit protect your forms."
 msgstr ""
 
@@ -2627,6 +2965,10 @@ msgstr ""
 msgid "Only the submit button"
 msgstr ""
 
+#: src/components/entries/ResponseFilters.vue:134
+msgid "Only the waiting list"
+msgstr ""
+
 #: src/components/builder/ActionCard.vue:482
 msgid "Only when the answers match"
 msgstr ""
@@ -2639,7 +2981,7 @@ msgstr ""
 msgid "Only you see this. It is never sent to the person who filled in the form."
 msgstr ""
 
-#: src/components/entries/ResponseCard.vue:131
+#: src/components/entries/ResponseCard.vue:141
 msgid "Open on its own page"
 msgstr ""
 
@@ -2652,8 +2994,8 @@ msgstr ""
 msgid "Open published forms on their responses"
 msgstr ""
 
-#: src/components/entries/ResponsesTable.vue:132
-#: src/components/entries/ResponsesTable.vue:133
+#: src/components/entries/ResponsesTable.vue:139
+#: src/components/entries/ResponsesTable.vue:140
 msgid "Open response {id} on its own page"
 msgstr ""
 
@@ -2662,26 +3004,38 @@ msgstr ""
 msgid "Open the form"
 msgstr ""
 
-#: src/availability.ts:77
+#: src/availability.ts:80
 msgid "Open until {time}."
 msgstr ""
 
-#: src/availability.ts:79
+#: src/availability.ts:82
 msgid "Open."
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:400
+#: src/components/builder/FormProperties.vue:414
 msgid "Opening and closing"
 msgstr ""
 
-#: src/components/builder/FormProperties.vue:402
-#: src/components/builder/FormProperties.vue:405
+#: src/components/builder/FormProperties.vue:416
+#: src/components/builder/FormProperties.vue:419
 msgid "Opens"
 msgstr ""
 
 #: src/components/builder/OptionsEditor.vue:36
 #: src/components/builder/OptionsEditor.vue:75
 msgid "Option {n}"
+msgstr ""
+
+#: src/templates/catalog.ts:59
+msgid "Option A"
+msgstr ""
+
+#: src/templates/catalog.ts:60
+msgid "Option B"
+msgstr ""
+
+#: src/templates/catalog.ts:61
+msgid "Option C"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:239
@@ -2702,6 +3056,14 @@ msgstr ""
 
 #: src/components/admin/StatusAdmin.vue:48
 msgid "Orange"
+msgstr ""
+
+#: src/templates/catalog.ts:70
+msgid "Organization"
+msgstr ""
+
+#: src/templates/catalog.ts:85
+msgid "Other"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:543
@@ -2787,6 +3149,7 @@ msgid "Percent"
 msgstr ""
 
 #: src/builder/fieldTypeNames.ts:16
+#: src/templates/catalog.ts:69
 msgid "Phone"
 msgstr ""
 
@@ -2817,6 +3180,10 @@ msgstr ""
 
 #: src/components/admin/PolicyAdmin.vue:238
 msgid "Pick at least one group, or choose Everyone."
+msgstr ""
+
+#: src/templates/catalog.ts:56
+msgid "Pick one answer."
 msgstr ""
 
 #: src/builder/fieldTypeNames.ts:55
@@ -2875,9 +3242,9 @@ msgstr ""
 msgid "Postal code"
 msgstr ""
 
+#: src/components/ImportDialog.vue:230
 #: src/components/builder/BuilderView.vue:567
 #: src/components/builder/BuilderView.vue:568
-#: src/components/builder/PreviewDialog.vue:44
 msgid "Preview"
 msgstr ""
 
@@ -2889,7 +3256,7 @@ msgstr ""
 msgid "Preview only, nothing saved"
 msgstr ""
 
-#: src/components/entries/ResponsePage.vue:170
+#: src/components/entries/ResponsePage.vue:191
 msgid "Print"
 msgstr ""
 
@@ -2913,6 +3280,19 @@ msgstr ""
 #: src/components/builder/FormProperties.vue:304
 #: src/components/builder/FormProperties.vue:306
 msgid "Progress text"
+msgstr ""
+
+#: src/components/entries/ResponsesTable.vue:152
+msgid "Promote"
+msgstr ""
+
+#: src/components/entries/ResponseCard.vue:138
+#: src/components/entries/ResponsePage.vue:248
+msgid "Promote from the waiting list"
+msgstr ""
+
+#: src/components/entries/ResponsesTable.vue:150
+msgid "Promote response {id} off the waiting list"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:385
@@ -2968,12 +3348,24 @@ msgstr ""
 msgid "QR code for the public link"
 msgstr ""
 
+#: src/importReport.ts:16
+msgid "question {id}"
+msgstr ""
+
 #: src/components/builder/FieldProperties.vue:630
 msgid "Questions (the rows)"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:242
 msgid "Questions and answers"
+msgstr ""
+
+#: src/templates/catalog.ts:54
+msgid "Quick poll"
+msgstr ""
+
+#: src/importReport.ts:35
+msgid "Ranking has no equivalent, so {question} and its answers were left out."
 msgstr ""
 
 #: src/builder/fieldTypeNames.ts:26
@@ -2992,8 +3384,20 @@ msgstr ""
 msgid "Redirect"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:805
+#: src/components/entries/EntriesView.vue:840
 msgid "Refresh"
+msgstr ""
+
+#: src/templates/catalog.ts:67
+msgid "Register"
+msgstr ""
+
+#: src/templates/catalog.ts:66
+msgid "Register your place."
+msgstr ""
+
+#: src/templates/catalog.ts:65
+msgid "Registration"
 msgstr ""
 
 #: src/components/render/FileInput.vue:104
@@ -3029,6 +3433,10 @@ msgstr ""
 
 #: src/components/builder/ActionCard.vue:409
 msgid "Remove sender name"
+msgstr ""
+
+#: src/components/admin/TemplateAdmin.vue:146
+msgid "Rename"
 msgstr ""
 
 #: src/components/builder/BuilderCanvas.vue:343
@@ -3068,8 +3476,8 @@ msgid "Resize field"
 msgstr ""
 
 #: src/components/entries/DeliveryRow.vue:56
-#: src/components/entries/ResponseCard.vue:158
-#: src/components/entries/ResponsePage.vue:200
+#: src/components/entries/ResponseCard.vue:168
+#: src/components/entries/ResponsePage.vue:221
 msgid "Response #{id}"
 msgstr ""
 
@@ -3087,16 +3495,20 @@ msgstr ""
 
 #: src/components/FormNav.vue:30
 #: src/components/SettingsDialog.vue:108
-#: src/components/entries/EntriesView.vue:606
+#: src/components/entries/EntriesView.vue:635
 msgid "Responses"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:645
+#: src/components/entries/EntriesView.vue:678
 msgid "Responses appear here as soon as someone sends the form."
 msgstr ""
 
 #: src/components/admin/PolicyAdmin.vue:191
 msgid "Responses are kept until their owner deletes them."
+msgstr ""
+
+#: src/components/ImportDialog.vue:199
+msgid "Responses need a published version to belong to, so these forms are published once and then closed. They take no new responses until you reopen them."
 msgstr ""
 
 #: src/components/admin/PolicyAdmin.vue:182
@@ -3120,7 +3532,7 @@ msgstr ""
 msgid "Responses per month"
 msgstr ""
 
-#: src/App.vue:404
+#: src/App.vue:451
 msgid "Restore"
 msgstr ""
 
@@ -3129,7 +3541,7 @@ msgstr ""
 msgid "Restore form"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:614
+#: src/components/entries/EntriesView.vue:643
 msgid "Review"
 msgstr ""
 
@@ -3160,6 +3572,10 @@ msgstr ""
 msgid "Rows are added as you, so you need to be allowed to add rows to the table. Each response becomes one row."
 msgstr ""
 
+#: src/templates/catalog.ts:29
+msgid "RSVP"
+msgstr ""
+
 #: src/components/builder/BuilderView.vue:714
 msgid "Rules that use this field will be updated or removed. Responses already received keep their answers."
 msgstr ""
@@ -3169,7 +3585,7 @@ msgstr ""
 msgid "Same as the accent colour"
 msgstr ""
 
-#: src/AdminApp.vue:121
+#: src/AdminApp.vue:122
 #: src/components/admin/MailAdmin.vue:127
 #: src/components/admin/PolicyAdmin.vue:286
 msgid "Save"
@@ -3181,6 +3597,10 @@ msgstr ""
 
 #: src/components/admin/StatusAdmin.vue:231
 msgid "Save anyway"
+msgstr ""
+
+#: src/App.vue:412
+msgid "Save as template"
 msgstr ""
 
 #: src/builder/labels.ts:59
@@ -3198,6 +3618,10 @@ msgstr ""
 #: src/components/builder/BuilderView.vue:236
 #: src/components/entries/NoteEditor.vue:81
 msgid "Saved"
+msgstr ""
+
+#: src/App.vue:319
+msgid "Saved as a template."
 msgstr ""
 
 #: src/components/render/FormRenderer.vue:243
@@ -3221,7 +3645,7 @@ msgstr ""
 msgid "Scheduled"
 msgstr ""
 
-#: src/availability.ts:71
+#: src/availability.ts:72
 msgid "Scheduled: opens {time}."
 msgstr ""
 
@@ -3238,7 +3662,7 @@ msgstr ""
 msgid "Search for a group"
 msgstr ""
 
-#: src/components/entries/ResponseFilters.vue:76
+#: src/components/entries/ResponseFilters.vue:78
 msgid "Search responses"
 msgstr ""
 
@@ -3246,15 +3670,15 @@ msgstr ""
 msgid "Search results"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:652
+#: src/components/entries/EntriesView.vue:685
 msgid "Searched the first 20,000 responses. There may be more matches, narrow the dates to find them."
 msgstr ""
 
-#: src/AdminApp.vue:113
+#: src/AdminApp.vue:114
 msgid "Secret key"
 msgstr ""
 
-#: src/AdminApp.vue:113
+#: src/AdminApp.vue:114
 msgid "Secret key (leave empty to keep the saved one)"
 msgstr ""
 
@@ -3266,11 +3690,11 @@ msgstr ""
 msgid "Select a field on the canvas to set up its rules."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:678
+#: src/components/entries/EntriesView.vue:711
 msgid "Select all {n} matching"
 msgstr ""
 
-#: src/components/entries/ResponsesTable.vue:89
+#: src/components/entries/ResponsesTable.vue:96
 msgid "Select all responses on this page"
 msgstr ""
 
@@ -3282,15 +3706,15 @@ msgstr ""
 msgid "Select more options."
 msgstr ""
 
-#: src/components/entries/ResponsesTable.vue:127
+#: src/components/entries/ResponsesTable.vue:134
 msgid "Select response {id}"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:681
+#: src/components/entries/EntriesView.vue:714
 msgid "Select up to {max} at a time, or use \"Select all matching\"."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:675
+#: src/components/entries/EntriesView.vue:708
 msgid "Selected responses"
 msgstr ""
 
@@ -3301,6 +3725,18 @@ msgstr ""
 
 #: src/builder/labels.ts:47
 msgid "Send an email"
+msgstr ""
+
+#: src/templates/catalog.ts:46
+msgid "Send feedback"
+msgstr ""
+
+#: src/templates/catalog.ts:22
+msgid "Send message"
+msgstr ""
+
+#: src/templates/catalog.ts:31
+msgid "Send RSVP"
 msgstr ""
 
 #: src/builder/labels.ts:61
@@ -3315,6 +3751,10 @@ msgstr ""
 msgid "Send to"
 msgstr ""
 
+#: src/templates/catalog.ts:21
+msgid "Send us a message and we will get back to you."
+msgstr ""
+
 #: src/components/admin/MailAdmin.vue:105
 msgid "Sender name"
 msgstr ""
@@ -3323,13 +3763,13 @@ msgstr ""
 msgid "Sender name (optional)"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:793
+#: src/components/entries/EntriesView.vue:828
 #: src/entries/deliveryText.ts:12
 msgid "Sent"
 msgstr ""
 
-#: src/components/entries/ResponseFilters.vue:102
-#: src/components/entries/ResponsesTable.vue:105
+#: src/components/entries/ResponseFilters.vue:104
+#: src/components/entries/ResponsesTable.vue:112
 msgid "Sent by"
 msgstr ""
 
@@ -3365,7 +3805,11 @@ msgstr ""
 msgid "Server-wide rules for every form. The defaults keep everything open and keep responses for ever."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:666
+#: src/templates/catalog.ts:71
+msgid "Session"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:699
 msgid "Set {n} responses to \"{status}\"."
 msgstr ""
 
@@ -3373,21 +3817,22 @@ msgstr ""
 msgid "Set password"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:690
+#: src/components/entries/EntriesView.vue:723
 msgid "Set status…"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:686
+#: src/components/entries/EntriesView.vue:719
 msgid "Set the status of the selected responses"
 msgstr ""
 
-#: src/App.vue:460
+#: src/App.vue:510
 #: src/components/FormNav.vue:29
 msgid "Settings"
 msgstr ""
 
-#: src/AdminApp.vue:83
+#: src/AdminApp.vue:84
 #: src/components/admin/PolicyAdmin.vue:128
+#: src/components/admin/TemplateAdmin.vue:83
 msgid "Settings saved"
 msgstr ""
 
@@ -3403,15 +3848,23 @@ msgstr ""
 msgid "Share this link, a custom address or a QR code to let people open the form."
 msgstr ""
 
-#: src/App.vue:84
+#: src/templates/catalog.ts:44
+msgid "Share your feedback"
+msgstr ""
+
+#: src/App.vue:90
 msgid "Shared by {owner}, you can edit"
 msgstr ""
 
-#: src/App.vue:83
+#: src/App.vue:89
 msgid "Shared by {owner}, you can read responses"
 msgstr ""
 
-#: src/App.vue:74
+#: src/components/admin/TemplateAdmin.vue:131
+msgid "Shared templates"
+msgstr ""
+
+#: src/App.vue:80
 msgid "Shared with me"
 msgstr ""
 
@@ -3439,8 +3892,8 @@ msgstr ""
 msgid "Show a summary before sending"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:774
-#: src/components/entries/EntriesView.vue:847
+#: src/components/entries/EntriesView.vue:809
+#: src/components/entries/EntriesView.vue:882
 msgid "Show more"
 msgstr ""
 
@@ -3476,7 +3929,7 @@ msgstr ""
 msgid "Show, hide or require this field depending on the answers to other fields."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:776
+#: src/components/entries/EntriesView.vue:811
 msgid "Showing {shown} of {total}"
 msgstr ""
 
@@ -3488,11 +3941,15 @@ msgstr ""
 msgid "Shown beside the checkbox. Basic markdown works, so you can link to your terms: [terms](https://example.com/terms)."
 msgstr ""
 
+#: src/components/admin/TemplateAdmin.vue:134
+msgid "Shown to everyone who can create forms. A template is a copy of one of your own forms as it is now: later changes to the form do not change it. Webhook secrets are never copied."
+msgstr ""
+
 #: src/components/builder/ActionCard.vue:291
 msgid "Shown to respondent"
 msgstr ""
 
-#: src/AdminApp.vue:50
+#: src/AdminApp.vue:51
 msgid "Shows a checkbox and sometimes a puzzle. Respondents' browsers contact hCaptcha. Needs a site key and a secret key."
 msgstr ""
 
@@ -3509,8 +3966,8 @@ msgid "Sign in to upload files."
 msgstr ""
 
 #: src/builder/fieldTypeNames.ts:34
-#: src/components/entries/ResponseCard.vue:119
-#: src/components/entries/ResponsePage.vue:212
+#: src/components/entries/ResponseCard.vue:123
+#: src/components/entries/ResponsePage.vue:233
 msgid "Signature"
 msgstr ""
 
@@ -3522,7 +3979,7 @@ msgstr ""
 msgid "Signature pad, signed"
 msgstr ""
 
-#: src/components/entries/ResponseFilters.vue:57
+#: src/components/entries/ResponseFilters.vue:59
 msgid "Signed in"
 msgstr ""
 
@@ -3542,11 +3999,11 @@ msgstr ""
 msgid "Single choice"
 msgstr ""
 
-#: src/AdminApp.vue:111
+#: src/AdminApp.vue:112
 msgid "Site key"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:794
+#: src/components/entries/EntriesView.vue:829
 #: src/entries/deliveryText.ts:14
 msgid "Skipped"
 msgstr ""
@@ -3559,7 +4016,7 @@ msgstr ""
 msgid "Solid"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:812
+#: src/components/entries/EntriesView.vue:847
 msgid "Some deliveries are overdue. Nextcloud sends them with its background jobs, which do not seem to be running. Ask your administrator to switch background jobs to Cron (Administration settings, Basic settings)."
 msgstr ""
 
@@ -3573,6 +4030,10 @@ msgstr ""
 
 #: src/components/builder/CollaboratorsPanel.vue:163
 msgid "Some responses have files in your own Files, which would stay behind. Move the folder or delete those responses first."
+msgstr ""
+
+#: src/templates/catalog.ts:84
+msgid "Something is broken"
 msgstr ""
 
 #: src/entries/deliveryText.ts:46
@@ -3596,7 +4057,7 @@ msgstr ""
 msgid "Spam check for people who are not logged in"
 msgstr ""
 
-#: src/AdminApp.vue:93
+#: src/AdminApp.vue:94
 msgid "Spam protection"
 msgstr ""
 
@@ -3614,12 +4075,24 @@ msgstr ""
 msgid "Stars, from 1 to 5 or more"
 msgstr ""
 
+#: src/components/TemplateDialog.vue:167
+msgid "Start from"
+msgstr ""
+
 #: src/components/render/FormRenderer.vue:463
 msgid "Start over"
 msgstr ""
 
+#: src/components/TemplateDialog.vue:60
+msgid "Start with nothing and add your own fields."
+msgstr ""
+
 #: src/components/builder/BuilderCanvas.vue:381
 msgid "Start your form"
+msgstr ""
+
+#: src/components/admin/TemplateAdmin.vue:114
+msgid "Starter templates"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:686
@@ -3631,15 +4104,15 @@ msgstr ""
 msgid "State or region"
 msgstr ""
 
-#: src/components/entries/ResponseFilters.vue:111
-#: src/components/entries/ResponsePage.vue:223
-#: src/components/entries/ResponsesTable.vue:108
+#: src/components/entries/ResponseFilters.vue:113
+#: src/components/entries/ResponsePage.vue:257
+#: src/components/entries/ResponsesTable.vue:115
 msgid "Status"
 msgstr ""
 
-#: src/components/entries/ResponseCard.vue:127
-#: src/components/entries/ResponsePage.vue:227
-#: src/components/entries/ResponsesTable.vue:146
+#: src/components/entries/ResponseCard.vue:131
+#: src/components/entries/ResponsePage.vue:261
+#: src/components/entries/ResponsesTable.vue:163
 msgid "Status of response {id}"
 msgstr ""
 
@@ -3680,6 +4153,7 @@ msgid "Style"
 msgstr ""
 
 #: src/components/builder/ActionCard.vue:412
+#: src/templates/catalog.ts:25
 msgid "Subject"
 msgstr ""
 
@@ -3695,15 +4169,19 @@ msgstr ""
 msgid "Submit button text"
 msgstr ""
 
-#: src/components/entries/ResponsesTable.vue:100
+#: src/templates/catalog.ts:80
+msgid "Submit request"
+msgstr ""
+
+#: src/components/entries/ResponsesTable.vue:107
 msgid "Submitted"
 msgstr ""
 
-#: src/components/entries/ResponsesTable.vue:98
+#: src/components/entries/ResponsesTable.vue:105
 msgid "Submitted, newest first. Show oldest first."
 msgstr ""
 
-#: src/components/entries/ResponsesTable.vue:98
+#: src/components/entries/ResponsesTable.vue:105
 msgid "Submitted, oldest first. Show newest first."
 msgstr ""
 
@@ -3723,6 +4201,14 @@ msgstr ""
 msgid "Summary of responses"
 msgstr ""
 
+#: src/templates/catalog.ts:94
+msgid "Support"
+msgstr ""
+
+#: src/templates/catalog.ts:77
+msgid "Support request"
+msgstr ""
+
 #: src/components/builder/FieldProperties.vue:842
 msgid "Switched off for this form under Settings, General."
 msgstr ""
@@ -3731,9 +4217,13 @@ msgstr ""
 msgid "Switched off, nobody can be added to a form. Forms that are already shared keep working."
 msgstr ""
 
+#: src/components/admin/TemplateAdmin.vue:117
+msgid "Switched on templates are offered to everyone who can create forms. Forms already made from a hidden template are not affected."
+msgstr ""
+
 #: src/components/SettingsDialog.vue:118
 #: src/components/builder/TablesActionBody.vue:164
-#: src/components/entries/EntriesView.vue:716
+#: src/components/entries/EntriesView.vue:749
 msgid "Table"
 msgstr ""
 
@@ -3751,6 +4241,18 @@ msgstr ""
 
 #: src/components/admin/StatusAdmin.vue:51
 msgid "Teal"
+msgstr ""
+
+#: src/components/admin/TemplateAdmin.vue:91
+msgid "Template added"
+msgstr ""
+
+#: src/components/admin/TemplateAdmin.vue:102
+msgid "Template deleted"
+msgstr ""
+
+#: src/components/admin/TemplateAdmin.vue:107
+msgid "Templates"
 msgstr ""
 
 #: src/builder/fieldTypeNames.ts:84
@@ -3788,15 +4290,15 @@ msgstr ""
 msgid "That account or group no longer exists."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:830
+#: src/components/entries/EntriesView.vue:865
 msgid "That did not work. Try again in a moment."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:285
+#: src/components/entries/EntriesView.vue:310
 msgid "That is too many responses to change at once. Narrow the filter, or select fewer."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:255
+#: src/components/entries/EntriesView.vue:280
 msgid "That is too many responses to delete at once. Narrow the filter, or select fewer."
 msgstr ""
 
@@ -3836,7 +4338,7 @@ msgstr ""
 msgid "The answer is true or false in responses, downloads and rules."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:856
+#: src/components/entries/EntriesView.vue:891
 msgid "The answers and the record of what was sent are deleted. This cannot be undone."
 msgstr ""
 
@@ -3845,12 +4347,16 @@ msgid "The choice is matched by its label or value."
 msgstr ""
 
 #: src/builder/errors.ts:38
-#: src/components/builder/FormProperties.vue:418
+#: src/components/builder/FormProperties.vue:432
 msgid "The closing time must be after the opening time."
 msgstr ""
 
 #: src/components/builder/SharePanel.vue:271
 msgid "The code holds the link above. It is made in your browser."
+msgstr ""
+
+#: src/importReport.ts:23
+msgid "The confirmation email was not copied. Add an email action to the draft."
 msgstr ""
 
 #: src/entries/deliveryText.ts:47
@@ -3877,8 +4383,16 @@ msgstr ""
 msgid "The defaults above are always used. A form may still reply to the address a respondent typed in an email field. Forms that already set their own keep sending, with their own choice ignored, and cannot be published again until it is removed."
 msgstr ""
 
-#: src/App.vue:334
+#: src/importReport.ts:29
+msgid "The description was too long and was cut."
+msgstr ""
+
+#: src/App.vue:378
 msgid "The draft has changes that are not published yet"
+msgstr ""
+
+#: src/components/ImportDialog.vue:212
+msgid "The draft has problems that you need to fix before you can publish it."
 msgstr ""
 
 #: src/entries/deliveryText.ts:51
@@ -3893,7 +4407,7 @@ msgstr ""
 msgid "The email settings could not be saved. Check the reply-to address and the sender name."
 msgstr ""
 
-#: src/components/entries/ResponseFilters.vue:131
+#: src/components/entries/ResponseFilters.vue:145
 msgid "The end date is before the start date."
 msgstr ""
 
@@ -3917,12 +4431,20 @@ msgstr ""
 msgid "The form could not be published."
 msgstr ""
 
+#: src/importReport.ts:25
+msgid "The form hid who answered, so the responses have no respondent."
+msgstr ""
+
 #: src/builder/errors.ts:40
 msgid "The form needs a title."
 msgstr ""
 
 #: src/components/admin/MailAdmin.vue:88
 msgid "The form owner's account email"
+msgstr ""
+
+#: src/importReport.ts:41
+msgid "The grid {question} has too many rows or columns and was left out."
 msgstr ""
 
 #: src/builder/errors.ts:34
@@ -3945,12 +4467,16 @@ msgstr ""
 msgid "The Nextcloud colour"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:281
+#: src/components/entries/EntriesView.vue:306
 msgid "The number of matching responses changed from {before} to {now}, so nothing was changed. Check the list and try again."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:251
+#: src/components/entries/EntriesView.vue:276
 msgid "The number of matching responses changed from {before} to {now}, so nothing was deleted. Check the list and try again."
+msgstr ""
+
+#: src/importReport.ts:27
+msgid "The opening time was not before the closing time, so only the closing time was kept."
 msgstr ""
 
 #: src/components/builder/CollaboratorsPanel.vue:112
@@ -3997,7 +4523,11 @@ msgstr ""
 msgid "The response was deleted before this could be sent."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:867
+#: src/importReport.ts:59
+msgid "The responses were not imported because the form could not be published. Fix the draft, then import again."
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:902
 msgid "The selected responses are deleted, with their answers, uploaded files and the record of what was sent. This cannot be undone."
 msgstr ""
 
@@ -4049,6 +4579,14 @@ msgstr ""
 msgid "The Tables app is not installed or not enabled on this server, so this action cannot run. Ask an administrator to enable it."
 msgstr ""
 
+#: src/components/TemplateDialog.vue:163
+msgid "The templates could not be loaded. You can still start with a blank form."
+msgstr ""
+
+#: src/components/admin/TemplateAdmin.vue:108
+msgid "The templates people can start a new form from. Hide starter templates you do not want, and add templates of your own for everyone."
+msgstr ""
+
 #: src/builder/errors.ts:104
 msgid "The text uses a field that does not exist."
 msgstr ""
@@ -4071,6 +4609,10 @@ msgstr ""
 
 #: src/components/builder/ActionCard.vue:254
 msgid "Their account email"
+msgstr ""
+
+#: src/components/admin/TemplateAdmin.vue:137
+msgid "There are no shared templates yet."
 msgstr ""
 
 #: src/components/admin/StatusAdmin.vue:158
@@ -4129,7 +4671,7 @@ msgstr ""
 msgid "This file is empty."
 msgstr ""
 
-#: src/builder/errors.ts:124
+#: src/builder/errors.ts:126
 msgid "This file is not an Advanced Webforms export."
 msgstr ""
 
@@ -4141,7 +4683,7 @@ msgstr ""
 msgid "This file name is not valid."
 msgstr ""
 
-#: src/builder/errors.ts:126
+#: src/builder/errors.ts:128
 msgid "This file was made by a newer version of Advanced Webforms. Update the app to import it."
 msgstr ""
 
@@ -4149,12 +4691,12 @@ msgstr ""
 msgid "This form has no choice, yes/no or number questions to count."
 msgstr ""
 
-#: src/builder/errors.ts:128
+#: src/builder/errors.ts:130
 msgid "This form has not been published yet."
 msgstr ""
 
 #: src/PublicApp.vue:149
-#: src/components/builder/FormProperties.vue:395
+#: src/components/builder/FormProperties.vue:409
 msgid "This form has received the maximum number of responses."
 msgstr ""
 
@@ -4192,7 +4734,7 @@ msgid "This form is no longer accepting responses."
 msgstr ""
 
 #: src/PublicApp.vue:145
-#: src/components/builder/FormProperties.vue:424
+#: src/components/builder/FormProperties.vue:438
 msgid "This form is not open yet."
 msgstr ""
 
@@ -4204,7 +4746,7 @@ msgstr ""
 msgid "This form is published. After you publish again, webhooks, exports and links that fill this field use the new ID. Responses already received keep the old one."
 msgstr ""
 
-#: src/builder/errors.ts:130
+#: src/builder/errors.ts:132
 msgid "This form is too large."
 msgstr ""
 
@@ -4228,7 +4770,7 @@ msgstr ""
 msgid "This form was closed when the previous owner's account was deleted, because the places it saves to in Files and Tables are not yet set up for you. Check them, then publish to open it again."
 msgstr ""
 
-#: src/builder/errors.ts:132
+#: src/builder/errors.ts:134
 msgid "This is not valid ({code})."
 msgstr ""
 
@@ -4256,7 +4798,7 @@ msgstr ""
 msgid "This link does not lead to an open form."
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:808
+#: src/components/entries/EntriesView.vue:843
 msgid "This list also refreshes by itself every few seconds while deliveries are waiting."
 msgstr ""
 
@@ -4288,7 +4830,7 @@ msgstr ""
 msgid "This picture loads from another site each time the form opens, so that site sees your respondents come and go, and the picture is gone if the site removes it."
 msgstr ""
 
-#: src/components/entries/ResponsePage.vue:178
+#: src/components/entries/ResponsePage.vue:199
 msgid "This response does not exist"
 msgstr ""
 
@@ -4343,8 +4885,12 @@ msgstr ""
 msgid "Title"
 msgstr ""
 
+#: src/components/TemplateDialog.vue:188
+msgid "Title (optional)"
+msgstr ""
+
 #: src/components/builder/FieldCard.vue:149
-#: src/components/entries/ResponseFilters.vue:94
+#: src/components/entries/ResponseFilters.vue:96
 #: src/components/render/FieldInput.vue:290
 msgid "To"
 msgstr ""
@@ -4373,6 +4919,14 @@ msgstr ""
 msgid "Too many uploads. Please wait a moment and try again."
 msgstr ""
 
+#: src/templates/catalog.ts:81
+msgid "Topic"
+msgstr ""
+
+#: src/templates/catalog.ts:78
+msgid "Topic, urgency and details."
+msgstr ""
+
 #: src/components/entries/ResponseSummary.vue:216
 msgid "Total"
 msgstr ""
@@ -4394,11 +4948,11 @@ msgstr ""
 msgid "Transfer this form to {name}?"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:636
+#: src/components/entries/EntriesView.vue:669
 msgid "Try a different search, or clear the filters."
 msgstr ""
 
-#: src/App.vue:431
+#: src/App.vue:478
 #: src/components/builder/CollaboratorsPanel.vue:207
 #: src/components/entries/DeliveryRow.vue:76
 msgid "Try again"
@@ -4416,7 +4970,7 @@ msgstr ""
 msgid "Two statuses have the same name."
 msgstr ""
 
-#: src/App.vue:87
+#: src/App.vue:93
 msgid "unpublished changes"
 msgstr ""
 
@@ -4424,7 +4978,7 @@ msgstr ""
 msgid "Unsaved changes"
 msgstr ""
 
-#: src/AdminApp.vue:116
+#: src/AdminApp.vue:117
 msgid "Until both keys are saved, forms are not protected by this provider."
 msgstr ""
 
@@ -4434,7 +4988,9 @@ msgstr ""
 msgid "Untitled field"
 msgstr ""
 
-#: src/App.vue:184
+#: src/App.vue:190
+#: src/components/ImportDialog.vue:187
+#: src/components/ImportDialog.vue:204
 msgid "Untitled form"
 msgstr ""
 
@@ -4518,7 +5074,16 @@ msgstr ""
 msgid "Values, separated by commas"
 msgstr ""
 
+#: src/templates/catalog.ts:38
+msgid "Vegan"
+msgstr ""
+
+#: src/templates/catalog.ts:37
+msgid "Vegetarian"
+msgstr ""
+
 #: src/components/builder/FieldProperties.vue:705
+#: src/templates/catalog.ts:52
 msgid "Very likely"
 msgstr ""
 
@@ -4530,9 +5095,19 @@ msgstr ""
 msgid "Visible lines (2 to 20)"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:792
+#: src/templates/catalog.ts:57
+msgid "Vote"
+msgstr ""
+
+#: src/components/entries/EntriesView.vue:827
 #: src/entries/deliveryText.ts:15
 msgid "Waiting"
+msgstr ""
+
+#: src/components/entries/ResponseFilters.vue:128
+#: src/components/entries/ResponsePage.vue:244
+#: src/components/entries/WaitlistTag.vue:13
+msgid "Waiting list"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:588
@@ -4555,6 +5130,14 @@ msgstr ""
 msgid "Website"
 msgstr ""
 
+#: src/templates/catalog.ts:49
+msgid "What could be better?"
+msgstr ""
+
+#: src/templates/catalog.ts:48
+msgid "What did you like?"
+msgstr ""
+
 #: src/components/admin/PolicyAdmin.vue:156
 msgid "What forms may do after someone sends them. A switched-off type is hidden in the builder, refused when publishing, and stops running on forms that are already live."
 msgstr ""
@@ -4571,7 +5154,7 @@ msgstr ""
 msgid "What the rule does"
 msgstr ""
 
-#: src/components/entries/EntriesView.vue:604
+#: src/components/entries/EntriesView.vue:633
 msgid "What to show"
 msgstr ""
 
@@ -4604,8 +5187,16 @@ msgstr ""
 msgid "Where replies go"
 msgstr ""
 
+#: src/templates/catalog.ts:58
+msgid "Which option do you prefer?"
+msgstr ""
+
 #: src/components/admin/PolicyAdmin.vue:219
 msgid "Who can create forms"
+msgstr ""
+
+#: src/importReport.ts:21
+msgid "Who can open the form and how it is shared were not copied. Set this before you publish."
 msgstr ""
 
 #: src/components/builder/FormProperties.vue:341
@@ -4633,6 +5224,10 @@ msgstr ""
 msgid "Width only applies on larger screens. On phones the form fills the screen and fields sit one under another."
 msgstr ""
 
+#: src/templates/catalog.ts:32
+msgid "Will you attend?"
+msgstr ""
+
 #: src/builder/fieldTypeNames.ts:54
 msgid "With optional minimum and maximum"
 msgstr ""
@@ -4643,6 +5238,14 @@ msgstr ""
 
 #: src/components/builder/ActionCard.vue:471
 msgid "Without a secret the request is sent unsigned."
+msgstr ""
+
+#: src/components/ImportDialog.vue:132
+msgid "Would be a closed form with {fields} and {responses}."
+msgstr ""
+
+#: src/components/ImportDialog.vue:125
+msgid "Would be a draft with {fields}."
 msgstr ""
 
 #: src/components/builder/SharePanel.vue:112
@@ -4665,6 +5268,10 @@ msgstr ""
 
 #: src/components/builder/FieldProperties.vue:610
 msgid "Yes or no answer"
+msgstr ""
+
+#: src/templates/catalog.ts:33
+msgid "Yes, I will be there"
 msgstr ""
 
 #: src/components/builder/ActionCard.vue:78
@@ -4691,6 +5298,10 @@ msgstr ""
 msgid "You are not allowed to use that table."
 msgstr ""
 
+#: src/components/builder/FormProperties.vue:403
+msgid "You are on the waiting list."
+msgstr ""
+
 #: src/entries/deliveryText.ts:45
 msgid "You can no longer change the CSV file or create it in that folder."
 msgstr ""
@@ -4703,7 +5314,7 @@ msgstr ""
 msgid "You cannot change that file or create it there. Choose a folder you can write to."
 msgstr ""
 
-#: src/App.vue:444
+#: src/App.vue:494
 msgid "You cannot create forms on this server. Ask an administrator to add you to a group that can."
 msgstr ""
 
@@ -4715,8 +5326,16 @@ msgstr ""
 msgid "You have already submitted this form."
 msgstr ""
 
+#: src/components/ImportDialog.vue:165
+msgid "You have no forms in the Forms app on this server."
+msgstr ""
+
 #: src/components/builder/TablesActionBody.vue:172
 msgid "You have no Tables tables you can add rows to. Create one in the Tables app first."
+msgstr ""
+
+#: src/builder/errors.ts:124
+msgid "You have reached the limit of saved templates. Delete one first."
 msgstr ""
 
 #: src/PublicApp.vue:184
@@ -4727,7 +5346,7 @@ msgstr ""
 msgid "You need to sign in to upload files here."
 msgstr ""
 
-#: src/App.vue:524
+#: src/App.vue:584
 msgid "You will no longer see {title} or its responses. The owner can share it with you again."
 msgstr ""
 
@@ -4753,6 +5372,10 @@ msgstr ""
 
 #: src/components/render/FormRenderer.vue:255
 msgid "Your answers from {date} are back. They are kept in this browser only."
+msgstr ""
+
+#: src/templates/catalog.ts:45
+msgid "Your answers help us improve."
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:580

@@ -1,0 +1,141 @@
+{
+  "id": "event_rsvp",
+  "category": "events",
+  "name": "Event RSVP",
+  "description": "Count guests and note dietary needs.",
+  "definition": {
+    "schemaVersion": 1,
+    "title": "RSVP",
+    "description": "Let us know if you can make it.",
+    "settings": {
+      "submitLabel": "Send RSVP"
+    },
+    "fields": {
+      "f_name": {
+        "type": "text",
+        "label": "Name",
+        "required": true
+      },
+      "f_email": {
+        "type": "email",
+        "label": "Email",
+        "required": true
+      },
+      "f_attending": {
+        "type": "radio",
+        "label": "Will you attend?",
+        "required": true,
+        "options": [
+          {
+            "value": "yes",
+            "label": "Yes, I will be there"
+          },
+          {
+            "value": "no",
+            "label": "No, I cannot make it"
+          }
+        ]
+      },
+      "f_guests": {
+        "type": "number",
+        "label": "Number of guests",
+        "required": false,
+        "min": 0,
+        "max": 10
+      },
+      "f_diet": {
+        "type": "checkboxes",
+        "label": "Dietary needs",
+        "required": false,
+        "options": [
+          {
+            "value": "vegetarian",
+            "label": "Vegetarian"
+          },
+          {
+            "value": "vegan",
+            "label": "Vegan"
+          },
+          {
+            "value": "gluten_free",
+            "label": "Gluten free"
+          },
+          {
+            "value": "allergies",
+            "label": "Allergies"
+          }
+        ]
+      },
+      "f_notes": {
+        "type": "textarea",
+        "label": "Anything else we should know?",
+        "required": false
+      }
+    },
+    "pages": [
+      {
+        "id": "p_1",
+        "title": null,
+        "rows": [
+          {
+            "id": "r_1",
+            "cells": [
+              {
+                "id": "c_1",
+                "span": 6,
+                "field": "f_name"
+              },
+              {
+                "id": "c_2",
+                "span": 6,
+                "field": "f_email"
+              }
+            ]
+          },
+          {
+            "id": "r_2",
+            "cells": [
+              {
+                "id": "c_3",
+                "span": 12,
+                "field": "f_attending"
+              }
+            ]
+          },
+          {
+            "id": "r_3",
+            "cells": [
+              {
+                "id": "c_4",
+                "span": 4,
+                "field": "f_guests"
+              }
+            ]
+          },
+          {
+            "id": "r_4",
+            "cells": [
+              {
+                "id": "c_5",
+                "span": 12,
+                "field": "f_diet"
+              }
+            ]
+          },
+          {
+            "id": "r_5",
+            "cells": [
+              {
+                "id": "c_6",
+                "span": 12,
+                "field": "f_notes"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "rules": [],
+    "actions": []
+  }
+}

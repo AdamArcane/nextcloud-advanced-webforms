@@ -56,4 +56,18 @@ class NewFormDefaultsTest extends TestCase {
 		);
 		$this->assertSame([], array_values($errors));
 	}
+
+	public function testApplyingToATemplateKeepsItAsIsWhenNothingIsSet(): void {
+		$definition = ['title' => 'T', 'settings' => ['submitLabel' => 'Send', 'design' => ['width' => 'narrow']]];
+		$this->assertSame($definition, NewFormDefaults::applyTo($definition, []));
+	}
+
+	public function testApplyingLaysThePersonsDefaultsOverTheTemplateSettings(): void {
+		$definition = ['title' => 'T', 'settings' => ['submitLabel' => 'Send', 'design' => ['width' => 'narrow', 'accentColor' => '#000000']]];
+		$out = NewFormDefaults::applyTo($definition, ['newFormAccentColor' => '#AA0000', 'newFormHideTitle' => true]);
+		$this->assertSame('Send', $out['settings']['submitLabel']);
+		$this->assertSame('narrow', $out['settings']['design']['width']);
+		$this->assertSame('#aa0000', $out['settings']['design']['accentColor']);
+		$this->assertTrue($out['settings']['hideTitle']);
+	}
 }

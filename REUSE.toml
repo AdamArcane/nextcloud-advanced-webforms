@@ -3,7 +3,7 @@ SPDX-PackageName = "nextcloud-advanced-webforms"
 SPDX-PackageDownloadLocation = "https://github.com/AdamArcane/nextcloud-advanced-webforms"
 
 [[annotations]]
-path = ["LICENSE", "package.json", "package-lock.json", "composer.json", "composer.lock", "tests/vectors/**", "tsconfig.json", ".gitignore", ".editorconfig", "img/**", "docs/screenshots/**"]
+path = ["LICENSE", "package.json", "package-lock.json", "composer.json", "composer.lock", "tests/vectors/**", "tsconfig.json", ".gitignore", ".editorconfig", "img/**", "docs/screenshots/**", "lib/Forms/Templates/**"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 ArcaneX"
 SPDX-License-Identifier = "AGPL-3.0-or-later"

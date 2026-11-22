@@ -120,6 +120,8 @@ export function describeError(code: string): string {
 			return t('webforms', 'You cannot save files to this folder. Choose a folder you can write to.')
 		case 'upload_anonymous_not_allowed':
 			return t('webforms', 'You are not allowed to let anyone upload into your files. Limit this field to signed-in users, or keep the files in the app.')
+		case 'template_limit':
+			return t('webforms', 'You have reached the limit of saved templates. Delete one first.')
 		case 'import_not_a_form':
 			return t('webforms', 'This file is not an Advanced Webforms export.')
 		case 'import_too_new':

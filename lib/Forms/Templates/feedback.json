@@ -1,0 +1,106 @@
+{
+  "id": "feedback",
+  "category": "feedback",
+  "name": "Feedback survey",
+  "description": "A rating, what worked and what did not.",
+  "definition": {
+    "schemaVersion": 1,
+    "title": "Share your feedback",
+    "description": "Your answers help us improve.",
+    "settings": {
+      "submitLabel": "Send feedback"
+    },
+    "fields": {
+      "f_rating": {
+        "type": "rating",
+        "label": "How would you rate your experience?",
+        "required": true,
+        "max": 5
+      },
+      "f_liked": {
+        "type": "textarea",
+        "label": "What did you like?",
+        "required": false
+      },
+      "f_improve": {
+        "type": "textarea",
+        "label": "What could be better?",
+        "required": false
+      },
+      "f_recommend": {
+        "type": "scale",
+        "label": "How likely are you to recommend us?",
+        "required": false,
+        "min": 0,
+        "max": 10,
+        "minLabel": "Not likely",
+        "maxLabel": "Very likely"
+      },
+      "f_contact": {
+        "type": "email",
+        "label": "Email (optional, if you want a reply)",
+        "required": false
+      }
+    },
+    "pages": [
+      {
+        "id": "p_1",
+        "title": null,
+        "rows": [
+          {
+            "id": "r_1",
+            "cells": [
+              {
+                "id": "c_1",
+                "span": 12,
+                "field": "f_rating"
+              }
+            ]
+          },
+          {
+            "id": "r_2",
+            "cells": [
+              {
+                "id": "c_2",
+                "span": 12,
+                "field": "f_liked"
+              }
+            ]
+          },
+          {
+            "id": "r_3",
+            "cells": [
+              {
+                "id": "c_3",
+                "span": 12,
+                "field": "f_improve"
+              }
+            ]
+          },
+          {
+            "id": "r_4",
+            "cells": [
+              {
+                "id": "c_4",
+                "span": 12,
+                "field": "f_recommend"
+              }
+            ]
+          },
+          {
+            "id": "r_5",
+            "cells": [
+              {
+                "id": "c_5",
+                "span": 12,
+                "field": "f_contact"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "rules": [],
+    "actions": []
+  }
+}
