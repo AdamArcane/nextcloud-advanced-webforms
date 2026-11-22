@@ -5,27 +5,33 @@
 
 # Changelog
 
-## Unreleased
+## 0.7.0 - 2026-11-22
 
-- **Templates.** **New form** now opens a chooser: a blank form, one of the starter templates (contact form,
-  event RSVP, feedback survey, event registration, quick poll, support request), or one of your own. Choose
-  **Save as template** in a form's menu to keep it for later; your own templates are private and are listed
-  under **My templates**, where you can delete them. A new form from a template is a draft, brings fields,
-  layout, rules and actions but no webhook secrets, and takes your defaults for new forms. The starter
-  templates are shown in your language. Administrators get a **Templates** section in the server settings:
-  hide starter templates nobody should use, and add templates for everyone from one of your own forms, which
-  appear under **Shared templates**. See `docs/SCHEMA.md` section 13.4.
-- A form can keep a **waiting list**. Set a response limit, then choose to keep a waiting list when the form is full:
-  further responses are still taken, marked as waiting, and do not count against the limit. In the Responses view you
-  can filter the waiting list and promote a response by hand. Actions can be set to run when a response is
-  confirmed, joins the waiting list or is promoted, and there is a new Flow event, "Response promoted from the waiting
-  list". The waiting list is not a status.
-- **Import from the core Forms app.** **Import form** is now a list of where a form can come from: a file, or your
-  forms in the Nextcloud Forms app. Pick forms, choose whether to bring their responses (the form is then
-  published once and closed), preview what would be left out, and import. Administrators can do the same for
-  everyone's forms with `occ webforms:import-core-forms`. Questions with no equivalent (ranking, number
-  grids, time ranges), uploaded files, sharing settings and the confirmation email are not carried, and the
-  command lists each one. See `docs/SCHEMA.md` section 13.3.
+- **Start a form from a template.** **New form** now opens a chooser instead of an empty form. Pick **Blank
+  form**, one of six ready-made starters (contact form, event RSVP, feedback survey, event registration, quick
+  poll, support request), or one of your own. Each choice shows a short description, and the chooser fits a
+  phone screen. A new form is always a draft, so nothing is public until you publish it. It comes with the
+  fields, layout, rules and actions of the template, takes your own defaults for new forms, and never copies
+  webhook secrets. The starters appear in your language.
+- **Save your own templates.** Choose **Save as template** in a form's menu to keep it for later. Your
+  templates are private to you, are listed under **My templates**, and can be deleted from the chooser.
+- **Templates for everyone (administrators).** Administration settings has a new **Templates** section. Hide
+  starters nobody should use, and share a form as a template with all users: it then appears under **Shared
+  templates**, and can be renamed or removed at any time. A template carries the form only, never responses,
+  links or passwords.
+- **Waiting list.** Set a response limit, then switch on **Keep a waiting list when the form is full**. More
+  people can still sign up: they are told they are on the waiting list (you can write that message), and they
+  do not use up the limit. In **Responses** you can show only the waiting list and move someone up to
+  confirmed by hand. After-submit actions, such as an email, can be set to run for confirmed responses, for
+  people joining the waiting list, or for people moved up, and there is a new Flow event, "Response promoted
+  from the waiting list".
+- **Bring in forms from the Nextcloud Forms app.** **Import form** now offers a file or your forms in the core
+  Forms app. Choose the forms, decide whether to bring their responses (the form is then published once and
+  closed), and see what cannot be carried before you import. Questions with no equivalent (ranking, number
+  grids, time ranges), uploaded files, sharing settings and the confirmation email are left out, and the
+  preview lists each one. Administrators can import everyone's forms with `occ webforms:import-core-forms`.
+- **Updating.** This release makes a small database change (one new table and one new column). It runs by
+  itself when you update.
 
 ## 0.6.0 - 2026-11-20
 
