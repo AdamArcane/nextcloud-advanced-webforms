@@ -5,7 +5,7 @@
 
 # Changelog
 
-## 0.8.0 - 2026-11-23
+## 0.7.1 - 2026-11-23
 
 - **Name and describe a template when you save it.** **Save as template** now opens a small window where you can
   change the template's name and write a short description. The name starts as the form's title followed by
