@@ -214,10 +214,14 @@ class FormController extends Controller {
 	 */
 	#[NoAdminRequired]
 	#[FrontpageRoute(verb: 'POST', url: '/api/v1/forms/{id}/save-as-template')]
-	public function saveAsTemplate(int $id, string $title = ''): JSONResponse {
-		return $this->guard(function () use ($id, $title): JSONResponse {
-			$template = $this->service->saveAsTemplate($this->userId(), $id, $title);
-			return new JSONResponse(['id' => 'u:' . $template->getId(), 'name' => $template->getTitle()], Http::STATUS_CREATED);
+	public function saveAsTemplate(int $id, string $title = '', ?string $description = null): JSONResponse {
+		return $this->guard(function () use ($id, $title, $description): JSONResponse {
+			$template = $this->service->saveAsTemplate($this->userId(), $id, $title, $description);
+			return new JSONResponse([
+				'id' => 'u:' . $template->getId(),
+				'name' => $template->getTitle(),
+				'description' => $template->getDescription() ?? '',
+			], Http::STATUS_CREATED);
 		});
 	}
 

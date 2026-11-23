@@ -32,8 +32,11 @@ const shown = ref<string[]>([])
 const forms = ref<OwnerForm[]>([])
 const formId = ref<number | null>(null)
 const title = ref('')
+const description = ref('')
 /** The new name typed for a shared template, by id. */
 const names = ref<Record<string, string>>({})
+/** The description typed for a shared template, by id. */
+const descriptions = ref<Record<string, string>>({})
 
 const hiddenChanged = computed(() => {
 	const was = settings.value.bundled.filter((item) => !item.hidden).map((item) => item.id).sort().join(',')
@@ -44,6 +47,7 @@ function apply(next: TemplateAdminSettings): void {
 	settings.value = next
 	shown.value = next.bundled.filter((item) => !item.hidden).map((item) => item.id)
 	names.value = Object.fromEntries(next.shared.map((item) => [item.id, item.name]))
+	descriptions.value = Object.fromEntries(next.shared.map((item) => [item.id, item.description]))
 }
 
 onMounted(async () => {
@@ -88,14 +92,15 @@ async function add(): Promise<void> {
 		return
 	}
 	const id = formId.value
-	if (await run(() => addSharedTemplate(id, title.value.trim()), t('webforms', 'Template added'))) {
+	if (await run(() => addSharedTemplate(id, title.value.trim(), description.value.trim() === '' ? null : description.value.trim()), t('webforms', 'Template added'))) {
 		formId.value = null
 		title.value = ''
+		description.value = ''
 	}
 }
 
 function rename(id: string): Promise<boolean> {
-	return run(() => renameSharedTemplate(id, (names.value[id] ?? '').trim()), t('webforms', 'Settings saved'))
+	return run(() => renameSharedTemplate(id, (names.value[id] ?? '').trim(), (descriptions.value[id] ?? '').trim()), t('webforms', 'Settings saved'))
 }
 
 function remove(id: string): Promise<boolean> {
@@ -139,11 +144,12 @@ function remove(id: string): Promise<boolean> {
 			<ul v-else class="af-tpl-admin__list">
 				<li v-for="item in settings.shared" :key="item.id" class="af-tpl-admin__row">
 					<NcTextField v-model="names[item.id]" :label="t('webforms', 'Name')" class="af-tpl-admin__name" />
+					<NcTextField v-model="descriptions[item.id]" :label="t('webforms', 'Description')" class="af-tpl-admin__name" />
 					<span class="af-tpl-admin__hint">{{ n('webforms', '%n field', '%n fields', item.fieldCount) }}</span>
 					<NcButton variant="secondary"
-						:disabled="saving || (names[item.id] ?? '').trim() === '' || names[item.id] === item.name"
+						:disabled="saving || (names[item.id] ?? '').trim() === '' || (names[item.id] === item.name && (descriptions[item.id] ?? '') === item.description)"
 						@click="rename(item.id)">
-						{{ t('webforms', 'Rename') }}
+						{{ t('webforms', 'Save changes') }}
 					</NcButton>
 					<NcButton variant="tertiary"
 						:aria-label="t('webforms', 'Delete the template {name}', { name: item.name })"
@@ -166,6 +172,9 @@ function remove(id: string): Promise<boolean> {
 			<NcTextField v-model="title"
 				:label="t('webforms', 'Name (optional)')"
 				:helper-text="t('webforms', 'Leave empty to use the name of the form.')" />
+			<NcTextField v-model="description"
+				:label="t('webforms', 'Description (optional)')"
+				:helper-text="t('webforms', 'Shown under the name when people choose a template. Leave empty to use the description of the form.')" />
 			<NcButton variant="primary" :disabled="saving || formId === null" @click="add">
 				{{ t('webforms', 'Add template') }}
 			</NcButton>

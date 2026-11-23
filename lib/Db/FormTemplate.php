@@ -19,6 +19,8 @@ use OCP\AppFramework\Db\Entity;
  * @method void setOwnerId(string $ownerId)
  * @method string getTitle()
  * @method void setTitle(string $title)
+ * @method string|null getDescription()
+ * @method void setDescription(string|null $description)
  * @method string getDefinition()
  * @method void setDefinition(string $definition)
  * @method int getCreatedAt()
@@ -32,6 +34,7 @@ class FormTemplate extends Entity {
 
 	protected $ownerId;
 	protected $title;
+	protected $description;
 	protected $definition;
 	protected $createdAt;
 	protected $updatedAt;
@@ -39,6 +42,7 @@ class FormTemplate extends Entity {
 	public function __construct() {
 		$this->addType('ownerId', 'string');
 		$this->addType('title', 'string');
+		$this->addType('description', 'string');
 		$this->addType('definition', 'string');
 		$this->addType('createdAt', 'integer');
 		$this->addType('updatedAt', 'integer');

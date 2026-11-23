@@ -272,6 +272,8 @@ export interface BundledTemplate {
 export interface OwnTemplate {
 	id: string
 	name: string
+	/** A line about the template, empty when it has none. */
+	description: string
 	fieldCount: number
 	updatedAt: number
 }
@@ -297,8 +299,8 @@ export function createFromTemplate(templateId: string, title: string, strings?: 
 	return call(axios.post<SaveResult>(url('/forms/from-template'), { templateId, title, strings: strings ?? {} }))
 }
 
-export function saveAsTemplate(formId: number, title: string): Promise<OwnTemplate> {
-	return call(axios.post<OwnTemplate>(url('/forms/' + formId + '/save-as-template'), { title }))
+export function saveAsTemplate(formId: number, title: string, description: string): Promise<OwnTemplate> {
+	return call(axios.post<OwnTemplate>(url('/forms/' + formId + '/save-as-template'), { title, description }))
 }
 
 export async function deleteTemplate(templateId: string): Promise<void> {

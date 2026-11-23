@@ -37,6 +37,7 @@ use OCA\Webforms\Db\FormShareMapper;
 use OCA\Webforms\Db\FormTemplate;
 use OCA\Webforms\Db\FormTemplateMapper;
 use OCA\Webforms\Forms\TemplateCatalog;
+use OCA\Webforms\Forms\TemplateDescription;
 use OCA\Webforms\Forms\TemplateText;
 use OCA\Webforms\Db\Version;
 use OCA\Webforms\Db\VersionMapper;
@@ -339,6 +340,7 @@ class FormService {
 			$items[] = [
 				'id' => $prefix . $template->getId(),
 				'name' => $template->getTitle(),
+				'description' => $template->getDescription() ?? '',
 				'fieldCount' => is_array($fields) ? count($fields) : 0,
 				'updatedAt' => $template->getUpdatedAt(),
 			];
@@ -400,7 +402,7 @@ class FormService {
 	 * @throws NotFoundException
 	 * @throws ValidationException
 	 */
-	public function saveAsTemplate(string $userId, int $formId, string $title = ''): FormTemplate {
+	public function saveAsTemplate(string $userId, int $formId, string $title = '', ?string $description = null): FormTemplate {
 		$source = $this->get($userId, $formId, Role::EDITOR);
 		$title = trim($title);
 		if ($title === '') {
@@ -409,6 +411,7 @@ class FormService {
 		if ($title === '' || mb_strlen($title) > 255) {
 			throw new ValidationException([['code' => 'title_invalid', 'path' => 'title']]);
 		}
+		$description = TemplateDescription::resolve($description, $source->getDraftDefinition());
 		if ($this->templates->countByOwner($userId) >= self::MAX_TEMPLATES) {
 			throw new ValidationException([['code' => 'template_limit', 'path' => '']]);
 		}
@@ -422,6 +425,7 @@ class FormService {
 		$template = new FormTemplate();
 		$template->setOwnerId($userId);
 		$template->setTitle($title);
+		$template->setDescription($description);
 		$template->setDefinition($encoded);
 		$template->setCreatedAt($now);
 		$template->setUpdatedAt($now);
@@ -445,12 +449,13 @@ class FormService {
 	 * @throws NotFoundException
 	 * @throws ValidationException
 	 */
-	public function saveServerTemplate(string $adminId, int $formId, string $title = ''): FormTemplate {
+	public function saveServerTemplate(string $adminId, int $formId, string $title = '', ?string $description = null): FormTemplate {
 		$source = $this->get($adminId, $formId, Role::EDITOR);
 		$title = trim($title) === '' ? $source->getTitle() : trim($title);
 		if ($title === '' || mb_strlen($title) > 255) {
 			throw new ValidationException([['code' => 'title_invalid', 'path' => 'title']]);
 		}
+		$description = TemplateDescription::resolve($description, $source->getDraftDefinition());
 		if ($this->templates->countServerWide() >= self::MAX_SERVER_TEMPLATES) {
 			throw new ValidationException([['code' => 'template_limit', 'path' => '']]);
 		}
@@ -464,6 +469,7 @@ class FormService {
 		$template = new FormTemplate();
 		$template->setOwnerId(FormTemplate::SERVER);
 		$template->setTitle($title);
+		$template->setDescription($description);
 		$template->setDefinition($encoded);
 		$template->setCreatedAt($now);
 		$template->setUpdatedAt($now);
@@ -474,7 +480,7 @@ class FormService {
 	 * @throws NotFoundException
 	 * @throws ValidationException
 	 */
-	public function renameServerTemplate(string $templateId, string $title): FormTemplate {
+	public function renameServerTemplate(string $templateId, string $title, ?string $description = null): FormTemplate {
 		$number = self::templateNumber($templateId);
 		if ($number === null || !str_starts_with($templateId, 's:')) {
 			throw new NotFoundException();
@@ -487,6 +493,9 @@ class FormService {
 		$definition = $template->getDefinitionArray();
 		$definition['title'] = $title;
 		$template->setTitle($title);
+		if ($description !== null) {
+			$template->setDescription(TemplateDescription::resolve($description, []));
+		}
 		$template->setDefinition($this->encode($definition));
 		$template->setUpdatedAt($this->time->getTime());
 		return $this->templates->update($template);

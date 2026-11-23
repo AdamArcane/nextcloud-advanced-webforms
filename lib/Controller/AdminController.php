@@ -257,21 +257,21 @@ class AdminController extends Controller {
 	 * Make a template for everyone from the draft of one of the administrator's own forms.
 	 */
 	#[FrontpageRoute(verb: 'POST', url: '/api/v1/admin/templates')]
-	public function addTemplate(int $formId = 0, string $title = ''): JSONResponse {
-		return $this->templateCall(function () use ($formId, $title): JSONResponse {
+	public function addTemplate(int $formId = 0, string $title = '', ?string $description = null): JSONResponse {
+		return $this->templateCall(function () use ($formId, $title, $description): JSONResponse {
 			$userId = $this->session->getUser()?->getUID();
 			if ($userId === null) {
 				throw new ForbiddenException();
 			}
-			$this->forms->saveServerTemplate($userId, $formId, $title);
+			$this->forms->saveServerTemplate($userId, $formId, $title, $description);
 			return new JSONResponse($this->forms->listServerTemplates(), Http::STATUS_CREATED);
 		});
 	}
 
 	#[FrontpageRoute(verb: 'PUT', url: '/api/v1/admin/templates/{templateId}')]
-	public function renameTemplate(string $templateId, string $title = ''): JSONResponse {
-		return $this->templateCall(function () use ($templateId, $title): JSONResponse {
-			$this->forms->renameServerTemplate($templateId, $title);
+	public function renameTemplate(string $templateId, string $title = '', ?string $description = null): JSONResponse {
+		return $this->templateCall(function () use ($templateId, $title, $description): JSONResponse {
+			$this->forms->renameServerTemplate($templateId, $title, $description);
 			return new JSONResponse($this->forms->listServerTemplates());
 		});
 	}
