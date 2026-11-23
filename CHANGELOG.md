@@ -5,6 +5,18 @@
 
 # Changelog
 
+## 0.8.0 - 2026-11-23
+
+- **Name and describe a template when you save it.** **Save as template** now opens a small window where you can
+  change the template's name and write a short description. The name starts as the form's title followed by
+  "template", so you can just press **Save template**; the description is empty until you write one. The
+  description shows under the name when you choose a template for a new form. On a phone the window leaves out
+  the line of text above the fields to stay short. Administrators can set the same for shared templates, and
+  edit them later. This release adds a small database change (one new column), which runs by itself when you
+  update.
+- **Easier to find on a phone.** Each form in the list now shows its three dot menu all the time on a touch screen,
+  instead of only when the pointer is over it. **Save as template** in that menu has an icon like the other items.
+
 ## 0.7.0 - 2026-11-22
 
 - **Start a form from a template.** **New form** now opens a chooser instead of an empty form. Pick **Blank

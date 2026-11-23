@@ -21,8 +21,8 @@ const list = {
 		{ id: 'b:contact', category: 'general', name: 'Contact form', description: 'Name, email and a message.', fieldCount: 4 },
 		{ id: 'b:event_rsvp', category: 'events', name: 'Event RSVP', description: 'Count guests.', fieldCount: 6 },
 	],
-	shared: [{ id: 's:3', name: 'Company onboarding', fieldCount: 9, updatedAt: 1 }],
-	own: [{ id: 'u:7', name: 'My intake form', fieldCount: 3, updatedAt: 1 }],
+	shared: [{ id: 's:3', name: 'Company onboarding', description: '', fieldCount: 9, updatedAt: 1 }],
+	own: [{ id: 'u:7', name: 'My intake form', description: 'Used for new projects.', fieldCount: 3, updatedAt: 1 }],
 }
 
 async function mountDialog(canCreate = true) {
@@ -65,7 +65,8 @@ describe('template dialog', () => {
 			expect(choice.hint, choice.id).not.toBe('')
 		}
 		expect(choices(wrapper).find((choice) => choice.id === 'b:contact')).toMatchObject({ label: 'Contact form', hint: 'Name, email and a message.' })
-		expect(choices(wrapper).find((choice) => choice.id === 'u:7')!.hint).toContain('My template')
+		// The description the person wrote is the second line; a template without one says what it is.
+		expect(choices(wrapper).find((choice) => choice.id === 'u:7')!.hint).toBe('Used for new projects.')
 		expect(choices(wrapper).find((choice) => choice.id === 's:3')!.hint).toContain('Shared template')
 	})
 
