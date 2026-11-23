@@ -23,7 +23,7 @@ import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { createForm, duplicateForm, saveAsTemplate, formExportUrl, importForm, leaveForm, listForms, setFormArchived } from './api/forms.ts'
+import { createForm, duplicateForm, formExportUrl, importForm, leaveForm, listForms, setFormArchived } from './api/forms.ts'
 import { ApiError } from './api/http.ts'
 import { DEFAULT_PREFERENCES, fetchUserPolicy, fetchUserPreferences, OPEN_POLICY, saveUserPreferences } from './api/settings.ts'
 import type { UserPolicy, UserPreferences } from './api/settings.ts'
@@ -34,6 +34,7 @@ import { loadNavOpen, saveNavOpen } from './navState.ts'
 import BuilderView from './components/builder/BuilderView.vue'
 import EntriesView from './components/entries/EntriesView.vue'
 import ImportDialog from './components/ImportDialog.vue'
+import SaveTemplateDialog from './components/SaveTemplateDialog.vue'
 import TemplateDialog from './components/TemplateDialog.vue'
 import OverviewView from './components/OverviewView.vue'
 import SettingsDialog from './components/SettingsDialog.vue'
@@ -152,7 +153,16 @@ async function load(): Promise<void> {
 	}
 }
 
+// A touch screen has no hover, and Nextcloud only shows a row's three dot menu on hover, so on a
+// phone the menu would stay invisible. Show it on every row there.
+const touchQuery = typeof window.matchMedia === 'function' ? window.matchMedia('(hover: none)') : null
+const touchScreen = ref(touchQuery?.matches ?? false)
+const onTouchChange = (event: MediaQueryListEvent) => {
+	touchScreen.value = event.matches
+}
+
 onMounted(() => {
+	touchQuery?.addEventListener('change', onTouchChange)
 	window.addEventListener('hashchange', onHashChange)
 	void fetchUserPolicy().then((loadedPolicy) => {
 		policy.value = loadedPolicy
@@ -164,7 +174,10 @@ onMounted(() => {
 	void load()
 })
 
-onBeforeUnmount(() => window.removeEventListener('hashchange', onHashChange))
+onBeforeUnmount(() => {
+	window.removeEventListener('hashchange', onHashChange)
+	touchQuery?.removeEventListener('change', onTouchChange)
+})
 
 /**
  * Change some preferences: shown at once, saved in the background, and put back if the server says no.
@@ -309,21 +322,19 @@ async function duplicate(form: OwnerForm): Promise<void> {
 	}
 }
 
-const templateFailed = ref(false)
 
 /** Keeps the draft as one of the person's own templates; it then shows under "My templates" in New form. */
-async function saveTemplate(form: OwnerForm): Promise<void> {
-	templateFailed.value = false
-	try {
-		await saveAsTemplate(form.id, form.title)
-		showSuccess(t('webforms', 'Saved as a template.'))
-	} catch (caught) {
-		if (caught instanceof ApiError && caught.errors[0]?.code === 'template_limit') {
-			showError(describeError('template_limit'))
-		} else {
-			templateFailed.value = true
-		}
-	}
+// The form being kept as a template, which opens the dialog asking for its name and description.
+const templateSource = ref<OwnerForm | null>(null)
+const saveTemplateOpen = ref(false)
+
+function saveTemplate(form: OwnerForm): void {
+	templateSource.value = form
+	saveTemplateOpen.value = true
+}
+
+function onTemplateSaved(): void {
+	showSuccess(t('webforms', 'Saved as a template.'))
 }
 
 async function toggleArchived(form: OwnerForm): Promise<void> {
@@ -373,6 +384,7 @@ function hasNewerDraft(form: OwnerForm): boolean {
 						:active="form.id === selectedId"
 						:href="formHash(form)"
 						:details="statusText(form)"
+						:force-display-actions="touchScreen"
 						:class="{ 'af-nav--newer': hasNewerDraft(form) }"
 						:title="rowTitle(form)"
 						:aria-description="hasNewerDraft(form) ? t('webforms', 'The draft has changes that are not published yet') : undefined"
@@ -409,6 +421,9 @@ function hasNewerDraft(form: OwnerForm): boolean {
 								{{ t('webforms', 'Duplicate') }}
 							</NcActionButton>
 							<NcActionButton v-if="canEdit(form)" :disabled="!policy.canCreate" close-after-click @click="saveTemplate(form)">
+								<template #icon>
+									<Icon :path="icons.template" :inline="false" />
+								</template>
 								{{ t('webforms', 'Save as template') }}
 							</NcActionButton>
 							<NcActionButton v-if="canEdit(form)" close-after-click @click="toggleArchived(form)">
@@ -442,6 +457,7 @@ function hasNewerDraft(form: OwnerForm): boolean {
 							:name="form.title"
 							:active="form.id === selectedId"
 							:href="formHash(form)"
+							:force-display-actions="touchScreen"
 							@click="openForm(form)">
 							<template v-if="canEdit(form)" #actions>
 								<NcActionButton close-after-click @click="toggleArchived(form)">
@@ -481,9 +497,6 @@ function hasNewerDraft(form: OwnerForm): boolean {
 				<NcNoteCard v-if="leaveFailed" type="error">
 					{{ t('webforms', 'Could not leave the form.') }}
 				</NcNoteCard>
-				<NcNoteCard v-if="templateFailed" type="error">
-					{{ t('webforms', 'Could not save the template.') }}
-				</NcNoteCard>
 				<NcNoteCard v-if="duplicateFailed" type="error">
 					{{ t('webforms', 'Could not duplicate the form.') }}
 				</NcNoteCard>
@@ -516,6 +529,9 @@ function hasNewerDraft(form: OwnerForm): boolean {
 			</template>
 		</NcAppNavigation>
 
+		<SaveTemplateDialog v-model:open="saveTemplateOpen"
+			:form="templateSource"
+			@saved="onTemplateSaved" />
 		<TemplateDialog v-model:open="templatesOpen"
 			:can-create="policy.canCreate"
 			@blank="create"

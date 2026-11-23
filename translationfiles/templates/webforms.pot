@@ -103,6 +103,11 @@ msgstr ""
 msgid "{question} was only shown after a certain answer. It is now always shown and not required."
 msgstr ""
 
+#: src/components/SaveTemplateDialog.vue:57
+#: src/components/SaveTemplateDialog.vue:59
+msgid "{title} template"
+msgstr ""
+
 #: src/components/builder/FieldProperties.vue:751
 msgid "$"
 msgstr ""
@@ -111,19 +116,19 @@ msgstr ""
 msgid "1 means the last date must be after the first. 0 allows the same day."
 msgstr ""
 
-#: src/builder/errors.ts:59
+#: src/builder/errors.ts:61
 msgid "A condition needs a valid value to compare against."
 msgstr ""
 
-#: src/builder/errors.ts:55
+#: src/builder/errors.ts:57
 msgid "A condition reads a field that has no answer."
 msgstr ""
 
-#: src/builder/errors.ts:57
+#: src/builder/errors.ts:59
 msgid "A condition uses a comparison this field does not support."
 msgstr ""
 
-#: src/builder/errors.ts:53
+#: src/builder/errors.ts:55
 msgid "A condition uses a field that no longer exists."
 msgstr ""
 
@@ -163,11 +168,11 @@ msgstr ""
 msgid "A group lets you mix 'all' and 'any' conditions"
 msgstr ""
 
-#: src/builder/errors.ts:62
+#: src/builder/errors.ts:64
 msgid "A group of conditions is empty or nested too deeply."
 msgstr ""
 
-#: src/builder/errors.ts:110
+#: src/builder/errors.ts:112
 msgid "A hidden value is never shown, so a rule cannot show, hide or require it."
 msgstr ""
 
@@ -183,7 +188,7 @@ msgstr ""
 msgid "A list replaces the options above. It is copied into this field, so you can still edit it."
 msgstr ""
 
-#: src/builder/errors.ts:96
+#: src/builder/errors.ts:98
 msgid "A mapped column no longer exists in the table."
 msgstr ""
 
@@ -348,7 +353,7 @@ msgstr ""
 msgid "Add field"
 msgstr ""
 
-#: src/components/admin/TemplateAdmin.vue:157
+#: src/components/admin/TemplateAdmin.vue:163
 msgid "Add from one of your forms"
 msgstr ""
 
@@ -369,7 +374,7 @@ msgstr ""
 msgid "Add rule"
 msgstr ""
 
-#: src/builder/errors.ts:100
+#: src/builder/errors.ts:102
 msgid "Add some questions to the form first, there is nothing to store yet."
 msgstr ""
 
@@ -381,7 +386,7 @@ msgstr ""
 msgid "Add some text."
 msgstr ""
 
-#: src/components/admin/TemplateAdmin.vue:170
+#: src/components/admin/TemplateAdmin.vue:179
 msgid "Add template"
 msgstr ""
 
@@ -516,7 +521,7 @@ msgstr ""
 msgid "An administrator has switched off every kind of action on this server."
 msgstr ""
 
-#: src/builder/errors.ts:98
+#: src/builder/errors.ts:100
 msgid "An answer does not fit its column. Choose a different answer or column."
 msgstr ""
 
@@ -607,7 +612,7 @@ msgstr ""
 msgid "Applies to people who are not logged in. Form owners can turn the check off for a single form. Every form also has a hidden trap field, a minimum fill time and a rate limit."
 msgstr ""
 
-#: src/App.vue:418
+#: src/App.vue:433
 #: src/components/builder/FormProperties.vue:171
 msgid "Archive"
 msgstr ""
@@ -616,7 +621,7 @@ msgstr ""
 msgid "Archive form"
 msgstr ""
 
-#: src/App.vue:432
+#: src/App.vue:447
 #: src/components/builder/BuilderView.vue:559
 msgid "Archived"
 msgstr ""
@@ -708,7 +713,7 @@ msgstr ""
 msgid "Body"
 msgstr ""
 
-#: src/App.vue:567
+#: src/App.vue:583
 msgid "Build forms with conditional fields and flexible layouts. Responses stay on your server."
 msgstr ""
 
@@ -736,9 +741,9 @@ msgstr ""
 msgid "Canadian provinces"
 msgstr ""
 
-#: src/App.vue:586
+#: src/App.vue:602
 #: src/components/ImportDialog.vue:246
-#: src/components/admin/PolicyAdmin.vue:280
+#: src/components/SaveTemplateDialog.vue:130
 msgid "Cancel"
 msgstr ""
 
@@ -819,7 +824,7 @@ msgstr ""
 msgid "Choose a folder for the uploaded files"
 msgstr ""
 
-#: src/components/admin/TemplateAdmin.vue:160
+#: src/components/admin/TemplateAdmin.vue:166
 msgid "Choose a form"
 msgstr ""
 
@@ -884,15 +889,15 @@ msgstr ""
 msgid "Choose what to show"
 msgstr ""
 
-#: src/builder/errors.ts:84
+#: src/builder/errors.ts:86
 msgid "Choose which answer goes in at least one column."
 msgstr ""
 
-#: src/builder/errors.ts:116
+#: src/builder/errors.ts:118
 msgid "Choose which kinds of files this field accepts."
 msgstr ""
 
-#: src/builder/errors.ts:64
+#: src/builder/errors.ts:66
 msgid "Choose who should receive this email."
 msgstr ""
 
@@ -1005,7 +1010,7 @@ msgstr ""
 msgid "Copy link"
 msgstr ""
 
-#: src/App.vue:304
+#: src/App.vue:317
 msgid "Copy of {title}"
 msgstr ""
 
@@ -1013,7 +1018,7 @@ msgstr ""
 msgid "Copy this secret now. It will not be shown again."
 msgstr ""
 
-#: src/App.vue:491
+#: src/App.vue:504
 #: src/components/builder/BuilderView.vue:640
 msgid "Could not change the archive state. Try again."
 msgstr ""
@@ -1035,7 +1040,7 @@ msgstr ""
 msgid "Could not create a secret. Try again."
 msgstr ""
 
-#: src/App.vue:497
+#: src/App.vue:510
 msgid "Could not create the form."
 msgstr ""
 
@@ -1051,15 +1056,15 @@ msgstr ""
 msgid "Could not delete the responses."
 msgstr ""
 
-#: src/components/TemplateDialog.vue:163
+#: src/components/TemplateDialog.vue:167
 msgid "Could not delete the template."
 msgstr ""
 
-#: src/App.vue:488
+#: src/App.vue:501
 msgid "Could not duplicate the form."
 msgstr ""
 
-#: src/App.vue:255
+#: src/App.vue:268
 msgid "Could not import the form."
 msgstr ""
 
@@ -1067,7 +1072,7 @@ msgstr ""
 msgid "Could not import this form."
 msgstr ""
 
-#: src/App.vue:482
+#: src/App.vue:498
 msgid "Could not leave the form."
 msgstr ""
 
@@ -1106,7 +1111,7 @@ msgstr ""
 msgid "Could not load the table columns."
 msgstr ""
 
-#: src/components/admin/TemplateAdmin.vue:110
+#: src/components/admin/TemplateAdmin.vue:115
 msgid "Could not load the templates."
 msgstr ""
 
@@ -1114,7 +1119,7 @@ msgstr ""
 msgid "Could not load who the form is shared with."
 msgstr ""
 
-#: src/App.vue:476
+#: src/App.vue:492
 msgid "Could not load your forms."
 msgstr ""
 
@@ -1126,7 +1131,7 @@ msgstr ""
 msgid "Could not look for your forms. Close this and try again."
 msgstr ""
 
-#: src/components/TemplateDialog.vue:146
+#: src/components/TemplateDialog.vue:150
 msgid "Could not make a form from this template."
 msgstr ""
 
@@ -1143,7 +1148,7 @@ msgstr ""
 msgid "Could not save the note."
 msgstr ""
 
-#: src/App.vue:182
+#: src/App.vue:195
 msgid "Could not save the setting."
 msgstr ""
 
@@ -1159,11 +1164,11 @@ msgstr ""
 msgid "Could not save the statuses."
 msgstr ""
 
-#: src/App.vue:485
+#: src/components/SaveTemplateDialog.vue:96
 msgid "Could not save the template."
 msgstr ""
 
-#: src/components/admin/TemplateAdmin.vue:64
+#: src/components/admin/TemplateAdmin.vue:68
 msgid "Could not save the templates."
 msgstr ""
 
@@ -1187,7 +1192,7 @@ msgstr ""
 msgid "Create a site in the provider's dashboard to get the keys:"
 msgstr ""
 
-#: src/components/TemplateDialog.vue:214
+#: src/components/TemplateDialog.vue:218
 msgid "Create form"
 msgstr ""
 
@@ -1195,7 +1200,7 @@ msgstr ""
 msgid "Create table"
 msgstr ""
 
-#: src/App.vue:566
+#: src/App.vue:582
 msgid "Create your first form"
 msgstr ""
 
@@ -1274,7 +1279,7 @@ msgstr ""
 msgid "Defaults for the emails that forms send. They apply at once, also to forms that are already live."
 msgstr ""
 
-#: src/components/admin/TemplateAdmin.vue:152
+#: src/components/admin/TemplateAdmin.vue:158
 #: src/components/builder/BuilderView.vue:717
 #: src/components/entries/EntriesView.vue:737
 msgid "Delete"
@@ -1329,11 +1334,11 @@ msgstr ""
 msgid "Delete status {n}"
 msgstr ""
 
-#: src/components/TemplateDialog.vue:211
+#: src/components/TemplateDialog.vue:215
 msgid "Delete template"
 msgstr ""
 
-#: src/components/admin/TemplateAdmin.vue:149
+#: src/components/admin/TemplateAdmin.vue:155
 msgid "Delete the template {name}"
 msgstr ""
 
@@ -1369,8 +1374,14 @@ msgstr ""
 msgid "Describe the problem and we will look into it."
 msgstr ""
 
+#: src/components/admin/TemplateAdmin.vue:147
 #: src/components/builder/FormProperties.vue:101
 msgid "Description"
+msgstr ""
+
+#: src/components/SaveTemplateDialog.vue:121
+#: src/components/admin/TemplateAdmin.vue:176
+msgid "Description (optional)"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:487
@@ -1485,7 +1496,7 @@ msgstr ""
 msgid "Dropdown"
 msgstr ""
 
-#: src/App.vue:409
+#: src/App.vue:421
 msgid "Duplicate"
 msgstr ""
 
@@ -1617,12 +1628,12 @@ msgstr ""
 msgid "Ends at"
 msgstr ""
 
-#: src/builder/errors.ts:86
+#: src/builder/errors.ts:88
 #: src/components/builder/FilesActionBody.vue:26
 msgid "Enter a file path in your Files that ends in .csv, like Webforms/Responses.csv."
 msgstr ""
 
-#: src/builder/errors.ts:74
+#: src/builder/errors.ts:76
 msgid "Enter a full address starting with https://."
 msgstr ""
 
@@ -1698,12 +1709,12 @@ msgstr ""
 msgid "Excel (.xlsx)"
 msgstr ""
 
-#: src/App.vue:394
-#: src/App.vue:459
+#: src/App.vue:406
+#: src/App.vue:475
 msgid "Export draft"
 msgstr ""
 
-#: src/App.vue:403
+#: src/App.vue:415
 msgid "Export published version"
 msgstr ""
 
@@ -1766,7 +1777,7 @@ msgstr ""
 msgid "Fill from the link"
 msgstr ""
 
-#: src/builder/errors.ts:72
+#: src/builder/errors.ts:74
 msgid "Fill in all the text for this action."
 msgstr ""
 
@@ -1872,7 +1883,7 @@ msgstr ""
 msgid "Form width"
 msgstr ""
 
-#: src/App.vue:348
+#: src/App.vue:359
 #: src/components/OverviewView.vue:30
 msgid "Forms"
 msgstr ""
@@ -2105,7 +2116,7 @@ msgstr ""
 msgid "Import a form"
 msgstr ""
 
-#: src/App.vue:502
+#: src/App.vue:515
 msgid "Import form"
 msgstr ""
 
@@ -2241,6 +2252,10 @@ msgstr ""
 msgid "Keep responses"
 msgstr ""
 
+#: src/components/SaveTemplateDialog.vue:113
+msgid "Keeps a copy of the form as it is now. Only you can see your templates. Webhook secrets are never copied."
+msgstr ""
+
 #: src/components/builder/FieldProperties.vue:755
 msgid "kg"
 msgstr ""
@@ -2342,15 +2357,15 @@ msgstr ""
 msgid "Leave empty"
 msgstr ""
 
-#: src/components/admin/TemplateAdmin.vue:168
+#: src/components/admin/TemplateAdmin.vue:174
 msgid "Leave empty to use the name of the form."
 msgstr ""
 
-#: src/components/TemplateDialog.vue:204
+#: src/components/TemplateDialog.vue:208
 msgid "Leave empty to use the name of the template."
 msgstr ""
 
-#: src/App.vue:587
+#: src/App.vue:603
 msgid "Leave form"
 msgstr ""
 
@@ -2358,11 +2373,11 @@ msgstr ""
 msgid "Leave the title off the form page"
 msgstr ""
 
-#: src/App.vue:424
+#: src/App.vue:439
 msgid "Leave this form"
 msgstr ""
 
-#: src/App.vue:583
+#: src/App.vue:599
 msgid "Leave this form?"
 msgstr ""
 
@@ -2628,17 +2643,17 @@ msgstr ""
 msgid "Must start with https://. Nextcloud blocks addresses on private networks unless an administrator allows them."
 msgstr ""
 
-#: src/App.vue:78
+#: src/App.vue:79
 msgid "My forms"
 msgstr ""
 
 #: src/builder/fieldTypeNames.ts:32
+#: src/components/SaveTemplateDialog.vue:116
 #: src/components/admin/StatusAdmin.vue:169
-#: src/components/admin/TemplateAdmin.vue:141
 msgid "Name"
 msgstr ""
 
-#: src/components/admin/TemplateAdmin.vue:167
+#: src/components/admin/TemplateAdmin.vue:173
 msgid "Name (optional)"
 msgstr ""
 
@@ -2675,8 +2690,8 @@ msgstr ""
 msgid "New"
 msgstr ""
 
-#: src/App.vue:350
-#: src/App.vue:570
+#: src/App.vue:361
+#: src/App.vue:586
 #: src/components/OverviewView.vue:124
 msgid "New form"
 msgstr ""
@@ -2913,7 +2928,7 @@ msgstr ""
 msgid "One of the limits is not valid."
 msgstr ""
 
-#: src/builder/errors.ts:112
+#: src/builder/errors.ts:114
 msgid "One of the upload settings is not valid."
 msgstr ""
 
@@ -2929,7 +2944,7 @@ msgstr ""
 msgid "Only for you, for example what fills this value."
 msgstr ""
 
-#: src/builder/errors.ts:49
+#: src/builder/errors.ts:51
 msgid "Only input fields can be required."
 msgstr ""
 
@@ -3198,7 +3213,7 @@ msgstr ""
 msgid "Pick one, all options visible"
 msgstr ""
 
-#: src/builder/errors.ts:82
+#: src/builder/errors.ts:84
 msgid "Pick the Tables table that should get the rows."
 msgstr ""
 
@@ -3268,7 +3283,7 @@ msgstr ""
 msgid "Programs, scripts and web pages are never accepted."
 msgstr ""
 
-#: src/builder/errors.ts:118
+#: src/builder/errors.ts:120
 msgid "Programs, scripts and web pages can never be uploaded."
 msgstr ""
 
@@ -3439,10 +3454,6 @@ msgstr ""
 msgid "Remove sender name"
 msgstr ""
 
-#: src/components/admin/TemplateAdmin.vue:146
-msgid "Rename"
-msgstr ""
-
 #: src/components/builder/BuilderCanvas.vue:343
 msgid "Rename page"
 msgstr ""
@@ -3536,7 +3547,7 @@ msgstr ""
 msgid "Responses per month"
 msgstr ""
 
-#: src/App.vue:451
+#: src/App.vue:467
 msgid "Restore"
 msgstr ""
 
@@ -3603,8 +3614,13 @@ msgstr ""
 msgid "Save anyway"
 msgstr ""
 
-#: src/App.vue:412
+#: src/App.vue:427
+#: src/components/SaveTemplateDialog.vue:105
 msgid "Save as template"
+msgstr ""
+
+#: src/components/admin/TemplateAdmin.vue:152
+msgid "Save changes"
 msgstr ""
 
 #: src/builder/labels.ts:59
@@ -3613,6 +3629,10 @@ msgstr ""
 
 #: src/components/entries/NoteEditor.vue:72
 msgid "Save note"
+msgstr ""
+
+#: src/components/SaveTemplateDialog.vue:133
+msgid "Save template"
 msgstr ""
 
 #: src/components/builder/SharePanel.vue:320
@@ -3624,7 +3644,7 @@ msgstr ""
 msgid "Saved"
 msgstr ""
 
-#: src/App.vue:319
+#: src/App.vue:337
 msgid "Saved as a template."
 msgstr ""
 
@@ -3829,14 +3849,14 @@ msgstr ""
 msgid "Set the status of the selected responses"
 msgstr ""
 
-#: src/App.vue:510
+#: src/App.vue:523
 #: src/components/FormNav.vue:29
 msgid "Settings"
 msgstr ""
 
 #: src/AdminApp.vue:84
 #: src/components/admin/PolicyAdmin.vue:128
-#: src/components/admin/TemplateAdmin.vue:83
+#: src/components/admin/TemplateAdmin.vue:87
 msgid "Settings saved"
 msgstr ""
 
@@ -3856,19 +3876,19 @@ msgstr ""
 msgid "Share your feedback"
 msgstr ""
 
-#: src/App.vue:90
+#: src/App.vue:91
 msgid "Shared by {owner}, you can edit"
 msgstr ""
 
-#: src/App.vue:89
+#: src/App.vue:90
 msgid "Shared by {owner}, you can read responses"
 msgstr ""
 
-#: src/components/admin/TemplateAdmin.vue:131
+#: src/components/admin/TemplateAdmin.vue:136
 msgid "Shared templates"
 msgstr ""
 
-#: src/App.vue:80
+#: src/App.vue:81
 msgid "Shared with me"
 msgstr ""
 
@@ -3945,12 +3965,16 @@ msgstr ""
 msgid "Shown beside the checkbox. Basic markdown works, so you can link to your terms: [terms](https://example.com/terms)."
 msgstr ""
 
-#: src/components/admin/TemplateAdmin.vue:134
+#: src/components/admin/TemplateAdmin.vue:139
 msgid "Shown to everyone who can create forms. A template is a copy of one of your own forms as it is now: later changes to the form do not change it. Webhook secrets are never copied."
 msgstr ""
 
 #: src/components/builder/ActionCard.vue:291
 msgid "Shown to respondent"
+msgstr ""
+
+#: src/components/admin/TemplateAdmin.vue:177
+msgid "Shown under the name when people choose a template. Leave empty to use the description of the form."
 msgstr ""
 
 #: src/AdminApp.vue:51
@@ -4079,7 +4103,7 @@ msgstr ""
 msgid "Stars, from 1 to 5 or more"
 msgstr ""
 
-#: src/components/TemplateDialog.vue:182
+#: src/components/TemplateDialog.vue:186
 msgid "Start from"
 msgstr ""
 
@@ -4091,7 +4115,7 @@ msgstr ""
 msgid "Start your form"
 msgstr ""
 
-#: src/components/admin/TemplateAdmin.vue:114
+#: src/components/admin/TemplateAdmin.vue:119
 msgid "Starter templates"
 msgstr ""
 
@@ -4217,7 +4241,7 @@ msgstr ""
 msgid "Switched off, nobody can be added to a form. Forms that are already shared keep working."
 msgstr ""
 
-#: src/components/admin/TemplateAdmin.vue:117
+#: src/components/admin/TemplateAdmin.vue:122
 msgid "Switched on templates are offered to everyone who can create forms. Forms already made from a hidden template are not affected."
 msgstr ""
 
@@ -4243,15 +4267,15 @@ msgstr ""
 msgid "Teal"
 msgstr ""
 
-#: src/components/admin/TemplateAdmin.vue:91
+#: src/components/admin/TemplateAdmin.vue:95
 msgid "Template added"
 msgstr ""
 
-#: src/components/admin/TemplateAdmin.vue:102
+#: src/components/admin/TemplateAdmin.vue:107
 msgid "Template deleted"
 msgstr ""
 
-#: src/components/admin/TemplateAdmin.vue:107
+#: src/components/admin/TemplateAdmin.vue:112
 msgid "Templates"
 msgstr ""
 
@@ -4310,7 +4334,7 @@ msgstr ""
 msgid "That password is not right."
 msgstr ""
 
-#: src/builder/errors.ts:94
+#: src/builder/errors.ts:96
 msgid "That table no longer exists."
 msgstr ""
 
@@ -4322,7 +4346,7 @@ msgstr ""
 msgid "The administrator chooses the kind of check. Logged-in users never see it."
 msgstr ""
 
-#: src/builder/errors.ts:66
+#: src/builder/errors.ts:68
 msgid "The administrator does not allow forms to set their own reply-to address or sender name. Remove it to publish."
 msgstr ""
 
@@ -4387,7 +4411,7 @@ msgstr ""
 msgid "The description was too long and was cut."
 msgstr ""
 
-#: src/App.vue:378
+#: src/App.vue:390
 msgid "The draft has changes that are not published yet"
 msgstr ""
 
@@ -4463,6 +4487,10 @@ msgstr ""
 msgid "The mail server refused it:{detail}"
 msgstr ""
 
+#: src/components/SaveTemplateDialog.vue:78
+msgid "The name is too long."
+msgstr ""
+
 #: src/components/SettingsDialog.vue:82
 msgid "The Nextcloud colour"
 msgstr ""
@@ -4499,7 +4527,7 @@ msgstr ""
 msgid "The receiver answered with HTTP {status}."
 msgstr ""
 
-#: src/builder/errors.ts:70
+#: src/builder/errors.ts:72
 msgid "The reply-to address is not a valid email address or email field."
 msgstr ""
 
@@ -4531,7 +4559,7 @@ msgstr ""
 msgid "The selected responses are deleted, with their answers, uploaded files and the record of what was sent. This cannot be undone."
 msgstr ""
 
-#: src/builder/errors.ts:68
+#: src/builder/errors.ts:70
 msgid "The sender name must be one line of at most 100 characters."
 msgstr ""
 
@@ -4559,7 +4587,7 @@ msgstr ""
 msgid "The signed-in respondent"
 msgstr ""
 
-#: src/builder/errors.ts:106
+#: src/builder/errors.ts:108
 msgid "The signing secret is not valid. Generate a new one."
 msgstr ""
 
@@ -4571,7 +4599,7 @@ msgstr ""
 msgid "The spam check was not passed. Please try again."
 msgstr ""
 
-#: src/builder/errors.ts:90
+#: src/builder/errors.ts:92
 msgid "The Tables app is not available on this server."
 msgstr ""
 
@@ -4579,15 +4607,24 @@ msgstr ""
 msgid "The Tables app is not installed or not enabled on this server, so this action cannot run. Ask an administrator to enable it."
 msgstr ""
 
-#: src/components/TemplateDialog.vue:178
+#: src/builder/errors.ts:42
+#: src/components/SaveTemplateDialog.vue:80
+msgid "The template description is too long."
+msgstr ""
+
+#: src/components/SaveTemplateDialog.vue:76
+msgid "The template needs a name."
+msgstr ""
+
+#: src/components/TemplateDialog.vue:182
 msgid "The templates could not be loaded. You can still start with a blank form."
 msgstr ""
 
-#: src/components/admin/TemplateAdmin.vue:108
+#: src/components/admin/TemplateAdmin.vue:113
 msgid "The templates people can start a new form from. Hide starter templates you do not want, and add templates of your own for everyone."
 msgstr ""
 
-#: src/builder/errors.ts:104
+#: src/builder/errors.ts:106
 msgid "The text uses a field that does not exist."
 msgstr ""
 
@@ -4595,7 +4632,7 @@ msgstr ""
 msgid "The upload did not work. Please try again."
 msgstr ""
 
-#: src/builder/errors.ts:114
+#: src/builder/errors.ts:116
 msgid "The upload folder is not valid. Use a folder path like Documents/Applications."
 msgstr ""
 
@@ -4611,7 +4648,7 @@ msgstr ""
 msgid "Their account email"
 msgstr ""
 
-#: src/components/admin/TemplateAdmin.vue:137
+#: src/components/admin/TemplateAdmin.vue:142
 msgid "There are no shared templates yet."
 msgstr ""
 
@@ -4643,7 +4680,7 @@ msgstr ""
 msgid "This field has conditional logic"
 msgstr ""
 
-#: src/builder/errors.ts:44
+#: src/builder/errors.ts:46
 msgid "This field id was used by a deleted field."
 msgstr ""
 
@@ -4671,7 +4708,7 @@ msgstr ""
 msgid "This file is empty."
 msgstr ""
 
-#: src/builder/errors.ts:126
+#: src/builder/errors.ts:128
 msgid "This file is not an Advanced Webforms export."
 msgstr ""
 
@@ -4683,7 +4720,7 @@ msgstr ""
 msgid "This file name is not valid."
 msgstr ""
 
-#: src/builder/errors.ts:128
+#: src/builder/errors.ts:130
 msgid "This file was made by a newer version of Advanced Webforms. Update the app to import it."
 msgstr ""
 
@@ -4691,7 +4728,7 @@ msgstr ""
 msgid "This form has no choice, yes/no or number questions to count."
 msgstr ""
 
-#: src/builder/errors.ts:130
+#: src/builder/errors.ts:132
 msgid "This form has not been published yet."
 msgstr ""
 
@@ -4704,11 +4741,11 @@ msgstr ""
 msgid "This form has the most fields it can have."
 msgstr ""
 
-#: src/builder/errors.ts:108
+#: src/builder/errors.ts:110
 msgid "This form has too many actions."
 msgstr ""
 
-#: src/builder/errors.ts:42
+#: src/builder/errors.ts:44
 msgid "This form has too many fields."
 msgstr ""
 
@@ -4746,7 +4783,7 @@ msgstr ""
 msgid "This form is published. After you publish again, webhooks, exports and links that fill this field use the new ID. Responses already received keep the old one."
 msgstr ""
 
-#: src/builder/errors.ts:132
+#: src/builder/errors.ts:134
 msgid "This form is too large."
 msgstr ""
 
@@ -4770,7 +4807,7 @@ msgstr ""
 msgid "This form was closed when the previous owner's account was deleted, because the places it saves to in Files and Tables are not yet set up for you. Check them, then publish to open it again."
 msgstr ""
 
-#: src/builder/errors.ts:134
+#: src/builder/errors.ts:136
 msgid "This is not valid ({code})."
 msgstr ""
 
@@ -4786,7 +4823,7 @@ msgstr ""
 msgid "This kind of action is switched off on this server, so it will not run and the form cannot be published with it. Remove it."
 msgstr ""
 
-#: src/builder/errors.ts:76
+#: src/builder/errors.ts:78
 msgid "This kind of action is switched off on this server. Remove it or ask an administrator."
 msgstr ""
 
@@ -4834,11 +4871,11 @@ msgstr ""
 msgid "This response does not exist"
 msgstr ""
 
-#: src/builder/errors.ts:47
+#: src/builder/errors.ts:49
 msgid "This rule does not point at a field."
 msgstr ""
 
-#: src/builder/errors.ts:78
+#: src/builder/errors.ts:80
 msgid "This server allows fewer actions on a form. Remove some."
 msgstr ""
 
@@ -4885,7 +4922,7 @@ msgstr ""
 msgid "Title"
 msgstr ""
 
-#: src/components/TemplateDialog.vue:203
+#: src/components/TemplateDialog.vue:207
 msgid "Title (optional)"
 msgstr ""
 
@@ -4952,13 +4989,13 @@ msgstr ""
 msgid "Try a different search, or clear the filters."
 msgstr ""
 
-#: src/App.vue:478
+#: src/App.vue:494
 #: src/components/builder/CollaboratorsPanel.vue:207
 #: src/components/entries/DeliveryRow.vue:76
 msgid "Try again"
 msgstr ""
 
-#: src/builder/errors.ts:51
+#: src/builder/errors.ts:53
 msgid "Two fields depend on each other. Change one of the conditions."
 msgstr ""
 
@@ -4970,7 +5007,7 @@ msgstr ""
 msgid "Two statuses have the same name."
 msgstr ""
 
-#: src/App.vue:93
+#: src/App.vue:94
 msgid "unpublished changes"
 msgstr ""
 
@@ -4988,7 +5025,7 @@ msgstr ""
 msgid "Untitled field"
 msgstr ""
 
-#: src/App.vue:190
+#: src/App.vue:203
 #: src/components/ImportDialog.vue:187
 #: src/components/ImportDialog.vue:204
 msgid "Untitled form"
@@ -5146,6 +5183,10 @@ msgstr ""
 msgid "What happens when someone fills in the form."
 msgstr ""
 
+#: src/components/SaveTemplateDialog.vue:125
+msgid "What is this template for?"
+msgstr ""
+
 #: src/components/builder/FieldProperties.vue:488
 msgid "What the picture shows. Leave empty if it is only decoration."
 msgstr ""
@@ -5282,19 +5323,19 @@ msgstr ""
 msgid "You added too many files."
 msgstr ""
 
-#: src/builder/errors.ts:92
+#: src/builder/errors.ts:94
 msgid "You are not allowed to add rows to that table."
 msgstr ""
 
-#: src/builder/errors.ts:80
+#: src/builder/errors.ts:82
 msgid "You are not allowed to create forms on this server. Ask an administrator."
 msgstr ""
 
-#: src/builder/errors.ts:122
+#: src/builder/errors.ts:124
 msgid "You are not allowed to let anyone upload into your files. Limit this field to signed-in users, or keep the files in the app."
 msgstr ""
 
-#: src/builder/errors.ts:102
+#: src/builder/errors.ts:104
 msgid "You are not allowed to use that table."
 msgstr ""
 
@@ -5310,15 +5351,15 @@ msgstr ""
 msgid "You cannot add rows to the table this action points at (it may have been deleted or unshared). Pick another table."
 msgstr ""
 
-#: src/builder/errors.ts:88
+#: src/builder/errors.ts:90
 msgid "You cannot change that file or create it there. Choose a folder you can write to."
 msgstr ""
 
-#: src/App.vue:494
+#: src/App.vue:507
 msgid "You cannot create forms on this server. Ask an administrator to add you to a group that can."
 msgstr ""
 
-#: src/builder/errors.ts:120
+#: src/builder/errors.ts:122
 msgid "You cannot save files to this folder. Choose a folder you can write to."
 msgstr ""
 
@@ -5334,7 +5375,7 @@ msgstr ""
 msgid "You have no Tables tables you can add rows to. Create one in the Tables app first."
 msgstr ""
 
-#: src/builder/errors.ts:124
+#: src/builder/errors.ts:126
 msgid "You have reached the limit of saved templates. Delete one first."
 msgstr ""
 
@@ -5346,7 +5387,7 @@ msgstr ""
 msgid "You need to sign in to upload files here."
 msgstr ""
 
-#: src/App.vue:584
+#: src/App.vue:600
 msgid "You will no longer see {title} or its responses. The owner can share it with you again."
 msgstr ""
 

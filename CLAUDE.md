@@ -130,6 +130,7 @@ templates are JSON in `lib/Forms/Templates/` read by `TemplateCatalog`; own temp
 English on the server and translated by the browser: every word must be listed in `src/templates/catalog.ts`
 (a test checks it), and `TemplateText` swaps only respondent-facing properties. The migration had already run on
 the dev instance, so its new table is not there until that migration's row is removed from the migrations table.
+A saved template has a name and a description (column added by `Version001200`, `TemplateDescription`, `SaveTemplateDialog.vue`).
 Administrators can hide starters (`TemplateSettings`, app config `templates_hidden`) and keep templates for everyone
 (`advforms_templates` rows with empty `owner_id`, ids `s:<n>`; `TemplateAdmin.vue`, `/api/v1/admin/templates`).
 Not yet tried by hand on the dev instance.

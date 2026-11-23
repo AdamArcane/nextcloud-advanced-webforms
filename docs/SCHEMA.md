@@ -1382,6 +1382,16 @@ copy (section 13.2).
   definition, times), private to that person: they are not shared, and an account's templates are deleted
   with the account. Their ids are `u:<number>` in the API. A person keeps at most 50 (`template_limit`), and
   the 512 KB limit on a definition applies. Saving needs the Editor role on the form (section 22.1).
+- **Name and description.** Saving a template (own or shared) asks for a name and an optional description of up to
+  500 characters. In the app's window the name starts as the form's title followed by "template", and the
+  description starts empty with a placeholder that says what to write, so nothing is saved that the person did
+  not choose. The window has a line of text above the fields, left out on a phone, and no help under the description. The description is kept in the `description`
+  column of `advforms_templates` (added in the migration `Version001200`; nullable, because Nextcloud refuses a
+  NOT NULL text column with an empty default), so it describes the template and is not the text respondents
+  read. The New form chooser shows it as the second line; a template without one shows "My template" or
+  "Shared template" and its number of fields. Through the API an omitted `description` takes the form's own
+  description cut to one line (160 characters) and an empty one means none (`description_invalid` when over
+  500).
 - **What a template brings.** Fields, layout, pages, rules, actions and settings. Webhook secrets are left
   out, as in an export (section 13). Nothing of a form's responses, versions or link exists in a template.
 - **Making a form.** The title is the one the person typed, or else the template's own. The person's defaults
@@ -1395,7 +1405,7 @@ copy (section 13.2).
   longer than 1000 characters. A person's own template is used as saved, in whatever language it was written.
 - **Endpoints.** `GET /api/v1/templates` answers `{ bundled, own }`. `POST /api/v1/forms/from-template` with
   `templateId`, an optional `title` and `strings` answers `201` with `{ form, errors }`, and is rate limited
-  like the core Forms import. `POST /api/v1/forms/{id}/save-as-template` with an optional `title` answers
+  like the core Forms import. `POST /api/v1/forms/{id}/save-as-template` with an optional `title` and `description` answers
   `201`. `DELETE /api/v1/templates/{templateId}` removes one of the person's own. Another person's template
   answers `404`.
 - **Server templates.** The administrator has a Templates section in the server settings with two parts.
@@ -1410,7 +1420,7 @@ copy (section 13.2).
 - **Admin endpoints** (administrators only): `GET /api/v1/admin/templates` answers the starter templates, each
   with `hidden`, and the shared ones. `PUT /api/v1/admin/templates/hidden` with `hidden`, a list of starter ids,
   replaces the hidden set (ids that are not starter templates are ignored). `POST /api/v1/admin/templates`
-  with `formId` and an optional `title`, `PUT /api/v1/admin/templates/{templateId}` with `title`, and
+  with `formId` and an optional `title` and `description`, `PUT /api/v1/admin/templates/{templateId}` with `title` and an optional `description` (left out, it is kept), and
   `DELETE /api/v1/admin/templates/{templateId}`. Each answers the same list as the `GET`.
 - **Left out on purpose.** Templates shared with only some groups, and changing the fields of a starter
   template in the app. A shared template made from a copy of a starter covers the second.

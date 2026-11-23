@@ -29,7 +29,7 @@ function settings(over: Partial<TemplateAdminSettings> = {}): TemplateAdminSetti
 			{ id: 'b:contact', category: 'general', name: 'Contact form', description: '', fieldCount: 4, hidden: false },
 			{ id: 'b:quick_poll', category: 'general', name: 'Quick poll', description: '', fieldCount: 2, hidden: false },
 		],
-		shared: [{ id: 's:3', name: 'Onboarding', fieldCount: 9, updatedAt: 1 }],
+		shared: [{ id: 's:3', name: 'Onboarding', description: 'For new staff', fieldCount: 9, updatedAt: 1 }],
 		...over,
 	}
 }
@@ -42,7 +42,7 @@ async function mountIt() {
 
 const button = (wrapper: Awaited<ReturnType<typeof mountIt>>, text: string) => wrapper.findAll('button').find((b) => b.text() === text)!
 
-const nameValues = (wrapper: Awaited<ReturnType<typeof mountIt>>) => wrapper.findAll('input.input-field__input').slice(0, -1).map((input) => (input.element as HTMLInputElement).value)
+const nameValues = (wrapper: Awaited<ReturnType<typeof mountIt>>) => wrapper.findAll('input.input-field__input').slice(0, -2).map((input) => (input.element as HTMLInputElement).value)
 
 beforeEach(() => {
 	vi.mocked(fetchAdminTemplates).mockReset().mockResolvedValue(settings())
@@ -59,7 +59,7 @@ describe('TemplateAdmin', () => {
 		const boxes = wrapper.findAll('input[type="checkbox"]')
 		expect(boxes).toHaveLength(2)
 		expect(boxes.every((box) => (box.element as HTMLInputElement).checked)).toBe(true)
-		expect(nameValues(wrapper)).toEqual(['Onboarding'])
+		expect(nameValues(wrapper)).toEqual(['Onboarding', 'For new staff'])
 		expect(button(wrapper, 'Save').attributes('disabled')).toBeDefined()
 	})
 
@@ -80,7 +80,20 @@ describe('TemplateAdmin', () => {
 		await wrapper.find('select').setValue('12')
 		await button(wrapper, 'Add template').trigger('click')
 		await flushPromises()
-		expect(addSharedTemplate).toHaveBeenCalledWith(12, '')
+		// Nothing typed: the server falls back to the form's own name and description.
+		expect(addSharedTemplate).toHaveBeenCalledWith(12, '', null)
+	})
+
+	it('adds a template with a name and description of its own', async () => {
+		vi.mocked(addSharedTemplate).mockResolvedValue(settings())
+		const wrapper = await mountIt()
+		await wrapper.find('select').setValue('12')
+		const inputs = wrapper.findAll('input.input-field__input')
+		await inputs[inputs.length - 2]!.setValue('Visitor sign-in')
+		await inputs[inputs.length - 1]!.setValue('For the front desk.')
+		await button(wrapper, 'Add template').trigger('click')
+		await flushPromises()
+		expect(addSharedTemplate).toHaveBeenCalledWith(12, 'Visitor sign-in', 'For the front desk.')
 	})
 
 	it('renames and deletes a shared template', async () => {
@@ -88,9 +101,9 @@ describe('TemplateAdmin', () => {
 		vi.mocked(deleteSharedTemplate).mockResolvedValue(settings({ shared: [] }))
 		const wrapper = await mountIt()
 		await wrapper.find('input.input-field__input').setValue('Staff onboarding')
-		await button(wrapper, 'Rename').trigger('click')
+		await button(wrapper, 'Save changes').trigger('click')
 		await flushPromises()
-		expect(renameSharedTemplate).toHaveBeenCalledWith('s:3', 'Staff onboarding')
+		expect(renameSharedTemplate).toHaveBeenCalledWith('s:3', 'Staff onboarding', 'For new staff')
 		await button(wrapper, 'Delete').trigger('click')
 		await flushPromises()
 		expect(deleteSharedTemplate).toHaveBeenCalledWith('s:3')
@@ -103,7 +116,7 @@ describe('TemplateAdmin', () => {
 		await wrapper.find('select').setValue('12')
 		await button(wrapper, 'Add template').trigger('click')
 		await flushPromises()
-		expect(nameValues(wrapper)).toEqual(['Onboarding'])
+		expect(nameValues(wrapper)).toEqual(['Onboarding', 'For new staff'])
 	})
 
 	it('says so when the templates cannot be loaded', async () => {

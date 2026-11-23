@@ -84,6 +84,10 @@ function byCategory(a: { category: string }, b: { category: string }): number {
 }
 
 function ownLine(item: OwnTemplate, mine: boolean): string {
+	// The description the person or the administrator wrote, else what kind of template it is and how big.
+	if (item.description.trim() !== '') {
+		return item.description.trim()
+	}
 	return mine
 		? n('webforms', 'My template, %n field', 'My template, %n fields', item.fieldCount)
 		: n('webforms', 'Shared template, %n field', 'Shared template, %n fields', item.fieldCount)

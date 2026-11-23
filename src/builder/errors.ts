@@ -38,6 +38,8 @@ export function describeError(code: string): string {
 			return t('webforms', 'The closing time must be after the opening time.')
 		case 'title_invalid':
 			return t('webforms', 'The form needs a title.')
+		case 'description_invalid':
+			return t('webforms', 'The template description is too long.')
 		case 'too_many_fields':
 			return t('webforms', 'This form has too many fields.')
 		case 'field_id_retired':

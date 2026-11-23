@@ -185,17 +185,17 @@ export async function saveHiddenTemplates(hidden: string[]): Promise<TemplateAdm
 }
 
 /** Make a template for everyone from the draft of one of the administrator's own forms. */
-export async function addSharedTemplate(formId: number, title: string): Promise<TemplateAdminSettings> {
+export async function addSharedTemplate(formId: number, title: string, description: string | null): Promise<TemplateAdminSettings> {
 	try {
-		return (await axios.post<TemplateAdminSettings>(url('/admin/templates'), { formId, title })).data
+		return (await axios.post<TemplateAdminSettings>(url('/admin/templates'), { formId, title, description })).data
 	} catch (error) {
 		throw toApiError(error)
 	}
 }
 
-export async function renameSharedTemplate(templateId: string, title: string): Promise<TemplateAdminSettings> {
+export async function renameSharedTemplate(templateId: string, title: string, description: string): Promise<TemplateAdminSettings> {
 	try {
-		return (await axios.put<TemplateAdminSettings>(url('/admin/templates/' + encodeURIComponent(templateId)), { title })).data
+		return (await axios.put<TemplateAdminSettings>(url('/admin/templates/' + encodeURIComponent(templateId)), { title, description })).data
 	} catch (error) {
 		throw toApiError(error)
 	}
