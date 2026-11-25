@@ -9,6 +9,7 @@ import type { OwnerForm } from './types.ts'
 
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createFolder, deleteFolder, listFolders, setFormFolder } from './api/folders.ts'
 import { duplicateForm, leaveForm, listForms } from './api/forms.ts'
 import { fetchUserPreferences, saveUserPreferences } from './api/settings.ts'
 import { showError } from '@nextcloud/dialogs'
@@ -31,6 +32,13 @@ vi.mock('./api/forms.ts', () => ({
 	setFormArchived: vi.fn(),
 	formExportUrl: () => '#',
 	formsBackupUrl: () => '/apps/webforms/api/v1/backup',
+}))
+vi.mock('./api/folders.ts', () => ({
+	listFolders: vi.fn(() => Promise.resolve([])),
+	createFolder: vi.fn(),
+	renameFolder: vi.fn(),
+	deleteFolder: vi.fn(),
+	setFormFolder: vi.fn(),
 }))
 vi.mock('./api/settings.ts', () => ({
 	OPEN_POLICY: { canCreate: true },
@@ -364,14 +372,14 @@ describe('the menu of a form shared with the person', () => {
 		NcActionLink: { template: '<a><slot /></a>' },
 	}
 
-	it('offers a Reviewer nothing but leaving, and an editor the usual menu without the owner\'s own tools', async () => {
+	it('offers a Reviewer nothing but filing it and leaving, and an editor the usual menu without the owner\'s own tools', async () => {
 		const wrapper = await mountTeam(stubs)
 		const rows = wrapper.findAll('li').filter((row) => row.text().includes('Shared'))
 		const labels = (row: (typeof rows)[number]) => row.findAll('button, a').map((el) => el.text())
 		const reviewer = rows.find((row) => row.text().startsWith('Shared 3'))!
-		expect(labels(reviewer)).toEqual(['Leave this form'])
+		expect(labels(reviewer)).toEqual(['Move to folder', 'Leave this form'])
 		const editor = rows.find((row) => row.text().startsWith('Shared 2'))!
-		expect(labels(editor)).toEqual(['Export draft', 'Export published version', 'Duplicate', 'Save as template', 'Archive', 'Leave this form'])
+		expect(labels(editor)).toEqual(['Move to folder', 'Export draft', 'Export published version', 'Duplicate', 'Save as template', 'Archive', 'Leave this form'])
 	})
 
 	it('does not offer to leave a form that comes through a group', async () => {
@@ -405,6 +413,161 @@ describe('the menu of a form shared with the person', () => {
 		await flushPromises()
 		expect(wrapper.text()).toContain('Could not leave the form.')
 		expect(wrapper.text()).toContain('Shared 2')
+		wrapper.unmount()
+	})
+})
+
+describe('folders in the sidebar', () => {
+	beforeEach(() => {
+		window.location.hash = ''
+		vi.mocked(listFolders).mockReset().mockResolvedValue([{ id: 7, name: 'Events' }])
+		vi.mocked(setFormFolder).mockReset().mockResolvedValue()
+		vi.mocked(createFolder).mockReset()
+		vi.mocked(deleteFolder).mockReset().mockResolvedValue()
+		vi.mocked(showError).mockClear()
+	})
+
+	// The row menus are popups; stubbed, their buttons are simply there.
+	const menus = {
+		NcAppNavigationItem: { props: ['name'], template: '<li><span>{{ name }}</span><slot name="actions" /><ul><slot /></ul></li>' },
+		NcActionButton: { template: '<button type="button" @click="$emit(\'click\')"><slot /></button>' },
+		NcActionLink: { template: '<a><slot /></a>' },
+	}
+	/** The innermost row that reads `name`: a form or a folder with its menu. */
+	const row = (wrapper: Mounted, name: string) => wrapper.findAll('li').find((li) => li.find(':scope > span').exists() && li.find(':scope > span').text() === name)!
+	const press = async (from: ReturnType<typeof row>, label: string) => {
+		await from.findAll(':scope > button').find((button) => button.text() === label)!.trigger('click')
+		await flushPromises()
+	}
+
+	async function mountFolders(stubs: Record<string, unknown> = {}) {
+		vi.mocked(fetchUserPreferences).mockResolvedValue(ALL)
+		vi.mocked(listForms).mockResolvedValue([
+			{ ...form(1, FORM_STATUS_UNPUBLISHED, true, null), folderId: 7 },
+			{ ...form(2, FORM_STATUS_UNPUBLISHED, true, null), folderId: null },
+		])
+		const wrapper = mount(App, { global: { stubs: { BuilderView: true, EntriesView: true, teleport: true, ...stubs } } })
+		await flushPromises()
+		return wrapper
+	}
+
+	type Mounted = Awaited<ReturnType<typeof mountFolders>>
+	/** The section whose heading reads `name`, as its list item. */
+	const section = (wrapper: Mounted, name: string) => wrapper.findAll('li').find((li) => li.find(':scope > div .app-navigation-entry__name').exists() && li.find(':scope > div .app-navigation-entry__name').text() === name)!
+	const formsIn = (wrapper: Mounted, name: string) => section(wrapper, name).findAll('a').map((link) => link.attributes('href')).filter((href) => href?.startsWith('#/f/'))
+	const byText = (wrapper: Mounted, text: string) => wrapper.findAll('button, a').find((el) => el.text() === text)!
+
+	function dragData() {
+		const data = new Map<string, string>()
+		return { setData: (type: string, value: string) => data.set(type, value), get types() { return [...data.keys()] } }
+	}
+
+	async function drag(wrapper: Mounted, formId: number, onto: string) {
+		const dataTransfer = dragData()
+		await wrapper.find('a[href="#/f/' + formId + '"]').trigger('dragstart', { dataTransfer })
+		await section(wrapper, onto).trigger('dragover', { dataTransfer })
+		await section(wrapper, onto).trigger('drop', { dataTransfer })
+		await flushPromises()
+	}
+
+	it('lists a filed form in its folder and not under My forms', async () => {
+		const wrapper = await mountFolders()
+		expect(formsIn(wrapper, 'Events')).toEqual(['#/f/1'])
+		expect(formsIn(wrapper, 'My forms')).toEqual(['#/f/2'])
+		wrapper.unmount()
+	})
+
+	it('moves a form dragged onto a folder, and takes it out when dragged onto My forms', async () => {
+		const wrapper = await mountFolders()
+		await drag(wrapper, 2, 'Events')
+		expect(setFormFolder).toHaveBeenCalledWith(2, 7)
+		expect(formsIn(wrapper, 'Events')).toEqual(['#/f/1', '#/f/2'])
+
+		await drag(wrapper, 1, 'My forms')
+		expect(setFormFolder).toHaveBeenLastCalledWith(1, null)
+		expect(formsIn(wrapper, 'My forms')).toEqual(['#/f/1'])
+		wrapper.unmount()
+	})
+
+	it('does nothing when a form is dropped where it already is, or something else is dropped', async () => {
+		const wrapper = await mountFolders()
+		await drag(wrapper, 1, 'Events')
+		await section(wrapper, 'Events').trigger('drop', { dataTransfer: { types: ['Files'] } })
+		expect(setFormFolder).not.toHaveBeenCalled()
+		wrapper.unmount()
+	})
+
+	it('puts the form back and says so when the server refuses', async () => {
+		vi.mocked(setFormFolder).mockRejectedValue(new Error('offline'))
+		const wrapper = await mountFolders()
+		await drag(wrapper, 2, 'Events')
+		expect(formsIn(wrapper, 'My forms')).toEqual(['#/f/2'])
+		expect(showError).toHaveBeenCalled()
+		wrapper.unmount()
+	})
+
+	it('shows every form under My forms when the folders cannot be loaded', async () => {
+		vi.mocked(listFolders).mockRejectedValue(new Error('offline'))
+		const wrapper = await mountFolders()
+		expect(formsIn(wrapper, 'My forms')).toEqual(['#/f/1', '#/f/2'])
+		expect(wrapper.text()).toContain('Could not load your folders.')
+		wrapper.unmount()
+	})
+
+	it('makes a folder from the bottom of the sidebar', async () => {
+		vi.mocked(createFolder).mockResolvedValue({ id: 8, name: 'Surveys' })
+		const wrapper = await mountFolders()
+		await byText(wrapper, 'New folder').trigger('click')
+		await flushPromises()
+		await wrapper.find('input.input-field__input').setValue('Surveys')
+		await byText(wrapper, 'Create folder').trigger('click')
+		await flushPromises()
+		expect(createFolder).toHaveBeenCalledWith('Surveys')
+		expect(formsIn(wrapper, 'Surveys')).toEqual([])
+		wrapper.unmount()
+	})
+
+	it('keeps the forms of a deleted folder, after asking', async () => {
+		const wrapper = await mountFolders(menus)
+		await press(row(wrapper, 'Events'), 'Delete folder')
+		expect(wrapper.text()).toContain('Delete this folder?')
+		expect(deleteFolder).not.toHaveBeenCalled()
+		await wrapper.findAll('button').filter((button) => button.text() === 'Delete folder').at(-1)!.trigger('click')
+		await flushPromises()
+		expect(deleteFolder).toHaveBeenCalledWith(7)
+		expect(row(wrapper, 'My forms').findAll(':scope > ul > li')).toHaveLength(2)
+		wrapper.unmount()
+	})
+
+	it('moves a form from its menu', async () => {
+		const wrapper = await mountFolders(menus)
+		await press(row(wrapper, 'Form 2'), 'Move to folder')
+		await wrapper.findAll('.af-move button').find((button) => button.text() === 'Events')!.trigger('click')
+		await flushPromises()
+		expect(setFormFolder).toHaveBeenCalledWith(2, 7)
+		expect(wrapper.find('.af-move').exists()).toBe(false)
+		wrapper.unmount()
+	})
+
+	it('makes a new folder while moving a form, and puts the form in it', async () => {
+		vi.mocked(createFolder).mockResolvedValue({ id: 8, name: 'Surveys' })
+		const wrapper = await mountFolders(menus)
+		await press(row(wrapper, 'Form 2'), 'Move to folder')
+		await wrapper.findAll('button').filter((button) => button.text() === 'New folder').at(-1)!.trigger('click')
+		await flushPromises()
+		await wrapper.find('input.input-field__input').setValue('Surveys')
+		await byText(wrapper, 'Create folder').trigger('click')
+		await flushPromises()
+		expect(setFormFolder).toHaveBeenCalledWith(2, 8)
+		expect(row(wrapper, 'Surveys').findAll(':scope > ul > li')).toHaveLength(1)
+		wrapper.unmount()
+	})
+
+	it('copies a filed form into the same folder', async () => {
+		vi.mocked(duplicateForm).mockResolvedValue({ form: form(9, FORM_STATUS_UNPUBLISHED, true, null), errors: [] })
+		const wrapper = await mountFolders(menus)
+		await press(row(wrapper, 'Form 1'), 'Duplicate')
+		expect(setFormFolder).toHaveBeenCalledWith(9, 7)
 		wrapper.unmount()
 	})
 })

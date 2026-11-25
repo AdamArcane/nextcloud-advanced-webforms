@@ -31,6 +31,7 @@ use OCA\Webforms\Forms\CsvExporter;
 use OCA\Webforms\Forms\EntryFilter;
 use OCA\Webforms\Forms\EntrySummary;
 use OCA\Webforms\Db\FormMapper;
+use OCA\Webforms\Db\FolderFormMapper;
 use OCA\Webforms\Db\FormSeenMapper;
 use OCA\Webforms\Db\FormShare;
 use OCA\Webforms\Db\FormShareMapper;
@@ -114,6 +115,7 @@ class FormService {
 		private readonly FormTemplateMapper $templates,
 		private readonly TemplateCatalog $catalog,
 		private readonly TemplateSettings $templateSettings,
+		private readonly FolderFormMapper $folderForms,
 	) {
 	}
 
@@ -145,6 +147,7 @@ class FormService {
 		$waiting = $ids === [] ? [] : $this->entries->countWaitlistedByForms($ids);
 		$new = $ids === [] ? [] : $this->entries->countNewForUser($userId, $ids);
 		$seen = $this->seen->forForms($userId, $ids);
+		$folders = $this->folderForms->forForms($userId, $ids);
 		$names = [];
 		$result = [];
 		foreach ($access as ['form' => $form, 'role' => $role, 'direct' => $direct]) {
@@ -154,6 +157,8 @@ class FormService {
 			if ($role->atLeast(Role::EDITOR)) {
 				$data['hasUnpublishedChanges'] = $latest === null ? true : $this->differs($form, $latest);
 			}
+			// The person's own folder for it (docs/SCHEMA.md section 24).
+			$data['folderId'] = $folders[$form->getId()] ?? null;
 			$result[] = $data;
 		}
 		return $result;
@@ -855,6 +860,7 @@ class FormService {
 		$this->versions->deleteByForm($form->getId());
 		$this->shares->deleteByForm($form->getId());
 		$this->seen->deleteByForm($form->getId());
+		$this->folderForms->deleteByForm($form->getId());
 		$this->forms->delete($form);
 	}
 

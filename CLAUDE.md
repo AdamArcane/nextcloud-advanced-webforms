@@ -160,6 +160,12 @@ section 22.5). Reviewers get `ReadingCopy` of a definition, never the real one. 
 `NextOwner`), and the server setting for sharing. Phase 3 and the conflict screen have not been tried on the dev
 instance with two real accounts yet.
 
+Folders (docs/SCHEMA.md section 24): each person's own, one level, in the sidebar (`FolderService`,
+`src/folders.ts`, `src/useFolders.ts`). They never change access. The tables are in `Version001300`, still
+unreleased. Tried on a throwaway `nextcloud:35-apache` container: the upgrade migration, the API with two
+accounts, and in a browser creating, moving (menu and drag), renaming, deleting and the phone layout. Not yet
+tried on the dev instance, or by hand with a shared form in the browser.
+
 ## Gotchas
 
 - Field ids and option values match `^[a-z][a-z0-9_]{2,31}$` and are immutable;
