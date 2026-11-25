@@ -60,10 +60,10 @@ class FormsEntity implements IEntity, IDisplayText, IUrl, IIcon, IContextPortati
 
 	public function getEvents(): array {
 		return [
-			new GenericEntityEvent($this->l10n->t('Response submitted'), EntryCreatedEvent::class),
-			new GenericEntityEvent($this->l10n->t('Response deleted'), EntryDeletedEvent::class),
-			new GenericEntityEvent($this->l10n->t('Response status changed'), EntryStatusChangedEvent::class),
-			new GenericEntityEvent($this->l10n->t('Response promoted from the waiting list'), EntryPromotedEvent::class),
+			new GenericEntityEvent($this->l10n->t('Form response submitted'), EntryCreatedEvent::class),
+			new GenericEntityEvent($this->l10n->t('Form response deleted'), EntryDeletedEvent::class),
+			new GenericEntityEvent($this->l10n->t('Form response status changed'), EntryStatusChangedEvent::class),
+			new GenericEntityEvent($this->l10n->t('Form response promoted from the waiting list'), EntryPromotedEvent::class),
 			new GenericEntityEvent($this->l10n->t('Form published'), FormPublishedEvent::class),
 			new GenericEntityEvent($this->l10n->t('Form status changed'), FormStatusChangedEvent::class),
 		];
