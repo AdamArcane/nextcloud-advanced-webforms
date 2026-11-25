@@ -15,9 +15,71 @@ msgstr ""
 msgid "(signature)"
 msgstr ""
 
+#: src/components/entries/ResponseSummary.vue:186
+msgid "{count} answer"
+msgid_plural "{count} answers"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/importReport.ts:64
+msgid "{count} answer to {question} was not imported."
+msgid_plural "{count} answers to {question} were not imported."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/components/builder/ActionCard.vue:91
+msgid "{count} column filled"
+msgid_plural "{count} columns filled"
+msgstr[0] ""
+msgstr[1] ""
+
 #: src/components/admin/PolicyAdmin.vue:187
 msgid "{count} existing responses are older than this and will be deleted."
 msgstr ""
+
+#: src/components/ImportDialog.vue:122
+msgid "{count} field"
+msgid_plural "{count} fields"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/importReport.ts:56
+msgid "{count} file uploaded to {question} stays in the Forms app and was not copied."
+msgid_plural "{count} files uploaded to {question} stay in the Forms app and were not copied."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/components/ImportDialog.vue:159
+msgid "{count} form of yours, with or without its responses."
+msgid_plural "{count} forms of yours, with or without their responses."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/components/render/FormRenderer.vue:536
+msgid "{count} optional question skipped."
+msgid_plural "{count} optional questions skipped."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/components/render/FormPage.vue:47
+msgid "{count} place left"
+msgid_plural "{count} places left"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/components/ImportDialog.vue:129
+#: src/components/ImportDialog.vue:189
+#: src/components/entries/ResponseSummary.vue:127
+msgid "{count} response"
+msgid_plural "{count} responses"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/availability.ts:88
+msgid "{count} response on the waiting list."
+msgid_plural "{count} responses on the waiting list."
+msgstr[0] ""
+msgstr[1] ""
 
 #: src/components/ImportDialog.vue:130
 msgid "{done} of {all} responses"
@@ -103,9 +165,67 @@ msgstr ""
 msgid "{question} was only shown after a certain answer. It is now always shown and not required."
 msgstr ""
 
+#: src/availability.ts:85
+msgid "{responses} of {count} response."
+msgid_plural "{responses} of {count} responses."
+msgstr[0] ""
+msgstr[1] ""
+
 #: src/components/SaveTemplateDialog.vue:57
 #: src/components/SaveTemplateDialog.vue:59
 msgid "{title} template"
+msgstr ""
+
+#: lib/WorkflowEngine/FormsEntity.php:93
+msgid "%1$s submitted %2$s"
+msgstr ""
+
+#: src/components/admin/TemplateAdmin.vue:148
+msgid "%n field"
+msgid_plural "%n fields"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/App.vue:436
+#: src/App.vue:437
+#: src/components/OverviewView.vue:44
+msgid "%n new response"
+msgid_plural "%n new responses"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/components/entries/EntriesView.vue:754
+msgid "%n new since your last visit"
+msgid_plural "%n new since your last visit"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/components/admin/StatusAdmin.vue:227
+msgid "%n response has a status you deleted. Saving takes the status off it."
+msgid_plural "%n responses have a status you deleted. Saving takes the status off them."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/components/render/FieldInput.vue:226
+msgid "%n star"
+msgid_plural "%n stars"
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/WorkflowEngine/FormsEntity.php:104
+msgid "%s was closed"
+msgstr ""
+
+#: lib/WorkflowEngine/FormsEntity.php:101
+msgid "%s was published"
+msgstr ""
+
+#: lib/WorkflowEngine/FormsEntity.php:106
+msgid "%s was reopened"
+msgstr ""
+
+#: lib/WorkflowEngine/FormsEntity.php:105
+msgid "%s was unpublished"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:751
@@ -226,6 +346,14 @@ msgstr ""
 
 #: src/components/builder/FieldProperties.vue:425
 msgid "A respondent can see and change this value in the link or the page. Do not use it for anything that must not be faked."
+msgstr ""
+
+#: lib/WorkflowEngine/FormsEntity.php:95
+msgid "A response to %s was deleted"
+msgstr ""
+
+#: lib/WorkflowEngine/FormsEntity.php:99
+msgid "A response to %s was moved off the waiting list"
 msgstr ""
 
 #: src/components/builder/ActionCard.vue:465
@@ -422,6 +550,10 @@ msgstr ""
 #: src/builder/fieldTypeNames.ts:87
 #: src/components/builder/FieldProperties.vue:824
 msgid "Advanced"
+msgstr ""
+
+#: lib/Settings/AdminSection.php:29
+msgid "Advanced Webforms"
 msgstr ""
 
 #: src/components/SettingsDialog.vue:38
@@ -1911,6 +2043,14 @@ msgstr ""
 msgid "Form owners may set their own reply-to address and sender name"
 msgstr ""
 
+#: lib/WorkflowEngine/FormsEntity.php:67
+msgid "Form published"
+msgstr ""
+
+#: lib/WorkflowEngine/FormsEntity.php:68
+msgid "Form status changed"
+msgstr ""
+
 #: src/components/FormNav.vue:26
 msgid "Form view"
 msgstr ""
@@ -2692,6 +2832,12 @@ msgstr ""
 #: src/App.vue:88
 msgid "My forms"
 msgstr ""
+
+#: src/components/TemplateDialog.vue:92
+msgid "My template, %n field"
+msgid_plural "My template, %n fields"
+msgstr[0] ""
+msgstr[1] ""
 
 #: src/builder/fieldTypeNames.ts:32
 #: src/components/SaveTemplateDialog.vue:116
@@ -3561,6 +3707,10 @@ msgstr ""
 msgid "Response #{id}"
 msgstr ""
 
+#: lib/WorkflowEngine/FormsEntity.php:64
+msgid "Response deleted"
+msgstr ""
+
 #: src/components/builder/FormProperties.vue:370
 msgid "Response limit"
 msgstr ""
@@ -3569,8 +3719,20 @@ msgstr ""
 msgid "Response number"
 msgstr ""
 
+#: lib/WorkflowEngine/FormsEntity.php:66
+msgid "Response promoted from the waiting list"
+msgstr ""
+
+#: lib/WorkflowEngine/FormsEntity.php:65
+msgid "Response status changed"
+msgstr ""
+
 #: src/components/admin/StatusAdmin.vue:150
 msgid "Response statuses"
+msgstr ""
+
+#: lib/WorkflowEngine/FormsEntity.php:63
+msgid "Response submitted"
 msgstr ""
 
 #: src/components/FormNav.vue:30
@@ -3949,6 +4111,12 @@ msgstr ""
 msgid "Shared by {owner}, you can read responses"
 msgstr ""
 
+#: src/components/TemplateDialog.vue:93
+msgid "Shared template, %n field"
+msgid_plural "Shared template, %n fields"
+msgstr[0] ""
+msgstr[1] ""
+
 #: src/components/admin/TemplateAdmin.vue:136
 msgid "Shared templates"
 msgstr ""
@@ -4123,6 +4291,10 @@ msgstr ""
 
 #: src/components/builder/CollaboratorsPanel.vue:163
 msgid "Some responses have files in your own Files, which would stay behind. Move the folder or delete those responses first."
+msgstr ""
+
+#: lib/WorkflowEngine/FormsEntity.php:92
+msgid "Someone"
 msgstr ""
 
 #: src/templates/catalog.ts:84
@@ -4666,6 +4838,10 @@ msgstr ""
 
 #: src/components/render/messages.ts:72
 msgid "The spam check was not passed. Please try again."
+msgstr ""
+
+#: lib/WorkflowEngine/FormsEntity.php:97
+msgid "The status of a response to %s changed"
 msgstr ""
 
 #: src/builder/errors.ts:98
@@ -5214,6 +5390,10 @@ msgstr ""
 #: src/components/entries/ResponsePage.vue:244
 #: src/components/entries/WaitlistTag.vue:13
 msgid "Waiting list"
+msgstr ""
+
+#: lib/WorkflowEngine/FormsEntity.php:54
+msgid "Webforms"
 msgstr ""
 
 #: src/components/builder/FieldProperties.vue:588
