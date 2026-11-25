@@ -120,7 +120,7 @@ Specified in SCHEMA.md section 23. For tools such as n8n that poll for new respo
 ## Quizzes and scoring (planned, on hold)
 
 Planned 2026-11-20, not started. It would reverse the "calculations" non-goal in SCHEMA.md section 1, so the
-first step is a new SCHEMA.md section (24) with shared scoring fixtures that PHP and TypeScript both pass.
+first step is a new SCHEMA.md section (25) with shared scoring fixtures that PHP and TypeScript both pass.
 
 - **Shape.** Quiz mode is a form setting (`settings.quiz`) plus per-question scoring, not a new field type.
   Pages, rules, actions and the responses view are reused.

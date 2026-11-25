@@ -36,6 +36,12 @@ export function describeError(code: string): string {
 			return t('webforms', 'This form is archived. Restore it first.')
 		case 'window_invalid':
 			return t('webforms', 'The closing time must be after the opening time.')
+		case 'folder_name_invalid':
+			return t('webforms', 'Give the folder a name of up to 100 characters.')
+		case 'folder_name_taken':
+			return t('webforms', 'You already have a folder with this name.')
+		case 'folder_limit':
+			return t('webforms', 'You have as many folders as you can have. Delete one first.')
 		case 'title_invalid':
 			return t('webforms', 'The form needs a title.')
 		case 'description_invalid':

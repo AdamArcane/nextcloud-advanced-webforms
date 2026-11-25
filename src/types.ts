@@ -294,9 +294,17 @@ export interface FormAvailability {
 /** What a person may do with a form (docs/SCHEMA.md section 22.1). */
 export type FormRole = 'owner' | 'editor' | 'reviewer'
 
+/** One of the person's own folders in the list of forms (docs/SCHEMA.md section 24). */
+export interface Folder {
+	id: number
+	name: string
+}
+
 /** A form as the owner API returns it. `draft` is only present on single-form calls. */
 export interface OwnerForm {
 	id: number
+	/** The person's own folder it is in, null for none. Only the list of forms says. */
+	folderId?: number | null
 	/** The person's role on it. Missing means they own it, as in answers from before sharing existed. */
 	role?: FormRole
 	/** Who owns it, for a form that was shared with the person. */

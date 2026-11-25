@@ -5,6 +5,14 @@
 
 # Changelog
 
+## Unreleased
+
+- **Folders.** Sort your list of forms into folders. Make one with **New folder** at the bottom of the sidebar,
+  then use **Move to folder** in a form's menu, or drag a form onto a folder with the mouse. Folders are yours
+  alone: they hold your own forms and ones shared with you, and never change who can open a form. Deleting a
+  folder deletes no form. This adds a small database change (two new tables), which runs by itself when you
+  update.
+
 ## 0.7.1 - 2026-11-23
 
 - **Name and describe a template when you save it.** **Save as template** now opens a small window where you can

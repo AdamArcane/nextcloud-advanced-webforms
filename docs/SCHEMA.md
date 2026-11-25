@@ -2075,6 +2075,7 @@ they belong to (section 22.3).
 | Create or reveal a webhook secret | no | no | yes |
 | Manage collaborators, transfer ownership | no | no | yes |
 | Delete the form | no | no | yes |
+| Put the form in one of their own folders (section 24) | yes | yes | yes |
 
 - A **Reviewer never sees the form's workings**: the builder, the settings and the exports are closed to
   them, and opening `#/f/<id>` takes them to the responses.
@@ -2323,3 +2324,51 @@ nextAfter}`.
 Read-only keys limited to one form (so a tool does not hold an account-wide app password), file downloads,
 an OpenAPI file produced in CI, and a filter on answers (`where`).
 
+
+## 24. Folders (DECISION)
+
+Decided 2026-11-25. People sort their list of forms into folders.
+
+- **Private to one person.** Each person has their own folders and files their own forms and the forms
+  shared with them. Nobody else sees them. A folder never changes who can open a form or what they may do
+  with it, so any role, Reviewer included, may file a form.
+- **One level.** A folder holds forms, not other folders. A form is in at most one of a person's folders.
+- **In the sidebar** folders come first, by name, as sections that open and close like the others. A form in a
+  folder is listed there instead of under **My forms** or **Shared with me**. An empty folder stays listed.
+- **Filing a form.** **Move to folder** in the form's menu (which can also make a new folder), or, with a
+  mouse, dragging the form onto a folder. Dragging it onto **My forms** or **Shared with me** takes it out.
+- **Archived forms** are listed under **Archived** whatever their folder, and return to it when restored.
+- **Deleting a folder** deletes no form: its forms go back to **My forms** or **Shared with me**.
+- **A name** is 1 to 100 characters after trimming, with runs of spaces made one, and no two of a person's
+  folders may differ only in capital letters. A person can have 100 folders.
+- **A copy** made with Duplicate goes into the folder of the form it was made from.
+
+### 24.1 Data
+
+- **`advforms_folders`**: `id`, `user_id`, `name`, `created_at`. Indexed on `user_id`.
+- **`advforms_folder_forms`**: `id`, `folder_id`, `form_id`, `user_id`. Unique on `(form_id, user_id)`,
+  indexed on `user_id` and on `folder_id`. No row means the form is in no folder.
+
+Deleting a form removes its rows. Deleting an account removes the person's folders and rows. Losing access
+to a form leaves the row, which does nothing until the form is shared with them again. Handing a form to
+another owner changes nobody's folders.
+
+### 24.2 API
+
+The app's own routes under `/apps/webforms/api/v1/`. Someone else's folder is `404`.
+
+| Route | Does |
+| --- | --- |
+| `GET /folders` | `{folders: [{id, name}]}`, the caller's, by name |
+| `POST /folders` `{name}` | make one |
+| `PUT /folders/{folderId}` `{name}` | rename it |
+| `DELETE /folders/{folderId}` | delete it |
+| `PUT /forms/{id}/folder` `{folderId}` | file a form, or `null` to take it out |
+
+A bad name is `422` with the code `folder_name_invalid`, `folder_name_taken` or, over the limit,
+`folder_limit`. Each form in `GET /forms` carries the caller's `folderId` (or `null`).
+
+### 24.3 Left out on purpose
+
+Folders shared with other people, folders inside folders, and folders in the read-only API (section 23),
+in exports and in backups.
