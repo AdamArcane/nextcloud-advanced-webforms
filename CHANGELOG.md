@@ -7,6 +7,8 @@
 
 ## Unreleased
 
+- **French translation.** The app is now available in French. The translation tooling also handles plurals and server-side strings.
+
 - **Folders.** Sort your list of forms into folders. Make one with **New folder** at the bottom of the sidebar,
   then use **Move to folder** in a form's menu, or drag a form onto a folder with the mouse. Folders are yours
   alone: they hold your own forms and ones shared with you, and never change who can open a form. Deleting a

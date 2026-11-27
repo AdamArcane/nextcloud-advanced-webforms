@@ -71,8 +71,9 @@ for this and prints the one-time `occ config:system:set apps_paths` command to r
 
 ## Translations
 
-English is the source language and needs no file. Every `t('webforms', '...')` call in
-`src/` is collected into `translationfiles/templates/webforms.pot`:
+English is the source language and needs no file. Every `t('webforms', '...')` and
+`n('webforms', '...', '...')` call in `src/`, and every `->t('...')` call in `lib/`, is
+collected into `translationfiles/templates/webforms.pot`:
 
 ```bash
 npm run l10n:extract

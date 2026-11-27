@@ -35,4 +35,22 @@ describe('l10n tooling', () => {
 		expect(toJs(parsed)).toContain('OC.L10N.register(')
 		expect(JSON.parse(toJson(parsed))).toEqual(parsed)
 	})
+
+	it('extracts plurals from the front end and messages from the server', () => {
+		const root = mkdtempSync(join(tmpdir(), 'l10n-'))
+		const script = join(root, 'a.ts')
+		const server = join(root, 'B.php')
+		writeFileSync(script, "n('webforms', '%n field', '%n fields', count)\n")
+		writeFileSync(server, "$this->l10n->t('%s was closed', [$title]);\n$this->l->t('It\\'s done');\n")
+		expect([...extractMessages([script, server], root).keys()]).toEqual(['_%n field_::_%n fields_', '%s was closed', "It's done"])
+	})
+
+	it('writes and compiles plural entries', () => {
+		const pot = toPot(new Map([['_%n field_::_%n fields_', ['src/a.ts:1']]]))
+		expect(pot).toContain('msgid_plural "%n fields"')
+		expect(parsePo(pot).translations).toEqual({})
+		const po = pot.replace('msgstr[0] ""', 'msgstr[0] "%n champ"').replace('msgstr[1] ""', 'msgstr[1] "%n champs"')
+		expect(parsePo(po).translations).toEqual({ '_%n field_::_%n fields_': ['%n champ', '%n champs'] })
+		expect(toJs(parsePo(po))).toContain('["%n champ","%n champs"]')
+	})
 })
