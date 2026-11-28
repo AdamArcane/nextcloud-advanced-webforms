@@ -77,8 +77,8 @@ printed (SCHEMA.md section 20). Still open, roughly in order:
 3. Clicking a bar in the summary to filter by that answer. Builds on the item above.
 4. Sharing results with someone who cannot edit the form.
 
-Not planned: assigning a response to someone. Forms are not a task tool, and a flow on "Response
-submitted" or "Response status changed" can create a task or a Deck card (SCHEMA.md section 20.5).
+Not planned: assigning a response to someone. Forms are not a task tool, and a flow on "Form response
+submitted" or "Form response status changed" can create a task or a Deck card (SCHEMA.md section 20.5).
 
 ## Decision: actions, not pluggable storage
 

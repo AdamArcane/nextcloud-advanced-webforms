@@ -1473,8 +1473,8 @@ Rules:
 ### 14.1 Flow trigger
 
 `OCA\Webforms\WorkflowEngine\FormsEntity` registers the events with the Nextcloud workflow engine
-(Flow) as an entity called "Webforms", so "Response submitted", "Response deleted", "Response status
-changed", "Response promoted from the waiting list", "Form published"
+(Flow) as an entity called "Webforms", so "Form response submitted", "Form response deleted", "Form
+response status changed", "Form response promoted from the waiting list", "Form published"
 and "Form status changed" can be chosen as the "When" of a flow. The event name the engine listens
 for is the event class name. An administrator's flow sees every form. A user's own flow only runs for
 forms that user owns. Webforms offers triggers only. The actions (what a flow does) come from other
@@ -1953,7 +1953,7 @@ when a response arrives, when it has no status, and they are copies that are not
 `entry.status_changed`, with the common keys plus `versionId`, `entryId`, `status`, `previousStatus`
 (each an id or `null`) and `changedBy`. No answers. Setting the status a response already has fires
 nothing, a bulk change fires one event per response that changed, and a status deleted by the
-administrator fires none. It is registered with Flow as "Response status changed" (section 14.1).
+administrator fires none. It is registered with Flow as "Form response status changed" (section 14.1).
 
 ### 20.3 A note
 
@@ -1991,7 +1991,7 @@ can be bookmarked and reached with the back button. It only opens for the form's
 ### 20.5 Left out on purpose
 
 - **Assignment.** Forms are not a task tool. Handing a response to someone is what Tasks and Deck are
-  for, and a flow on "Response submitted" or "Response status changed" can create one there.
+  for, and a flow on "Form response submitted" or "Form response status changed" can create one there.
 - Statuses per form or per user. One list for the server keeps it simple.
 - Hiding responses of a status by default, or leaving them out of the response limit.
 - Several notes, authors, mentions and notifications.
