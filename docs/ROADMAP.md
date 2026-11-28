@@ -77,8 +77,8 @@ printed (SCHEMA.md section 20). Still open, roughly in order:
 3. Clicking a bar in the summary to filter by that answer. Builds on the item above.
 4. Sharing results with someone who cannot edit the form.
 
-Not planned: assigning a response to someone. Forms are not a task tool, and a flow on "Response
-submitted" or "Response status changed" can create a task or a Deck card (SCHEMA.md section 20.5).
+Not planned: assigning a response to someone. Forms are not a task tool, and a flow on "Form response
+submitted" or "Form response status changed" can create a task or a Deck card (SCHEMA.md section 20.5).
 
 ## Decision: actions, not pluggable storage
 
@@ -120,7 +120,7 @@ Specified in SCHEMA.md section 23. For tools such as n8n that poll for new respo
 ## Quizzes and scoring (planned, on hold)
 
 Planned 2026-11-20, not started. It would reverse the "calculations" non-goal in SCHEMA.md section 1, so the
-first step is a new SCHEMA.md section (24) with shared scoring fixtures that PHP and TypeScript both pass.
+first step is a new SCHEMA.md section (25) with shared scoring fixtures that PHP and TypeScript both pass.
 
 - **Shape.** Quiz mode is a form setting (`settings.quiz`) plus per-question scoring, not a new field type.
   Pages, rules, actions and the responses view are reused.

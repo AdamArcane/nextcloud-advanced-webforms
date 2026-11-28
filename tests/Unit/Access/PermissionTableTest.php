@@ -12,6 +12,7 @@ namespace OCA\Webforms\Tests\Unit\Access;
 use OCA\Webforms\Service\ActionLogService;
 use OCA\Webforms\Service\ApiService;
 use OCA\Webforms\Service\EntryExportService;
+use OCA\Webforms\Service\FolderService;
 use OCA\Webforms\Service\FormService;
 use OCA\Webforms\Service\OwnershipService;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -53,6 +54,12 @@ final class PermissionTableTest extends TestCase {
 	private const EXPORT = ['export' => 'REVIEWER'];
 	private const OWNERSHIP = ['transfer' => 'OWNER'];
 
+	/** Filing a form changes only the caller's own list (section 24), so reading it is enough. */
+	private const FOLDERS = ['moveForm' => 'REVIEWER'];
+
+	/** FolderService methods that name no form: they work on the caller's own folders. */
+	private const FOLDERS_OPEN = ['list', 'create', 'rename', 'delete'];
+
 	/** The read-only API (section 23): everything it reads needs the Reviewer role, and nothing else. */
 	private const API = [
 		'form' => 'REVIEWER',
@@ -82,6 +89,9 @@ final class PermissionTableTest extends TestCase {
 		}
 		foreach (self::OWNERSHIP as $method => $role) {
 			yield 'OwnershipService::' . $method => [OwnershipService::class, $method, $role];
+		}
+		foreach (self::FOLDERS as $method => $role) {
+			yield 'FolderService::' . $method => [FolderService::class, $method, $role];
 		}
 		foreach (self::API as $method => $role) {
 			yield 'ApiService::' . $method => [ApiService::class, $method, $role];
@@ -122,6 +132,19 @@ final class PermissionTableTest extends TestCase {
 			}
 		}
 		self::assertSame([], $undecided, 'A new public ApiService method must be given a role in section 23 and in this table.');
+	}
+
+	public function testNoPublicFolderServiceMethodIsLeftOutOfTheTable(): void {
+		$undecided = [];
+		foreach ((new \ReflectionClass(FolderService::class))->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
+			if ($method->isConstructor() || $method->isStatic()) {
+				continue;
+			}
+			if (!isset(self::FOLDERS[$method->getName()]) && !in_array($method->getName(), self::FOLDERS_OPEN, true)) {
+				$undecided[] = $method->getName();
+			}
+		}
+		self::assertSame([], $undecided, 'A new public FolderService method must be given a role in section 24 and in this table.');
 	}
 
 	public function testAMethodThatOnlyDelegatesCallsOneThatAsksForTheRole(): void {

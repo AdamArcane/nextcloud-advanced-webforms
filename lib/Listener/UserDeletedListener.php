@@ -10,6 +10,8 @@ declare(strict_types=1);
 namespace OCA\Webforms\Listener;
 
 use OCA\Webforms\Db\EntryMapper;
+use OCA\Webforms\Db\FolderFormMapper;
+use OCA\Webforms\Db\FolderMapper;
 use OCA\Webforms\Db\FormMapper;
 use OCA\Webforms\Db\FormSeenMapper;
 use OCA\Webforms\Db\FormTemplateMapper;
@@ -38,6 +40,8 @@ class UserDeletedListener implements IEventListener {
 		private readonly FormShareMapper $shares,
 		private readonly FormSeenMapper $seen,
 		private readonly FormTemplateMapper $templates,
+		private readonly FolderMapper $folders,
+		private readonly FolderFormMapper $folderForms,
 		private readonly LoggerInterface $logger,
 	) {
 	}
@@ -59,6 +63,8 @@ class UserDeletedListener implements IEventListener {
 			$this->seen->deleteByUser($userId);
 			// Their saved templates are theirs alone, so they go with them.
 			$this->templates->deleteByOwner($userId);
+			$this->folderForms->deleteByUser($userId);
+			$this->folders->deleteByUser($userId);
 			$this->entries->anonymizeUser($userId);
 		} catch (\Throwable $e) {
 			// Deleting an account must not fail because of this app.

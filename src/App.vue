@@ -35,10 +35,15 @@ import BuilderView from './components/builder/BuilderView.vue'
 import EntriesView from './components/entries/EntriesView.vue'
 import ImportDialog from './components/ImportDialog.vue'
 import SaveTemplateDialog from './components/SaveTemplateDialog.vue'
+import FolderDialog from './components/FolderDialog.vue'
+import MoveToFolderDialog from './components/MoveToFolderDialog.vue'
 import TemplateDialog from './components/TemplateDialog.vue'
 import OverviewView from './components/OverviewView.vue'
 import SettingsDialog from './components/SettingsDialog.vue'
 import { statusText } from './availability.ts'
+import { formSections, isShared } from './folders.ts'
+import type { FormSection } from './folders.ts'
+import { useFolders } from './useFolders.ts'
 import { FORM_STATUS_PUBLISHED } from './types.ts'
 
 const forms = ref<OwnerForm[]>([])
@@ -64,24 +69,31 @@ const view = computed(() => route.value.view)
 const activeForms = computed(() => forms.value.filter((form) => form.archivedAt == null))
 const archivedForms = computed(() => forms.value.filter((form) => form.archivedAt != null))
 
-// A form someone else owns is listed apart, under their name (docs/SCHEMA.md section 22.3).
-function isShared(form: OwnerForm): boolean {
-	return form.role !== undefined && form.role !== 'owner'
-}
-
 /** A Reviewer only reads responses; everyone else may open the editor. */
 function canEdit(form: OwnerForm): boolean {
 	return form.role !== 'reviewer'
 }
 
-const navGroups = computed(() => {
-	const shared = activeForms.value.filter(isShared)
-	const groups: Array<{ key: string, caption: string, icon: string, forms: OwnerForm[] }> = [{ key: 'mine', caption: t('webforms', 'My forms'), icon: icons.tabForm, forms: activeForms.value.filter((form) => !isShared(form)) }]
-	if (shared.length > 0) {
-		groups.push({ key: 'shared', caption: t('webforms', 'Shared with me'), icon: icons.share, forms: shared })
+const {
+	folders, loadFailed: foldersFailed, load: loadFolders, naming, moving, deleting, move: moveForm, pick: pickFolder,
+	newFolderForMoving, onSaved: onFolderSaved, confirmDelete: confirmDeleteFolder, dropTarget, dragStart, dragOver, dragLeave, drop, dragEnd,
+} = useFolders(forms)
+
+const sections = computed(() => formSections(activeForms.value, folders.value))
+
+function sectionName(section: FormSection): string {
+	if (section.folder) {
+		return section.folder.name
 	}
-	return groups
-})
+	return section.kind === 'shared' ? t('webforms', 'Shared with me') : t('webforms', 'My forms')
+}
+
+function sectionIcon(section: FormSection): string {
+	if (section.folder) {
+		return icons.folder
+	}
+	return section.kind === 'shared' ? icons.share : icons.tabForm
+}
 
 function rowTitle(form: OwnerForm): string | undefined {
 	const parts: string[] = []
@@ -95,7 +107,7 @@ function rowTitle(form: OwnerForm): string | undefined {
 	}
 	return parts.length > 0 ? form.title + ' (' + parts.join('; ') + ')' : undefined
 }
-// Which sections are open, remembered in this browser. My forms and Shared with me start open, Archived closed.
+// Which sections are open, remembered in this browser. All start open but Archived.
 const savedOpen = loadNavOpen()
 const archiveOpen = ref(savedOpen.archived === true)
 const sectionOpen = reactive<Record<string, boolean>>(Object.fromEntries(Object.entries(savedOpen).filter(([key]) => key !== 'archived')))
@@ -143,8 +155,12 @@ function openForm(form: OwnerForm): void {
 }
 
 async function load(): Promise<void> {
+	// Together, so the forms do not show in one place and then jump into their folders.
+	const foldersLoaded = loadFolders()
 	try {
-		forms.value = await listForms()
+		const list = await listForms()
+		await foldersLoaded
+		forms.value = list
 		loadFailed.value = false
 	} catch {
 		loadFailed.value = true
@@ -317,6 +333,10 @@ async function duplicate(form: OwnerForm): Promise<void> {
 		const { form: copy } = await duplicateForm(form.id, t('webforms', 'Copy of {title}', { title: form.title }))
 		forms.value = [copy, ...forms.value]
 		open(copy.id)
+		// A copy stays beside the form it was made from.
+		if (form.folderId != null) {
+			await moveForm(copy.id, form.folderId)
+		}
 	} catch {
 		duplicateFailed.value = true
 	}
@@ -366,19 +386,38 @@ function hasNewerDraft(form: OwnerForm): boolean {
 						<span v-else aria-hidden="true" class="af-new-plus">+</span>
 					</template>
 				</NcAppNavigationNew>
-				<NcAppNavigationList v-for="group in navGroups" :key="group.key">
-					<!-- The whole heading opens and closes the section, not only the caret. -->
-					<NcAppNavigationItem :open="sectionOpen[group.key] !== false"
-						:name="group.caption"
+				<NcAppNavigationList v-for="section in sections" :key="section.key">
+					<!-- The whole heading opens and closes the section, not only the caret. A form dragged onto it
+					     moves there; onto My forms or Shared with me it leaves its folder. -->
+					<NcAppNavigationItem :open="sectionOpen[section.key] !== false"
+						:name="sectionName(section)"
+						:class="{ 'af-nav--drop': dropTarget === section.key }"
 						:allow-collapse="true"
-						:counter-number="group.forms.length"
-						:force-display-actions="false"
-						@click="sectionOpen[group.key] = sectionOpen[group.key] === false"
-						@update:open="(value: boolean) => { sectionOpen[group.key] = value }">
+						:counter-number="section.forms.length"
+						:force-display-actions="section.folder !== null && touchScreen"
+						@click="sectionOpen[section.key] = sectionOpen[section.key] === false"
+						@update:open="(value: boolean) => { sectionOpen[section.key] = value }"
+						@dragover="(event: DragEvent) => dragOver(event, section.key)"
+						@dragleave="dragLeave"
+						@drop="(event: DragEvent) => drop(event, section.folder?.id ?? null)">
 						<template #icon>
-							<Icon :path="group.icon" />
+							<Icon :path="sectionIcon(section)" />
 						</template>
-					<NcAppNavigationItem v-for="form in group.forms"
+						<template v-if="section.folder" #actions>
+							<NcActionButton close-after-click @click="naming = { folder: section.folder, thenMove: null }">
+								<template #icon>
+									<Icon :path="icons.edit" :inline="false" />
+								</template>
+								{{ t('webforms', 'Rename') }}
+							</NcActionButton>
+							<NcActionButton close-after-click @click="deleting = section.folder">
+								<template #icon>
+									<Icon :path="icons.delete" :inline="false" />
+								</template>
+								{{ t('webforms', 'Delete folder') }}
+							</NcActionButton>
+						</template>
+					<NcAppNavigationItem v-for="form in section.forms"
 						:key="form.id"
 						:name="form.title"
 						:active="form.id === selectedId"
@@ -388,14 +427,22 @@ function hasNewerDraft(form: OwnerForm): boolean {
 						:class="{ 'af-nav--newer': hasNewerDraft(form) }"
 						:title="rowTitle(form)"
 						:aria-description="hasNewerDraft(form) ? t('webforms', 'The draft has changes that are not published yet') : undefined"
-						@click="openForm(form)">
+						@click="openForm(form)"
+						@dragstart="(event: DragEvent) => dragStart(event, form)"
+						@dragend="dragEnd">
 						<template v-if="(form.newCount ?? 0) > 0" #counter>
 							<NcCounterBubble :count="form.newCount ?? 0"
 								type="highlighted"
 								:title="n('webforms', '%n new response', '%n new responses', form.newCount ?? 0)"
 								:aria-label="n('webforms', '%n new response', '%n new responses', form.newCount ?? 0)" />
 						</template>
-						<template v-if="canEdit(form) || form.canLeave" #actions>
+						<template #actions>
+							<NcActionButton close-after-click @click="moving = form">
+								<template #icon>
+									<Icon :path="icons.moveToFolder" :inline="false" />
+								</template>
+								{{ t('webforms', 'Move to folder') }}
+							</NcActionButton>
 							<NcActionLink v-if="canEdit(form)"
 								:href="formExportUrl(form.id, 'draft')"
 								:download="''"
@@ -494,6 +541,12 @@ function hasNewerDraft(form: OwnerForm): boolean {
 						{{ t('webforms', 'Try again') }}
 					</NcButton>
 				</NcNoteCard>
+				<NcNoteCard v-if="foldersFailed" type="error">
+					{{ t('webforms', 'Could not load your folders.') }}
+					<NcButton variant="tertiary" @click="loadFolders">
+						{{ t('webforms', 'Try again') }}
+					</NcButton>
+				</NcNoteCard>
 				<NcNoteCard v-if="leaveFailed" type="error">
 					{{ t('webforms', 'Could not leave the form.') }}
 				</NcNoteCard>
@@ -512,6 +565,11 @@ function hasNewerDraft(form: OwnerForm): boolean {
 			</template>
 			<template #footer>
 				<ul class="app-navigation-entry__settings">
+					<NcAppNavigationItem :name="t('webforms', 'New folder')" @click="naming = { folder: null, thenMove: null }">
+						<template #icon>
+							<Icon :path="icons.newFolder" />
+						</template>
+					</NcAppNavigationItem>
 					<NcAppNavigationItem :name="t('webforms', 'Import form')"
 						:disabled="importing || !policy.canCreate"
 						@click="importOpen = true">
@@ -528,6 +586,26 @@ function hasNewerDraft(form: OwnerForm): boolean {
 				</ul>
 			</template>
 		</NcAppNavigation>
+
+		<FolderDialog v-if="naming"
+			:open="true"
+			:folder="naming.folder"
+			@saved="onFolderSaved"
+			@update:open="(value: boolean) => { if (!value) naming = null }" />
+		<MoveToFolderDialog v-if="moving"
+			:form="moving"
+			:folders="folders"
+			@close="moving = null"
+			@pick="pickFolder"
+			@new-folder="newFolderForMoving" />
+		<NcDialog v-if="deleting"
+			:name="t('webforms', 'Delete this folder?')"
+			:message="t('webforms', 'The forms in {name} are not deleted. They are listed outside any folder again.', { name: deleting.name })"
+			:buttons="[
+				{ label: t('webforms', 'Cancel'), variant: 'tertiary', callback: () => { deleting = null } },
+				{ label: t('webforms', 'Delete folder'), variant: 'error', callback: confirmDeleteFolder },
+			]"
+			@closing="deleting = null" />
 
 		<SaveTemplateDialog v-model:open="saveTemplateOpen"
 			:form="templateSource"
@@ -617,6 +695,12 @@ function hasNewerDraft(form: OwnerForm): boolean {
 	border-radius: 50%;
 	background: var(--color-warning, #eca700);
 	vertical-align: middle;
+}
+
+.af-nav--drop {
+	border-radius: var(--border-radius-element, var(--border-radius-large));
+	outline: 2px dashed var(--color-primary-element);
+	outline-offset: -2px;
 }
 
 .af-home {
