@@ -5,15 +5,15 @@
 
 # Changelog
 
-## Unreleased
-
-- **French translation.** The app is now available in French. The translation tooling also handles plurals and server-side strings.
+## 0.7.2 - 2026-11-28
 
 - **Folders.** Sort your list of forms into folders. Make one with **New folder** at the bottom of the sidebar,
   then use **Move to folder** in a form's menu, or drag a form onto a folder with the mouse. Folders are yours
   alone: they hold your own forms and ones shared with you, and never change who can open a form. Deleting a
   folder deletes no form. This adds a small database change (two new tables), which runs by itself when you
   update.
+- **French translation.** The app is now available in French, contributed by LeutholdF. Messages sent by
+  the server and counts such as "2 answers" can now be translated too.
 - **Clearer names in Flow.** The response triggers now start with "Form", for example "Form response
   submitted", so they are easier to find in a list shared with other apps. Existing flows keep working.
 
