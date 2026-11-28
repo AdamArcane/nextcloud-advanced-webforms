@@ -2047,6 +2047,22 @@ msgstr ""
 msgid "Form published"
 msgstr ""
 
+#: lib/WorkflowEngine/FormsEntity.php:64
+msgid "Form response deleted"
+msgstr ""
+
+#: lib/WorkflowEngine/FormsEntity.php:66
+msgid "Form response promoted from the waiting list"
+msgstr ""
+
+#: lib/WorkflowEngine/FormsEntity.php:65
+msgid "Form response status changed"
+msgstr ""
+
+#: lib/WorkflowEngine/FormsEntity.php:63
+msgid "Form response submitted"
+msgstr ""
+
 #: lib/WorkflowEngine/FormsEntity.php:68
 msgid "Form status changed"
 msgstr ""
@@ -3707,10 +3723,6 @@ msgstr ""
 msgid "Response #{id}"
 msgstr ""
 
-#: lib/WorkflowEngine/FormsEntity.php:64
-msgid "Response deleted"
-msgstr ""
-
 #: src/components/builder/FormProperties.vue:370
 msgid "Response limit"
 msgstr ""
@@ -3719,20 +3731,8 @@ msgstr ""
 msgid "Response number"
 msgstr ""
 
-#: lib/WorkflowEngine/FormsEntity.php:66
-msgid "Response promoted from the waiting list"
-msgstr ""
-
-#: lib/WorkflowEngine/FormsEntity.php:65
-msgid "Response status changed"
-msgstr ""
-
 #: src/components/admin/StatusAdmin.vue:150
 msgid "Response statuses"
-msgstr ""
-
-#: lib/WorkflowEngine/FormsEntity.php:63
-msgid "Response submitted"
 msgstr ""
 
 #: src/components/FormNav.vue:30
