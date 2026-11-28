@@ -130,7 +130,7 @@ For each release:
 
 ## Screenshot addresses
 
-The `<screenshot>` entries in `appinfo/info.xml` name the release tag (`.../v0.7.1/docs/screenshots/...`), not
+The `<screenshot>` entries in `appinfo/info.xml` name the release tag (`.../v0.7.2/docs/screenshots/...`), not
 `main`. The app store fetches each address once and keeps the result, even a failed fetch, so an address that
 was ever unreachable stays broken. Point them at the tag of the release being published, and the tag must
 exist before the upload.
