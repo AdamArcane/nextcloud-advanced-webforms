@@ -5,8 +5,8 @@
 
 // Translation tooling without extra dependencies.
 //
-//   node tools/l10n.mjs extract   collect every t('webforms', '...') and n('webforms', '...', '...')
-//                                 in src/, and every ->t('...') in lib/, into
+//   node tools/l10n.mjs extract   collect every t('webforms', ...) and n('webforms', ...) in src/,
+//                                 and every ->t(...) and ->n(...) in lib/ and templates/, into
 //                                 translationfiles/templates/webforms.pot
 //   node tools/l10n.mjs compile   turn translationfiles/<lang>/webforms.po into
 //                                 l10n/<lang>.js and l10n/<lang>.json, the files Nextcloud loads
@@ -14,7 +14,7 @@
 // English is the source language and needs no file. Translators work on the .pot / .po files
 // (by hand, in Poedit, or in Transifex), and the compiled files are committed.
 
-import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 
 const APP_ID = 'webforms'
@@ -26,74 +26,66 @@ const POT_HEADER = [
 ]
 
 /** Source files that contain translatable strings. */
-function sourceFiles(root) {
+export function sourceFiles(root) {
 	const found = []
-	const walk = (dir) => {
+	const walk = (dir, wanted) => {
 		for (const name of readdirSync(dir).sort()) {
 			const path = join(dir, name)
 			if (statSync(path).isDirectory()) {
-				walk(path)
-			} else if (/\.(vue|ts|php)$/.test(name) && !/\.test\.ts$/.test(name)) {
+				walk(path, wanted)
+			} else if (wanted(name)) {
 				found.push(path)
 			}
 		}
 	}
-	walk(join(root, 'src'))
-	walk(join(root, 'lib'))
+	walk(join(root, 'src'), (name) => /\.(vue|ts)$/.test(name) && !/\.test\.ts$/.test(name))
+	for (const dir of ['lib', 'templates']) {
+		if (existsSync(join(root, dir))) {
+			walk(join(root, dir), (name) => name.endsWith('.php'))
+		}
+	}
 	return found
 }
 
-/** A single-quoted literal, the only form this code base uses. */
-const LITERAL = String.raw`'((?:[^'\\\n]|\\.)*)'`
-/** `t('webforms', 'text')` in the front end. */
-const CALL = new RegExp(String.raw`\bt\(\s*'webforms'\s*,\s*` + LITERAL, 'g')
-/** `n('webforms', 'one', 'many', count)` in the front end. */
-const PLURAL_CALL = new RegExp(String.raw`\bn\(\s*'webforms'\s*,\s*` + LITERAL + String.raw`\s*,\s*` + LITERAL, 'g')
-/** `$this->l10n->t('text')` on the server. */
-const PHP_CALL = new RegExp(String.raw`->l(?:10n)?->t\(\s*` + LITERAL, 'g')
+/** A single-quoted literal, the only form this code base uses. PHP lets one run over several lines. */
+const JS_TEXT = String.raw`'((?:[^'\\\n]|\\.)*)'`
+const PHP_TEXT = String.raw`'((?:[^'\\]|\\[\s\S])*)'`
+/** `$l->t(`, `$this->l10n->n(` and the like. Other objects with a `t` or `n` method are left alone. */
+const PHP_CALL = String.raw`(?:\$|->)(?:l|l10n)->`
 
-function unescapeJs(text) {
-	return text.replace(/\\(.)/g, (_, char) => (char === 'n' ? '\n' : char === 't' ? '\t' : char))
+const SYNTAX = {
+	js: {
+		singular: new RegExp(String.raw`\bt\(\s*'webforms'\s*,\s*` + JS_TEXT, 'g'),
+		plural: new RegExp(String.raw`\bn\(\s*'webforms'\s*,\s*` + JS_TEXT + String.raw`\s*,\s*` + JS_TEXT, 'g'),
+		unescape: (text) => text.replace(/\\(.)/g, (_, char) => (char === 'n' ? '\n' : char === 't' ? '\t' : char)),
+	},
+	php: {
+		singular: new RegExp(PHP_CALL + String.raw`t\(\s*` + PHP_TEXT, 'g'),
+		plural: new RegExp(PHP_CALL + String.raw`n\(\s*` + PHP_TEXT + String.raw`\s*,\s*` + PHP_TEXT, 'g'),
+		// In a single-quoted PHP string only \' and \\ are escapes, everything else is literal.
+		unescape: (text) => text.replace(/\\([\\'])/g, '$1'),
+	},
 }
 
-/** A PHP single-quoted literal only escapes the quote and the backslash. */
-function unescapePhp(text) {
-	return text.replace(/\\(['\\])/g, '$1')
-}
-
-/** The key Nextcloud looks a plural message up by. */
-function pluralKey(one, many) {
-	return '_' + one + '_::_' + many + '_'
-}
-
-function splitPluralKey(key) {
-	const match = /^_([\s\S]*)_::_([\s\S]*)_$/.exec(key)
-	return match ? [match[1], match[2]] : null
-}
+/** The key Nextcloud looks a plural message up by, in both PHP and JavaScript. */
+const pluralKey = (singular, plural) => '_' + singular + '_::_' + plural + '_'
+const PLURAL_KEY = /^_([\s\S]*)_::_([\s\S]*)_$/
 
 /** @returns {Map<string, string[]>} message (or plural key) to the places it is used */
 export function extractMessages(files, root) {
 	const messages = new Map()
 	for (const file of files) {
 		const source = readFileSync(file, 'utf8')
-		const add = (text, index) => {
+		const syntax = file.endsWith('.php') ? SYNTAX.php : SYNTAX.js
+		const found = [
+			...[...source.matchAll(syntax.singular)].map((match) => [match.index, syntax.unescape(match[1])]),
+			...[...source.matchAll(syntax.plural)].map((match) => [match.index, pluralKey(syntax.unescape(match[1]), syntax.unescape(match[2]))]),
+		].sort((a, b) => a[0] - b[0])
+		for (const [index, key] of found) {
 			const line = source.slice(0, index).split('\n').length
-			const places = messages.get(text) ?? []
+			const places = messages.get(key) ?? []
 			places.push(relative(root, file) + ':' + line)
-			messages.set(text, places)
-		}
-		const php = file.endsWith('.php')
-		const found = []
-		for (const match of source.matchAll(php ? PHP_CALL : CALL)) {
-			found.push([(php ? unescapePhp : unescapeJs)(match[1]), match.index])
-		}
-		if (!php) {
-			for (const match of source.matchAll(PLURAL_CALL)) {
-				found.push([pluralKey(unescapeJs(match[1]), unescapeJs(match[2])), match.index])
-			}
-		}
-		for (const [text, index] of found.sort((a, b) => a[1] - b[1])) {
-			add(text, index)
+			messages.set(key, places)
 		}
 	}
 	return messages
@@ -114,15 +106,16 @@ export function toPot(messages) {
 		'"Plural-Forms: ' + DEFAULT_PLURAL + '\\n"',
 		'',
 	]
-	for (const text of [...messages.keys()].sort((a, b) => a.localeCompare(b, 'en'))) {
-		for (const place of messages.get(text).slice(0, 3)) {
+	const singularOf = (key) => PLURAL_KEY.exec(key)?.[1] ?? key
+	for (const key of [...messages.keys()].sort((a, b) => singularOf(a).localeCompare(singularOf(b), 'en'))) {
+		for (const place of messages.get(key).slice(0, 3)) {
 			lines.push('#: ' + place)
 		}
-		const plural = splitPluralKey(text)
+		const plural = PLURAL_KEY.exec(key)
 		if (plural) {
-			lines.push('msgid ' + quotePo(plural[0]), 'msgid_plural ' + quotePo(plural[1]), 'msgstr[0] ""', 'msgstr[1] ""', '')
+			lines.push('msgid ' + quotePo(plural[1]), 'msgid_plural ' + quotePo(plural[2]), 'msgstr[0] ""', 'msgstr[1] ""', '')
 		} else {
-			lines.push('msgid ' + quotePo(text), 'msgstr ""', '')
+			lines.push('msgid ' + quotePo(key), 'msgstr ""', '')
 		}
 	}
 	return lines.join('\n')
@@ -132,53 +125,56 @@ function unquotePo(text) {
 	return text.slice(1, -1).replace(/\\(.)/g, (_, char) => (char === 'n' ? '\n' : char === 't' ? '\t' : char))
 }
 
-/** @returns {{ translations: Record<string, string | string[]>, pluralForm: string }} untranslated entries are left out */
+/**
+ * @returns {{ translations: Record<string, string | string[]>, pluralForm: string }} untranslated
+ *   entries are left out. A plural entry is only taken when every one of its forms is translated.
+ */
 export function parsePo(source) {
 	const translations = {}
 	let pluralForm = DEFAULT_PLURAL
-	let entry = { id: '', plural: null, str: [''] }
-	/** Which part of the entry a continuation line belongs to. */
-	let field = null
+	let entry = { id: '', plural: null, str: [] }
+	// Where a continuation line belongs.
+	let append = null
+	let sawStr = false
 	const flush = () => {
 		const { id, plural, str } = entry
 		if (id === '') {
-			const header = /Plural-Forms:\s*([^\n]+)/.exec(str[0])
+			const header = /Plural-Forms:\s*([^\n]+)/.exec(str[0] ?? '')
 			if (header) {
 				pluralForm = header[1].trim()
 			}
-		} else if (str.every((form) => form !== '')) {
-			if (plural === null) {
-				translations[id] = str[0]
-			} else {
+		} else if (plural !== null) {
+			if (str.length > 0 && str.every((form) => form !== '')) {
 				translations[pluralKey(id, plural)] = str
 			}
+		} else if (str[0]) {
+			translations[id] = str[0]
 		}
-		entry = { id: '', plural: null, str: [''] }
+		entry = { id: '', plural: null, str: [] }
+		sawStr = false
 	}
 	for (const raw of source.split('\n')) {
 		const line = raw.trim()
-		const msgstr = /^msgstr(?:\[(\d+)\])? (".*")$/.exec(line)
+		const msgstr = /^msgstr(?:\[(\d+)\])?\s+(".*")$/.exec(line)
 		if (line.startsWith('msgid ')) {
-			if (typeof field === 'number') {
+			if (sawStr) {
 				flush()
 			}
-			field = 'id'
 			entry.id = unquotePo(line.slice(6))
+			append = (text) => { entry.id += text }
 		} else if (line.startsWith('msgid_plural ')) {
-			field = 'plural'
 			entry.plural = unquotePo(line.slice(13))
+			append = (text) => { entry.plural += text }
 		} else if (msgstr) {
-			field = Number(msgstr[1] ?? 0)
-			entry.str[field] = unquotePo(msgstr[2])
-		} else if (line.startsWith('"') && field !== null) {
-			if (typeof field === 'number') {
-				entry.str[field] += unquotePo(line)
-			} else {
-				entry[field] += unquotePo(line)
-			}
+			const index = Number(msgstr[1] ?? 0)
+			sawStr = true
+			entry.str[index] = unquotePo(msgstr[2])
+			append = (text) => { entry.str[index] += text }
+		} else if (line.startsWith('"') && append !== null) {
+			append(unquotePo(line))
 		}
 	}
-	if (typeof field === 'number') {
+	if (sawStr) {
 		flush()
 	}
 	return { translations, pluralForm }

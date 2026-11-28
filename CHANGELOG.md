@@ -14,6 +14,8 @@
   alone: they hold your own forms and ones shared with you, and never change who can open a form. Deleting a
   folder deletes no form. This adds a small database change (two new tables), which runs by itself when you
   update.
+- **Clearer names in Flow.** The response triggers now start with "Form", for example "Form response
+  submitted", so they are easier to find in a list shared with other apps. Existing flows keep working.
 
 ## 0.7.1 - 2026-11-23
 

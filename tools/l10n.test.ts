@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 // @ts-expect-error plain JavaScript tooling
-import { extractMessages, parsePo, toJs, toJson, toPot } from './l10n.mjs'
+import { extractMessages, parsePo, sourceFiles, toJs, toJson, toPot } from './l10n.mjs'
 
 describe('l10n tooling', () => {
 	it('extracts messages with escapes and placeholders, once each', () => {
@@ -36,21 +36,38 @@ describe('l10n tooling', () => {
 		expect(JSON.parse(toJson(parsed))).toEqual(parsed)
 	})
 
-	it('extracts plurals from the front end and messages from the server', () => {
+	it('reads PHP translation calls in lib/ and templates/', () => {
 		const root = mkdtempSync(join(tmpdir(), 'l10n-'))
-		const script = join(root, 'a.ts')
-		const server = join(root, 'B.php')
-		writeFileSync(script, "n('webforms', '%n field', '%n fields', count)\n")
-		writeFileSync(server, "$this->l10n->t('%s was closed', [$title]);\n$this->l->t('It\\'s done');\n")
-		expect([...extractMessages([script, server], root).keys()]).toEqual(['_%n field_::_%n fields_', '%s was closed', "It's done"])
+		for (const dir of ['src', 'lib/Deep', 'templates']) {
+			mkdirSync(join(root, dir), { recursive: true })
+		}
+		writeFileSync(join(root, 'lib/Deep/A.php'), [
+			"$this->l10n->t('Closed');",
+			"$this->l->t(",
+			"	'It\\'s %s', [$title]);",
+			"$l10n->n('%n file', '%n files', $count);",
+			"$this->l10n->t('A \\n stays');",
+			"$other->t('Not a translation');",
+		].join('\n'))
+		writeFileSync(join(root, 'templates/main.php'), "<?php p($l->t('Hello')); ?>\n")
+		const messages = extractMessages(sourceFiles(root), root)
+		expect([...messages.keys()]).toEqual(['Closed', "It's %s", '_%n file_::_%n files_', 'A \\n stays', 'Hello'])
+		expect(messages.get("It's %s")).toEqual(['lib/Deep/A.php:2'])
+		expect(messages.get('Hello')).toEqual(['templates/main.php:1'])
 	})
 
-	it('writes and compiles plural entries', () => {
-		const pot = toPot(new Map([['_%n field_::_%n fields_', ['src/a.ts:1']]]))
-		expect(pot).toContain('msgid_plural "%n fields"')
+	it('carries a plural from the source to the compiled files', () => {
+		const root = mkdtempSync(join(tmpdir(), 'l10n-'))
+		mkdirSync(join(root, 'src'))
+		writeFileSync(join(root, 'src', 'a.ts'), "n('webforms', '%n response', '%n responses', count)\n")
+		const pot = toPot(extractMessages(sourceFiles(root), root))
+		expect(pot).toContain('msgid "%n response"\nmsgid_plural "%n responses"\nmsgstr[0] ""\nmsgstr[1] ""\n')
 		expect(parsePo(pot).translations).toEqual({})
-		const po = pot.replace('msgstr[0] ""', 'msgstr[0] "%n champ"').replace('msgstr[1] ""', 'msgstr[1] "%n champs"')
-		expect(parsePo(po).translations).toEqual({ '_%n field_::_%n fields_': ['%n champ', '%n champs'] })
-		expect(toJs(parsePo(po))).toContain('["%n champ","%n champs"]')
+
+		const translated = pot.replace('msgstr[0] ""', 'msgstr[0] "%n réponse"')
+		expect(parsePo(translated).translations).toEqual({})
+		const parsed = parsePo(translated.replace('msgstr[1] ""', 'msgstr[1] ""\n"%n réponses"'))
+		expect(parsed.translations).toEqual({ '_%n response_::_%n responses_': ['%n réponse', '%n réponses'] })
+		expect(toJs(parsed)).toContain('"_%n response_::_%n responses_" : ["%n réponse","%n réponses"]')
 	})
 })
