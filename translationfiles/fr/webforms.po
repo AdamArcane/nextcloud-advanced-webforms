@@ -1193,6 +1193,10 @@ msgstr "Impossible de créer le formulaire."
 msgid "Could not create the table. Try again."
 msgstr "Impossible de créer la table. Réessayez."
 
+#: src/useFolders.ts:93
+msgid "Could not delete the folder."
+msgstr "Impossible de supprimer le dossier."
+
 #: src/components/entries/EntriesView.vue:682
 msgid "Could not delete the response."
 msgstr "Impossible de supprimer la réponse."
@@ -1264,6 +1268,10 @@ msgstr "Impossible de charger les modèles."
 msgid "Could not load who the form is shared with."
 msgstr "Impossible de charger la liste des partages du formulaire."
 
+#: src/App.vue:545
+msgid "Could not load your folders."
+msgstr "Impossible de charger vos dossiers."
+
 #: src/App.vue:492
 msgid "Could not load your forms."
 msgstr "Impossible de charger vos formulaires."
@@ -1280,6 +1288,10 @@ msgstr "Impossible de rechercher vos formulaires. Fermez cette fenêtre et rées
 msgid "Could not make a form from this template."
 msgstr "Impossible de créer un formulaire à partir de ce modèle."
 
+#: src/useFolders.ts:56
+msgid "Could not move the form."
+msgstr "Impossible de déplacer le formulaire."
+
 #: src/components/entries/EntriesView.vue:655
 #: src/components/entries/ResponsePage.vue:251
 msgid "Could not promote the response."
@@ -1288,6 +1300,10 @@ msgstr "Impossible de sortir la réponse de la liste d’attente."
 #: src/components/builder/BuilderView.vue:235
 msgid "Could not save"
 msgstr "Échec de l’enregistrement"
+
+#: src/components/FolderDialog.vue:62
+msgid "Could not save the folder."
+msgstr "Impossible d’enregistrer le dossier."
 
 #: src/components/entries/NoteEditor.vue:78
 msgid "Could not save the note."
@@ -1336,6 +1352,10 @@ msgstr "Pays"
 #: src/AdminApp.vue:109
 msgid "Create a site in the provider's dashboard to get the keys:"
 msgstr "Créez un site dans le tableau de bord du fournisseur pour obtenir les clés :"
+
+#: src/components/FolderDialog.vue:88
+msgid "Create folder"
+msgstr "Créer le dossier"
 
 #: src/components/TemplateDialog.vue:218
 msgid "Create form"
@@ -1448,6 +1468,11 @@ msgstr "Supprimer l’action"
 msgid "Delete field"
 msgstr "Supprimer le champ"
 
+#: src/App.vue:417
+#: src/App.vue:606
+msgid "Delete folder"
+msgstr "Supprimer le dossier"
+
 #: src/components/builder/BuilderView.vue:726
 #: src/components/builder/FormProperties.vue:191
 msgid "Delete form"
@@ -1494,6 +1519,10 @@ msgstr "Les supprimer et enregistrer"
 #: src/components/builder/BuilderView.vue:713
 msgid "Delete this field?"
 msgstr "Supprimer ce champ ?"
+
+#: src/App.vue:602
+msgid "Delete this folder?"
+msgstr "Supprimer ce dossier ?"
 
 #: src/components/builder/BuilderView.vue:722
 msgid "Delete this form?"
@@ -1958,6 +1987,14 @@ msgstr "Corrigez les problèmes signalés avant de publier."
 msgid "Folder"
 msgstr "Dossier"
 
+#: src/components/FolderDialog.vue:79
+msgid "Folder name"
+msgstr "Nom du dossier"
+
+#: src/components/MoveToFolderDialog.vue:45
+msgid "Folders"
+msgstr "Dossiers"
+
 #: src/components/builder/FieldProperties.vue:138
 msgid "Following the form setting: {position}."
 msgstr "Selon le réglage du formulaire : {position}."
@@ -2022,6 +2059,22 @@ msgstr "Les propriétaires de formulaires peuvent définir leur propre adresse d
 #: lib/WorkflowEngine/FormsEntity.php:67
 msgid "Form published"
 msgstr "Formulaire publié"
+
+#: lib/WorkflowEngine/FormsEntity.php:64
+msgid "Form response deleted"
+msgstr "Réponse à un formulaire supprimée"
+
+#: lib/WorkflowEngine/FormsEntity.php:66
+msgid "Form response promoted from the waiting list"
+msgstr "Réponse à un formulaire sortie de la liste d’attente"
+
+#: lib/WorkflowEngine/FormsEntity.php:65
+msgid "Form response status changed"
+msgstr "Statut d’une réponse à un formulaire modifié"
+
+#: lib/WorkflowEngine/FormsEntity.php:63
+msgid "Form response submitted"
+msgstr "Réponse à un formulaire envoyée"
 
 #: lib/WorkflowEngine/FormsEntity.php:68
 msgid "Form status changed"
@@ -2117,6 +2170,10 @@ msgstr "Générer un secret"
 #: src/components/builder/TablesActionBody.vue:234
 msgid "Gets the answer from"
 msgstr "Reçoit la réponse de"
+
+#: src/builder/errors.ts:40
+msgid "Give the folder a name of up to 100 characters."
+msgstr "Donnez au dossier un nom de 100 caractères au maximum."
 
 #: src/builder/errors.ts:14
 msgid "Give this field a label."
@@ -2776,6 +2833,11 @@ msgstr "Descendre le statut {n}"
 msgid "Move status {n} up"
 msgstr "Monter le statut {n}"
 
+#: src/App.vue:444
+#: src/components/MoveToFolderDialog.vue:39
+msgid "Move to folder"
+msgstr "Déplacer vers un dossier"
+
 #: src/components/builder/FieldProperties.vue:144
 msgid "Moves above the field when there is not enough room."
 msgstr "Passe au-dessus du champ lorsque la place manque."
@@ -2842,6 +2904,12 @@ msgstr "Jamais utilisé"
 #: src/components/entries/ResponsesTable.vue:143
 msgid "New"
 msgstr "Nouvelle"
+
+#: src/App.vue:568
+#: src/components/FolderDialog.vue:71
+#: src/components/MoveToFolderDialog.vue:67
+msgid "New folder"
+msgstr "Nouveau dossier"
 
 #: src/App.vue:361
 #: src/App.vue:586
@@ -2912,6 +2980,10 @@ msgstr "Aucun champ sélectionné"
 #: src/components/builder/AddFieldMenu.vue:107
 msgid "No field type matches that."
 msgstr "Aucun type de champ ne correspond."
+
+#: src/components/MoveToFolderDialog.vue:32
+msgid "No folder"
+msgstr "Aucun dossier"
 
 #: src/components/builder/FormProperties.vue:377
 msgid "No limit"
@@ -3607,6 +3679,15 @@ msgstr "Supprimer le mot de passe"
 msgid "Remove sender name"
 msgstr "Supprimer le nom d’expéditeur"
 
+#: src/App.vue:411
+#: src/components/FolderDialog.vue:88
+msgid "Rename"
+msgstr "Renommer"
+
+#: src/components/FolderDialog.vue:71
+msgid "Rename folder"
+msgstr "Renommer le dossier"
+
 #: src/components/builder/BuilderCanvas.vue:343
 msgid "Rename page"
 msgstr "Renommer la page"
@@ -3649,10 +3730,6 @@ msgstr "Redimensionner le champ"
 msgid "Response #{id}"
 msgstr "Réponse n° {id}"
 
-#: lib/WorkflowEngine/FormsEntity.php:64
-msgid "Response deleted"
-msgstr "Réponse supprimée"
-
 #: src/components/builder/FormProperties.vue:370
 msgid "Response limit"
 msgstr "Limite de réponses"
@@ -3661,21 +3738,9 @@ msgstr "Limite de réponses"
 msgid "Response number"
 msgstr "Numéro de réponse"
 
-#: lib/WorkflowEngine/FormsEntity.php:66
-msgid "Response promoted from the waiting list"
-msgstr "Réponse sortie de la liste d’attente"
-
-#: lib/WorkflowEngine/FormsEntity.php:65
-msgid "Response status changed"
-msgstr "Statut de réponse modifié"
-
 #: src/components/admin/StatusAdmin.vue:150
 msgid "Response statuses"
 msgstr "Statuts des réponses"
-
-#: lib/WorkflowEngine/FormsEntity.php:63
-msgid "Response submitted"
-msgstr "Réponse envoyée"
 
 #: src/components/FormNav.vue:30
 #: src/components/SettingsDialog.vue:108
@@ -4640,6 +4705,10 @@ msgstr "Le formulaire doit avoir un titre."
 msgid "The form owner's account email"
 msgstr "L’adresse e-mail du compte du propriétaire du formulaire"
 
+#: src/App.vue:603
+msgid "The forms in {name} are not deleted. They are listed outside any folder again."
+msgstr "Les formulaires du dossier « {name} » ne sont pas supprimés. Ils sont de nouveau affichés hors de tout dossier."
+
 #: src/importReport.ts:41
 msgid "The grid {question} has too many rows or columns and was left out."
 msgstr "La grille {question} comporte trop de rangées ou de colonnes et a été écartée."
@@ -5504,6 +5573,10 @@ msgstr "vous"
 msgid "You added too many files."
 msgstr "Vous avez ajouté trop de fichiers."
 
+#: src/builder/errors.ts:42
+msgid "You already have a folder with this name."
+msgstr "Vous avez déjà un dossier portant ce nom."
+
 #: src/builder/errors.ts:94
 msgid "You are not allowed to add rows to that table."
 msgstr "Vous n’êtes pas autorisé à ajouter des lignes à cette table."
@@ -5547,6 +5620,10 @@ msgstr "Vous ne pouvez pas enregistrer de fichiers dans ce dossier. Choisissez u
 #: src/components/render/messages.ts:98
 msgid "You have already submitted this form."
 msgstr "Vous avez déjà envoyé ce formulaire."
+
+#: src/builder/errors.ts:44
+msgid "You have as many folders as you can have. Delete one first."
+msgstr "Vous avez atteint le nombre maximal de dossiers. Supprimez-en d’abord un."
 
 #: src/components/ImportDialog.vue:165
 msgid "You have no forms in the Forms app on this server."
